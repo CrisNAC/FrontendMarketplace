@@ -1,11 +1,6 @@
 import "../styles/commerces.css";
 
-type Props = {
-    name: string;
-    detail: string;
-};
-
-export const ProductItem = ({ name, detail }: Props) => {
+export const ProductItem = ({ name, detail }) => {
     return (
         <div className="product-item p-2 rounded mb-2">
             <div>

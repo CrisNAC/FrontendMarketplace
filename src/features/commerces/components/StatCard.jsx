@@ -1,11 +1,6 @@
 import "../styles/commerces.css";
 
-type Props = {
-    title: string;
-    value: string;
-};
-
-export const Statcard = ({ title, value }: Props) => {
+export const StatCard = ({ title, value }) => {
     return (
         <div className="card shadow-sm stat-card">
             <div className="card-body">

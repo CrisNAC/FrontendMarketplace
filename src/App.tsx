@@ -1,6 +1,6 @@
 
 import './App.css'
-import { MyCommerceLayout } from './features/commerces/layout/MyCommerceLayout'
+import { MyCommerceLayout } from './features/commerces/layouts/MyCommerceLayout'
 import { MyCommercePage } from './features/commerces/pages/MyCommercePage'
 
 function App() {
