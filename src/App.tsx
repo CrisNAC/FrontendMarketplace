@@ -2,7 +2,7 @@
 import './App.css'
 // import { MyCommerceLayout } from './layouts/MyCommerceLayout'
 // import { MyCommercePage } from './pages/MyCommercePage'
-import PriceComparisonPage from "./pages/PriceComparisonPage";
+import MyAccountPage from "./pages/MyAccountPage";
 
 function App() {
 
@@ -10,7 +10,7 @@ function App() {
     // <MyCommerceLayout>
     //   <MyCommercePage />
     // </MyCommerceLayout>
-    <PriceComparisonPage />
+    <MyAccountPage />
   )
 }
 
