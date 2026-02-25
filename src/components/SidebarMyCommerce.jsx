@@ -1,6 +1,6 @@
-import "../styles/commerces.css";
+import './SidebarMyCommerce.css';
 
-export const Sidebar = () => {
+export const SidebarMyCommerce = () => {
     return (
         <div className="sidebar p-3 d-flex flex-column">
             <h5 className="mb-4 text-white">Mi Comercio</h5>

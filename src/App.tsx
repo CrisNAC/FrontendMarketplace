@@ -1,15 +1,16 @@
 
 import './App.css'
-import { MyCommerceLayout } from './features/commerces/layouts/MyCommerceLayout'
-import { MyCommercePage } from './features/commerces/pages/MyCommercePage'
-//import PriceComparisonPage from './features/commerces/pages/PriceComparisonPage.jsx'
+import { MyCommerceLayout } from './layouts/MyCommerceLayout'
+import { MyCommercePage } from './pages/MyCommercePage'
+import {PriceComparisonPage} from "./pages/PriceComparisonPage";
 
 function App() {
 
   return (
-    <MyCommerceLayout>
-      <MyCommercePage />
-    </MyCommerceLayout>
+    // <MyCommerceLayout>
+    //   <MyCommercePage />
+    // </MyCommerceLayout>
+    <PriceComparisonPage />
   )
 }
 
