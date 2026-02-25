@@ -1,8 +1,8 @@
 
 import './App.css'
-import { MyCommerceLayout } from './layouts/MyCommerceLayout'
-import { MyCommercePage } from './pages/MyCommercePage'
-import {PriceComparisonPage} from "./pages/PriceComparisonPage";
+// import { MyCommerceLayout } from './layouts/MyCommerceLayout'
+// import { MyCommercePage } from './pages/MyCommercePage'
+import PriceComparisonPage from "./pages/PriceComparisonPage";
 
 function App() {
 
