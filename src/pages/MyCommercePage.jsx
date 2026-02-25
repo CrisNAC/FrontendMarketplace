@@ -1,9 +1,9 @@
 
-import { Topbar } from "../components/Topbar";
-import { StatCard } from "../components/StatCard";
-import { BestRatedSection } from "../components/BestRatedSection";
-import { MostSoldSection } from "../components/MostSoldSection";
-import { CollectionsSection } from "../components/CollectionsSection";
+import { Topbar } from "../features/commerces/components/Topbar";
+import { StatCard } from "../features/commerces/components/StatCard";
+import { BestRatedSection } from "../features/commerces/components/BestRatedSection";
+import { MostSoldSection } from "../features/commerces/components/MostSoldSection";
+import { CollectionsSection } from "../features/commerces/components/CollectionsSection";
 
 export const MyCommercePage = () => {
     return (
