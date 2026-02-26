@@ -8,9 +8,9 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { MyCommerceLayout } from './layouts/MyCommerceLayout'
 import { MyCommercePage } from './pages/MyCommercePage'
 import MyAccountPage from "./pages/MyAccountPage";
-<<<<<<< HEAD
+
 import ComercioVerProducto from './pages/ComercioVerProducto';
-=======
+
 import PriceComparisonPage from './pages/PriceComparisonPage';
 import DetalleProducto from './pages/DetalleProducto';
 
@@ -29,15 +29,10 @@ const HomePage = () => (
  * 
  * @returns 
  */
->>>>>>> 939d77796ea750a33edc8727a35f65ba68e74f84
+
 function App() {
   return (
-<<<<<<< HEAD
-    // <MyCommerceLayout>
-    //   <MyCommercePage />
-    // </MyCommerceLayout>
-    <ComercioVerProducto />
-=======
+
     <Router>
       <Routes>
         {/* Ruta de inicio */}
@@ -59,7 +54,7 @@ function App() {
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
->>>>>>> 939d77796ea750a33edc8727a35f65ba68e74f84
+
   )
 }
 
