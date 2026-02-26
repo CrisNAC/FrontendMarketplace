@@ -206,7 +206,7 @@ export default function ComercioVerProducto() {
     <MyCommerceLayout>
       <div className="min-h-screen bg-[#ECF7F0]">
         <main className="px-3 py-3 max-w-[1080px]">
-          {/* TOP BAR */}
+          {/* top bar*/}
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-2 text-left">
               <button
@@ -236,14 +236,14 @@ export default function ComercioVerProducto() {
             </button>
           </div>
 
-          {/* GRID */}
+          {/* grid */}
           <div className="mt-3 grid grid-cols-12 gap-3">
-            {/* LEFT */}
+            {/* izquierda */}
             <div className="col-span-12 lg:col-span-8 space-y-3">
-              {/* PRODUCT CARD */}
+              {/* card producto */}
               <section className="rounded-2xl bg-white p-3 shadow-sm ring-1 ring-slate-100">
                 <div className="grid grid-cols-12 gap-3">
-                  {/* Image */}
+                  {/* imagen */}
                   <div className="col-span-5">
                     <div className="overflow-hidden rounded-2xl shadow-sm ring-1 ring-slate-100">
                       <img
@@ -307,7 +307,7 @@ export default function ComercioVerProducto() {
                 </div>
               </section>
 
-              {/* COMMENTS */}
+              {/* comentarios */}
               <section className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
                 <div className="px-4 pt-3 pb-2 text-left">
                   <h3 className={`text-[12px] font-semibold ${TITLE}`}>
@@ -355,7 +355,7 @@ export default function ComercioVerProducto() {
               </section>
             </div>
 
-            {/* RIGHT */}
+            {/* derecha */}
             <div className="col-span-12 lg:col-span-4 space-y-3">
               <SideCard title="Información">
                 <div className="space-y-3 text-left text-[11px]">
