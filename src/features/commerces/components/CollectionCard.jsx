@@ -1,12 +1,6 @@
 import "../styles/commerces.css";
 
-type Props = {
-    title: string;
-    description: string;
-    products: string;
-};
-
-export const CollectionCard = ({ title, description, products }: Props) => {
+export const CollectionCard = ({ title, description, products }) => {
     return (
         <div className="collection-card p-3 rounded h-100">
             <h6 className="fw-semibold mb-2">{title}</h6>

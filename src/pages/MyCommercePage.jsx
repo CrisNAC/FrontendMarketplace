@@ -1,9 +1,9 @@
 
-import { Topbar } from "../components/Topbar";
-import { Statcard } from "../components/Statcard";
-import { BestRatedSection } from "../components/BestRatedSection";
-import { MostSoldSection } from "../components/MostSoldSection";
-import { CollectionsSection } from "../components/CollectionsSection";
+import { Topbar } from "../features/commerces/components/Topbar";
+import { StatCard } from "../features/commerces/components/StatCard";
+import { BestRatedSection } from "../features/commerces/components/BestRatedSection";
+import { MostSoldSection } from "../features/commerces/components/MostSoldSection";
+import { CollectionsSection } from "../features/commerces/components/CollectionsSection";
 
 export const MyCommercePage = () => {
     return (
@@ -13,16 +13,16 @@ export const MyCommercePage = () => {
             {/* Estadisticas */}
             <div className="row g-4 mb-4">
                 <div className="col-md-3">
-                    <Statcard title="Productos Activos" value="3" />
+                    <StatCard title="Productos Activos" value="3" />
                 </div>
                 <div className="col-md-3">
-                    <Statcard title="Calificación Promedio" value="4.6" />
+                    <StatCard title="Calificación Promedio" value="4.6" />
                 </div>
                 <div className="col-md-3">
-                    <Statcard title="Total Reseñas" value="5" />
+                    <StatCard title="Total Reseñas" value="5" />
                 </div>
                 <div className="col-md-3">
-                    <Statcard title="Colecciones Activas" value="2" />
+                    <StatCard title="Colecciones Activas" value="2" />
                 </div>
             </div>
 

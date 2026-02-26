@@ -1,6 +1,6 @@
-import { SearchFilterSidebar } from "../components/SearchFilterSidebar";
-import { SearchProductCard } from "../components/SearchProductCard";
-import { Pagination } from "../components/Pagination";
+import { SearchFilterSidebar } from "../features/commerces/components/SearchFilterSidebar";
+import { SearchProductCard } from "../features/commerces/components/SearchProductCard";
+import { Pagination } from "../features/commerces/components/Pagination";
 
 // Mock data — reemplazar con resultados reales al conectar el backend
 const MOCK_PRODUCTS = [
