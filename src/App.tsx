@@ -8,6 +8,9 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { MyCommerceLayout } from './layouts/MyCommerceLayout'
 import { MyCommercePage } from './pages/MyCommercePage'
 import MyAccountPage from "./pages/MyAccountPage";
+
+import ComercioVerProducto from './pages/ComercioVerProducto';
+
 import PriceComparisonPage from './pages/PriceComparisonPage';
 import DetalleProducto from './pages/DetalleProducto';
 
@@ -26,8 +29,10 @@ const HomePage = () => (
  * 
  * @returns 
  */
+
 function App() {
   return (
+
     <Router>
       <Routes>
         {/* Ruta de inicio */}
@@ -49,6 +54,7 @@ function App() {
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
+
   )
 }
 
