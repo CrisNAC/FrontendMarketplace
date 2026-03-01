@@ -1,6 +1,6 @@
 import { Edit2 } from "lucide-react";
-import { MarketplaceNavbar } from "../features/clients/components/MarketplaceNavbar";
-import { CategoriesBar } from "../features/clients/components/CategoriesBar";
+import { MarketplaceNavbar } from "../../../components/navbar/MarketplaceNavbar";
+import { CategoriesBar } from "../../../components/navbar/CategoriesBar";
 
 const AccountSidebar = () => {
     return (

@@ -1,5 +1,5 @@
 import { ProductCard } from "./ProductCard";
-import "../styles/vistaComercio.css";
+import "../../styles/vistaComercio.css";
 
 type Product = {
     id: number;

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import "../styles/vistaComercio.css";
+import "../../styles/vistaComercio.css";
 
 const FILTER_CATEGORIES = [
     "Tecnologia",

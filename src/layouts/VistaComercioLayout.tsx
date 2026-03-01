@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
-import { GlobalNavbar } from "../components/GlobalNavbar";
-import { CategoryNavBar } from "../components/CategoryNavbar";
-import "../styles/vistaComercio.css";
+import { GlobalNavbar } from "../components/navbar/GlobalNavbar";
+import { CategoryNavBar } from "../components/navbar/CategoryNavBar";
+import "../features/clients/styles/vistaComercio.css";
 
 type Props = {
     children: ReactNode;

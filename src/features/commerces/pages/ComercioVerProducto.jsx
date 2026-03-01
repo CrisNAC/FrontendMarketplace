@@ -1,5 +1,6 @@
-import { MyCommerceLayout } from "../layouts/MyCommerceLayout";
-import sillaImg from "../assets/silla.jpg";
+import { MyCommerceLayout } from "../../../layouts/MyCommerceLayout";
+import sillaImg from "../../../assets/silla.jpg";
+
 
 function SvgIcon({ children, className = "w-4 h-4" }) {
   return (

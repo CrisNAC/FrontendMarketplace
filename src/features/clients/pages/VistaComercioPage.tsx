@@ -1,7 +1,7 @@
-import { CategoryFilterSidebar } from "../features/commerces/components/CategoryFilterSidebar";
-import { CommerceProfileHeader } from "../features/commerces/components/CommerceProfileHeader";
-import { FeaturedProducts } from "../features/commerces/components/FeaturedProducts";
-import { Pagination } from "../features/commerces/components/Pagination";
+import { CategoryFilterSidebar } from "../components/commerceProfile/CategoryFilterSidebar";
+import { CommerceProfileHeader } from "../components/commerceProfile/CommerceProfileHeader";
+import { FeaturedProducts } from "../components/commerceProfile/FeaturedProducts";
+import { Pagination } from "../components/commerceProfile/Pagination";
 import "../styles/vistaComercio.css";
 
 // Mock data — reemplazar con datos reales cuando se conecte el backend

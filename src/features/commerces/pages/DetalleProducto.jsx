@@ -1,8 +1,8 @@
 import { useState } from "react";
-import iphoneImg from "../assets/iphone.png";
-import negroImg from "../assets/iphonenegrito.png";
-import naranjaImg from "../assets/iphonenaranja.png";
-import whiteImg from "../assets/iphonewhite.png";
+import iphoneImg from "../../../assets/iphone.png";
+import negroImg from "../../../assets/iphonenegrito.png";
+import naranjaImg from "../../../assets/iphonenaranja.png";
+import whiteImg from "../../../assets/iphonewhite.png";
 
 /* svg iconos internos */
 
