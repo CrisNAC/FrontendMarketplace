@@ -66,7 +66,11 @@ function App() {
         } />
         <Route path="/pedidos" element={<ClientOrdersPage />} />
         <Route path="/homepage" element={<HomePage />} />
-        <Route path="/busqueda" element={<BusquedaPage />} />
+        <Route path="/busqueda" element={
+          <VistaComercioLayout>
+            <BusquedaPage />
+          </VistaComercioLayout>
+        } />
                 <Route path="/comentarios" element={<CommentsPage />} />
 
 
