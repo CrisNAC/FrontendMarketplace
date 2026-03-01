@@ -1,19 +1,23 @@
 import { OrderCard } from '../../../components/OrderCard';
 import { SidebarClientProfile } from '../../../components/SidebarClientProfile';
+import { useNavigate } from 'react-router-dom';
 
 export const ClientOrdersPage = () => {
+
+  const navigate = useNavigate();
+
   const orders = [
     {
       id: "ORD-2024-001543",
       total: 1388.96,
-      estado: 'Entregado',
+      estado: 'Enviado',
       fecha: '15 de junio del 2024',
       cantidad: 4
     },
     {
       id: "ORD-2024-001502",
       total: 299.99,
-      estado: 'Pendiente',
+      estado: 'Entregado',
       fecha: '8 de junio del 2024',
       cantidad: 1
     },
@@ -25,6 +29,10 @@ export const ClientOrdersPage = () => {
       cantidad: 2
     }
   ];
+
+  const handleCardClick = (orderId) => {
+    navigate(``);
+  }
 
   return (
     <div>
@@ -40,7 +48,7 @@ export const ClientOrdersPage = () => {
         {/* lista de pedidos */}
         <div className="p-6">
           {orders.map(order => (
-            <OrderCard key={order.id} order={order} />
+            <OrderCard key={order.id} order={order} onClick={() => handleCardClick(order.id)}/>
           ))}
         </div>
       </div>
