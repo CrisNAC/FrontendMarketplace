@@ -1,7 +1,7 @@
 import React from "react";
 import { ArrowLeft } from "lucide-react";
-import { MarketplaceNavbar } from "../features/clients/components/MarketplaceNavbar";
-import { CategoriesBar } from "../features/clients/components/CategoriesBar";
+import { MarketplaceNavbar } from "../../../components/navbar/MarketplaceNavbar";
+import { CategoriesBar } from "../../../components/navbar/CategoriesBar";
 
 // --- Pantalla Principal ---
 export default function PriceComparisonPage() {

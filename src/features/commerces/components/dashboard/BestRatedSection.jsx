@@ -1,5 +1,5 @@
 import { ProductItem } from "./ProductItem";
-import "../styles/commerces.css";
+import "../../styles/commerces.css";
 
 export const BestRatedSection = () => {
     return (

@@ -1,4 +1,4 @@
-import "../styles/vistaComercio.css";
+import "../../styles/vistaComercio.css";
 
 type Props = {
     name: string;

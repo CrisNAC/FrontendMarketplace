@@ -1,5 +1,5 @@
 import { CollectionCard } from "./CollectionCard";
-import "../styles/commerces.css";
+import "../../styles/commerces.css";
 
 export const CollectionsSection = () => {
     return (

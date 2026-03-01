@@ -1,4 +1,4 @@
-import "../styles/commerces.css";
+import "../../styles/commerces.css";
 
 export const ProductItem = ({ name, detail }) => {
     return (

@@ -1,5 +1,5 @@
-import { OrderCard } from '../components/OrderCard';
-import { SidebarClientProfile } from '../components/SidebarClientProfile';
+import { OrderCard } from '../../../components/OrderCard';
+import { SidebarClientProfile } from '../../../components/SidebarClientProfile';
 
 export const ClientOrdersPage = () => {
   const orders = [

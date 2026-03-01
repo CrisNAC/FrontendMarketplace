@@ -1,3 +1,4 @@
+//QUE FUNCION TIENE?
 import { SearchProductCard } from "./SearchProductCard";
 
 type Product = {
