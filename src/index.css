@@ -1,8 +1,10 @@
+@import "tailwindcss";
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+@layer base {
+  /* Evita que el reset de Tailwind rompa Bootstrap */
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
 }
 
 :root {
