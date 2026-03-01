@@ -1,5 +1,4 @@
 import { ProductCard } from "./ProductCard";
-import "../../styles/vistaComercio.css";
 
 type Product = {
     id: number;
@@ -14,18 +13,21 @@ type Props = {
 
 export const FeaturedProducts = ({ products }: Props) => {
     return (
-        <div className="flex-grow-1">
-            <h5 className="fw-bold mb-4">Productos Destacados</h5>
+        <div style={{ flexGrow: 1 }}>
+            <h5 style={{ fontWeight: "bold", marginBottom: "16px" }}>Productos Destacados</h5>
 
-            <div className="row g-4">
+            <div style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(4, 1fr)",
+                gap: "16px",
+            }}>
                 {products.map((product) => (
-                    <div key={product.id} className="col-md-3">
-                        <ProductCard
-                            name={product.name}
-                            price={product.price}
-                            imageUrl={product.imageUrl}
-                        />
-                    </div>
+                    <ProductCard
+                        key={product.id}
+                        name={product.name}
+                        price={product.price}
+                        imageUrl={product.imageUrl}
+                    />
                 ))}
             </div>
         </div>

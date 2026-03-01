@@ -1,24 +1,45 @@
+import { ArrowLeft } from "lucide-react";
 import { CategoryFilterSidebar } from "../components/commerceProfile/CategoryFilterSidebar";
 import { CommerceProfileHeader } from "../components/commerceProfile/CommerceProfileHeader";
 import { FeaturedProducts } from "../components/commerceProfile/FeaturedProducts";
 import { Pagination } from "../components/commerceProfile/Pagination";
-import "../styles/vistaComercio.css";
 
-// Mock data — reemplazar con datos reales cuando se conecte el backend
+// Mock data — reemplazar con datos reales del backend
 const MOCK_PRODUCTS = [
-    { id: 1, name: "Samsung Galaxy S24 Ultra", price: "Gs. 8.500.000" },
-    { id: 2, name: "Samsung Galaxy S24 Ultra", price: "Gs. 8.500.000" },
-    { id: 3, name: "Samsung Galaxy S24 Ultra", price: "Gs. 8.500.000" },
-    { id: 4, name: "Samsung Galaxy S24 Ultra", price: "Gs. 8.500.000" },
+    {
+        id: 1,
+        name: "Samsung Galaxy S24 Ultra",
+        price: "8.500.000",
+        imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Samsung_Galaxy_S24_Ultra_top.jpg/800px-Samsung_Galaxy_S24_Ultra_top.jpg",
+    },
+    {
+        id: 2,
+        name: "Samsung Galaxy S24 Ultra",
+        price: "8.500.000",
+        imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Samsung_Galaxy_S24_Ultra_top.jpg/800px-Samsung_Galaxy_S24_Ultra_top.jpg",
+    },
+    {
+        id: 3,
+        name: "Samsung Galaxy S24 Ultra",
+        price: "8.500.000",
+        imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Samsung_Galaxy_S24_Ultra_top.jpg/800px-Samsung_Galaxy_S24_Ultra_top.jpg",
+    },
+    {
+        id: 4,
+        name: "Samsung Galaxy S24 Ultra",
+        price: "8.500.000",
+        imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Samsung_Galaxy_S24_Ultra_top.jpg/800px-Samsung_Galaxy_S24_Ultra_top.jpg",
+    },
 ];
 
 export const VistaComercioPage = () => {
     return (
-        <div className="vista-comercio-container">
+        <div style={{ minHeight: "100vh", backgroundColor: "var(--background-soft)" }}>
+
             {/* Breadcrumb */}
-            <div className="d-flex align-items-center gap-2 px-4 py-3">
-                <span className="cursor-pointer text-muted">←</span>
-                <h5 className="fw-bold mb-0">Comercios / Nissei</h5>
+            <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "8px", padding: "16px 24px" }}>
+                <ArrowLeft size={24} style={{ cursor: "pointer", color: "#6b7280" }} />
+                <h5 style={{ fontWeight: "bold", fontSize: "20px", margin: 0 }}>Comercios / Nissei</h5>
             </div>
 
             {/* Commerce profile banner */}
@@ -32,12 +53,9 @@ export const VistaComercioPage = () => {
             />
 
             {/* Main content: sidebar + products */}
-            <div className="d-flex gap-4 px-4 pb-4">
+            <div style={{ display: "flex", flexDirection: "row", gap: "24px", padding: "40px 24px 24px 24px" }}>
                 <CategoryFilterSidebar />
-
-                <div className="flex-grow-1">
-                    <FeaturedProducts products={MOCK_PRODUCTS} />
-                </div>
+                <FeaturedProducts products={MOCK_PRODUCTS} />
             </div>
 
             {/* Pagination */}

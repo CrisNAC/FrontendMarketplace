@@ -1,5 +1,3 @@
-import "../../styles/vistaComercio.css";
-
 type Props = {
     name: string;
     price: string;
@@ -8,21 +6,50 @@ type Props = {
 
 export const ProductCard = ({ name, price, imageUrl }: Props) => {
     return (
-        <div className="product-card rounded-3 overflow-hidden">
-            {/* Product image */}
-            <div className="product-card-image d-flex align-items-center justify-content-center">
+        <div style={{
+            backgroundColor: "#fef7ff",
+            border: "1px solid #cac4d0",
+            borderRadius: "12px",
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+        }}>
+            {/* Image */}
+            <div style={{
+                height: "200px",
+                backgroundColor: "#f0eaf5",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                overflow: "hidden",
+            }}>
                 {imageUrl ? (
-                    <img src={imageUrl} alt={name} className="product-card-img" />
+                    <img
+                        src={imageUrl}
+                        alt={name}
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    />
                 ) : (
-                    <div className="product-card-img-placeholder" />
+                    <div style={{ width: "100%", height: "100%", backgroundColor: "#e8e0f0" }} />
                 )}
             </div>
 
-            {/* Product info */}
-            <div className="product-card-body px-3 pt-2 pb-3">
-                <p className="product-card-name small fw-semibold mb-1">{name}</p>
-                <p className="product-card-price small text-muted mb-2">{price}</p>
-                <button className="btn btn-product-card w-100">Ver mas</button>
+            {/* Info */}
+            <div style={{ padding: "8px 12px 12px 12px" }}>
+                <p style={{ fontSize: "14px", fontWeight: "600", lineHeight: "1.3", margin: "0 0 4px 0" }}>{name}</p>
+                <p style={{ fontSize: "14px", color: "#6b7280", margin: "0 0 8px 0" }}>Gs. {price}</p>
+                <button style={{
+                    width: "100%",
+                    padding: "6px 0",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    color: "white",
+                    backgroundColor: "#944343",
+                    border: "none",
+                    cursor: "pointer",
+                }}>
+                    Ver más
+                </button>
             </div>
         </div>
     );
