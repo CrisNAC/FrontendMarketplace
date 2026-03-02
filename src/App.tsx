@@ -13,6 +13,7 @@ import { VistaComercioLayout } from './layouts/VistaComercioLayout'
 
 import { VistaComercioPage } from './features/clients/pages/VistaComercioPage'
 import { ClientOrdersPage } from './features/clients/pages/ClientOrdersPage'
+import { ClientOrderDetailsPage } from './features/clients/pages/ClientOrderDetailsPage'
 import { HomePage } from './features/clients/pages/HomePage'
 import { BusquedaPage } from './features/clients/pages/BusquedaPage'
 import { CommentsPage } from './features/clients/pages/CommentsPage'
@@ -34,7 +35,7 @@ const HomePageRoutes = () => (
     <p className="mt-4">Navega a <a href="/comercio" className="text-blue-500 underline">Mi Comercio</a></p>
     <p className="mt-4">Navega a <a href="/perfil-comercio" className="text-blue-500 underline">perfil comercio</a></p>
     <p className="mt-4">Navega a <a href="/comercio-producto" className="text-blue-500 underline">Ver Producto Comercio</a></p>
-    <p className="mt-4">Navega a <a href="/Pedidos" className="text-blue-500 underline">Ver pedidos</a></p>
+    <p className="mt-4">Navega a <a href="/pedidos" className="text-blue-500 underline">Ver pedidos</a></p>
     <p className="mt-4">Navega a <a href="/homepage" className="text-blue-500 underline">Homepage</a></p>
     <p className="mt-4">Navega a <a href="/busqueda" className="text-blue-500 underline">Busqueda</a></p>
     <p className="mt-4">Navega a <a href="/comentarios" className="text-blue-500 underline">Comentarios</a></p>
@@ -65,6 +66,7 @@ function App() {
           </VistaComercioLayout>
         } />
         <Route path="/pedidos" element={<ClientOrdersPage />} />
+        <Route path="/pedidos/:orderId" element={<ClientOrderDetailsPage />} />
         <Route path="/homepage" element={<HomePage />} />
         <Route path="/busqueda" element={<BusquedaPage />} />
                 <Route path="/comentarios" element={<CommentsPage />} />
