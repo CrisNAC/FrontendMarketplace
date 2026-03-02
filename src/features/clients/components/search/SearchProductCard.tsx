@@ -6,25 +6,49 @@ type Props = {
 
 export const SearchProductCard = ({ name, price, imageUrl }: Props) => {
     return (
-        <div className="bg-[#FEF7FF] h-80 rounded-xl border border-solid border-[#CAC4D0] flex flex-col overflow-hidden">
-            {/* Image area */}
-            <div className="flex-1 flex items-center justify-center overflow-hidden bg-[#f0eaf5]">
+        <div style={{
+            backgroundColor: "#FEF7FF",
+            height: "320px",
+            borderRadius: "12px",
+            border: "1px solid #CAC4D0",
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+        }}>
+            {/* Image */}
+            <div style={{
+                flex: 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                overflow: "hidden",
+                backgroundColor: "#f0eaf5",
+            }}>
                 {imageUrl ? (
                     <img
                         src={imageUrl}
                         alt={name}
-                        className="w-full h-full object-cover"
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
                     />
                 ) : (
-                    <div className="w-full h-full bg-[#e8e0f0]" />
+                    <div style={{ width: "100%", height: "100%", backgroundColor: "#e8e0f0" }} />
                 )}
             </div>
 
             {/* Info */}
-            <div className="px-3 pt-2 pb-3 shrink-0">
-                <p className="text-sm font-semibold leading-snug mb-1 text-black">{name}</p>
-                <p className="text-xs text-gray-500 mb-2">Desde Gs. {price}</p>
-                <button className="w-full py-1.5 rounded-lg text-sm text-neutral-100 bg-[#6B9080] border border-solid border-[#658D7B] hover:bg-[#5a7a6b] transition-colors">
+            <div style={{ padding: "8px 12px 12px 12px", flexShrink: 0 }}>
+                <p style={{ fontSize: "14px", fontWeight: "600", lineHeight: "1.3", margin: "0 0 4px 0", color: "#000" }}>{name}</p>
+                <p style={{ fontSize: "12px", color: "#6b7280", margin: "0 0 8px 0" }}>Desde Gs. {price}</p>
+                <button style={{
+                    width: "100%",
+                    padding: "6px 0",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    color: "#f5f5f5",
+                    backgroundColor: "#6B9080",
+                    border: "1px solid #658D7B",
+                    cursor: "pointer",
+                }}>
                     Ver Ofertas
                 </button>
             </div>

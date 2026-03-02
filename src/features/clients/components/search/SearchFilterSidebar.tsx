@@ -54,55 +54,79 @@ export const SearchFilterSidebar = ({ onPriceApply }: Props) => {
     };
 
     return (
-        <div
-            className="flex flex-col items-start bg-[#6B908033] py-[9px] rounded-[10px] shrink-0"
-            style={{ width: "220px" }}
-        >
+        <div style={{
+            display: "flex",
+            flexDirection: "column",
+            backgroundColor: "rgba(107, 144, 128, 0.2)",
+            padding: "9px 12px",
+            borderRadius: "10px",
+            width: "100%",
+            boxSizing: "border-box",
+        }}>
             {/* Title */}
-            <span className="text-black text-xl font-bold mb-[21px] ml-[25px]">
+            <span style={{ color: "#000", fontSize: "20px", fontWeight: "bold", marginBottom: "21px", marginLeft: "13px" }}>
                 Filtrar por
             </span>
 
-            {/* Category section */}
-            <span className="text-black text-lg font-bold mb-3 ml-[11px]">
+            {/* Category title */}
+            <span style={{ color: "#000", fontSize: "18px", fontWeight: "bold", marginBottom: "12px", marginLeft: "11px" }}>
                 Categoria
             </span>
 
-            <div className="flex flex-col items-start mb-4 ml-2 w-full">
+            {/* Category list */}
+            <div style={{ display: "flex", flexDirection: "column", marginBottom: "16px", width: "100%" }}>
                 {CATEGORIES.map((cat) => {
                     const isExpanded = expandedCats.includes(cat.name);
                     return (
-                        <div key={cat.name} className="w-full">
+                        <div key={cat.name} style={{ width: "100%" }}>
                             {/* Category row */}
                             <div
-                                className="flex flex-row items-center gap-1 cursor-pointer hover:opacity-75 transition-opacity ml-1 mb-1"
                                 onClick={() => toggleCategory(cat.name)}
+                                style={{
+                                    display: "flex",
+                                    flexDirection: "row",
+                                    alignItems: "center",
+                                    gap: "4px",
+                                    cursor: "pointer",
+                                    padding: "3px 0 3px 4px",
+                                }}
                             >
-                                <span className="text-sm text-[#6B9080] w-4 shrink-0">
+                                <span style={{ color: "#6B9080", width: "14px", flexShrink: 0, fontSize: "13px" }}>
                                     {isExpanded ? "▾" : "›"}
                                 </span>
-                                <span className="text-[#464141] text-base font-bold">
+                                <span style={{ color: "#464141", fontSize: "14px", fontWeight: "bold" }}>
                                     {cat.name}
                                 </span>
                             </div>
 
                             {/* Subcategories */}
                             {isExpanded && cat.subcategories && (
-                                <div className="flex flex-col ml-6 mb-2 gap-1">
+                                <div style={{ display: "flex", flexDirection: "column", paddingLeft: "18px", marginBottom: "4px", gap: "3px" }}>
                                     {cat.subcategories.map((sub) => (
                                         <label
                                             key={sub.name}
-                                            className="flex flex-row items-center gap-2 cursor-pointer"
+                                            style={{
+                                                display: "flex",
+                                                flexDirection: "row",
+                                                alignItems: "flex-start",
+                                                gap: "6px",
+                                                cursor: "pointer",
+                                            }}
                                         >
                                             <input
                                                 type="checkbox"
                                                 checked={checkedSubs.includes(sub.name)}
                                                 onChange={() => toggleSub(sub.name)}
-                                                className="cursor-pointer accent-[#6B9080] shrink-0"
+                                                style={{
+                                                    cursor: "pointer",
+                                                    accentColor: "#6B9080",
+                                                    flexShrink: 0,
+                                                    marginTop: "2px",
+                                                }}
                                             />
-                                            <span className="text-black text-sm leading-tight">
+                                            <span style={{ color: "#000", fontSize: "12px", lineHeight: "1.4" }}>
                                                 {sub.name}{" "}
-                                                <span className="text-gray-500">({sub.count})</span>
+                                                <span style={{ color: "#6b7280" }}>({sub.count})</span>
                                             </span>
                                         </label>
                                     ))}
@@ -113,33 +137,69 @@ export const SearchFilterSidebar = ({ onPriceApply }: Props) => {
                 })}
             </div>
 
-            {/* Price section */}
-            <span className="text-black text-lg font-bold mb-2 ml-[11px]">
+            {/* Price title */}
+            <span style={{ color: "#000", fontSize: "18px", fontWeight: "bold", marginBottom: "8px", marginLeft: "11px" }}>
                 Precio
             </span>
 
-            <div className="flex flex-row items-center gap-1 mb-[11px] ml-7" style={{ width: "180px" }}>
+            {/* Price inputs */}
+            <div style={{
+                display: "flex",
+                flexDirection: "row",
+                alignItems: "center",
+                gap: "4px",
+                marginBottom: "11px",
+                marginLeft: "11px",
+                width: "calc(100% - 22px)",
+            }}>
                 <input
                     type="number"
                     value={minPrice}
                     onChange={(e) => setMinPrice(e.target.value)}
-                    className="w-full text-xs border border-[#cac4d0] rounded px-1 py-1 text-center bg-white"
+                    style={{
+                        width: "100%",
+                        fontSize: "12px",
+                        border: "1px solid #cac4d0",
+                        borderRadius: "4px",
+                        padding: "4px",
+                        textAlign: "center",
+                        backgroundColor: "white",
+                        boxSizing: "border-box",
+                    }}
                     placeholder="Min"
                 />
-                <span className="text-xs text-gray-400 shrink-0">—</span>
+                <span style={{ color: "#9ca3af", fontSize: "12px", flexShrink: 0 }}>—</span>
                 <input
                     type="number"
                     value={maxPrice}
                     onChange={(e) => setMaxPrice(e.target.value)}
-                    className="w-full text-xs border border-[#cac4d0] rounded px-1 py-1 text-center bg-white"
+                    style={{
+                        width: "100%",
+                        fontSize: "12px",
+                        border: "1px solid #cac4d0",
+                        borderRadius: "4px",
+                        padding: "4px",
+                        textAlign: "center",
+                        backgroundColor: "white",
+                        boxSizing: "border-box",
+                    }}
                     placeholder="Max"
                 />
             </div>
 
-            <div className="flex flex-col items-center w-full">
+            {/* Apply button */}
+            <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
                 <button
-                    className="bg-[#6B9080] text-neutral-100 text-base py-1.5 px-2.5 rounded-[10px] border border-solid border-[#658D7B] hover:bg-[#5a7a6b] transition-colors"
                     onClick={() => onPriceApply?.(Number(minPrice), Number(maxPrice))}
+                    style={{
+                        backgroundColor: "#6B9080",
+                        color: "#f5f5f5",
+                        fontSize: "15px",
+                        padding: "6px 20px",
+                        borderRadius: "10px",
+                        border: "1px solid #658D7B",
+                        cursor: "pointer",
+                    }}
                 >
                     Aplicar
                 </button>
