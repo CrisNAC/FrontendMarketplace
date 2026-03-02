@@ -40,7 +40,8 @@ export const HomeSections = () => {
 
       {/* ================= CATEGORÍAS ================= */}
       <section className="mb-[60px]">
-        <h3 className="font-semibold text-[20px] mb-[25px] text-[#333]">
+        <h3 className="font-semibold text-[20px] mb-[25px] text-[#333]"
+        style={{fontSize: "20px", fontWeight: "bold" }}>
           Compra por categorías
         </h3>
 
@@ -62,7 +63,8 @@ export const HomeSections = () => {
 
       {/* ================= COMERCIOS ================= */}
       <section>
-        <h3 className="font-semibold text-[20px] mb-[25px] text-[#333]">
+        <h3 className="font-semibold text-[20px] mb-[25px] text-[#333]"
+                style={{fontSize: "20px", fontWeight: "bold" }}>
           Comercios
         </h3>
 
