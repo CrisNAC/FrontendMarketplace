@@ -1,6 +1,7 @@
 import { OrderCard } from '../../../components/OrderCard';
 import { SidebarClientProfile } from '../../../components/SidebarClientProfile';
 import { useNavigate } from 'react-router-dom';
+import  Navbar  from '../../../components/navbar/Navbar';
 
 export const ClientOrdersPage = () => {
 
@@ -31,13 +32,14 @@ export const ClientOrdersPage = () => {
   ];
 
   const handleCardClick = (orderId) => {
-    navigate(``);
+    navigate(`/pedidos/${orderId}`);
   }
 
   return (
     <div>
+      <Navbar />
       {/*titulo*/}
-      <h3 className="p-4 ms-5 font-bold mb-10">Mis Pedidos</h3>
+      <h3 className="p-2 ms-5 mt-2 font-bold">Mis Pedidos</h3>
 
       <div className="grid grid-cols-[250px_1fr] min-h-screen gap-x-15">
         {/* sidebar de navegacion del perfil del cliente */}
