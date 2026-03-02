@@ -1,19 +1,24 @@
 import { OrderCard } from '../../../components/OrderCard';
 import { SidebarClientProfile } from '../../../components/SidebarClientProfile';
+import { useNavigate } from 'react-router-dom';
+import  Navbar  from '../../../components/navbar/Navbar';
 
 export const ClientOrdersPage = () => {
+
+  const navigate = useNavigate();
+
   const orders = [
     {
       id: "ORD-2024-001543",
       total: 1388.96,
-      estado: 'Entregado',
+      estado: 'Enviado',
       fecha: '15 de junio del 2024',
       cantidad: 4
     },
     {
       id: "ORD-2024-001502",
       total: 299.99,
-      estado: 'Pendiente',
+      estado: 'Entregado',
       fecha: '8 de junio del 2024',
       cantidad: 1
     },
@@ -26,10 +31,15 @@ export const ClientOrdersPage = () => {
     }
   ];
 
+  const handleCardClick = (orderId) => {
+    navigate(`/pedidos/${orderId}`);
+  }
+
   return (
     <div>
+      <Navbar />
       {/*titulo*/}
-      <h3 className="p-4 ms-5 font-bold mb-10">Mis Pedidos</h3>
+      <h3 className="p-2 ms-5 mt-2 font-bold">Mis Pedidos</h3>
 
       <div className="grid grid-cols-[250px_1fr] min-h-screen gap-x-15">
         {/* sidebar de navegacion del perfil del cliente */}
@@ -40,7 +50,7 @@ export const ClientOrdersPage = () => {
         {/* lista de pedidos */}
         <div className="p-6">
           {orders.map(order => (
-            <OrderCard key={order.id} order={order} />
+            <OrderCard key={order.id} order={order} onClick={() => handleCardClick(order.id)}/>
           ))}
         </div>
       </div>
