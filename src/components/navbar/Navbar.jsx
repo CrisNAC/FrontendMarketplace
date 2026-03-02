@@ -1,5 +1,6 @@
 import { ShoppingCart, User, Search, X } from "lucide-react";
 import logo from "/src/assets/feather.png";
+import { Link } from "react-router-dom";
 
 const Navbar = () => {
   return (
@@ -9,31 +10,39 @@ const Navbar = () => {
       <div className="bg-[#A4C3B2] flex items-center justify-between px-[30px] py-[10px]">
 
         {/* Logo */}
-        <div className="flex items-center gap-[6px]">
+        <Link to="/" className="flex items-center gap-[6px] !no-underline">
           <span>
             <img src={logo} alt="Logo" className="w-[30px] h-auto" />
           </span>
           <span className="font-medium text-[16px] text-white">
             Open Market
           </span>
-        </div>
+        </Link>
 
         {/* Main links */}
         <nav className="flex gap-[20px] font-normal text-[14px]">
-          <a href="#" className="no-underline text-[#485B53] hover:text-[#2e6b4f] transition-colors">
+          <Link 
+            to="/" 
+            className="!no-underline !text-[#485B53] hover:!text-[#2e6b4f] transition-colors"
+          >
             Inicio
-          </a>
-          <a href="#" className="no-underline text-[#485B53] hover:text-[#2e6b4f] transition-colors">
+          </Link>
+          <Link 
+            to="/productos" 
+            className="!no-underline !text-[#485B53] hover:!text-[#2e6b4f] transition-colors"
+          >
             Productos
-          </a>
-          <a href="#" className="no-underline text-[#485B53] hover:text-[#2e6b4f] transition-colors">
+          </Link>
+          <Link 
+            to="/comercio" 
+            className="!no-underline !text-[#485B53] hover:!text-[#2e6b4f] transition-colors"
+          >
             Comercio
-          </a>
+          </Link>
         </nav>
 
         {/* Search */}
         <div className="flex items-center gap-[12px]">
-
           <div className="flex items-center bg-white rounded-full px-[12px] py-[4px] w-[600px] relative">
             <input
               type="text"
@@ -43,30 +52,87 @@ const Navbar = () => {
             <X className="text-gray-500 cursor-pointer mr-[6px]" size={16} />
           </div>
 
-          <button className="bg-[#6B9080] rounded-md px-[8px] py-[4px] text-white flex items-center justify-center">
+         <button
+            style={{
+              padding: "6px 10px",
+              borderRadius: "12px",
+              backgroundColor: "#6B9080",
+              border: "1px solid #658D7B",
+              color: "#fff",
+              cursor: "pointer",
+            }}
+          >
             <Search size={16} />
           </button>
         </div>
 
         {/* Icons */}
-        <div className="flex gap-[15px] text-[#333] cursor-pointer">
-          <User size={25} />
+        <div className="flex gap-[15px] items-center">
+          <Link 
+            to="/perfil" 
+            className="!text-[#333] hover:!text-[#2e6b4f] transition-colors !no-underline"
+          >
+            <User size={25} />
+          </Link>
         </div>
       </div>
 
       {/* Categories */}
-      <div className="bg-[#E5EAE9] flex justify-center gap-[20px] py-[8px] text-[13px] font-normal text-[#474242]">
-        <span className="hover:text-[#2e6b4f] transition-colors cursor-pointer">Tecnología</span>
-        <span className="hover:text-[#2e6b4f] transition-colors cursor-pointer">Moda</span>
-        <span className="hover:text-[#2e6b4f] transition-colors cursor-pointer">Coleccionables y Arte</span>
-        <span className="hover:text-[#2e6b4f] transition-colors cursor-pointer">Hogar y Jardín</span>
-        <span className="hover:text-[#2e6b4f] transition-colors cursor-pointer">Salud y Belleza</span>
-        <span className="hover:text-[#2e6b4f] transition-colors cursor-pointer">Entretenimiento</span>
-        <span className="hover:text-[#2e6b4f] transition-colors cursor-pointer">Deportes</span>
-        <span className="hover:text-[#2e6b4f] transition-colors cursor-pointer">Equipo Industrial</span>
-        <span className="text-[#952626] font-semibold cursor-pointer">
+      <div className="bg-[#E5EAE9] flex justify-center gap-[20px] py-[8px] text-[13px] font-normal">
+        <Link 
+          to="/categoria/tecnologia" 
+          className="!no-underline !text-[#474242] hover:!text-[#2e6b4f] transition-colors"
+        >
+          Tecnología
+        </Link>
+        <Link 
+          to="/categoria/moda" 
+          className="!no-underline !text-[#474242] hover:!text-[#2e6b4f] transition-colors"
+        >
+          Moda
+        </Link>
+        <Link 
+          to="/categoria/coleccionables" 
+          className="!no-underline !text-[#474242] hover:!text-[#2e6b4f] transition-colors"
+        >
+          Coleccionables y Arte
+        </Link>
+        <Link 
+          to="/categoria/hogar" 
+          className="!no-underline !text-[#474242] hover:!text-[#2e6b4f] transition-colors"
+        >
+          Hogar y Jardín
+        </Link>
+        <Link 
+          to="/categoria/salud" 
+          className="!no-underline !text-[#474242] hover:!text-[#2e6b4f] transition-colors"
+        >
+          Salud y Belleza
+        </Link>
+        <Link 
+          to="/categoria/entretenimiento" 
+          className="!no-underline !text-[#474242] hover:!text-[#2e6b4f] transition-colors"
+        >
+          Entretenimiento
+        </Link>
+        <Link 
+          to="/categoria/deportes" 
+          className="!no-underline !text-[#474242] hover:!text-[#2e6b4f] transition-colors"
+        >
+          Deportes
+        </Link>
+        <Link 
+          to="/categoria/industrial" 
+          className="!no-underline !text-[#474242] hover:!text-[#2e6b4f] transition-colors"
+        >
+          Equipo Industrial
+        </Link>
+        <Link 
+          to="/ofertas" 
+          className="!no-underline !text-[#952626] font-semibold hover:!text-[#b33a3a] transition-colors"
+        >
           Ofertas!!
-        </span>
+        </Link>
       </div>
 
     </header>
