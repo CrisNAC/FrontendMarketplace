@@ -156,6 +156,7 @@ export const SearchFilterSidebar = ({ onPriceApply }: Props) => {
                     type="number"
                     value={minPrice}
                     onChange={(e) => setMinPrice(e.target.value)}
+                    min={0}
                     style={{
                         width: "100%",
                         fontSize: "12px",
@@ -173,6 +174,7 @@ export const SearchFilterSidebar = ({ onPriceApply }: Props) => {
                     type="number"
                     value={maxPrice}
                     onChange={(e) => setMaxPrice(e.target.value)}
+                    min={0}
                     style={{
                         width: "100%",
                         fontSize: "12px",
@@ -190,7 +192,15 @@ export const SearchFilterSidebar = ({ onPriceApply }: Props) => {
             {/* Apply button */}
             <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
                 <button
-                    onClick={() => onPriceApply?.(Number(minPrice), Number(maxPrice))}
+                    onClick={() => {
+                        const min = Number(minPrice);
+                        const max = Number(maxPrice);
+                        if (min > max) {
+                            alert("El precio mínimo no puede ser mayor al máximo");
+                            return;
+                        }
+                        onPriceApply?.(min, max);
+                    }}
                     style={{
                         backgroundColor: "#6B9080",
                         color: "#f5f5f5",
