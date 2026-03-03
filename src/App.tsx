@@ -18,6 +18,7 @@ import { HomePage } from './features/clients/pages/HomePage'
 import { BusquedaPage } from './features/clients/pages/BusquedaPage'
 import { CommentsPage } from './features/clients/pages/CommentsPage'
 
+import { CreateCommercePage } from './features/clients/pages/CreateCommercePage'
 
 import ComercioVerProducto from './features/commerces/pages/ComercioVerProducto';
 
@@ -39,6 +40,7 @@ const HomePageRoutes = () => (
     <p className="mt-4">Navega a <a href="/homepage" className="text-blue-500 underline">Homepage</a></p>
     <p className="mt-4">Navega a <a href="/busqueda" className="text-blue-500 underline">Busqueda</a></p>
     <p className="mt-4">Navega a <a href="/comentarios" className="text-blue-500 underline">Comentarios</a></p>
+    <p className="mt-4">Navega a <a href="/crear-comercio" className="text-blue-500 underline">Crear Comercio</a></p>
 
   </div>
 );
@@ -65,6 +67,7 @@ function App() {
             <VistaComercioPage />
           </VistaComercioLayout>
         } />
+        <Route path="/crear-comercio" element={<CreateCommercePage />} />
         <Route path="/pedidos" element={<ClientOrdersPage />} />
         <Route path="/pedidos/:orderId" element={<ClientOrderDetailsPage />} />
         <Route path="/homepage" element={<HomePage />} />
