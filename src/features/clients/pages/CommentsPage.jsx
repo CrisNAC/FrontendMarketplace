@@ -34,12 +34,12 @@ export const CommentsPage = ({ productId = '123' }) => {
   };
 
   return (
-    <div className="bg-gray-100 min-h-screen p-0">
-      <div className="max-w-6xl mx-auto bg-white min-h-screen">
-        {/* Header */}
-        <div className="p-10 border-b border-gray-200 flex items-center">
+    <div className="min-h-screen p-0" style={{ background: '#F5F5F5' }}>
+      <div className="max-w-6xl mx-auto min-h-screen">
+        {/* Header - SIN fondo blanco, sobre el fondo gris */}
+        <div className="px-6 py-4 flex items-center">
           <button 
-            className="bg-none border-none text-2xl cursor-pointer text-gray-800 p-0 font-semibold transition-colors hover:text-gray-600"
+            className="bg-none border-none text-lg cursor-pointer text-gray-800 p-0 font-semibold transition-colors hover:text-gray-600"
             onClick={handleBack}
           >
             ← Comentarios
@@ -47,11 +47,11 @@ export const CommentsPage = ({ productId = '123' }) => {
         </div>
 
         {/* Contenido principal */}
-        <div className="grid grid-cols-[350px_1fr] gap-10 p-8">
+        <div className="grid grid-cols-[300px_1fr] gap-6 px-6 pb-8">
           {/* Sidebar izquierdo */}
-          <aside className="flex flex-col gap-5">
-            {/* Wrapper de ratings */}
-            <div className="bg-white border border-gray-200 rounded-lg p-0">
+          <aside className="flex flex-col gap-4">
+            {/* Card de ratings */}
+            <div className="bg-white border border-gray-200 rounded-lg">
               <RatingsDistribution
                 ratings={{
                   5: 56,
@@ -62,26 +62,25 @@ export const CommentsPage = ({ productId = '123' }) => {
                 }}
               />
 
-              {/* Textos dentro del contenedor */}
-              <div className="px-5 pb-5 border-t border-gray-200 mt-5">
-                <h3 className="text-base font-bold m-0 mb-2 text-gray-800">
+              {/* Texto escribir opinión - dentro del card */}
+              <div className="px-4 pb-4 pt-2 border-t border-gray-200">
+                <h3 className="text-base font-bold m-0 mb-1 text-gray-800">
                   Escribir opinión de este producto
                 </h3>
-                <p className="text-sm text-gray-600 m-0">
+                <p className="text-xs text-gray-500 m-0">
                   Comparte tu opinión con otros clientes
                 </p>
               </div>
             </div>
 
-            {/* Sección de botón */}
-            <div className="bg-gray-50 p-5 rounded-lg border border-gray-200">
-              <button 
-                className="w-full py-3 px-4 bg-teal-600 text-white rounded font-semibold cursor-pointer transition-all hover:bg-teal-700 active:translate-y-0.5"
-                onClick={() => setShowModal(true)}
-              >
-                Escribir mi opinión
-              </button>
-            </div>
+            {/* Botón fuera del card, directamente sobre el fondo gris */}
+            <button 
+              className="w-full py-2.5 px-4 text-white rounded-full text-sm font-semibold cursor-pointer transition-all hover:opacity-90 active:translate-y-0.5"
+              style={{ background: '#6B9080' }}
+              onClick={() => setShowModal(true)}
+            >
+              Escribir mi opinión
+            </button>
           </aside>
 
           {/* Contenido principal: Comentarios */}
