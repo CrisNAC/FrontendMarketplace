@@ -1,14 +1,20 @@
 import { Edit2 } from "lucide-react";
-import { MarketplaceNavbar } from "../../../components/navbar/MarketplaceNavbar";
-import { CategoriesBar } from "../../../components/navbar/CategoriesBar";
+import { Link } from "react-router-dom";
+import Navbar from "../../../components/navbar/Navbar";
 
 const AccountSidebar = () => {
     return (
         <div className="bg-[#c0cec2] rounded-md py-6 px-4 shadow-sm h-fit">
             <ul className="space-y-5 text-[17px] text-[#2d4030]">
                 <li className="font-bold cursor-pointer">Mi Cuenta</li>
-                <li className="font-semibold cursor-pointer hover:text-black transition-colors">
-                    Mis pedidos
+                <li>
+                    <Link
+                        to="/pedidos"
+                        className="font-semibold cursor-pointer !text-[#2d4030] visited:!text-[#2d4030] !no-underline hover:!no-underline hover:!text-black transition-colors"
+                        style={{ color: "#2d4030", textDecoration: "none" }}
+                    >
+                        Mis pedidos
+                    </Link>
                 </li>
                 <li className="font-semibold cursor-pointer hover:text-black transition-colors">
                     Mi lista de favoritos
@@ -49,8 +55,7 @@ const AccountInfoCard = ({ title, children, footer }) => {
 const MyAccountPage = () => {
     return (
         <div className="min-h-screen flex flex-col">
-            <MarketplaceNavbar />
-            <CategoriesBar />
+            <Navbar />
 
             <main className="max-w-[1400px] mx-auto w-full px-6 py-10">
                 <h1 className="text-[28px] font-bold text-[#2d4030] mb-8">Mi Cuenta</h1>
