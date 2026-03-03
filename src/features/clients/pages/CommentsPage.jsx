@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { RatingsDistribution } from '../components/comments/RatingsDistribution';
 import { CommentsList } from '../components/comments/CommentsList';
 import { AddReviewModal } from '../components/comments/AddReviewModal';
 
-export const CommentsPage = ({ productId = '123', onBack = () => {} }) => {
+export const CommentsPage = ({ productId = '123' }) => {
+  const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
   const [comments, setComments] = useState([]);
 
@@ -27,6 +29,10 @@ export const CommentsPage = ({ productId = '123', onBack = () => {} }) => {
     alert('¡Tu reseña ha sido enviada exitosamente!');
   };
 
+  const handleBack = () => {
+    navigate('/homepage');
+  };
+
   return (
     <div className="bg-gray-100 min-h-screen p-0">
       <div className="max-w-6xl mx-auto bg-white min-h-screen">
@@ -34,7 +40,7 @@ export const CommentsPage = ({ productId = '123', onBack = () => {} }) => {
         <div className="p-10 border-b border-gray-200 flex items-center">
           <button 
             className="bg-none border-none text-2xl cursor-pointer text-gray-800 p-0 font-semibold transition-colors hover:text-gray-600"
-            onClick={onBack}
+            onClick={handleBack}
           >
             ← Comentarios
           </button>

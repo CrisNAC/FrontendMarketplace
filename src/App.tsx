@@ -17,7 +17,7 @@ import { ClientOrderDetailsPage } from './features/clients/pages/ClientOrderDeta
 import { HomePage } from './features/clients/pages/HomePage'
 import { BusquedaPage } from './features/clients/pages/BusquedaPage'
 import { CommentsPage } from './features/clients/pages/CommentsPage'
-
+import { CommentsLayout } from './layouts/CommentsLayout'
 
 import ComercioVerProducto from './features/commerces/pages/ComercioVerProducto';
 
@@ -73,11 +73,15 @@ function App() {
             <BusquedaPage />
           </VistaComercioLayout>
         } />
-                <Route path="/comentarios" element={<CommentsPage />} />
+        <Route path="/comentarios" element={
+          <CommentsLayout>
+            <CommentsPage />
+          </CommentsLayout>
+        } />
 
 
         {/* COMERCIOS */}
-                <Route path="/comercio-producto" element={<ComercioVerProducto />} />
+        <Route path="/comercio-producto" element={<ComercioVerProducto />} />
 
         <Route path="/comercio" element={
           <MyCommerceLayout>
