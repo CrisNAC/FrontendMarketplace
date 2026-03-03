@@ -5,6 +5,7 @@ import { MyCommerceLayout } from './layouts/MyCommerceLayout'
 import { MyCommercePage } from './features/commerces/pages/MyCommercePage'
 import MyAccountPage from "./features/clients/pages/MyAccountPage";
 import { VistaComercioLayout } from './layouts/VistaComercioLayout'
+import { CommentsLayout } from './layouts/CommentsLayout'
 
 import { VistaComercioPage } from './features/clients/pages/VistaComercioPage'
 import { ClientOrdersPage } from './features/clients/pages/ClientOrdersPage'
@@ -41,6 +42,7 @@ function App() {
 
         <Route path="/perfil" element={<MyAccountPage />} />
         <Route path="/comparar" element={<PriceComparisonPage />} />
+
         <Route
           path="/producto-detalle"
           element={
@@ -49,6 +51,7 @@ function App() {
             </VistaComercioLayout>
           }
         />
+
         <Route
           path="/perfil-comercio"
           element={
@@ -57,9 +60,11 @@ function App() {
             </VistaComercioLayout>
           }
         />
+
         <Route path="/pedidos" element={<ClientOrdersPage />} />
         <Route path="/pedidos/:orderId" element={<ClientOrderDetailsPage />} />
         <Route path="/homepage" element={<HomePage />} />
+
         <Route
           path="/busqueda"
           element={
@@ -68,8 +73,18 @@ function App() {
             </VistaComercioLayout>
           }
         />
-        <Route path="/comentarios" element={<CommentsPage />} />
+
+        <Route
+          path="/comentarios"
+          element={
+            <CommentsLayout>
+              <CommentsPage />
+            </CommentsLayout>
+          }
+        />
+
         <Route path="/comercio-producto" element={<ComercioVerProducto />} />
+
         <Route
           path="/comercio"
           element={
@@ -78,6 +93,7 @@ function App() {
             </MyCommerceLayout>
           }
         />
+
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
