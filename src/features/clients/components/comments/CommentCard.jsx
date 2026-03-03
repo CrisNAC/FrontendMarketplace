@@ -50,7 +50,7 @@ export const CommentCard = ({
       </div>
 
       {/* Ubicación y fecha */}
-      <div className="flex gap-0 text-xs text-gray-600 mb-2 flex-wrap">
+      <div className="flex gap-1 text-xs text-gray-600 mb-2 flex-wrap">
         <span>Calificado en {location}</span>
         <span> el {date}</span>
       </div>

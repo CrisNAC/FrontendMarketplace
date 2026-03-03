@@ -11,7 +11,7 @@ export const CommentsList = ({ comments = [] }) => {
       content: 'great phone, came with apple charging cord, no scratches, no imperfections!! Beautiful color!! Perfect condition! Would definitely buy other phones from this seller! I was a little skeptical, but it really is in perfect condition!!',
       verified: true,
       location: 'Estados Unidos',
-      date: 'el 12 de agosto de 2025',
+      date: ' 12 de agosto de 2025',
       productDetails: {
         'Tamaño': '128GB',
         'Color': 'Rosado'
@@ -25,7 +25,7 @@ export const CommentsList = ({ comments = [] }) => {
       content: 'great phone, came with apple charging cord, no scratches, no imperfections!! Beautiful color!! Perfect condition! Would definitely buy other phones from this seller! I was a little skeptical, but it really is in perfect condition!!',
       verified: true,
       location: 'Estados Unidos',
-      date: 'el 12 de agosto de 2025',
+      date: ' 12 de agosto de 2025',
       productDetails: {
         'Tamaño': '128GB',
         'Color': 'Rosado'
@@ -39,7 +39,7 @@ export const CommentsList = ({ comments = [] }) => {
       content: 'great phone, came with apple charging cord, no scratches, no imperfections!! Beautiful color!! Perfect condition! Would definitely buy other phones from this seller! I was a little skeptical, but it really is in perfect condition!!',
       verified: true,
       location: 'Estados Unidos',
-      date: 'el 12 de agosto de 2025',
+      date: ' 12 de agosto de 2025',
       productDetails: {
         'Tamaño': '128GB',
         'Color': 'Rosado'
