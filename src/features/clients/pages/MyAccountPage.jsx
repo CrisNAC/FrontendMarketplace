@@ -10,7 +10,8 @@ const AccountSidebar = () => {
                 <li>
                     <Link
                         to="/pedidos"
-                        className="font-semibold cursor-pointer text-[#2d4030] visited:text-[#2d4030] no-underline hover:no-underline hover:text-black transition-colors"
+                        className="font-semibold cursor-pointer !text-[#2d4030] visited:!text-[#2d4030] !no-underline hover:!no-underline hover:!text-black transition-colors"
+                        style={{ color: "#2d4030", textDecoration: "none" }}
                     >
                         Mis pedidos
                     </Link>
