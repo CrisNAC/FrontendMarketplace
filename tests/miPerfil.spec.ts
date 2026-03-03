@@ -8,10 +8,27 @@ test.describe('Página de Mi Perfil', () => {
     await page.goto('/perfil');
   });
 
+  test('debe mostrar el navbar con el logo Open Market', async ({ page }) => {
+    const omNavbar = page.locator('header').getByText('Open Market');
+    await expect(omNavbar).toBeVisible();
+  });
+
   test('debe mostrar el título Mi Cuenta', async ({ page }) => {
     await expect(
       page.getByRole('heading', { name: 'Mi Cuenta' })
     ).toBeVisible();
+  });
+
+  test('debe mostrar la barra de categorías', async ({ page }) => {
+    await expect(page.getByText('Tecnología')).toBeVisible();
+    await expect(page.getByText('Moda')).toBeVisible();
+    await expect(page.getByText('Coleccionables y Arte')).toBeVisible();
+    await expect(page.getByText('Hogar y Jardín')).toBeVisible();
+    await expect(page.getByText('Salud y Belleza')).toBeVisible();
+    await expect(page.getByText('Entretenimiento')).toBeVisible();
+    await expect(page.getByText('Deportes')).toBeVisible();
+    await expect(page.getByText('Equipo Industrial')).toBeVisible();
+    await expect(page.getByText('Ofertas!!')).toBeVisible();
   });
 
   test('debe mostrar el sidebar con las opciones de navegación', async ({ page }) => {
@@ -21,11 +38,11 @@ test.describe('Página de Mi Perfil', () => {
   });
 
   test('debe mostrar la sección de información de la cuenta', async ({ page }) => {
-    await expect(page.getByText('Informacion de la cuenta')).toBeVisible();
+    await expect(page.getByText('Información de la cuenta')).toBeVisible();
   });
 
   test('debe mostrar la tarjeta de información de contacto', async ({ page }) => {
-    await expect(page.getByText('Informacion de Contacto')).toBeVisible();
+    await expect(page.getByText('Información de Contacto')).toBeVisible();
   });
 
   test('debe mostrar la tarjeta de boletines', async ({ page }) => {
@@ -33,10 +50,10 @@ test.describe('Página de Mi Perfil', () => {
   });
 
   test('debe mostrar la sección de libreta de direcciones', async ({ page }) => {
-    const direccionPago = page.getByRole('heading', { name: 'Direccion de pago predeterminada' });
+    const direccionPago = page.getByRole('heading', { name: 'Dirección de pago predeterminada' });
     await expect(direccionPago).toBeVisible();
 
-    const direccionEnvio = page.getByRole('heading', { name: 'Direccion de envio predeterminada' });
+    const direccionEnvio = page.getByRole('heading', { name: 'Dirección de envío predeterminada' });
     await expect(direccionEnvio).toBeVisible();
   });
 
@@ -46,7 +63,7 @@ test.describe('Página de Mi Perfil', () => {
   });
 
   test('debe mostrar el botón Cambiar contraseña', async ({ page }) => {
-    await expect(page.getByRole('button', { name: /Cambiar contrasena/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Cambiar contraseña/i })).toBeVisible();
   });
 
   test('debe mostrar el navbar correctamente', async ({ page }) => {

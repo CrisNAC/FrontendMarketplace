@@ -14,10 +14,10 @@ test.describe('Página de Mi Comercio', () => {
 
   test('debe mostrar los ítems de navegación del sidebar', async ({ page }) => {
     await expect(page.locator('span', { hasText: 'Productos' })).toBeVisible();
-    await expect(page.locator('span', { hasText: /Colecciones/ })).toBeVisible();
+    await expect(page.locator('span', { hasText: 'Colecciones' })).toBeVisible();
     await expect(page.locator('span', { hasText: 'Delivery' })).toBeVisible();
     await expect(page.locator('span', { hasText: 'Perfil' })).toBeVisible();
-    await expect(page.locator('span', { hasText: 'Cerrar Sesion' })).toBeVisible();
+    await expect(page.locator('span', { hasText: 'Cerrar Sesión' })).toBeVisible();
   });
 
   test('debe mostrar el dashboard title', async ({ page }) => {
@@ -56,6 +56,6 @@ test.describe('Página de Mi Comercio', () => {
   });
 
   test('debe mostrar la caja de ayuda en el sidebar', async ({ page }) => {
-    await expect(page.getByText(/Necesitas ayuda/i)).toBeVisible();
+    await expect(page.getByText(/Necesitas ayuda?/i)).toBeVisible();
   });
 });
