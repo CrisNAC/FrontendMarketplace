@@ -1,21 +1,32 @@
 import { useState } from 'react';
 
-export const CommentCard = ({ 
-  author = 'Usuario', 
-  rating = 5, 
+export const CommentCard = ({
+  author = 'Usuario',
+  rating = 5,
   title = 'Título del comentario',
   content = 'Contenido del comentario',
   verified = false,
   location = 'País',
-  date = new Date().toLocaleDateString(),
+  date = new Date(),
   productDetails = {},
-  onReport = () => {}
+  onReport = () => { }
 }) => {
   const [reported, setReported] = useState(false);
 
   const handleReport = () => {
     setReported(true);
     onReport();
+  };
+
+  const formatDate = (value) => {
+    const parsed = new Date(value);
+    if (isNaN(parsed)) return value; // si ya viene formateado
+
+    return parsed.toLocaleDateString("es-ES", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
   };
 
   return (
@@ -25,7 +36,7 @@ export const CommentCard = ({
         <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-semibold text-gray-500 flex-shrink-0">
           {author.charAt(0).toUpperCase()}
         </div>
-        
+
         <span className="text-sm font-semibold text-gray-800">
           {author}
         </span>
@@ -34,8 +45,8 @@ export const CommentCard = ({
       {/* Estrellas + título de rating */}
       <div className="flex items-center gap-1 mb-1.5">
         {[...Array(5)].map((_, i) => (
-          <span 
-            key={i} 
+          <span
+            key={i}
             className={`text-xs ${i < rating ? 'text-orange-500' : 'text-gray-300'}`}
           >
             ★
@@ -48,7 +59,7 @@ export const CommentCard = ({
 
       {/* Ubicación y fecha */}
       <div className="text-xs text-gray-500 mb-1.5">
-        Calificado en {location} {date}
+        Calificado en {location} el {formatDate(date)}
       </div>
 
       {/* Detalles del producto */}
@@ -76,7 +87,7 @@ export const CommentCard = ({
           Útil
         </button>
         <span className="text-gray-300">|</span>
-        <button 
+        <button
           className="text-xs text-gray-500 cursor-pointer bg-transparent border-none p-0 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={handleReport}
           disabled={reported}
