@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { MyCommerceLayout } from "../../../layouts/MyCommerceLayout";
 import sillaImg from "../../../assets/silla.jpg";
 
@@ -178,6 +179,7 @@ function Row({ left, right, rightClass = "" }) {
 }
 
 export default function ComercioVerProducto() {
+  const navigate = useNavigate();
   const comentarios = [
     {
       nombre: "María González",
@@ -211,7 +213,7 @@ export default function ComercioVerProducto() {
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-2 text-left">
               <button
-                type="button"
+                type="button" onClick={() => navigate("/comercio")}
                 className="mt-[1px] inline-flex h-7 w-7 items-center justify-center rounded-xl bg-white shadow-sm ring-1 ring-slate-100 hover:bg-slate-50"
                 aria-label="Volver"
               >
