@@ -1,31 +1,6 @@
 import { Edit2 } from "lucide-react";
-import { Link } from "react-router-dom";
 import Navbar from "../../../components/navbar/Navbar";
-
-const AccountSidebar = () => {
-    return (
-        <div className="bg-[#c0cec2] rounded-md py-6 px-4 shadow-sm h-fit">
-            <ul className="space-y-5 text-[17px] text-[#2d4030]">
-                <li className="font-bold cursor-pointer">Mi Cuenta</li>
-                <li>
-                    <Link
-                        to="/pedidos"
-                        className="font-semibold cursor-pointer !text-[#2d4030] visited:!text-[#2d4030] !no-underline hover:!no-underline hover:!text-black transition-colors"
-                        style={{ color: "#2d4030", textDecoration: "none" }}
-                    >
-                        Mis pedidos
-                    </Link>
-                </li>
-                <li className="font-semibold cursor-pointer hover:text-black transition-colors">
-                    Mi lista de favoritos
-                </li>
-                <li className="font-semibold cursor-pointer hover:text-black transition-colors">
-                    Libreta de direcciones
-                </li>
-            </ul>
-        </div>
-    );
-};
+import { SidebarClientProfile } from "../../../components/SidebarClientProfile";
 
 const AccountSectionHeader = ({ title, rightContent }) => {
     return (
@@ -62,19 +37,19 @@ const MyAccountPage = () => {
 
                 <div className="flex flex-col md:flex-row gap-8 items-start">
                     <aside className="w-full md:w-[280px] shrink-0">
-                        <AccountSidebar />
+                        <SidebarClientProfile />
                     </aside>
 
                     <div className="flex-1 w-full space-y-10">
                         <section>
-                            <AccountSectionHeader title="Informacion de la cuenta" />
+                            <AccountSectionHeader title="Información de la cuenta" />
                             <div className="grid md:grid-cols-2 gap-4 mt-4">
                                 <AccountInfoCard
-                                    title="Informacion de Contacto"
+                                    title="Información de Contacto"
                                     footer={
                                         <>
                                             <button className="hover:underline">Editar</button>
-                                            <button className="hover:underline">Cambiar contrasena</button>
+                                            <button className="hover:underline">Cambiar contraseña</button>
                                         </>
                                     }
                                 >
@@ -86,7 +61,7 @@ const MyAccountPage = () => {
                                     title="Boletines informativos"
                                     footer={<button className="hover:underline">Editar</button>}
                                 >
-                                    <p>Usted no esta suscrito a nuestro boletin de noticias.</p>
+                                    <p>Usted no está suscrito a nuestro boletín de noticias.</p>
                                 </AccountInfoCard>
                             </div>
                         </section>
@@ -103,17 +78,17 @@ const MyAccountPage = () => {
                             />
                             <div className="grid md:grid-cols-2 gap-4 mt-4">
                                 <AccountInfoCard
-                                    title="Direccion de pago predeterminada"
-                                    footer={<button className="hover:underline">Editar direccion</button>}
+                                    title="Dirección de pago predeterminada"
+                                    footer={<button className="hover:underline">Editar dirección</button>}
                                 >
-                                    <p>No ha establecido una direccion de facturacion predeterminada.</p>
+                                    <p>No ha establecido una dirección de facturación predeterminada.</p>
                                 </AccountInfoCard>
 
                                 <AccountInfoCard
-                                    title="Direccion de envio predeterminada"
-                                    footer={<button className="hover:underline">Editar direccion</button>}
+                                    title="Dirección de envío predeterminada"
+                                    footer={<button className="hover:underline">Editar dirección</button>}
                                 >
-                                    <p>No ha establecido una direccion de envio predeterminada.</p>
+                                    <p>No ha establecido una dirección de envío predeterminada.</p>
                                 </AccountInfoCard>
                             </div>
                         </section>

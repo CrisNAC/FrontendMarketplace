@@ -1,45 +1,62 @@
-// Import el badge de activo despues
-import "../../styles/commerces.css";
-
-export const MostSoldSection = () => {
+export const MostSoldSection = ({ products = [] }) => {
     return (
-        <div className="card shadow-sm p-3">
-            <div className="d-flex justify-content-between mb-3">
-                <h6>Más Vendidos</h6>
-                <span className="text-primary small cursor-pointer">
+        <div style={{ backgroundColor: "white", borderRadius: "16px", padding: "16px", boxShadow: "0 1px 4px rgba(0,0,0,0.08)", height: "100%" }}>
+            <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                <h6 style={{ fontWeight: "bold", margin: 0 }}>Más Vendidos</h6>
+                <span
+                    onClick={() => console.log("Ver todos - Más Vendidos")}
+                    style={{ color: "#3b82f6", fontSize: "13px", cursor: "pointer" }}
+                >
                     Ver todos
                 </span>
             </div>
 
-            <div className="sold-item p-2 rounded mb-3 d-flex justify-content-between align-items-center">
-                <div>
-                    <strong>Lámpara de Escritorio LED</strong>
-                    <div className="small text-muted">
-                        <span className="text-danger fw-semibold">243 ventas</span> · $ 24.990
-                    </div>
-                </div>
-                {/*<Badge bg="success">Activo</Badge>*/}
-            </div>
+            {products.length === 0 && (
+                <p style={{ fontSize: "13px", color: "#6b7280" }}>No hay productos disponibles.</p>
+            )}
 
-            <div className="sold-item p-2 rounded mb-3 d-flex justify-content-between align-items-center">
-                <div>
-                    <strong>Silla Ergonómica Oficina</strong>
-                    <div className="small text-muted">
-                        <span className="text-danger fw-semibold">156 ventas</span> · $ 89.990
+            {products.map((product, index) => (
+                <div
+                    key={product.id_product}
+                    style={{
+                        backgroundColor: "var(--background-white)",
+                        borderRadius: "8px",
+                        padding: "8px",
+                        marginBottom: index < products.length - 1 ? "10px" : 0,
+                        display: "flex",
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        gap: "10px",
+                    }}
+                >
+                    <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "10px" }}>
+                        <div style={{ width: "44px", height: "44px", borderRadius: "6px", flexShrink: 0, overflow: "hidden", backgroundColor: "#e8e0f0" }}>
+                            {product.imageUrl
+                                ? <img src={product.imageUrl} alt={product.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                : <div style={{ width: "100%", height: "100%", backgroundColor: "#d5cce0" }} />
+                            }
+                        </div>
+                        <div>
+                            <strong style={{ fontSize: "14px" }}>{product.name}</strong>
+                            <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                                $ {Number(product.price).toLocaleString("es-CL")}
+                            </div>
+                        </div>
                     </div>
+                    <span style={{
+                        backgroundColor: "rgba(22,149,80,0.15)",
+                        color: "#16a34a",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        padding: "2px 10px",
+                        borderRadius: "12px",
+                        flexShrink: 0,
+                    }}>
+                        Activo
+                    </span>
                 </div>
-                {/*<Badge bg="success">Activo</Badge>*/}
-            </div>
-
-            <div className="sold-item p-2 rounded d-flex justify-content-between align-items-center">
-                <div>
-                    <strong>Organizador de Escritorio</strong>
-                    <div className="small text-muted">
-                        <span className="text-danger fw-semibold">89 ventas</span> · $ 15.990
-                    </div>
-                </div>
-                {/*<Badge bg="success">Activo</Badge>*/}
-            </div>
+            ))}
         </div>
     );
 };

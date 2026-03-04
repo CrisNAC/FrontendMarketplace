@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { ShoppingCart, User, Search, X } from "lucide-react";
 import logo from "/src/assets/feather.png";
 import { Link } from "react-router-dom";
 
 const Navbar = () => {
+  const [search, setSearch] = useState("");
   return (
     <header className="w-full border-b border-gray-200 shadow-sm font-sans">
 
@@ -10,7 +12,7 @@ const Navbar = () => {
       <div className="bg-[#A4C3B2] flex items-center justify-between px-[30px] py-[10px]">
 
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-[6px] !no-underline">
+        <Link to="/homepage" className="flex items-center gap-[6px] !no-underline">
           <span>
             <img src={logo} alt="Logo" className="w-[30px] h-auto" />
           </span>
@@ -22,13 +24,13 @@ const Navbar = () => {
         {/* Main links */}
         <nav className="flex gap-[20px] font-normal text-[14px]">
           <Link 
-            to="/" 
+            to="/homepage"
             className="!no-underline !text-[#485B53] hover:!text-[#2e6b4f] transition-colors"
           >
             Inicio
           </Link>
           <Link 
-            to="/productos" 
+            to="/busqueda" 
             className="!no-underline !text-[#485B53] hover:!text-[#2e6b4f] transition-colors"
           >
             Productos
@@ -48,8 +50,10 @@ const Navbar = () => {
               type="text"
               placeholder="Buscar"
               className="flex-1 border-none outline-none text-[13px]"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
             />
-            <X className="text-gray-500 cursor-pointer mr-[6px]" size={16} />
+            <X className="text-gray-500 cursor-pointer mr-[6px]" size={16} onClick={() => setSearch("")} />
           </div>
 
          <button

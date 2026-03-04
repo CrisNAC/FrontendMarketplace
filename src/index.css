@@ -1,5 +1,21 @@
 @import "tailwindcss";
 
+
+/* esto es solo para darle la forma a un select de CommerceCreationForm */
+@layer components {
+  .select-category {
+    @apply w-full px-3 py-2 border border-green-100 rounded-md bg-green-50/30 focus:outline-none focus:ring-1 focus:ring-[#5B7B6D]
+     focus:border-[#5B7B6D] text-gray-500 appearance-none;
+    
+    
+    background-image: url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%235B7B6D%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E');
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    background-size: 1.25rem 1.25rem;
+  }
+}
+
+
 @layer base {
   /* Evita que el reset de Tailwind rompa Bootstrap */
   *, *::before, *::after {
