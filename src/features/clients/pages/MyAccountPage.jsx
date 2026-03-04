@@ -42,14 +42,14 @@ const MyAccountPage = () => {
 
                     <div className="flex-1 w-full space-y-10">
                         <section>
-                            <AccountSectionHeader title="Informacion de la cuenta" />
+                            <AccountSectionHeader title="Información de la cuenta" />
                             <div className="grid md:grid-cols-2 gap-4 mt-4">
                                 <AccountInfoCard
-                                    title="Informacion de Contacto"
+                                    title="Información de Contacto"
                                     footer={
                                         <>
                                             <button className="hover:underline">Editar</button>
-                                            <button className="hover:underline">Cambiar contrasena</button>
+                                            <button className="hover:underline">Cambiar contraseña</button>
                                         </>
                                     }
                                 >
@@ -61,7 +61,7 @@ const MyAccountPage = () => {
                                     title="Boletines informativos"
                                     footer={<button className="hover:underline">Editar</button>}
                                 >
-                                    <p>Usted no esta suscrito a nuestro boletin de noticias.</p>
+                                    <p>Usted no está suscrito a nuestro boletín de noticias.</p>
                                 </AccountInfoCard>
                             </div>
                         </section>
@@ -78,17 +78,17 @@ const MyAccountPage = () => {
                             />
                             <div className="grid md:grid-cols-2 gap-4 mt-4">
                                 <AccountInfoCard
-                                    title="Direccion de pago predeterminada"
-                                    footer={<button className="hover:underline">Editar direccion</button>}
+                                    title="Dirección de pago predeterminada"
+                                    footer={<button className="hover:underline">Editar dirección</button>}
                                 >
-                                    <p>No ha establecido una direccion de facturacion predeterminada.</p>
+                                    <p>No ha establecido una dirección de facturación predeterminada.</p>
                                 </AccountInfoCard>
 
                                 <AccountInfoCard
-                                    title="Direccion de envio predeterminada"
-                                    footer={<button className="hover:underline">Editar direccion</button>}
+                                    title="Dirección de envío predeterminada"
+                                    footer={<button className="hover:underline">Editar dirección</button>}
                                 >
-                                    <p>No ha establecido una direccion de envio predeterminada.</p>
+                                    <p>No ha establecido una dirección de envío predeterminada.</p>
                                 </AccountInfoCard>
                             </div>
                         </section>
