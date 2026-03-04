@@ -96,6 +96,15 @@ function App() {
           }
         />
 
+        <Route
+          path="/comercio/productos/nuevo"
+          element={
+            <MyCommerceLayout>
+              <CreateProductPage />
+            </MyCommerceLayout>
+          }
+        />
+          
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
