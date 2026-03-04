@@ -50,7 +50,14 @@ function App() {
         
         <Route path="/perfil" element={<MyAccountPage />} />
         <Route path="/comparar" element={<PriceComparisonPage />} />
-        <Route path="/producto-detalle" element={<DetalleProducto />} />
+        <Route
+          path="/producto-detalle"
+          element={
+            <VistaComercioLayout>
+              <DetalleProducto />
+            </VistaComercioLayout>
+          }
+        />
         <Route path="/perfil-comercio" element={
           <VistaComercioLayout>
             <VistaComercioPage />

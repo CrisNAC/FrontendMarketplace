@@ -158,7 +158,7 @@ export default function DetalleProducto() {
                 Características
               </h3>
               <ul className="text-[12px] text-black list-disc pl-5 space-y-1">
-                <li>Pantalla LTPO Super Retina XDR OLED 6.3"</li>
+                <li>Pantalla LTPO Sup er Retina XDR OLED 6.3"</li>
                 <li>Resolución 1206 × 2622p</li>
                 <li>Triple 48Mp + 48Mp + 48Mp</li>
                 <li>Frontal 18Mp</li>
