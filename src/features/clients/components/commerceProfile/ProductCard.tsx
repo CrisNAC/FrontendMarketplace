@@ -1,3 +1,5 @@
+import { useNavigate } from "react-router-dom";
+
 type Props = {
     name: string;
     price: string;
@@ -5,6 +7,12 @@ type Props = {
 };
 
 export const ProductCard = ({ name, price, imageUrl }: Props) => {
+    const navigate = useNavigate();
+
+    const handleCategoryClick = () => {
+        navigate(`/producto-detalle`);
+    };
+
     return (
         <div style={{
             backgroundColor: "#fef7ff",
@@ -38,7 +46,9 @@ export const ProductCard = ({ name, price, imageUrl }: Props) => {
             <div style={{ padding: "8px 12px 12px 12px" }}>
                 <p style={{ fontSize: "14px", fontWeight: "600", lineHeight: "1.3", margin: "0 0 4px 0" }}>{name}</p>
                 <p style={{ fontSize: "14px", color: "#6b7280", margin: "0 0 8px 0" }}>Gs. {price}</p>
-                <button style={{
+                <button 
+                onClick={() => handleCategoryClick()}
+                style={{
                     width: "100%",
                     padding: "6px 0",
                     borderRadius: "8px",
