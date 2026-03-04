@@ -16,7 +16,7 @@ export const OfferCard = ({ storeName, description, price, imageUrl }) => {
                     {price} Gs.
                 </span>
                 <button className="bg-[#a5cbf0] text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-blue-300 transition-colors">
-                    + Ver mas
+                    + Ver más
                 </button>
             </div>
 
