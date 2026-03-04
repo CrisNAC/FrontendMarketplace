@@ -5,6 +5,16 @@ import { test, expect } from '@playwright/test';
 // =============================================
 test.describe('Página de Mi Comercio', () => {
   test.beforeEach(async ({ page }) => {
+    await page.route('**/api/commerces/1', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 1,
+          name: 'Commerce Test'
+        })
+      });
+    });
     await page.goto('/comercio');
   });
 
