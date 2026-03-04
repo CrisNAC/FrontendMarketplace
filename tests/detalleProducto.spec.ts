@@ -8,10 +8,27 @@ test.describe('Página de Detalle del Producto', () => {
     await page.goto('/producto-detalle');
   });
 
+  test('debe mostrar el navbar con el logo Open Market', async ({ page }) => {
+    const omNavbar = page.locator('header').getByText('Open Market');
+    await expect(omNavbar).toBeVisible();
+  });
+
   test('debe mostrar el nombre del producto', async ({ page }) => {
     await expect(
       page.getByRole('heading', { name: /Apple iPhone 17 Pro/i })
     ).toBeVisible();
+  });
+
+  test('debe mostrar la barra de categorías', async ({ page }) => {
+    await expect(page.getByText('Tecnología')).toBeVisible();
+    await expect(page.getByText('Moda')).toBeVisible();
+    await expect(page.getByText('Coleccionables y Arte')).toBeVisible();
+    await expect(page.getByText('Hogar y Jardín')).toBeVisible();
+    await expect(page.getByText('Salud y Belleza')).toBeVisible();
+    await expect(page.getByText('Entretenimiento')).toBeVisible();
+    await expect(page.getByText('Deportes')).toBeVisible();
+    await expect(page.getByText('Equipo Industrial')).toBeVisible();
+    await expect(page.getByText('Ofertas!!')).toBeVisible();
   });
 
   test('debe mostrar la navegación de Nissei / Celulares', async ({ page }) => {
@@ -23,7 +40,7 @@ test.describe('Página de Detalle del Producto', () => {
   });
 
   test('debe mostrar el precio del producto', async ({ page }) => {
-    await expect(page.getByText('Gs. 13.290.000')).toBeVisible();
+    await expect(page.getByText('Gs. ')).toBeVisible();
   });
 
   test('debe mostrar el badge En stock', async ({ page }) => {

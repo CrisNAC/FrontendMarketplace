@@ -1,19 +1,24 @@
 import React from "react";
+import { Link, Navigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import { MarketplaceNavbar } from "../../../components/navbar/MarketplaceNavbar";
-import { CategoriesBar } from "../../../components/navbar/CategoriesBar";
+
+// --- Importación de imágenes ---
+import iphoneImg from "../../../assets/iphone.png";
+import negroImg from "../../../assets/iphonenegrito.png";
+import naranjaImg from "../../../assets/iphonenaranja.png";
+import whiteImg from "../../../assets/iphonewhite.png";
 
 // --- Pantalla Principal ---
 export default function PriceComparisonPage() {
+    const alternativeText = "Imagen del producto";
+
     return (
         <div className="min-h-screen flex flex-col">
-            <MarketplaceNavbar />
-            <CategoriesBar />
 
             <main className="max-w-7xl mx-auto w-full px-6 py-6">
                 {/* Titulo */}
                 <div className="flex items-center gap-4 mb-8">
-                    <ArrowLeft className="w-6 h-6 cursor-pointer" />
+                    <ArrowLeft className="w-6 h-6 cursor-pointer" Link/>
                     <h1 className="text-2xl font-bold">Ofertas: Celular Apple iPhone 17 Pro</h1>
                 </div>
 
@@ -22,8 +27,8 @@ export default function PriceComparisonPage() {
                     <div className="lg:col-span-5 flex flex-col items-center">
                         <div className="bg-white rounded-[40px] p-12 shadow-sm w-full aspect-square flex items-center justify-center mb-6">
                             <img
-                                src="https://media.solotodo.com/media/products/1888204_main_1726002936.webp"
-                                alt="iPhone 17 Pro"
+                                src={naranjaImg}
+                                alt={alternativeText}
                                 className="w-full h-auto object-contain"
                             />
                         </div>
@@ -58,9 +63,9 @@ export default function PriceComparisonPage() {
                                         </div>
                                     </div>
                                     <img
-                                        src="https://nissei.com/media/catalog/product/cache/16a1529124976ed4a080829871587600/i/p/iphone_15_pro_q423_white_titanium_pdp_image_position-1__en-us_1_2.jpg"
+                                        src={naranjaImg}
                                         className="w-24 h-24 object-contain"
-                                        alt="thumbnail"
+                                        alt={alternativeText}
                                     />
                                 </div>
                             ))}
