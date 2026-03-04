@@ -13,9 +13,6 @@ export const CreateCommercePage = () => {
 
                     {/**Formulario */}
                     <CommerceCreationForm />
-
-
-                    
                     <p className="text-sm text-gray-500 text-center mt-4">Los campos marcados con * son obligatorios.</p>
                 </div>
             </div>
