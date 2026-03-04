@@ -1,17 +1,13 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-body {
-    @apply bg-[#f3f4f6] text-gray-800;
-}
 body {
   font-family: 'Inter', sans-serif;
+  background: #F5F5F5;
+  color: #1f2937;
 }
+
 html, body, #root {
   height: 100%;
   margin: 0;
   padding: 0;
-  overflow: hidden;
-  background: #F5F5F5; /* gris */
-} 
+  overflow: auto;
+  background: #F5F5F5;
+}
