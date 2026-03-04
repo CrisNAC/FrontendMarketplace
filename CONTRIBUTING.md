@@ -25,8 +25,9 @@ Nuestro flujo de trabajo se basa en el ID de los tickets de Jira (`OM-XXX`).
 1. Sitúate en `dev` y actualiza: `git checkout dev && git pull origin dev`.
 2. Crea tu rama: `git checkout -b feat/OM-12-login-supabase`.
 3. Desarrolla y haz commits siguiendo los estándares.
-4. Sube tu rama: `git push origin feat/OM-12-login-supabase`.
-5. Abre un **Pull Request (PR)** en GitHub hacia la rama `dev`.
+4. Hazte un pull origin dev para resolver conflictos antes de subir a tu rama remota.
+5. Sube tu rama: `git push origin feat/OM-12-login-supabase`.
+6. Abre un **Pull Request (PR)** en GitHub hacia la rama `dev`.
 
 ---
 
