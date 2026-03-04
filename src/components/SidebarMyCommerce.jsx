@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+
 import {
     LayoutDashboard,
     Package,
@@ -22,6 +25,16 @@ const NAV_ITEMS = [
 
 export const SidebarMyCommerce = ({ collapsed, onToggle }) => {
     const [active, setActive] = useState("Dashboard");
+
+    const handleLogout = async () => {
+        try {
+            await axios.delete("/api/session");
+            navigate("/homepage");
+        } catch (err) {
+            console.error("Error al cerrar sesión:", err);
+            navigate("/homepage"); // redirigir igual aunque falle
+        }
+    };
 
     return (
         <div style={{

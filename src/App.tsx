@@ -20,6 +20,7 @@ import { HomePage } from './features/clients/pages/HomePage'
 import { BusquedaPage } from './features/clients/pages/BusquedaPage'
 import { CommentsPage } from './features/clients/pages/CommentsPage'
 import { CreateCommercePage } from './features/clients/pages/CreateCommercePage'
+import AuthPage from './features/clients/pages/AuthPage';
 
 import ComercioVerProducto from './features/commerces/pages/ComercioVerProducto';
 import PriceComparisonPage from './features/clients/pages/PriceComparisonPage';
@@ -29,6 +30,7 @@ import CreateProductPage from './features/commerces/pages/CreateProductPage';
 const HomePageRoutes = () => (
   <div className="p-10 text-center">
     <h1 className="text-3xl font-bold">Bienvenido al Marketplace</h1>
+    <p className="mt-4">Navega a <a href="/login" className="text-blue-500 underline">Login/Registro</a></p>
     <p className="mt-4">Navega a <a href="/comparar" className="text-blue-500 underline">Comparar Precios</a></p>
     <p className="mt-4">Navega a <a href="/perfil" className="text-blue-500 underline">Mi Perfil</a></p>
     <p className="mt-4">Navega a <a href="/producto-detalle" className="text-blue-500 underline">Detalle de Producto</a></p>
@@ -50,6 +52,8 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<HomePageRoutes />} />
+
+        <Route path="/login" element={<AuthPage />} />
         
         <Route path="/perfil" element={<MyAccountPage />} />
         <Route path="/comparar" element={<PriceComparisonPage />} />
