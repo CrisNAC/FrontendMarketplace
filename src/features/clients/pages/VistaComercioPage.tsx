@@ -1,4 +1,5 @@
 import { ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { CategoryFilterSidebar } from "../components/commerceProfile/CategoryFilterSidebar";
 import { CommerceProfileHeader } from "../components/commerceProfile/CommerceProfileHeader";
 import { FeaturedProducts } from "../components/commerceProfile/FeaturedProducts";
@@ -57,12 +58,22 @@ const MOCK_PRODUCTS = [
 ];
 
 export const VistaComercioPage = () => {
+    const navigate = useNavigate();
+
+    const handleBack = () => {
+        navigate(-1);
+    };
+
     return (
         <div style={{ minHeight: "100vh", backgroundColor: "var(--background-soft)" }}>
 
             {/* Breadcrumb */}
             <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "8px", padding: "16px 24px" }}>
-                <ArrowLeft size={24} style={{ cursor: "pointer", color: "#6b7280" }} />
+                <ArrowLeft
+                    size={24}
+                    style={{ cursor: "pointer", color: "#6b7280" }}
+                    onClick={handleBack}  // ← AGREGAR
+                />
                 <h5 style={{ fontWeight: "bold", fontSize: "20px", margin: 0 }}>Comercios / Nissei</h5>
             </div>
 

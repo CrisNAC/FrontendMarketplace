@@ -1,7 +1,9 @@
 import { ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { SearchFilterSidebar } from "../components/search/SearchFilterSidebar";
 import { SearchProductCard } from "../components/search/SearchProductCard";
 import { Pagination } from "../components/commerceProfile/Pagination";
+
 
 // Mock data — reemplazar con resultados reales del backend
 const MOCK_PRODUCTS = [
@@ -60,6 +62,8 @@ type Props = {
 };
 
 export const BusquedaPage = ({ query = "Celular" }: Props) => {
+    const navigate = useNavigate();
+
     const columns = [
         MOCK_PRODUCTS.slice(0, 2),
         MOCK_PRODUCTS.slice(2, 4),
@@ -67,12 +71,20 @@ export const BusquedaPage = ({ query = "Celular" }: Props) => {
         MOCK_PRODUCTS.slice(6, 8),
     ];
 
+    const handleBack = () => {
+        navigate(-1); // Volver a la página anterior
+    };
+
     return (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", width: "100%", backgroundColor: "#F3F3F3", paddingBottom: "44px" }}>
 
             {/* Breadcrumb */}
             <div style={{ display: "flex", flexDirection: "row", alignItems: "center", marginBottom: "20px", marginLeft: "25px", marginTop: "16px", gap: "4px" }}>
-                <ArrowLeft size={24} style={{ cursor: "pointer", color: "#6b7280" }} />
+                <ArrowLeft
+                    size={24}
+                    style={{ cursor: "pointer", color: "#6b7280" }}
+                    onClick={handleBack} 
+                />
                 <span style={{ color: "#000000", fontSize: "25px", fontWeight: "bold" }}>
                     Resultado de Búsqueda para: {query}
                 </span>

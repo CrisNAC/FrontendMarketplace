@@ -1,3 +1,5 @@
+import { useNavigate } from "react-router-dom";
+
 const categories = [
   {
     name: "Celulares",
@@ -35,13 +37,23 @@ const commerces = [
 ];
 
 export const HomeSections = () => {
+  const navigate = useNavigate();
+
+  const handleCategoryClick = (categoryName) => {
+    navigate(`/busqueda?q=${encodeURIComponent(categoryName)}`);
+  };
+
+  const handleCommerceClick = (commerceName) => {
+    navigate('/perfil-comercio');
+  };
+
   return (
     <div className="w-[1254px] mx-auto mt-[50px]">
 
       {/* ================= CATEGORÍAS ================= */}
       <section className="mb-[60px]">
         <h3 className="font-semibold text-[20px] mb-[25px] text-[#333]"
-        style={{fontSize: "20px", fontWeight: "bold" }}>
+          style={{ fontSize: "20px", fontWeight: "bold" }}>
           Compra por categorías
         </h3>
 
@@ -54,6 +66,7 @@ export const HomeSections = () => {
               <div
                 className="w-[150px] h-[150px] rounded-full bg-cover bg-center cursor-pointer transition duration-300 hover:scale-105"
                 style={{ backgroundImage: `url(${cat.image})` }}
+                onClick={() => handleCategoryClick(cat.name)}
               />
               <span>{cat.name}</span>
             </div>
@@ -64,7 +77,7 @@ export const HomeSections = () => {
       {/* ================= COMERCIOS ================= */}
       <section>
         <h3 className="font-semibold text-[20px] mb-[25px] text-[#333]"
-                style={{fontSize: "20px", fontWeight: "bold" }}>
+          style={{ fontSize: "20px", fontWeight: "bold" }}>
           Comercios
         </h3>
 
@@ -76,6 +89,7 @@ export const HomeSections = () => {
             >
               <div
                 className={`w-[150px] h-[150px] rounded-full flex items-center justify-center font-semibold text-[18px] cursor-pointer transition duration-300 hover:scale-105 ${commerce.color}`}
+                onClick={() => handleCommerceClick(commerce.name)}
               >
                 {commerce.name}
               </div>
