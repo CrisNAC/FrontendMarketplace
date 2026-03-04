@@ -1,15 +1,11 @@
-
 import './App.css'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
-
-/**
- * Importación de componentes y páginas
- */
 import { MyCommerceLayout } from './layouts/MyCommerceLayout'
 import { MyCommercePage } from './features/commerces/pages/MyCommercePage'
 import MyAccountPage from "./features/clients/pages/MyAccountPage";
 import { VistaComercioLayout } from './layouts/VistaComercioLayout'
+import { CommentsLayout } from './layouts/CommentsLayout'
 
 import { VistaComercioPage } from './features/clients/pages/VistaComercioPage'
 import { ClientOrdersPage } from './features/clients/pages/ClientOrdersPage'
@@ -18,15 +14,15 @@ import { HomePage } from './features/clients/pages/HomePage'
 import { BusquedaPage } from './features/clients/pages/BusquedaPage'
 import { CommentsPage } from './features/clients/pages/CommentsPage'
 
+<<<<<<< HEAD
 import { CreateCommercePage } from './features/clients/pages/CreateCommercePage'
 
+=======
+>>>>>>> e014ea6a66e8da94724a5719f49642c5bf4ae392
 import ComercioVerProducto from './features/commerces/pages/ComercioVerProducto';
-
 import PriceComparisonPage from './features/clients/pages/PriceComparisonPage';
 import DetalleProducto from './features/commerces/pages/DetalleProducto';
-import { Home } from 'lucide-react';
 
-// Creamos una página de inicio rápida para probar
 const HomePageRoutes = () => (
   <div className="p-10 text-center">
     <h1 className="text-3xl font-bold">Bienvenido al Marketplace</h1>
@@ -34,33 +30,29 @@ const HomePageRoutes = () => (
     <p className="mt-4">Navega a <a href="/perfil" className="text-blue-500 underline">Mi Perfil</a></p>
     <p className="mt-4">Navega a <a href="/producto-detalle" className="text-blue-500 underline">Detalle de Producto</a></p>
     <p className="mt-4">Navega a <a href="/comercio" className="text-blue-500 underline">Mi Comercio</a></p>
-    <p className="mt-4">Navega a <a href="/perfil-comercio" className="text-blue-500 underline">perfil comercio</a></p>
+    <p className="mt-4">Navega a <a href="/perfil-comercio" className="text-blue-500 underline">Perfil comercio</a></p>
     <p className="mt-4">Navega a <a href="/comercio-producto" className="text-blue-500 underline">Ver Producto Comercio</a></p>
     <p className="mt-4">Navega a <a href="/pedidos" className="text-blue-500 underline">Ver pedidos</a></p>
     <p className="mt-4">Navega a <a href="/homepage" className="text-blue-500 underline">Homepage</a></p>
     <p className="mt-4">Navega a <a href="/busqueda" className="text-blue-500 underline">Busqueda</a></p>
     <p className="mt-4">Navega a <a href="/comentarios" className="text-blue-500 underline">Comentarios</a></p>
+<<<<<<< HEAD
     <p className="mt-4">Navega a <a href="/crear-comercio" className="text-blue-500 underline">Crear Comercio</a></p>
 
+=======
+>>>>>>> e014ea6a66e8da94724a5719f49642c5bf4ae392
   </div>
 );
 
-/**
- * 
- * @returns 
- */
-
 function App() {
   return (
-
     <Router>
       <Routes>
-        {/* Ruta de inicio */}
         <Route path="/" element={<HomePageRoutes />} />
 
-        {/* CLIENTES */}
         <Route path="/perfil" element={<MyAccountPage />} />
         <Route path="/comparar" element={<PriceComparisonPage />} />
+<<<<<<< HEAD
         <Route path="/producto-detalle" element={<DetalleProducto />} />
         <Route path="/perfil-comercio" element={
           <VistaComercioLayout>
@@ -68,31 +60,63 @@ function App() {
           </VistaComercioLayout>
         } />
         <Route path="/crear-comercio" element={<CreateCommercePage />} />
+=======
+
+        <Route
+          path="/producto-detalle"
+          element={
+            <VistaComercioLayout>
+              <DetalleProducto />
+            </VistaComercioLayout>
+          }
+        />
+
+        <Route
+          path="/perfil-comercio"
+          element={
+            <VistaComercioLayout>
+              <VistaComercioPage />
+            </VistaComercioLayout>
+          }
+        />
+
+>>>>>>> e014ea6a66e8da94724a5719f49642c5bf4ae392
         <Route path="/pedidos" element={<ClientOrdersPage />} />
         <Route path="/pedidos/:orderId" element={<ClientOrderDetailsPage />} />
         <Route path="/homepage" element={<HomePage />} />
-        <Route path="/busqueda" element={
-          <VistaComercioLayout>
-            <BusquedaPage />
-          </VistaComercioLayout>
-        } />
-                <Route path="/comentarios" element={<CommentsPage />} />
 
+        <Route
+          path="/busqueda"
+          element={
+            <VistaComercioLayout>
+              <BusquedaPage />
+            </VistaComercioLayout>
+          }
+        />
 
-        {/* COMERCIOS */}
-                <Route path="/comercio-producto" element={<ComercioVerProducto />} />
+        <Route
+          path="/comentarios"
+          element={
+            <CommentsLayout>
+              <CommentsPage />
+            </CommentsLayout>
+          }
+        />
 
-        <Route path="/comercio" element={
-          <MyCommerceLayout>
-            <MyCommercePage />
-          </MyCommerceLayout>
-        } />
+        <Route path="/comercio-producto" element={<ComercioVerProducto />} />
 
-        {/* Ruta 404 - Si escriben cualquier cosa, los manda al inicio */}
+        <Route
+          path="/comercio"
+          element={
+            <MyCommerceLayout>
+              <MyCommercePage />
+            </MyCommerceLayout>
+          }
+        />
+
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
-
   )
 }
 

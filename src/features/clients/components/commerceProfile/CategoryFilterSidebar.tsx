@@ -28,7 +28,7 @@ export const CategoryFilterSidebar = () => {
             alignSelf: "flex-start",
         }}>
             <p style={{ fontWeight: "bold", marginBottom: "4px" }}>Filtrar por</p>
-            <p style={{ fontWeight: "bold", marginBottom: "12px" }}>Categorias</p>
+            <p style={{ fontWeight: "bold", marginBottom: "12px" }}>Categorías</p>
 
             <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
                 {FILTER_CATEGORIES.map((cat) => (
