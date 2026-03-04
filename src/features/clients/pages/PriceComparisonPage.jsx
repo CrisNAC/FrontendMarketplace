@@ -1,6 +1,7 @@
 import React from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import Navbar from '../../../components/navbar/Navbar';
 
 // --- Importación de imágenes ---
 import iphoneImg from "../../../assets/iphone.png";
@@ -11,14 +12,15 @@ import whiteImg from "../../../assets/iphonewhite.png";
 // --- Pantalla Principal ---
 export default function PriceComparisonPage() {
     const alternativeText = "Imagen del producto";
+    const navigate = useNavigate();
 
     return (
         <div className="min-h-screen flex flex-col">
-
+            <Navbar />
             <main className="max-w-7xl mx-auto w-full px-6 py-6">
                 {/* Titulo */}
                 <div className="flex items-center gap-4 mb-8">
-                    <ArrowLeft className="w-6 h-6 cursor-pointer" Link/>
+                    <ArrowLeft className="w-6 h-6 cursor-pointer" onClick={() => navigate("/homepage")}/>
                     <h1 className="text-2xl font-bold">Ofertas: Celular Apple iPhone 17 Pro</h1>
                 </div>
 
@@ -53,11 +55,11 @@ export default function PriceComparisonPage() {
                                     <div className="space-y-1">
                                         <h3 className="text-xl font-black">Nissei</h3>
                                         <p className="text-gray-500 text-sm">
-                                            Apple iPhone 17 Pro A3256 Dual 256 GB - Silver
+                                            Apple iPhone 17 Pro A3256 Dual 256 GB - Orange
                                         </p>
                                         <div className="pt-4 flex items-center gap-4">
                                             <span className="text-2xl font-bold text-red-600">9.900.000 Gs.</span>
-                                            <button className="bg-[#a5cbf0] text-white px-4 py-1 rounded-full text-xs font-bold">
+                                            <button onClick={() => navigate("/producto-detalle")} className="bg-[#a5cbf0] text-white px-4 py-1 rounded-full text-xs font-bold">
                                                 + Ver mas
                                             </button>
                                         </div>
