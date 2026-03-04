@@ -1,24 +1,16 @@
-
+import { useState } from "react";
 import { SidebarMyCommerce } from "../components/SidebarMyCommerce";
 
-const styles = {
-    container: {
-        backgroundColor: 'var(--background-soft)',
-        minHeight: '100vh'
-    },
-
-    contentArea: {
-        backgroundColor: 'var(--background-soft)',
-        minHeight: '100vh'
-    }
-}
-
 export const MyCommerceLayout = ({ children }) => {
-    return (
-        <div className="d-flex" style={styles.container}>
-            <SidebarMyCommerce />
+    const [collapsed, setCollapsed] = useState(false);
 
-            <main className="flex-grow-1 p-4" style={styles.contentArea}>
+    return (
+        <div style={{ display: "flex", flexDirection: "row", backgroundColor: "var(--background-soft)", minHeight: "100vh" }}>
+            <SidebarMyCommerce
+                collapsed={collapsed}
+                onToggle={() => setCollapsed((p) => !p)}
+            />
+            <main style={{ flex: 1, padding: "24px", backgroundColor: "var(--background-soft)", minHeight: "100vh", overflow: "auto" }}>
                 {children}
             </main>
         </div>
