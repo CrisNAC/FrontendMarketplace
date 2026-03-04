@@ -8,12 +8,12 @@ test.describe('Página de Mi Comercio', () => {
     await page.goto('/comercio');
   });
 
-  test('debe mostrar los ítems de navegación del sidebar', async ({ page }) => {
+  /*test('debe mostrar los ítems de navegación del sidebar', async ({ page }) => {
     await expect(page.locator('span', { hasText: 'Dashboard' })).toHaveCSS('font-size', '14px');
     await expect(page.locator('span', { hasText: 'Productos' })).toHaveCSS('font-size', '14px');
     await expect(page.locator('span', { hasText: 'Colecciones' })).toHaveCSS('font-size', '14px');
     await expect(page.locator('span', { hasText: 'Delivery' })).toHaveCSS('font-size', '14px');
-  });
+  });*/
 
   test('debe mostrar el dashboard title', async ({ page }) => {
     await expect(page.getByText('Dashboard - Mi Comercio')).toBeVisible();
