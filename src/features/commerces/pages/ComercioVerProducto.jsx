@@ -274,7 +274,7 @@ export default function ComercioVerProducto() {
                     <div className="mt-3 space-y-1.5 text-[11px]">
                       <div className="flex items-center justify-between">
                         <span className={SUBTLE}>Precio:</span>
-                        <span className="font-semibold text-emerald-700">$ 89.990</span>
+                        <span className="font-semibold text-emerald-700">Gs. 89.990</span>
                       </div>
 
                       <div className="flex items-center justify-between">
@@ -299,7 +299,7 @@ export default function ComercioVerProducto() {
                       <div className="flex items-start justify-between">
                         <span className={`pt-[1px] ${SUBTLE}`}>Etiquetas:</span>
                         <div className="flex flex-wrap justify-end gap-1.5">
-                          <Pill variant="indigo">ergonomica</Pill>
+                          <Pill variant="indigo">ergonómica</Pill>
                           <Pill variant="indigo">oficina</Pill>
                           <Pill variant="indigo">silla</Pill>
                           <Pill variant="indigo">trabajo</Pill>

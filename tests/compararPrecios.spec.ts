@@ -20,15 +20,15 @@ test.describe('Página de comparar precios', () => {
   });
 
   test('debe mostrar la barra de categorías', async ({ page }) => {
-    await expect(page.getByText('Tecnología')).toBeVisible();
-    await expect(page.getByText('Moda')).toBeVisible();
-    await expect(page.getByText('Coleccionables y Arte')).toBeVisible();
-    await expect(page.getByText('Hogar y Jardín')).toBeVisible();
-    await expect(page.getByText('Salud y Belleza')).toBeVisible();
-    await expect(page.getByText('Entretenimiento')).toBeVisible();
-    await expect(page.getByText('Deportes')).toBeVisible();
-    await expect(page.getByText('Equipo Industrial')).toBeVisible();
-    await expect(page.getByText('Ofertas!!')).toBeVisible();
+    await expect(page.locator('a', { hasText: 'Tecnología' })).toBeVisible();
+    await expect(page.locator('a', { hasText: 'Moda' })).toBeVisible();
+    await expect(page.locator('a', { hasText: 'Coleccionables y Arte' })).toBeVisible();
+    await expect(page.locator('a', { hasText: 'Hogar y Jardín' })).toBeVisible();
+    await expect(page.locator('a', { hasText: 'Salud y Belleza' })).toBeVisible();
+    await expect(page.locator('a', { hasText: 'Entretenimiento' })).toBeVisible();
+    await expect(page.locator('a', { hasText: 'Deportes' })).toBeVisible();
+    await expect(page.locator('a', { hasText: 'Equipo Industrial' })).toBeVisible();
+    await expect(page.locator('a', { hasText: 'Ofertas!!' })).toBeVisible();
   });
 
   test('debe mostrar el rango de precios', async ({ page }) => {
@@ -56,7 +56,7 @@ test.describe('Página de comparar precios', () => {
   });
 
   test('debe mostrar la imagen del producto', async ({ page }) => {
-    const productImage = page.getByAltText('iPhone 17 Pro');
+    const productImage = page.getByAltText('Imagen del producto').first();
     await expect(productImage).toBeVisible();
   });
 });

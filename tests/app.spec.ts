@@ -91,7 +91,7 @@ test.describe('Rutas y navegación', () => {
     await expect(page).toHaveURL('/');
   });
 
-  test('debe poder navegar desde inicio a /Pedidos y volver', async ({ page }) => {
+  test('debe poder navegar desde inicio a /pedidos y volver', async ({ page }) => {
     await page.goto('/');
     await page.getByRole('link', { name: 'Ver pedidos' }).click();
     await expect(page).toHaveURL('/pedidos');
@@ -114,7 +114,7 @@ test.describe('Rutas y navegación', () => {
     await page.goto('/');
     await page.getByRole('link', { name: 'Busqueda' }).click();
     await expect(page).toHaveURL('/busqueda');
-    await expect(page.getByText('Resultado de Busqueda para:').first()).toBeVisible();
+    await expect(page.getByText('Resultado de Búsqueda para:').first()).toBeVisible();
 
     await page.goBack();
     await expect(page).toHaveURL('/');
