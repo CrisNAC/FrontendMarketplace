@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
+import { useLogout } from "../hooks/useLogout";
 
 import {
     LayoutDashboard,
@@ -14,19 +15,21 @@ import {
     HelpCircle,
 } from "lucide-react";
 
-const NAV_ITEMS = [
-    { label: "Dashboard",     icon: LayoutDashboard, route: "/comercio" },
-    { label: "Productos",     icon: Package,         route: "/comercio-producto" },
-    { label: "Colecciones",   icon: Layers,          route: "/colecciones" },
-    { label: "Delivery",      icon: Truck,           route: "/delivery" },
-    { label: "Mi Comercio",   icon: Store,           route: "/mi-comercio" },
-    // { label: "Cerrar Sesión", icon: LogOut },
-];
 
 export const SidebarMyCommerce = ({ collapsed, onToggle }) => {
     // const [active, setActive] = useState("Dashboard"); *PROBLEMA: El estado se reinicia cuando el componente se remonta.*
     const navigate = useNavigate();
     const location = useLocation();
+    const logout = useLogout();
+
+    const NAV_ITEMS = [
+        { label: "Dashboard",     icon: LayoutDashboard, route: "/comercio" },
+        { label: "Productos",     icon: Package,         route: "/comercio-producto" },
+        { label: "Colecciones",   icon: Layers,          route: "/colecciones" },
+        { label: "Delivery",      icon: Truck,           route: "/delivery" },
+        { label: "Mi Comercio",   icon: Store,           route: "/mi-comercio" },
+        { label: "Cerrar Sesión", icon: LogOut,          onClick: logout },
+    ];
 
     // Determina el activo basándose en la URL
     const active = NAV_ITEMS.find(
@@ -36,16 +39,6 @@ export const SidebarMyCommerce = ({ collapsed, onToggle }) => {
     const handleNavigation = (label, route) => {
         // setActive(label); *SE PIERDE AL NAVEGAR*
         navigate(route);
-    };
-
-    const handleLogout = async () => {
-        try {
-            await axios.delete("/api/session");
-            navigate("/homepage");
-        } catch (err) {
-            console.error("Error al cerrar sesión:", err);
-            navigate("/homepage"); // redirigir igual aunque falle
-        }
     };
 
     return (
@@ -83,12 +76,19 @@ export const SidebarMyCommerce = ({ collapsed, onToggle }) => {
 
             {/* Nav items */}
             <nav style={{ display: "flex", flexDirection: "column", gap: "4px", flex: 1 }}>
-                {NAV_ITEMS.map(({ label, icon: Icon, route }) => {
+                {NAV_ITEMS.map(({ label, icon: Icon, route, onClick }) => {
                     const isActive = active === label;
                     return (
                         <div
                             key={label}
-                            onClick={() => handleNavigation(label, route)}
+                            onClick={() => {
+                                if (onClick) {
+                                    onClick();
+                                } else {
+                                handleNavigation(label, route)
+                                }
+                            }
+                            }
                             title={collapsed ? label : undefined}
                             style={{
                                 display: "flex",

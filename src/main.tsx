@@ -7,10 +7,15 @@ import App from './App.tsx';
 
 // axios.interceptors.response.use(
 //     (response) => {
+//         console.log("Response:", response.status, response.config.url);
 //         return response;
 //     },
 //     (error) => {
 //         if (error.response.status === 401) {
+//             console.log("Error status:", error.response?.status);
+//             console.log("Error data:", error.response?.data);
+//             console.log("Error headers:", error.response?.headers);
+//             console.log("error.response existe?:", !!error.response)
 //             const location = error.response.headers.location;
 //             window.location = location;
 //         }
@@ -21,13 +26,20 @@ import App from './App.tsx';
 // Todas las requests mandan la cookie automáticamente
 //axios.defaults.withCredentials = true;
 
-// Interceptor global — cualquier 401 en cualquier request manda al login
+// // Interceptor global — cualquier 401 en cualquier request manda al login
 // axios.interceptors.response.use(
-//   (response) => response,
+//   (response) => {
+//     console.log("Response:", response.status, response.config.url);
+//     return response;
+//   },
 //   (error) => {
+//     console.log("Error status:", error.response?.status);
+//     console.log("Error data:", error.response?.data);
+//     console.log("Error headers:", error.response?.headers);
+//     console.log("error.response existe?:", !!error.response)
 //     if (error.response?.status === 401) {
-//       const location = error.response.headers.location;
-//       window.location = location ?? "/login";
+//       console.log("🔁 Redirigiendo a /login...");
+//       window.location.href = "/login";
 //     }
 //     return Promise.reject(error);
 //   }

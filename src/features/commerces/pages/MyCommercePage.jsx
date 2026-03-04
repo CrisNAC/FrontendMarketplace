@@ -5,6 +5,7 @@ import { StatCard } from "../components/dashboard/StatCard";
 import { BestRatedSection } from "../components/dashboard/BestRatedSection";
 import { MostSoldSection } from "../components/dashboard/MostSoldSection";
 import { CollectionsSection } from "../components/dashboard/CollectionsSection";
+import axios from "axios";
 
 const ID_STORE = 1;
 
@@ -15,10 +16,11 @@ export const MyCommercePage = () => {
     useEffect(() => {
         const fetchStore = async () => {
             try {
-                const res = await fetch(`http://localhost:3000/api/commerces/${ID_STORE}`);
-                if (!res.ok) throw new Error("Error al obtener el comercio");
-                const data = await res.json();
-                setStore(data);
+                const res = await axios.get(`/api/commerces/${ID_STORE}`);
+                if (!res) {
+                    console.log("Error al contactar la API");
+                }
+                setStore(res.data);
             } catch (err) {
                 console.error(err);
             } finally {
