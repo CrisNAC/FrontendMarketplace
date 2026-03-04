@@ -1,24 +1,25 @@
 import './App.css'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
-import { MyCommerceLayout } from './layouts/MyCommerceLayout'
-import { MyCommercePage } from './features/commerces/pages/MyCommercePage'
-import MyAccountPage from "./features/clients/pages/MyAccountPage";
-import { VistaComercioLayout } from './layouts/VistaComercioLayout'
-import { CommentsLayout } from './layouts/CommentsLayout'
+/**
+ * Layouts
+ */
+import { MyCommerceLayout } from './layouts/MyCommerceLayout';
+import { VistaComercioLayout } from './layouts/VistaComercioLayout';
+import { CommentsLayout } from './layouts/CommentsLayout';
 
+/**
+ * Pages
+ */
+import { MyCommercePage } from './features/commerces/pages/MyCommercePage';
+import MyAccountPage from "./features/clients/pages/MyAccountPage";
 import { VistaComercioPage } from './features/clients/pages/VistaComercioPage'
 import { ClientOrdersPage } from './features/clients/pages/ClientOrdersPage'
 import { ClientOrderDetailsPage } from './features/clients/pages/ClientOrderDetailsPage'
 import { HomePage } from './features/clients/pages/HomePage'
 import { BusquedaPage } from './features/clients/pages/BusquedaPage'
 import { CommentsPage } from './features/clients/pages/CommentsPage'
-
-<<<<<<< HEAD
 import { CreateCommercePage } from './features/clients/pages/CreateCommercePage'
-
-=======
->>>>>>> e014ea6a66e8da94724a5719f49642c5bf4ae392
 import ComercioVerProducto from './features/commerces/pages/ComercioVerProducto';
 import PriceComparisonPage from './features/clients/pages/PriceComparisonPage';
 import DetalleProducto from './features/commerces/pages/DetalleProducto';
@@ -36,11 +37,8 @@ const HomePageRoutes = () => (
     <p className="mt-4">Navega a <a href="/homepage" className="text-blue-500 underline">Homepage</a></p>
     <p className="mt-4">Navega a <a href="/busqueda" className="text-blue-500 underline">Busqueda</a></p>
     <p className="mt-4">Navega a <a href="/comentarios" className="text-blue-500 underline">Comentarios</a></p>
-<<<<<<< HEAD
     <p className="mt-4">Navega a <a href="/crear-comercio" className="text-blue-500 underline">Crear Comercio</a></p>
 
-=======
->>>>>>> e014ea6a66e8da94724a5719f49642c5bf4ae392
   </div>
 );
 
@@ -49,10 +47,9 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<HomePageRoutes />} />
-
+        
         <Route path="/perfil" element={<MyAccountPage />} />
         <Route path="/comparar" element={<PriceComparisonPage />} />
-<<<<<<< HEAD
         <Route path="/producto-detalle" element={<DetalleProducto />} />
         <Route path="/perfil-comercio" element={
           <VistaComercioLayout>
@@ -60,27 +57,6 @@ function App() {
           </VistaComercioLayout>
         } />
         <Route path="/crear-comercio" element={<CreateCommercePage />} />
-=======
-
-        <Route
-          path="/producto-detalle"
-          element={
-            <VistaComercioLayout>
-              <DetalleProducto />
-            </VistaComercioLayout>
-          }
-        />
-
-        <Route
-          path="/perfil-comercio"
-          element={
-            <VistaComercioLayout>
-              <VistaComercioPage />
-            </VistaComercioLayout>
-          }
-        />
-
->>>>>>> e014ea6a66e8da94724a5719f49642c5bf4ae392
         <Route path="/pedidos" element={<ClientOrdersPage />} />
         <Route path="/pedidos/:orderId" element={<ClientOrderDetailsPage />} />
         <Route path="/homepage" element={<HomePage />} />
