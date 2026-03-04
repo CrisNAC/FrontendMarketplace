@@ -1,12 +1,16 @@
 
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { Spinner } from "../../../components/Spinner" // spinner de carga
+import { set } from "zod"
+import { useRef } from "react"
 
 export const CommerceCreationForm = () => {
 
     const navigate = useNavigate()
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState("")
+    const errorRef = useRef(null) // referencia para el mensaje de error, para hacer scroll hacia el cuando haya un error
 
     const [formData, setFormData] = useState({
         name: "",
@@ -20,11 +24,15 @@ export const CommerceCreationForm = () => {
         logo: null // esto se tiene que ver despues como implementar
     })
 
+
+    // funcion para manejar el cambio en los campos del formulario
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value })
         setError("")
     };
 
+
+    // funcion para manejar el submit del formulario
     const handleSubmit = async (e) => {
         e.preventDefault()
         setLoading(true)
@@ -33,12 +41,16 @@ export const CommerceCreationForm = () => {
         //validacion de campos obligatorios
         if (!formData.name || !formData.email || !formData.phone || !formData.address || !formData.city || !formData.description) {
             setError("Por favor completa todos los campos obligatorios.");
+            setLoading(false)
+            errorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }) // forzar scroll hacia arriba para que el usuario vea el mensaje de error
             return;
         }
 
         const phoneRegex = /^\+595\d{9}$/;
         if (!phoneRegex.test(formData.phone)) {
-            setError("El número de teléfono debe tener el formato +595 XXXXXXXXXX.");
+            setError("El número de teléfono debe tener el formato +595XXXXXXXX.");
+            setLoading(false)
+            errorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }) // forzar scroll hacia arriba para que el usuario vea el mensaje de error
             return;
         }
 
@@ -46,7 +58,7 @@ export const CommerceCreationForm = () => {
 
         try {
             const payload = {
-                fk_user: 5, // esto se tiene que cambiar despues por el id del usuario logueado
+                fk_user: 6, // esto se tiene que cambiar despues por el id del usuario logueado
                 fk_store_category: 1, // esto se tiene que cambiar despues por la categoria seleccionada
                 name: formData.name,
                 email: formData.email,
@@ -69,12 +81,17 @@ export const CommerceCreationForm = () => {
 
             //manejo de errores
             if (!response.ok) {
-                throw new Error(data.error || "Error al crear comercio.");
+                setError(data.message || "Error al crear el comercio");
+                console.error("Error al crear el comercio:", data);
             }
-            navigate("/comercios") // redirigir a la pagina de comercios despues de crear el comercio
+            else {
+                console.log("Comercio creado exitosamente:", data);
+                navigate("/comercio") // redirigir a la pagina de comercios despues de crear el comercio
+            }
         }
         catch (error) {
             setError(error.message);
+            setLoading(false)
         }
         finally {
             setLoading(false)
@@ -85,7 +102,7 @@ export const CommerceCreationForm = () => {
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-4">
 
             {error && (
-                <div className="bg-red-50 text-red-600 p-3 rounded border border-red-200 text-sm">
+                <div ref={errorRef} className="bg-red-50 text-red-600 p-3 rounded border border-red-200 text-sm">
                     {error}
                 </div>
             )}
@@ -125,7 +142,7 @@ export const CommerceCreationForm = () => {
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
-                    placeholder="+595 XXXXXXXXXX"
+                    placeholder="+595XXXXXXXX"
                     maxLength={20}
                     className="w-full px-3 py-2 border border-green-100 rounded-md bg-green-50/30 focus:outline-none focus:ring-1 focus:ring-[#5B7B6D] focus:border-[#5B7B6D]"
                 />
@@ -228,8 +245,10 @@ export const CommerceCreationForm = () => {
             </div>
             <p className="text-xs text-gray-400 mt-1">Formato: 500px x 500px 72ppi</p>
             <div className="grid grid-cols-2 gap-4">
-                <button type="button" onClick={() => navigate("/comercios")} className="bg-white text-gray-800 px-4 py-2 rounded border border-gray-800 hover:!bg-green-100">Cancelar</button>
-                <button className="bg-[#5B7B6D] text-white px-4 py-2 rounded hover:bg-green-800">Registrar Comercio</button>
+                <button type="button" onClick={() => navigate("/homepage")} className="bg-white text-gray-800 px-4 py-2 rounded border border-gray-800 hover:!bg-green-100">Cancelar</button>
+                <button className="bg-[#5B7B6D] text-white px-4 py-2 rounded hover:bg-green-800 flex items-center justify-center">
+                    {loading ? <Spinner size="5" color="text-white" /> : "Registrar Comercio"}
+                </button>
             </div>
         </form>
     )
