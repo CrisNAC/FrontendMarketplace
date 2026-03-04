@@ -24,6 +24,7 @@ import { CreateCommercePage } from './features/clients/pages/CreateCommercePage'
 import ComercioVerProducto from './features/commerces/pages/ComercioVerProducto';
 import PriceComparisonPage from './features/clients/pages/PriceComparisonPage';
 import DetalleProducto from './features/commerces/pages/DetalleProducto';
+import CreateProductPage from './features/commerces/pages/CreateProductPage';
 
 const HomePageRoutes = () => (
   <div className="p-10 text-center">
@@ -34,6 +35,7 @@ const HomePageRoutes = () => (
     <p className="mt-4">Navega a <a href="/comercio" className="text-blue-500 underline">Mi Comercio</a></p>
     <p className="mt-4">Navega a <a href="/perfil-comercio" className="text-blue-500 underline">Perfil comercio</a></p>
     <p className="mt-4">Navega a <a href="/comercio-producto" className="text-blue-500 underline">Ver Producto Comercio</a></p>
+    <p className="mt-4">Navega a <a href="/comercio/productos/nuevo" className="text-blue-500 underline">Crear Producto Comercio</a></p>
     <p className="mt-4">Navega a <a href="/pedidos" className="text-blue-500 underline">Ver pedidos</a></p>
     <p className="mt-4">Navega a <a href="/homepage" className="text-blue-500 underline">Homepage</a></p>
     <p className="mt-4">Navega a <a href="/busqueda" className="text-blue-500 underline">Busqueda</a></p>
@@ -110,6 +112,15 @@ function App() {
           }
         />
 
+        <Route
+          path="/comercio/productos/nuevo"
+          element={
+            <MyCommerceLayout>
+              <CreateProductPage />
+            </MyCommerceLayout>
+          }
+        />
+          
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
