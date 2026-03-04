@@ -74,7 +74,7 @@ export const BusquedaPage = ({ query = "Celular" }: Props) => {
             <div style={{ display: "flex", flexDirection: "row", alignItems: "center", marginBottom: "20px", marginLeft: "25px", marginTop: "16px", gap: "4px" }}>
                 <ArrowLeft size={24} style={{ cursor: "pointer", color: "#6b7280" }} />
                 <span style={{ color: "#000000", fontSize: "25px", fontWeight: "bold" }}>
-                    Resultado de Busqueda para: {query}
+                    Resultado de Búsqueda para: {query}
                 </span>
             </div>
 

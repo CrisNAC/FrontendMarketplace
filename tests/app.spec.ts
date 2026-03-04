@@ -94,7 +94,7 @@ test.describe('Rutas y navegación', () => {
   test('debe poder navegar desde inicio a /Pedidos y volver', async ({ page }) => {
     await page.goto('/');
     await page.getByRole('link', { name: 'Ver pedidos' }).click();
-    await expect(page).toHaveURL('/Pedidos');
+    await expect(page).toHaveURL('/pedidos');
     await expect(page.getByRole('heading', { name: 'Mis Pedidos' })).toBeVisible();
 
     await page.goBack();

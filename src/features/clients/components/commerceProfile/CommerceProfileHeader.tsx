@@ -140,7 +140,19 @@ export const CommerceProfileHeader = ({
                 minWidth: "260px",
                 boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
             }}>
-                <span style={{ fontSize: "14px", color: "#9ca3af" }}>Buscar en {name}</span>
+                <input
+                    type="text"
+                    placeholder={`Buscar en ${name}`}
+                    style={{
+                        border: "none",
+                        outline: "none",
+                        fontSize: "14px",
+                        color: "#111827",
+                        backgroundColor: "transparent",
+                        flex: 1,
+                        minWidth: 0,
+                    }}
+                />
                 <div style={{
                     width: "40px",
                     height: "40px",

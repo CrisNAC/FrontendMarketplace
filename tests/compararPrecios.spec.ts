@@ -8,21 +8,22 @@ test.describe('Página de comparar precios', () => {
     await page.goto('/comparar');
   });
 
+  test('debe mostrar el navbar con el logo Open Market', async ({ page }) => {
+    const omNavbar = page.locator('header').getByText('Open Market');
+    await expect(omNavbar).toBeVisible();
+  });
+  
   test('debe mostrar el título del producto', async ({ page }) => {
     await expect(
       page.getByRole('heading', { name: /iPhone 17 Pro/i })
     ).toBeVisible();
   });
 
-  test('debe mostrar el navbar con el logo Open Market', async ({ page }) => {
-    await expect(page.getByText('Open Market')).toBeVisible();
-  });
-
   test('debe mostrar la barra de categorías', async ({ page }) => {
-    await expect(page.getByText('Tecnologia')).toBeVisible();
+    await expect(page.getByText('Tecnología')).toBeVisible();
     await expect(page.getByText('Moda')).toBeVisible();
     await expect(page.getByText('Coleccionables y Arte')).toBeVisible();
-    await expect(page.getByText('Hogar y Jardin')).toBeVisible();
+    await expect(page.getByText('Hogar y Jardín')).toBeVisible();
     await expect(page.getByText('Salud y Belleza')).toBeVisible();
     await expect(page.getByText('Entretenimiento')).toBeVisible();
     await expect(page.getByText('Deportes')).toBeVisible();
@@ -31,7 +32,7 @@ test.describe('Página de comparar precios', () => {
   });
 
   test('debe mostrar el rango de precios', async ({ page }) => {
-    await expect(page.getByText(/Rango de precios/i)).toBeVisible();
+    await expect(page.getByText('Rango de precios')).toBeVisible();
   });
 
   test('debe mostrar las ofertas encontradas', async ({ page }) => {
@@ -45,7 +46,7 @@ test.describe('Página de comparar precios', () => {
   });
 
   test('debe mostrar botones "Ver mas" en las cards de oferta', async ({ page }) => {
-    const verMasButtons = page.getByRole('button', { name: /Ver mas/i });
+    const verMasButtons = page.getByRole('button', { name: /Ver más/i });
     await expect(verMasButtons.first()).toBeVisible();
   });
 

@@ -12,7 +12,7 @@ type Category = {
 
 const CATEGORIES: Category[] = [
     {
-        name: "Tecnologia",
+        name: "Tecnología",
         subcategories: [
             { name: "Celulares y Tabletas", count: 25 },
             { name: "Relojes inteligentes", count: 1 },
@@ -24,7 +24,7 @@ const CATEGORIES: Category[] = [
     },
     { name: "Moda" },
     { name: "Coleccionables y Arte" },
-    { name: "Hogar y Jardin" },
+    { name: "Hogar y Jardín" },
     { name: "Salud y Belleza" },
     { name: "Entretenimiento" },
     { name: "Deportes" },
@@ -36,7 +36,7 @@ type Props = {
 };
 
 export const SearchFilterSidebar = ({ onPriceApply }: Props) => {
-    const [expandedCats, setExpandedCats] = useState<string[]>(["Tecnologia"]);
+    const [expandedCats, setExpandedCats] = useState<string[]>(["Tecnología"]);
     const [checkedSubs, setCheckedSubs] = useState<string[]>(["Celulares y Tabletas"]);
     const [minPrice, setMinPrice] = useState<string>("0");
     const [maxPrice, setMaxPrice] = useState<string>("10000000");
@@ -70,7 +70,7 @@ export const SearchFilterSidebar = ({ onPriceApply }: Props) => {
 
             {/* Category title */}
             <span style={{ color: "#000", fontSize: "18px", fontWeight: "bold", marginBottom: "12px", marginLeft: "11px" }}>
-                Categoria
+                Categoría
             </span>
 
             {/* Category list */}

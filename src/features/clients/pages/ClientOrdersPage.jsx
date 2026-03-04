@@ -10,21 +10,21 @@ export const ClientOrdersPage = () => {
   const orders = [
     {
       id: "ORD-2024-001543",
-      total: 1388.96,
+      total: '61.200',
       estado: 'Enviado',
       fecha: '15 de junio del 2024',
       cantidad: 4
     },
     {
       id: "ORD-2024-001502",
-      total: 299.99,
+      total: '314.000',
       estado: 'Entregado',
       fecha: '8 de junio del 2024',
       cantidad: 1
     },
     {
       id: "ORD-2024-001489",
-      total: 85.50,
+      total: '155.200',
       estado: 'Cancelado',
       fecha: '1 de junio del 2024',
       cantidad: 2

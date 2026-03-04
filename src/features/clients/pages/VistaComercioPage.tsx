@@ -69,7 +69,7 @@ export const VistaComercioPage = () => {
             {/* Commerce profile banner */}
             <CommerceProfileHeader
                 name="Nissei"
-                category="Produtos varios"
+                category="Productos varios"
                 isOpen={true}
                 rating={4.7}
                 reviews={542}

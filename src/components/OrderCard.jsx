@@ -59,7 +59,7 @@ export const OrderCard = ({ order, onClick }) => {
       {/* Cantidad del producto y el total */}
       <div className="text-right me-2 shrink-0">
         <p className="text-sm mb-1 text-gray-600">{order.cantidad} producto(s)</p>
-        <p className="text-lg font-bold">${order.total}</p>
+        <p className="text-lg font-bold">Gs. {order.total}</p>
       </div>
     </div>
   );
