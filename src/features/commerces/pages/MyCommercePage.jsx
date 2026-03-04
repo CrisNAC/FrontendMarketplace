@@ -14,7 +14,7 @@ export const MyCommercePage = () => {
     useEffect(() => {
         const fetchStore = async () => {
             try {
-                const res = await fetch(`http://localhost:3000/stores/${ID_STORE}`);
+                const res = await fetch(`http://localhost:3000/api/commerces/${ID_STORE}`);
                 if (!res.ok) throw new Error("Error al obtener el comercio");
                 const data = await res.json();
                 setStore(data);
