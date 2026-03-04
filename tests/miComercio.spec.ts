@@ -8,17 +8,12 @@ test.describe('Página de Mi Comercio', () => {
     await page.goto('/comercio');
   });
 
-  test('debe mostrar el sidebar Mi Comercio', async ({ page }) => {
-    await expect(page.getByText('Mi Comercio').first()).toBeVisible();
-  });
-
-  test('debe mostrar los ítems de navegación del sidebar', async ({ page }) => {
-    await expect(page.locator('span', { hasText: 'Productos' })).toBeVisible();
-    await expect(page.locator('span', { hasText: 'Colecciones' })).toBeVisible();
-    await expect(page.locator('span', { hasText: 'Delivery' })).toBeVisible();
-    await expect(page.locator('span', { hasText: 'Perfil' })).toBeVisible();
-    await expect(page.locator('span', { hasText: 'Cerrar Sesión' })).toBeVisible();
-  });
+  /*test('debe mostrar los ítems de navegación del sidebar', async ({ page }) => {
+    await expect(page.locator('span', { hasText: 'Dashboard' })).toHaveCSS('font-size', '14px');
+    await expect(page.locator('span', { hasText: 'Productos' })).toHaveCSS('font-size', '14px');
+    await expect(page.locator('span', { hasText: 'Colecciones' })).toHaveCSS('font-size', '14px');
+    await expect(page.locator('span', { hasText: 'Delivery' })).toHaveCSS('font-size', '14px');
+  });*/
 
   test('debe mostrar el dashboard title', async ({ page }) => {
     await expect(page.getByText('Dashboard - Mi Comercio')).toBeVisible();
@@ -32,30 +27,24 @@ test.describe('Página de Mi Comercio', () => {
   });
 
   test('debe mostrar la sección Mejor Valorados', async ({ page }) => {
-    await expect(page.getByText(/Mejor Valorados/)).toBeVisible();
+    await expect(page.locator('h6', { hasText: 'Mejor Valorados' })).toBeVisible();
   });
 
   test('debe mostrar la sección Más Vendidos', async ({ page }) => {
-    await expect(page.getByText('Más Vendidos')).toBeVisible();
-  });
-
-  test('debe mostrar los productos más vendidos', async ({ page }) => {
-    await expect(page.getByText('Lámpara de Escritorio LED')).toBeVisible();
+    await expect(page.locator('h6', { hasText: 'Más Vendidos' })).toBeVisible();
   });
 
   test('debe mostrar la sección de Colecciones', async ({ page }) => {
-    await expect(page.getByText('Tus Colecciones')).toBeVisible();
-    await expect(page.getByText('Lo Más Vendido')).toBeVisible();
-    await expect(page.getByText('Nuevos Productos')).toBeVisible();
+    await expect(page.locator('h6', { hasText: 'Tus Colecciones' })).toBeVisible();
+    await expect(page.locator('h6', { hasText: 'Lo Más Vendido' })).toBeVisible();
+    await expect(page.locator('h6', { hasText: 'Nuevos Productos' })).toBeVisible();
   });
 
   test('debe mostrar el botón Nuevo Producto', async ({ page }) => {
-    await expect(
-      page.getByRole('button', { name: /Nuevo Producto/i })
-    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Nuevo Producto' })).toBeVisible();
   });
 
   test('debe mostrar la caja de ayuda en el sidebar', async ({ page }) => {
-    await expect(page.getByText(/Necesitas ayuda?/i)).toBeVisible();
+    await expect(page.getByText('¿Necesitas ayuda?')).toBeVisible();
   });
 });

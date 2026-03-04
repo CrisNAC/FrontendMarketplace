@@ -9,27 +9,19 @@ test.describe('Página de Ver Producto (Comercio)', () => {
   });
 
   test('debe mostrar el nombre del producto en el título', async ({ page }) => {
-    await expect(
-      page.getByRole('heading', { name: /Silla Ergonómica Oficina/i })
-    ).toBeVisible();
+    await expect(page.locator('h2', { hasText: 'Silla Ergonómica Oficina' })).toBeVisible();
   });
 
   test('debe mostrar el subtítulo de la vista', async ({ page }) => {
-    await expect(
-      page.getByText(/Vista detallada del producto/i)
-    ).toBeVisible();
+    await expect(page.getByText('Vista detallada del producto')).toBeVisible();
   });
 
   test('debe mostrar el botón Volver', async ({ page }) => {
-    await expect(
-      page.getByRole('button', { name: 'Volver' })
-    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Volver' })).toBeVisible();
   });
 
   test('debe mostrar el botón Editar Producto', async ({ page }) => {
-    await expect(
-      page.getByRole('button', { name: /Editar Producto/i })
-    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Editar Producto' })).toBeVisible();
   });
 
   test('debe mostrar la imagen del producto', async ({ page }) => {
@@ -50,14 +42,14 @@ test.describe('Página de Ver Producto (Comercio)', () => {
   });
 
   test('debe mostrar la calificación del producto', async ({ page }) => {
-    await expect(page.getByText('4.7')).toBeVisible();
+    await expect(page.getByText('4.7').first()).toBeVisible();
   });
 
   test('debe mostrar las etiquetas del producto', async ({ page }) => {
-    await expect(page.getByText('ergonomica')).toBeVisible();
-    await expect(page.getByText('oficina')).toBeVisible();
-    await expect(page.getByText('silla')).toBeVisible();
-    await expect(page.getByText('trabajo')).toBeVisible();
+    await expect(page.locator('span', { hasText: 'ergonómica' })).toBeVisible();
+    await expect(page.locator('span', { hasText: 'oficina' })).toBeVisible();
+    await expect(page.locator('span', { hasText: 'silla' })).toBeVisible();
+    await expect(page.locator('span', { hasText: 'trabajo' })).toBeVisible();
   });
 
   test('debe mostrar la sección de Calificaciones y Comentarios', async ({ page }) => {

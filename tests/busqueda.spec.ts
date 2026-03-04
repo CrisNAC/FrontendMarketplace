@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 // =============================================
-// PAGINA DE BUSQUEDA (/busqueda)
+// PAGINA DE BUSQUEDA
 // =============================================
 test.describe('Página de Búsqueda', () => {
   test.beforeEach(async ({ page }) => {
@@ -14,15 +14,15 @@ test.describe('Página de Búsqueda', () => {
   });
 
   test('debe mostrar la barra de categorías', async ({ page }) => {
-    await expect(page.getByText('Tecnología')).toBeVisible();
-    await expect(page.getByText('Moda')).toBeVisible();
-    await expect(page.getByText('Coleccionables y Arte')).toBeVisible();
-    await expect(page.getByText('Hogar y Jardín')).toBeVisible();
-    await expect(page.getByText('Salud y Belleza')).toBeVisible();
-    await expect(page.getByText('Entretenimiento')).toBeVisible();
-    await expect(page.getByText('Deportes')).toBeVisible();
-    await expect(page.getByText('Equipo Industrial')).toBeVisible();
-    await expect(page.getByText('Ofertas!!')).toBeVisible();
+    await expect(page.locator('a', { hasText: 'Tecnología' })).toBeVisible();
+    await expect(page.locator('a', { hasText: 'Moda' })).toBeVisible();
+    await expect(page.locator('a', { hasText: 'Coleccionables y Arte' })).toBeVisible();
+    await expect(page.locator('a', { hasText: 'Hogar y Jardín' })).toBeVisible();
+    await expect(page.locator('a', { hasText: 'Salud y Belleza' })).toBeVisible();
+    await expect(page.locator('a', { hasText: 'Entretenimiento' })).toBeVisible();
+    await expect(page.locator('a', { hasText: 'Deportes' })).toBeVisible();
+    await expect(page.locator('a', { hasText: 'Equipo Industrial' })).toBeVisible();
+    await expect(page.locator('a', { hasText: 'Ofertas!!' })).toBeVisible();
   });
 
   test('debe mostrar el título de resultado de búsqueda', async ({ page }) => {
@@ -38,7 +38,7 @@ test.describe('Página de Búsqueda', () => {
   });
 
   test('debe mostrar los precios de los productos', async ({ page }) => {
-    await expect(page.getByText('Gs. ')).toBeVisible();
+    await expect(page.getByText('Gs. ').first()).toBeVisible();
   });
 
   test('debe mostrar imágenes de los productos', async ({ page }) => {

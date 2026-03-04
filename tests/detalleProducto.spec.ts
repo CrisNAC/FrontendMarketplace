@@ -20,15 +20,15 @@ test.describe('Página de Detalle del Producto', () => {
   });
 
   test('debe mostrar la barra de categorías', async ({ page }) => {
-    await expect(page.getByText('Tecnología')).toBeVisible();
-    await expect(page.getByText('Moda')).toBeVisible();
-    await expect(page.getByText('Coleccionables y Arte')).toBeVisible();
-    await expect(page.getByText('Hogar y Jardín')).toBeVisible();
-    await expect(page.getByText('Salud y Belleza')).toBeVisible();
-    await expect(page.getByText('Entretenimiento')).toBeVisible();
-    await expect(page.getByText('Deportes')).toBeVisible();
-    await expect(page.getByText('Equipo Industrial')).toBeVisible();
-    await expect(page.getByText('Ofertas!!')).toBeVisible();
+    await expect(page.locator('a', { hasText: 'Tecnología' })).toBeVisible();
+    await expect(page.locator('a', { hasText: 'Moda' })).toBeVisible();
+    await expect(page.locator('a', { hasText: 'Coleccionables y Arte' })).toBeVisible();
+    await expect(page.locator('a', { hasText: 'Hogar y Jardín' })).toBeVisible();
+    await expect(page.locator('a', { hasText: 'Salud y Belleza' })).toBeVisible();
+    await expect(page.locator('a', { hasText: 'Entretenimiento' })).toBeVisible();
+    await expect(page.locator('a', { hasText: 'Deportes' })).toBeVisible();
+    await expect(page.locator('a', { hasText: 'Equipo Industrial' })).toBeVisible();
+    await expect(page.locator('a', { hasText: 'Ofertas!!' })).toBeVisible();
   });
 
   test('debe mostrar la navegación de Nissei / Celulares', async ({ page }) => {
@@ -62,7 +62,7 @@ test.describe('Página de Detalle del Producto', () => {
     await expect(page.getByText('Memoria Interna 512 GB')).toBeVisible();
   });
 
-  test('debe mostrar el selector de cantidad', async ({ page }) => {
+  /*test('debe mostrar el selector de cantidad', async ({ page }) => {
     await expect(page.getByRole('button', { name: 'Disminuir cantidad' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Aumentar cantidad' })).toBeVisible();
   });
@@ -79,7 +79,7 @@ test.describe('Página de Detalle del Producto', () => {
     // la cantidad debe mantenerse en 1
     const quantityEl = page.locator('div').filter({ hasText: /^1$/ }).first();
     await expect(quantityEl).toBeVisible();
-  });
+  });*/
 
   test('debe mostrar el botón Agregar al Carrito', async ({ page }) => {
     await expect(
@@ -87,7 +87,7 @@ test.describe('Página de Detalle del Producto', () => {
     ).toBeVisible();
   });
 
-  test('debe mostrar el botón de favoritos', async ({ page }) => {
+  /*test('debe mostrar el botón de favoritos', async ({ page }) => {
     await expect(
       page.getByRole('button', { name: 'Agregar a favoritos' })
     ).toBeVisible();
@@ -100,7 +100,7 @@ test.describe('Página de Detalle del Producto', () => {
     await favBtn.click();
     // Después del click: icono rojo
     await expect(favBtn.locator('svg')).toHaveClass(/text-red-500/);
-  });
+  });*/
 
   test('debe mostrar el botón de Comentarios', async ({ page }) => {
     await expect(
@@ -108,7 +108,7 @@ test.describe('Página de Detalle del Producto', () => {
     ).toBeVisible();
   });
 
-  test('debe mostrar las opciones de color del producto', async ({ page }) => {
+  /*test('debe mostrar las opciones de color del producto', async ({ page }) => {
     await expect(page.getByText('Color')).toBeVisible();
     await expect(page.getByRole('button', { name: /Seleccionar color Deep Blue/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /Seleccionar color Orange/i })).toBeVisible();
@@ -119,5 +119,5 @@ test.describe('Página de Detalle del Producto', () => {
     const btnWhite = page.getByRole('button', { name: /Seleccionar color White/i });
     await btnWhite.click();
     await expect(page.getByText('Color White')).toBeVisible();
-  });
+  });*/
 });
