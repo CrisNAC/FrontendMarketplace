@@ -12,7 +12,7 @@ const Navbar = () => {
       <div className="bg-[#A4C3B2] flex items-center justify-between px-[30px] py-[10px]">
 
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-[6px] !no-underline">
+        <Link to="/homepage" className="flex items-center gap-[6px] !no-underline">
           <span>
             <img src={logo} alt="Logo" className="w-[30px] h-auto" />
           </span>
@@ -24,13 +24,13 @@ const Navbar = () => {
         {/* Main links */}
         <nav className="flex gap-[20px] font-normal text-[14px]">
           <Link 
-            to="/" 
+            to="/homepage"
             className="!no-underline !text-[#485B53] hover:!text-[#2e6b4f] transition-colors"
           >
             Inicio
           </Link>
           <Link 
-            to="/productos" 
+            to="/busqueda" 
             className="!no-underline !text-[#485B53] hover:!text-[#2e6b4f] transition-colors"
           >
             Productos
