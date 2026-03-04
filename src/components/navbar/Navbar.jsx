@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { ShoppingCart, User, Search, X } from "lucide-react";
 import logo from "/src/assets/feather.png";
 import { Link } from "react-router-dom";
 
 const Navbar = () => {
+  const [search, setSearch] = useState("");
   return (
     <header className="w-full border-b border-gray-200 shadow-sm font-sans">
 
@@ -48,8 +50,10 @@ const Navbar = () => {
               type="text"
               placeholder="Buscar"
               className="flex-1 border-none outline-none text-[13px]"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
             />
-            <X className="text-gray-500 cursor-pointer mr-[6px]" size={16} />
+            <X className="text-gray-500 cursor-pointer mr-[6px]" size={16} onClick={() => setSearch("")} />
           </div>
 
          <button

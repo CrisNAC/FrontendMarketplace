@@ -20,6 +20,7 @@ import { HomePage } from './features/clients/pages/HomePage'
 import { BusquedaPage } from './features/clients/pages/BusquedaPage'
 import { CommentsPage } from './features/clients/pages/CommentsPage'
 import { CreateCommercePage } from './features/clients/pages/CreateCommercePage'
+
 import ComercioVerProducto from './features/commerces/pages/ComercioVerProducto';
 import PriceComparisonPage from './features/clients/pages/PriceComparisonPage';
 import DetalleProducto from './features/commerces/pages/DetalleProducto';
@@ -57,6 +58,25 @@ function App() {
           </VistaComercioLayout>
         } />
         <Route path="/crear-comercio" element={<CreateCommercePage />} />
+
+        <Route
+          path="/producto-detalle"
+          element={
+            <VistaComercioLayout>
+              <DetalleProducto />
+            </VistaComercioLayout>
+          }
+        />
+
+        <Route
+          path="/perfil-comercio"
+          element={
+            <VistaComercioLayout>
+              <VistaComercioPage />
+            </VistaComercioLayout>
+          }
+        />
+
         <Route path="/pedidos" element={<ClientOrdersPage />} />
         <Route path="/pedidos/:orderId" element={<ClientOrderDetailsPage />} />
         <Route path="/homepage" element={<HomePage />} />
