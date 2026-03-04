@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
+import { Package, Star, MessageSquare, Layers } from "lucide-react";
 import { Topbar } from "../components/dashboard/Topbar";
 import { StatCard } from "../components/dashboard/StatCard";
 import { BestRatedSection } from "../components/dashboard/BestRatedSection";
 import { MostSoldSection } from "../components/dashboard/MostSoldSection";
 import { CollectionsSection } from "../components/dashboard/CollectionsSection";
 
-const ID_STORE = 1; // Hardcodeado hasta tener auth
+const ID_STORE = 1;
 
 export const MyCommercePage = () => {
     const [store, setStore] = useState(null);
@@ -28,37 +29,24 @@ export const MyCommercePage = () => {
         fetchStore();
     }, []);
 
-    if (loading) return <p className="text-muted p-4">Cargando...</p>;
+    if (loading) return <p style={{ color: "#6b7280", padding: "16px" }}>Cargando...</p>;
 
     return (
         <>
             <Topbar storeName={store?.name} />
 
-            <div className="row g-4 mb-4">
-                <div className="col-md-3">
-                    <StatCard
-                        title="Productos Activos"
-                        value={store?.products?.length ?? 0}
-                    />
-                </div>
-                <div className="col-md-3">
-                    <StatCard title="Calificación Promedio" value="—" />
-                </div>
-                <div className="col-md-3">
-                    <StatCard title="Total Reseñas" value="—" />
-                </div>
-                <div className="col-md-3">
-                    <StatCard title="Colecciones Activas" value="—" />
-                </div>
+            {/* Estadísticas */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "24px" }}>
+                <StatCard title="Productos Activos"     value={store?.products?.length ?? 0} icon={Package}       iconColor="#16a34a" />
+                <StatCard title="Calificación Promedio" value="—"                            icon={Star}          iconColor="#f59e0b" />
+                <StatCard title="Total Reseñas"         value="—"                            icon={MessageSquare} iconColor="#3b82f6" />
+                <StatCard title="Colecciones Activas"   value="—"                            icon={Layers}        iconColor="#6B9080" />
             </div>
 
-            <div className="row g-4 mb-4">
-                <div className="col-md-6">
-                    <BestRatedSection />
-                </div>
-                <div className="col-md-6">
-                    <MostSoldSection products={store?.products} />
-                </div>
+            {/* Secciones */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "24px" }}>
+                <BestRatedSection />
+                <MostSoldSection products={store?.products} />
             </div>
 
             <CollectionsSection />
