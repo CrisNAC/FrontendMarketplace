@@ -85,6 +85,7 @@ export const AddReviewModal = ({ isOpen, onClose, onSubmit }) => {
           <button 
             type="submit" 
             className="px-5 py-3 bg-teal-600 text-white rounded font-semibold cursor-pointer transition-all hover:bg-teal-700 active:translate-y-0.5 mt-2"
+            style={{ background: '#6B9080' }}
           >
             Guardar
           </button>

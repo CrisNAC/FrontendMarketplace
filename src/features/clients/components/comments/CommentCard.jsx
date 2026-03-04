@@ -30,7 +30,7 @@ export const CommentCard = ({
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4 transition-shadow hover:shadow-sm">
+    <div className="bg-white rounded-3xl p-4 mb-4 transition-shadow hover:shadow-sm">
       {/* Header con usuario y estrellas en una línea */}
       <div className="flex items-center gap-2.5 mb-2">
         <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-semibold text-gray-500 flex-shrink-0">
