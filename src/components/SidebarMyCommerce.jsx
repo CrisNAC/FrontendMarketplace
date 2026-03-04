@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 
 import {
@@ -15,16 +15,28 @@ import {
 } from "lucide-react";
 
 const NAV_ITEMS = [
-    { label: "Dashboard",     icon: LayoutDashboard },
-    { label: "Productos",     icon: Package },
-    { label: "Colecciones",   icon: Layers },
-    { label: "Delivery",      icon: Truck },
-    { label: "Mi Comercio",   icon: Store },
-    { label: "Cerrar Sesión", icon: LogOut },
+    { label: "Dashboard",     icon: LayoutDashboard, route: "/comercio" },
+    { label: "Productos",     icon: Package,         route: "/comercio-producto" },
+    { label: "Colecciones",   icon: Layers,          route: "/colecciones" },
+    { label: "Delivery",      icon: Truck,           route: "/delivery" },
+    { label: "Mi Comercio",   icon: Store,           route: "/mi-comercio" },
+    // { label: "Cerrar Sesión", icon: LogOut },
 ];
 
 export const SidebarMyCommerce = ({ collapsed, onToggle }) => {
-    const [active, setActive] = useState("Dashboard");
+    // const [active, setActive] = useState("Dashboard"); *PROBLEMA: El estado se reinicia cuando el componente se remonta.*
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    // Determina el activo basándose en la URL
+    const active = NAV_ITEMS.find(
+        item => item.route === location.pathname
+    )?.label || "Dashboard";
+
+    const handleNavigation = (label, route) => {
+        // setActive(label); *SE PIERDE AL NAVEGAR*
+        navigate(route);
+    };
 
     const handleLogout = async () => {
         try {
@@ -71,12 +83,12 @@ export const SidebarMyCommerce = ({ collapsed, onToggle }) => {
 
             {/* Nav items */}
             <nav style={{ display: "flex", flexDirection: "column", gap: "4px", flex: 1 }}>
-                {NAV_ITEMS.map(({ label, icon: Icon }) => {
+                {NAV_ITEMS.map(({ label, icon: Icon, route }) => {
                     const isActive = active === label;
                     return (
                         <div
                             key={label}
-                            onClick={() => setActive(label)}
+                            onClick={() => handleNavigation(label, route)}
                             title={collapsed ? label : undefined}
                             style={{
                                 display: "flex",

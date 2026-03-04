@@ -1,6 +1,13 @@
 import { Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export const Topbar = ({ storeName = "Mi Comercio" }) => {
+    const navigate = useNavigate();
+    
+        const handleCreateProduct = () => {
+            navigate('/comercio/productos/nuevo');
+        };
+
     return (
         <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "24px" }}>
             <div>
@@ -11,7 +18,9 @@ export const Topbar = ({ storeName = "Mi Comercio" }) => {
                     Gestiona tu catálogo y mantente al día con el rendimiento de tus productos
                 </p>
             </div>
-            <button style={{
+            <button 
+            onClick={() => handleCreateProduct()}
+            style={{
                 display: "flex", flexDirection: "row", alignItems: "center", gap: "6px",
                 backgroundColor: "var(--primary-dark)", color: "white",
                 borderRadius: "8px", border: "none", padding: "8px 16px",
