@@ -1,4 +1,5 @@
-import { Phone, Mail, MapPin, Search } from "lucide-react";
+import { useState } from "react";
+import { Phone, Mail, MapPin, Search, X } from "lucide-react";
 
 type Props = {
     name: string;
@@ -19,6 +20,7 @@ export const CommerceProfileHeader = ({
     closesAt,
     logoUrl,
 }: Props) => {
+    const [search, setSearch] = useState("");
     return (
         <div style={{
             backgroundColor: "rgba(159, 7, 18, 0.12)",
@@ -143,6 +145,8 @@ export const CommerceProfileHeader = ({
                 <input
                     type="text"
                     placeholder={`Buscar en ${name}`}
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
                     style={{
                         border: "none",
                         outline: "none",
@@ -153,6 +157,13 @@ export const CommerceProfileHeader = ({
                         minWidth: 0,
                     }}
                 />
+                {search && (
+                    <X
+                        size={16}
+                        style={{ color: "#9ca3af", cursor: "pointer", marginRight: "8px", flexShrink: 0 }}
+                        onClick={() => setSearch("")}
+                    />
+                )}
                 <div style={{
                     width: "40px",
                     height: "40px",
