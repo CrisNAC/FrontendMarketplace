@@ -1,4 +1,5 @@
 import "../../styles/commerces.css";
+import { Link } from "react-router-dom";
 
 export const Topbar = () => {
     return (
@@ -12,9 +13,9 @@ export const Topbar = () => {
                 </p>
             </div>
 
-            <button className="btn new-product-btn px-4">
-                + Nuevo Producto
-            </button>
+            <Link to="/comercio/productos/nuevo" className="btn new-product-btn px-4">
+                Crear Producto
+            </Link>
         </div>
     );
 };

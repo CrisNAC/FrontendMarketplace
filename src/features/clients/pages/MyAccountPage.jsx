@@ -1,25 +1,6 @@
 import { Edit2 } from "lucide-react";
-import { MarketplaceNavbar } from "../../../components/navbar/MarketplaceNavbar";
-import { CategoriesBar } from "../../../components/navbar/CategoriesBar";
-
-const AccountSidebar = () => {
-    return (
-        <div className="bg-[#c0cec2] rounded-md py-6 px-4 shadow-sm h-fit">
-            <ul className="space-y-5 text-[17px] text-[#2d4030]">
-                <li className="font-bold cursor-pointer">Mi Cuenta</li>
-                <li className="font-semibold cursor-pointer hover:text-black transition-colors">
-                    Mis pedidos
-                </li>
-                <li className="font-semibold cursor-pointer hover:text-black transition-colors">
-                    Mi lista de favoritos
-                </li>
-                <li className="font-semibold cursor-pointer hover:text-black transition-colors">
-                    Libreta de direcciones
-                </li>
-            </ul>
-        </div>
-    );
-};
+import Navbar from "../../../components/navbar/Navbar";
+import { SidebarClientProfile } from "../../../components/SidebarClientProfile";
 
 const AccountSectionHeader = ({ title, rightContent }) => {
     return (
@@ -49,15 +30,14 @@ const AccountInfoCard = ({ title, children, footer }) => {
 const MyAccountPage = () => {
     return (
         <div className="min-h-screen flex flex-col">
-            <MarketplaceNavbar />
-            <CategoriesBar />
+            <Navbar />
 
             <main className="max-w-[1400px] mx-auto w-full px-6 py-10">
                 <h1 className="text-[28px] font-bold text-[#2d4030] mb-8">Mi Cuenta</h1>
 
                 <div className="flex flex-col md:flex-row gap-8 items-start">
                     <aside className="w-full md:w-[280px] shrink-0">
-                        <AccountSidebar />
+                        <SidebarClientProfile />
                     </aside>
 
                     <div className="flex-1 w-full space-y-10">
