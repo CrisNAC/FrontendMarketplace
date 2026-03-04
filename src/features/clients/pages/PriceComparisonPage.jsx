@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import Navbar from '../../../components/navbar/Navbar';
 
 // --- Importación de imágenes ---
 import iphoneImg from "../../../assets/iphone.png";
@@ -15,7 +16,7 @@ export default function PriceComparisonPage() {
 
     return (
         <div className="min-h-screen flex flex-col">
-
+            <Navbar />
             <main className="max-w-7xl mx-auto w-full px-6 py-6">
                 {/* Titulo */}
                 <div className="flex items-center gap-4 mb-8">
