@@ -31,7 +31,7 @@ const validateForm = (formData, selectedTags) => {
   }
 
   if (!formData.description.trim()) {
-    errors.description = "La descripcion es obligatoria.";
+    errors.description = "La descripción es obligatoria.";
   }
 
   if (formData.price === "" || formData.price === null) {
@@ -44,7 +44,7 @@ const validateForm = (formData, selectedTags) => {
   }
 
   if (!formData.categoryId) {
-    errors.categoryId = "Selecciona una categoria.";
+    errors.categoryId = "Selecciona una categoría.";
   }
 
   if (formData.quantity === "" || formData.quantity === null) {
@@ -56,12 +56,12 @@ const validateForm = (formData, selectedTags) => {
       Number.isNaN(numericQuantity) ||
       numericQuantity < 0
     ) {
-      errors.quantity = "El stock debe ser un numero entero mayor o igual a 0.";
+      errors.quantity = "El stock debe ser un número entero mayor o igual a 0.";
     }
   }
 
   if (selectedTags.length > MAX_TAGS) {
-    errors.tags = `No puedes seleccionar mas de ${MAX_TAGS} tags.`;
+    errors.tags = `No puedes seleccionar más de ${MAX_TAGS} tags.`;
   }
 
   if (formData.imageUrl.trim()) {
@@ -69,7 +69,7 @@ const validateForm = (formData, selectedTags) => {
       // eslint-disable-next-line no-new
       new URL(formData.imageUrl.trim());
     } catch (_error) {
-      errors.imageUrl = "Ingresa una URL valida para la imagen.";
+      errors.imageUrl = "Ingresa una URL válida para la imagen.";
     }
   }
 
@@ -248,7 +248,7 @@ export default function CreateProductPage() {
         isOpen: true,
         variant: "success",
         title: "Producto creado",
-        message: "El producto se creo correctamente.",
+        message: "El producto se creó correctamente.",
       });
       resetForm();
     } catch (error) {
@@ -282,7 +282,7 @@ export default function CreateProductPage() {
             Crear Nuevo Producto
           </h1>
           <p className="mt-1 text-[14px] text-[#2f3b35]">
-            Completa la informacion para agregar un nuevo producto
+            Completa la información para agregar un nuevo producto
           </p>
         </div>
       </header>
@@ -302,7 +302,7 @@ export default function CreateProductPage() {
         noValidate
       >
         <section className={cardClassName}>
-          <h2 className={cardTitleClassName}>Informacion Basica</h2>
+          <h2 className={cardTitleClassName}>Información Básica</h2>
 
           <label className={labelClassName} htmlFor="name">
             Nombre del Producto *
@@ -322,7 +322,7 @@ export default function CreateProductPage() {
           )}
 
           <label className={labelClassName} htmlFor="description">
-            Descripcion *
+            Descripción *
           </label>
           <textarea
             id="description"
@@ -330,7 +330,7 @@ export default function CreateProductPage() {
             value={formData.description}
             onChange={onFieldChange}
             className={`${inputClassName} min-h-[90px] resize-y`}
-            placeholder="Describe las caracteristicas del producto"
+            placeholder="Describe las características del producto"
             disabled={isFormDisabled}
           />
           {validationErrors.description && (
@@ -361,7 +361,7 @@ export default function CreateProductPage() {
 
             <div>
               <label className={labelClassName} htmlFor="categoryId">
-                Categoria *
+                Categoría *
               </label>
               <select
                 id="categoryId"
@@ -373,8 +373,8 @@ export default function CreateProductPage() {
               >
                 <option value="">
                   {isLoadingInitialData
-                    ? "Cargando categorias..."
-                    : "Selecciona una categoria"}
+                    ? "Cargando categorías..."
+                    : "Selecciona una categoría"}
                 </option>
                 {categories.map((category) => (
                   <option key={category.id} value={category.id}>
@@ -529,7 +529,7 @@ export default function CreateProductPage() {
             >
               {formData.isVisible
                 ? "Los clientes pueden ver y comprar este producto."
-                : "El producto esta oculto y no se mostrara a clientes."}
+                : "El producto está oculto y no se mostrará a clientes."}
             </div>
           </section>
         </aside>
