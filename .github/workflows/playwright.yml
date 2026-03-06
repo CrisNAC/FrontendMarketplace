@@ -7,6 +7,12 @@ jobs:
     timeout-minutes: 30
     runs-on: ubuntu-latest
 
+    strategy:
+      fail-fast: false
+      matrix:
+        shardIndex: [1, 2]
+        shardTotal: [2]
+
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
@@ -21,11 +27,11 @@ jobs:
       run: npx playwright install --with-deps
 
     - name: Run Playwright tests
-      run: npx playwright test
+      run: npx playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
 
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
-        name: playwright-report
+        name: playwright-report-${{ matrix.shardIndex }}-${{ matrix.shardTotal }}
         path: playwright-report/
         retention-days: 30
