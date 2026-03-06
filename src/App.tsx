@@ -26,6 +26,7 @@ import ComercioVerProducto from './features/commerces/pages/ComercioVerProducto'
 import PriceComparisonPage from './features/clients/pages/PriceComparisonPage';
 import DetalleProducto from './features/commerces/pages/DetalleProducto';
 import CreateProductPage from './features/commerces/pages/CreateProductPage';
+import { EditClientProfile } from './features/clients/pages/EditClientProfile';
 
 const HomePageRoutes = () => (
   <div className="p-10 text-center">
@@ -43,6 +44,7 @@ const HomePageRoutes = () => (
     <p className="mt-4">Navega a <a href="/busqueda" className="text-blue-500 underline">Busqueda</a></p>
     <p className="mt-4">Navega a <a href="/comentarios" className="text-blue-500 underline">Comentarios</a></p>
     <p className="mt-4">Navega a <a href="/crear-comercio" className="text-blue-500 underline">Crear Comercio</a></p>
+    <p className="mt-4">Navega a <a href="/mi-perfil" className="text-blue-500 underline">Editar Perfil</a></p>
     
   </div>
 );
@@ -56,6 +58,7 @@ function App() {
         <Route path="/login" element={<AuthPage />} />
         
         <Route path="/perfil" element={<MyAccountPage />} />
+        <Route path="/mi-perfil" element={<EditClientProfile />} />
         <Route path="/comparar" element={<PriceComparisonPage />} />
         <Route
           path="/producto-detalle"
