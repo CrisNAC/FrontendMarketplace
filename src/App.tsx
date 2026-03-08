@@ -26,6 +26,7 @@ import ComercioVerProducto from './features/commerces/pages/ComercioVerProducto'
 import PriceComparisonPage from './features/clients/pages/PriceComparisonPage';
 import DetalleProducto from './features/commerces/pages/DetalleProducto';
 import CreateProductPage from './features/commerces/pages/CreateProductPage';
+import EditProductPage from './features/commerces/pages/EditProductPage';
 
 const HomePageRoutes = () => (
   <div className="p-10 text-center">
@@ -128,6 +129,15 @@ function App() {
           element={
             <MyCommerceLayout>
               <CreateProductPage />
+            </MyCommerceLayout>
+          }
+        />
+
+        <Route
+          path="/comercio/productos/:id/editar"
+          element={
+            <MyCommerceLayout>
+              <EditProductPage />
             </MyCommerceLayout>
           }
         />
