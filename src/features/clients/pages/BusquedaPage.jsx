@@ -1,9 +1,8 @@
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { SearchFilterSidebar } from "../components/search/SearchFilterSidebar";
-import { SearchProductCard } from "../components/search/SearchProductCard";
-import { Pagination } from "../components/commerceProfile/Pagination";
-
+import { CategorySidebar } from "../components/search/CategorySidebar";
+import { ProductCard } from "../components/search/ProductCard";
+import { Pagination } from "../components/search/Pagination";
 
 // Mock data — reemplazar con resultados reales del backend
 const MOCK_PRODUCTS = [
@@ -57,11 +56,7 @@ const MOCK_PRODUCTS = [
     },
 ];
 
-type Props = {
-    query?: string;
-};
-
-export const BusquedaPage = ({ query = "Celular" }: Props) => {
+export const BusquedaPage = ({ query = "Celular" }) => {
     const navigate = useNavigate();
 
     const columns = [
@@ -83,7 +78,7 @@ export const BusquedaPage = ({ query = "Celular" }: Props) => {
                 <ArrowLeft
                     size={24}
                     style={{ cursor: "pointer", color: "#6b7280" }}
-                    onClick={handleBack} 
+                    onClick={handleBack}
                 />
                 <span style={{ color: "#000000", fontSize: "25px", fontWeight: "bold" }}>
                     Resultado de Búsqueda para: {query}
@@ -95,7 +90,7 @@ export const BusquedaPage = ({ query = "Celular" }: Props) => {
 
                 {/* Sidebar */}
                 <div style={{ flexShrink: 0, width: "220px" }}>
-                    <SearchFilterSidebar
+                    <CategorySidebar
                         onPriceApply={(min, max) => console.log("Precio:", min, max)}
                     />
                 </div>
@@ -104,7 +99,7 @@ export const BusquedaPage = ({ query = "Celular" }: Props) => {
                 {columns.map((col, colIdx) => (
                     <div key={colIdx} style={{ display: "flex", flexDirection: "column", flex: 1, gap: "29px" }}>
                         {col.map((product) => (
-                            <SearchProductCard
+                            <ProductCard
                                 key={product.id}
                                 name={product.name}
                                 price={product.price}

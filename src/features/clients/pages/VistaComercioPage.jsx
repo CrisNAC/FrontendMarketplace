@@ -1,9 +1,9 @@
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { CategoryFilterSidebar } from "../components/commerceProfile/CategoryFilterSidebar";
+import { CategorySidebar } from "../components/search/CategorySidebar";
 import { CommerceProfileHeader } from "../components/commerceProfile/CommerceProfileHeader";
 import { FeaturedProducts } from "../components/commerceProfile/FeaturedProducts";
-import { Pagination } from "../components/commerceProfile/Pagination";
+import { Pagination } from "../components/search/Pagination";
 
 // Mock data — reemplazar con datos reales del backend
 const MOCK_PRODUCTS = [
@@ -89,7 +89,7 @@ export const VistaComercioPage = () => {
 
             {/* Main content: sidebar + products */}
             <div style={{ display: "flex", flexDirection: "row", gap: "24px", padding: "40px 24px 24px 24px" }}>
-                <CategoryFilterSidebar />
+                <CategorySidebar />
                 <FeaturedProducts products={MOCK_PRODUCTS} />
             </div>
 
