@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import iphoneImg from "../../../assets/iphone.png";
 import negroImg from "../../../assets/iphonenegrito.png";
 import naranjaImg from "../../../assets/iphonenaranja.png";
 import whiteImg from "../../../assets/iphonewhite.png";
 
-/* ---------- SVG ICON COMPONENT ---------- */
+/* svg icon*/
 
 function SvgIcon({ children, className = "w-4 h-4" }) {
   return (
@@ -87,6 +88,41 @@ export default function DetalleProducto() {
   ];
 
   const [colorSel, setColorSel] = useState(colores[0]);
+
+  const agregarAlCarrito = () => {
+
+    const producto = {
+      id: 1,
+      nombre: "Apple iPhone 17 Pro A3256 Dual",
+      precio: 13290000,
+      cantidad: cantidad,
+      color: colorSel.nombre,
+      memoria: memoria
+    };
+
+    const carritoActual = JSON.parse(localStorage.getItem("carrito")) || [];
+
+    carritoActual.push(producto);
+
+    localStorage.setItem("carrito", JSON.stringify(carritoActual));
+
+    window.dispatchEvent(new Event("cartUpdated"));
+
+    toast.success("Producto agregado al carrito");
+
+  };
+
+  const toggleFavorito = () => {
+
+    setFavorito((v) => !v);
+
+    if (!favorito) {
+      toast.success("Producto agregado a favoritos");
+    } else {
+      toast("Producto removido de favoritos");
+    }
+
+  };
 
   return (
     <div className="min-h-screen bg-[#F3F3F3] overflow-y-auto">
@@ -278,6 +314,7 @@ export default function DetalleProducto() {
           <div className="flex items-center gap-4">
             <button
               type="button"
+              onClick={agregarAlCarrito}
               className="px-8 py-2 rounded-md text-white text-[12px] font-medium"
               style={{ backgroundColor: VERDE }}
             >
@@ -286,7 +323,7 @@ export default function DetalleProducto() {
 
             <button
               type="button"
-              onClick={() => setFavorito((v) => !v)}
+              onClick={toggleFavorito}
               className="w-10 h-10 rounded-full border border-gray-300 bg-white flex items-center justify-center"
             >
               <SvgIcon

@@ -1,10 +1,27 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ShoppingCart, User, Search, X } from "lucide-react";
 import logo from "/src/assets/feather.png";
 import { Link } from "react-router-dom";
 
 const Navbar = () => {
   const [search, setSearch] = useState("");
+  const [cartCount, setCartCount] = useState(0);
+
+  useEffect(() => {
+
+    const actualizar = () => {
+      const carrito = JSON.parse(localStorage.getItem("carrito")) || [];
+      setCartCount(carrito.length);
+    };
+
+    actualizar();
+
+    window.addEventListener("cartUpdated", actualizar);
+
+    return () => window.removeEventListener("cartUpdated", actualizar);
+
+  }, []);
+
   return (
     <header className="w-full border-b border-gray-200 shadow-sm font-sans">
 
@@ -72,12 +89,24 @@ const Navbar = () => {
 
         {/* Icons */}
         <div className="flex gap-[15px] items-center">
+
+          <div className="relative">
+            <ShoppingCart size={25} />
+
+            {cartCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] px-1 rounded-full">
+                {cartCount}
+              </span>
+            )}
+          </div>
+
           <Link 
             to="/perfil" 
             className="!text-[#333] hover:!text-[#2e6b4f] transition-colors !no-underline"
           >
             <User size={25} />
           </Link>
+
         </div>
       </div>
 
