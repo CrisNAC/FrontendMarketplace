@@ -5,6 +5,7 @@ export const EditClientProfile = () => {
 
     const [formData, setFormData] = useState({
         name: "Juan Pérez",
+        email: "juan@email.com",
         phone: "+595981123456",
         address: "Calle Principal 123",
         city: "Encarnación",
@@ -45,6 +46,22 @@ export const EditClientProfile = () => {
                                 name="name"
                                 value={formData.name}
                                 onChange={handleChange}
+                                className="w-full px-3 py-2 border border-green-100 rounded-md bg-green-50/30 focus:outline-none focus:ring-1 focus:ring-[#5B7B6D]"
+                            />
+                        </div>
+
+                        {/* Correo */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Correo electrónico *
+                            </label>
+
+                            <input
+                                type="email"
+                                name="email"
+                                value={formData.email}
+                                onChange={handleChange}
+                                placeholder="correo@ejemplo.com"
                                 className="w-full px-3 py-2 border border-green-100 rounded-md bg-green-50/30 focus:outline-none focus:ring-1 focus:ring-[#5B7B6D]"
                             />
                         </div>
