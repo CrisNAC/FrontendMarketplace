@@ -20,6 +20,7 @@ import { HomePage } from './features/clients/pages/HomePage'
 import { BusquedaPage } from './features/clients/pages/BusquedaPage'
 import { CommentsPage } from './features/clients/pages/CommentsPage'
 import { CreateCommercePage } from './features/clients/pages/CreateCommercePage'
+import { EditCommercePage } from './features/commerces/pages/EditCommercePage'
 import AuthPage from './features/clients/pages/AuthPage';
 
 import ComercioVerProducto from './features/commerces/pages/ComercioVerProducto';
@@ -72,6 +73,8 @@ function App() {
           </VistaComercioLayout>
         } />
         <Route path="/crear-comercio" element={<CreateCommercePage />} />
+        
+        <Route path="/comercio/editar" element={<EditCommercePage />} />
 
         <Route
           path="/producto-detalle"

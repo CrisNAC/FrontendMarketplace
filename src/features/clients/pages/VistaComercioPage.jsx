@@ -66,15 +66,17 @@ export const VistaComercioPage = () => {
 
     return (
         <div style={{ minHeight: "100vh", backgroundColor: "var(--background-soft)" }}>
-
+            
             {/* Breadcrumb */}
             <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "8px", padding: "16px 24px" }}>
                 <ArrowLeft
                     size={24}
                     style={{ cursor: "pointer", color: "#6b7280" }}
-                    onClick={handleBack}  // ← AGREGAR
+                    onClick={handleBack}
                 />
-                <h5 style={{ fontWeight: "bold", fontSize: "20px", margin: 0 }}>Comercios / Nissei</h5>
+                <h5 style={{ fontWeight: "bold", fontSize: "20px", margin: 0 }}>
+                    Comercios / Nissei
+                </h5>
             </div>
 
             {/* Commerce profile banner */}
