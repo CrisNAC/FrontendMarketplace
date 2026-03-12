@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
+
 import iphoneImg from "../../../assets/iphone.png";
 import negroImg from "../../../assets/iphonenegrito.png";
 import naranjaImg from "../../../assets/iphonenaranja.png";
@@ -89,21 +91,13 @@ export default function DetalleProducto() {
   const [colorSel, setColorSel] = useState(colores[0]);
 
   return (
-    <div className="min-h-screen bg-[#F3F3F3] overflow-y-auto">
-      <div className="max-w-6xl mx-auto px-12 py-10 flex flex-col gap-10">
-
-        {/*boton de atras de nissei*/}
-        <button
-          type="button"
-          onClick={() => navigate("/homepage")}
-          className="flex items-center gap-3 w-fit"
-        >
-          <SvgIcon className="w-5 h-5 text-black">{I.back}</SvgIcon>
-          <span className="text-[20px] font-semibold text-black">
-            Nissei / Celulares
-          </span>
-        </button>
-
+    <div className="min-h-screen flex flex-col">
+        <div className="max-w-7xl mx-auto w-full px-6 py-6">
+        {/* Titulo */}
+        <div className="flex items-center gap-4 mb-8">
+            <ArrowLeft className="w-6 h-6 cursor-pointer" onClick={() => navigate("/homepage")}/>
+            <h1 className="text-2xl font-bold">Nissei / Celulares</h1>
+        </div>
         {/*contenido*/}
         <div className="grid grid-cols-2 gap-16 items-start">
 
@@ -112,7 +106,7 @@ export default function DetalleProducto() {
             <img
               src={iphoneImg}
               alt="iPhone"
-              className="w-[350px] object-contain"
+              className="w-[400px] object-contain"
               draggable={false}
             />
           </div>
@@ -272,7 +266,7 @@ export default function DetalleProducto() {
             onClick={() => navigate("/comentarios")}
             className="text-[18px] font-semibold text-black border-b border-black pb-[2px]"
           >
-            Comentarios
+            <h2>Comentarios</h2>
           </button>
 
           <div className="flex items-center gap-4">
