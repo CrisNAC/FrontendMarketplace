@@ -64,7 +64,7 @@ export default function ComercioVerProducto() {
       try {
 
         const data = await getProductById(id);
-
+        console.log(data);
         setProducto(data);
 
       }
