@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { RatingsDistribution } from '../components/comments/RatingsDistribution';
 import { CommentsList } from '../components/comments/CommentsList';
 import { AddReviewModal } from '../components/comments/AddReviewModal';
+import { ArrowLeft } from "lucide-react";
 
 export const CommentsPage = ({ productId = '123' }) => {
   const navigate = useNavigate();
@@ -38,12 +39,8 @@ export const CommentsPage = ({ productId = '123' }) => {
       <div className="max-w-6xl mx-auto min-h-screen">
         {/* Header - SIN fondo blanco, sobre el fondo gris */}
         <div className="px-6 py-4 flex items-center">
-          <button 
-            className="bg-none border-none text-lg cursor-pointer text-gray-800 p-0 font-semibold transition-colors hover:text-gray-600"
-            onClick={handleBack}
-          >
-            ← Comentarios
-          </button>
+           <ArrowLeft className="w-6 h-6 cursor-pointer" onClick={() => navigate("/homepage")}/>
+            <h1 className="text-2xl font-bold">Comentarios</h1>
         </div>
 
         {/* Contenido principal */}
