@@ -1,4 +1,7 @@
 import { useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { getProductById } from "../api/productDetailApi";
 import { MyCommerceLayout } from "../../../layouts/MyCommerceLayout";
 import sillaImg from "../../../assets/silla.jpg";
 
