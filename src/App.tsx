@@ -21,12 +21,14 @@ import { HomePage } from './features/clients/pages/HomePage'
 import { BusquedaPage } from './features/clients/pages/BusquedaPage'
 import { CommentsPage } from './features/clients/pages/CommentsPage'
 import { CreateCommercePage } from './features/clients/pages/CreateCommercePage'
+import { EditCommercePage } from './features/commerces/pages/EditCommercePage'
 import AuthPage from './features/clients/pages/AuthPage';
 
 import ComercioVerProducto from './features/commerces/pages/ComercioVerProducto';
 import PriceComparisonPage from './features/clients/pages/PriceComparisonPage';
 import DetalleProducto from './features/commerces/pages/DetalleProducto';
 import CreateProductPage from './features/commerces/pages/CreateProductPage';
+import EditProductPage from './features/commerces/pages/EditProductPage';
 
 const HomePageRoutes = () => (
   <div className="p-10 text-center">
@@ -72,6 +74,8 @@ function App() {
           </VistaComercioLayout>
         } />
         <Route path="/crear-comercio" element={<CreateCommercePage />} />
+        
+        <Route path="/comercio/editar" element={<EditCommercePage />} />
 
         <Route
           path="/producto-detalle"
@@ -129,6 +133,15 @@ function App() {
           element={
             <MyCommerceLayout>
               <CreateProductPage />
+            </MyCommerceLayout>
+          }
+        />
+
+        <Route
+          path="/comercio/productos/:id/editar"
+          element={
+            <MyCommerceLayout>
+              <EditProductPage />
             </MyCommerceLayout>
           }
         />
