@@ -1,8 +1,6 @@
-import { useState } from "react";
+// src/components/SidebarMyCommerce.jsx
 import { useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
 import { useLogout } from "../hooks/useLogout";
-
 import {
     LayoutDashboard,
     Package,
@@ -15,9 +13,7 @@ import {
     HelpCircle,
 } from "lucide-react";
 
-
 export const SidebarMyCommerce = ({ collapsed, onToggle }) => {
-    // const [active, setActive] = useState("Dashboard"); *PROBLEMA: El estado se reinicia cuando el componente se remonta.*
     const navigate = useNavigate();
     const location = useLocation();
     const logout = useLogout();
@@ -27,19 +23,15 @@ export const SidebarMyCommerce = ({ collapsed, onToggle }) => {
         { label: "Productos",     icon: Package,         route: "/comercio-producto" },
         { label: "Colecciones",   icon: Layers,          route: "/colecciones" },
         { label: "Delivery",      icon: Truck,           route: "/delivery" },
-        { label: "Mi Comercio",   icon: Store,           route: "/mi-comercio" },
+        // ← ruta actualizada a /comercio/perfil
+        { label: "Mi Comercio",   icon: Store,           route: "/comercio/perfil" },
         { label: "Cerrar Sesión", icon: LogOut,          onClick: logout },
     ];
 
-    // Determina el activo basándose en la URL
-    const active = NAV_ITEMS.find(
-        item => item.route === location.pathname
+    // Activo basado en la URL actual — /comercio/editar también resalta "Mi Comercio"
+    const active = NAV_ITEMS.find(item =>
+        item.route && (location.pathname === item.route || location.pathname.startsWith(item.route + "/"))
     )?.label || "Dashboard";
-
-    const handleNavigation = (label, route) => {
-        // setActive(label); *SE PIERDE AL NAVEGAR*
-        navigate(route);
-    };
 
     return (
         <div style={{
@@ -81,14 +73,7 @@ export const SidebarMyCommerce = ({ collapsed, onToggle }) => {
                     return (
                         <div
                             key={label}
-                            onClick={() => {
-                                if (onClick) {
-                                    onClick();
-                                } else {
-                                handleNavigation(label, route)
-                                }
-                            }
-                            }
+                            onClick={() => onClick ? onClick() : navigate(route)}
                             title={collapsed ? label : undefined}
                             style={{
                                 display: "flex",
