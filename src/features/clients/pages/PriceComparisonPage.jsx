@@ -58,7 +58,7 @@ export default function PriceComparisonPage() {
                                             Apple iPhone 17 Pro A3256 Dual 256 GB - Orange
                                         </p>
                                         <div className="pt-4 flex items-center gap-4">
-                                            <span className="text-2xl font-bold text-red-600">9.900.000 Gs.</span>
+                                            <span className="text-lg font-bold text-red-600">9.900.000 Gs.</span>
                                             <button onClick={() => navigate("/producto-detalle")} className="bg-[#a5cbf0] text-white px-4 py-1 rounded-full text-xs font-bold">
                                                 + Ver más
                                             </button>
