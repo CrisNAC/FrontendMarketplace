@@ -11,17 +11,15 @@ import {
 
 export const EditClientProfile = () => {
 
-    // SOLO TEST
-    const USER_ID =26
-
+    // para testear, solo usamos el id=26, para ver si funciona el post, despues implementamos con el user logeado
+    const USER_ID =28
     const didLoad = useRef(false)
-
     const [loading,setLoading] = useState(true)
     const [saving,setSaving] = useState(false)
     const [error,setError] = useState("")
-
+    const [success,setSuccess]=useState("")
     const [addressId,setAddressId] = useState(null)
-
+    const [preview,setPreview]=useState(null)
     const [formData,setFormData] = useState({
 
         name:"",
@@ -45,120 +43,95 @@ export const EditClientProfile = () => {
     }
 
     const handleFileChange = (e)=>{
-
-        setFormData({
-
-            ...formData,
-            photo:e.target.files[0]
-
-        })
+        const file=e.target.files[0]
+        if(!file) return setFormData({...formData, photo:file})
+        
+        setPreview(URL.createObjectURL(file))
 
     }
 
-    // CARGAR PERFIL
+    // cargar perfil
     useEffect(()=>{
-
         if(didLoad.current) return
         didLoad.current = true
-
         const loadUser = async()=>{
-
             try{
-
-                // LOGIN TEST
+                // hacer un login test para que funcione la pagina
                 await loginTestUser()
-
                 const response = await fetchUserProfile(USER_ID)
-
                 const user = response.data
-
                 setFormData({
-
                     name:user.name || "",
                     email:user.email || "",
                     phone:user.phone || "",
                     address:user.addresses?.[0]?.address || "",
                     city:user.addresses?.[0]?.city || "",
                     photo:null
-
                 })
-
                 if(user.addresses?.length){
-
                     setAddressId(
-
                         user.addresses[0].id_address
-
                     )
-
                 }
 
             }catch(err){
-
                 setError(
-
                     getBackendErrorMessage(
                         err,
                         "Error cargando perfil"
                     )
-
                 )
-
             }finally{
-
                 setLoading(false)
-
             }
-
         }
-
         loadUser()
 
     },[])
+    const validateForm=()=>{
+        if(!formData.name.trim()) return "Nombre obligatorio"
+        if(!formData.email.trim()) return "Email obligatorio"
+        if(!formData.phone.trim()) return "Teléfono obligatorio"
+        if(!formData.address.trim()) return "Direccion obligatoria"
+        if(!formData.city.trim()) return "Ciudad obligatoria"
+        if(!formData.email.includes("@")) return "Email inválido"
+        return null
+    }
 
     const handleSubmit = async()=>{
 
         setSaving(true)
         setError("")
-
+        setSuccess("")
+        const validationError= validateForm()
+        if(validationError){
+            setError(validationError)
+            setSaving(false)
+            return
+        }
         try{
-
             await updateUserProfile(
-
                 USER_ID,
                 {
-
                     name:formData.name,
                     email:formData.email,
                     phone:formData.phone
-
                 }
-
             )
-
             if(addressId){
-
                 await updateUserAddress(
-
                     USER_ID,
                     addressId,
                     {
-
                         address:formData.address,
                         city:formData.city
-
                     }
-
                 )
-
             }
-
-            alert("Perfil actualizado correctamente")
+            setSuccess("Perfil actualizado correctamente")
 
         }catch(err){
-
             setError(
-
                 getBackendErrorMessage(
                     err,
                     "Error actualizando perfil"
@@ -167,11 +140,8 @@ export const EditClientProfile = () => {
             )
 
         }finally{
-
             setSaving(false)
-
         }
-
     }
 
     if(loading){
@@ -216,16 +186,6 @@ export const EditClientProfile = () => {
 
                     </p>
 
-                    {error && (
-
-                        <div className="text-red-500 mt-3">
-
-                            {error}
-
-                        </div>
-
-                    )}
-
                     <form className="flex flex-col gap-4 mt-6">
 
                         <div>
@@ -237,11 +197,15 @@ export const EditClientProfile = () => {
                             </label>
 
                             <input
+
                                 type="text"
                                 name="name"
                                 value={formData.name}
                                 onChange={handleChange}
+                                required
+
                                 className="w-full px-3 py-2 border border-green-100 rounded-md bg-green-50/30"
+
                             />
 
                         </div>
@@ -255,11 +219,15 @@ export const EditClientProfile = () => {
                             </label>
 
                             <input
+
                                 type="email"
                                 name="email"
                                 value={formData.email}
                                 onChange={handleChange}
+                                required
+
                                 className="w-full px-3 py-2 border border-green-100 rounded-md bg-green-50/30"
+
                             />
 
                         </div>
@@ -273,11 +241,15 @@ export const EditClientProfile = () => {
                             </label>
 
                             <input
+
                                 type="text"
                                 name="phone"
                                 value={formData.phone}
                                 onChange={handleChange}
+                                required
+
                                 className="w-full px-3 py-2 border border-green-100 rounded-md bg-green-50/30"
+
                             />
 
                         </div>
@@ -291,11 +263,15 @@ export const EditClientProfile = () => {
                             </label>
 
                             <input
+
                                 type="text"
                                 name="address"
                                 value={formData.address}
                                 onChange={handleChange}
+                                required
+
                                 className="w-full px-3 py-2 border border-green-100 rounded-md bg-green-50/30"
+
                             />
 
                         </div>
@@ -309,11 +285,15 @@ export const EditClientProfile = () => {
                             </label>
 
                             <input
+
                                 type="text"
                                 name="city"
                                 value={formData.city}
                                 onChange={handleChange}
+                                required
+
                                 className="w-full px-3 py-2 border border-green-100 rounded-md bg-green-50/30"
+
                             />
 
                         </div>
@@ -326,19 +306,50 @@ export const EditClientProfile = () => {
 
                             </label>
 
-                            <input
-                                type="file"
-                                onChange={handleFileChange}
-                                className="block w-full text-sm"
-                            />
+                            <div className="flex flex-col items-start gap-2">
+
+                                <label className="cursor-pointer bg-[#5B7B6D] text-white px-4 py-2 rounded hover:bg-green-800 transition text-sm font-medium">
+
+                                    Seleccionar foto
+
+                                    <input
+                                        type="file"
+                                        onChange={handleFileChange}
+                                        className="hidden"
+                                    />
+
+                                </label>
+
+                                <span className="text-xs text-gray-500">
+
+                                    JPG o PNG recomendado
+
+                                </span>
+
+                            </div>
+
+                            {preview && (
+
+                                <img
+
+                                    src={preview}
+
+                                    className="w-24 h-24 rounded-full mt-3 object-cover border"
+
+                                />
+
+                            )}
 
                         </div>
 
                         <button
+
                             type="button"
                             onClick={handleSubmit}
                             disabled={saving}
-                            className="bg-[#5B7B6D] text-white px-4 py-2 rounded hover:bg-green-800"
+
+                            className="bg-[#5B7B6D] text-white px-4 py-2 rounded hover:bg-green-800 transition"
+
                         >
 
                             {saving ? "Guardando..." : "Guardar cambios"}
@@ -346,12 +357,26 @@ export const EditClientProfile = () => {
                         </button>
 
                     </form>
+                    {error && (
 
-                    <p className="text-sm text-gray-500 text-center mt-4">
+                        <div className="text-red-500 mt-3">
 
-                        Los campos con * son obligatorios.
+                            {error}
 
-                    </p>
+                        </div>
+
+                    )}
+
+                    {success && (
+
+                        <div className="text-green-600 mt-3">
+
+                            {success}
+
+                        </div>
+
+                    )}
+
 
                 </div>
 
