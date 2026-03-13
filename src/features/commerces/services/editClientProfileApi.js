@@ -56,3 +56,20 @@ export const getBackendErrorMessage = (error,fallback) => {
     return fallback;
 
 };
+//de prueba
+export const loginTestUser = async () => {
+
+    const response = await apiClient.post(
+
+        "/api/session",
+
+        {
+            email:"filgonzalez@gmail.com",
+            password:"buenas123"
+        }
+
+    )
+
+    return response.data
+
+}

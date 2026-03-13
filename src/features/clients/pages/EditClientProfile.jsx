@@ -1,17 +1,20 @@
-import { useState,useEffect } from "react"
+import { useState,useEffect,useRef } from "react"
 import Navbar from "../../../components/navbar/Navbar"
 
 import {
     fetchUserProfile,
     updateUserProfile,
     updateUserAddress,
-    getBackendErrorMessage
+    getBackendErrorMessage,
+    loginTestUser
 } from "../../commerces/services/editClientProfileApi"
 
 export const EditClientProfile = () => {
 
-    // SOLO PARA PRUEBA
-    const USER_ID = 2
+    // SOLO TEST
+    const USER_ID =26
+
+    const didLoad = useRef(false)
 
     const [loading,setLoading] = useState(true)
     const [saving,setSaving] = useState(false)
@@ -55,27 +58,37 @@ export const EditClientProfile = () => {
     // CARGAR PERFIL
     useEffect(()=>{
 
+        if(didLoad.current) return
+        didLoad.current = true
+
         const loadUser = async()=>{
 
             try{
 
-                const data = await fetchUserProfile(USER_ID)
+                // LOGIN TEST
+                await loginTestUser()
+
+                const response = await fetchUserProfile(USER_ID)
+
+                const user = response.data
 
                 setFormData({
 
-                    name:data.name || "",
-                    email:data.email || "",
-                    phone:data.phone || "",
-                    address:data.addresses?.[0]?.address || "",
-                    city:data.addresses?.[0]?.city || "",
+                    name:user.name || "",
+                    email:user.email || "",
+                    phone:user.phone || "",
+                    address:user.addresses?.[0]?.address || "",
+                    city:user.addresses?.[0]?.city || "",
                     photo:null
 
                 })
 
-                if(data.addresses?.length){
+                if(user.addresses?.length){
 
                     setAddressId(
-                        data.addresses[0].id_address
+
+                        user.addresses[0].id_address
+
                     )
 
                 }
@@ -140,7 +153,7 @@ export const EditClientProfile = () => {
 
             }
 
-            alert("Perfil actualizado")
+            alert("Perfil actualizado correctamente")
 
         }catch(err){
 
@@ -148,7 +161,7 @@ export const EditClientProfile = () => {
 
                 getBackendErrorMessage(
                     err,
-                    "Error actualizando"
+                    "Error actualizando perfil"
                 )
 
             )
@@ -224,14 +237,11 @@ export const EditClientProfile = () => {
                             </label>
 
                             <input
-
                                 type="text"
                                 name="name"
                                 value={formData.name}
                                 onChange={handleChange}
-
                                 className="w-full px-3 py-2 border border-green-100 rounded-md bg-green-50/30"
-
                             />
 
                         </div>
@@ -245,14 +255,11 @@ export const EditClientProfile = () => {
                             </label>
 
                             <input
-
                                 type="email"
                                 name="email"
                                 value={formData.email}
                                 onChange={handleChange}
-
                                 className="w-full px-3 py-2 border border-green-100 rounded-md bg-green-50/30"
-
                             />
 
                         </div>
@@ -266,14 +273,11 @@ export const EditClientProfile = () => {
                             </label>
 
                             <input
-
                                 type="text"
                                 name="phone"
                                 value={formData.phone}
                                 onChange={handleChange}
-
                                 className="w-full px-3 py-2 border border-green-100 rounded-md bg-green-50/30"
-
                             />
 
                         </div>
@@ -287,14 +291,11 @@ export const EditClientProfile = () => {
                             </label>
 
                             <input
-
                                 type="text"
                                 name="address"
                                 value={formData.address}
                                 onChange={handleChange}
-
                                 className="w-full px-3 py-2 border border-green-100 rounded-md bg-green-50/30"
-
                             />
 
                         </div>
@@ -308,14 +309,11 @@ export const EditClientProfile = () => {
                             </label>
 
                             <input
-
                                 type="text"
                                 name="city"
                                 value={formData.city}
                                 onChange={handleChange}
-
                                 className="w-full px-3 py-2 border border-green-100 rounded-md bg-green-50/30"
-
                             />
 
                         </div>
@@ -329,25 +327,18 @@ export const EditClientProfile = () => {
                             </label>
 
                             <input
-
                                 type="file"
                                 onChange={handleFileChange}
-
                                 className="block w-full text-sm"
-
                             />
 
                         </div>
 
                         <button
-
                             type="button"
                             onClick={handleSubmit}
-
                             disabled={saving}
-
                             className="bg-[#5B7B6D] text-white px-4 py-2 rounded hover:bg-green-800"
-
                         >
 
                             {saving ? "Guardando..." : "Guardar cambios"}
