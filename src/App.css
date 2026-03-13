@@ -11,3 +11,24 @@ html, body, #root {
   overflow: auto;
   background: #F5F5F5;
 }
+h1{
+  font-size: 25px;
+  font-weight: bold;
+}
+
+h2{
+  font-size: 20px;
+  font-weight: bold;
+}
+h3{
+  font-size: 18px;
+  font-weight: bold;
+}
+p{
+  font-size: 16px;
+}
+button{
+    font-size: 14px;
+    border-radius: 12px;
+    cursor: pointer;
+}

@@ -1,11 +1,11 @@
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { SearchFilterSidebar } from "../components/search/SearchFilterSidebar";
-import { SearchProductCard } from "../components/search/SearchProductCard";
-import { Pagination } from "../components/commerceProfile/Pagination";
+import { CategorySidebar } from "../components/search/CategorySidebar";
+import { CommerceProfileHeader } from "../components/commerceProfile/CommerceProfileHeader";
+import { FeaturedProducts } from "../components/commerceProfile/FeaturedProducts";
+import { Pagination } from "../components/search/Pagination";
 
-
-// Mock data — reemplazar con resultados reales del backend
+// Mock data — reemplazar con datos reales del backend
 const MOCK_PRODUCTS = [
     {
         id: 1,
@@ -57,62 +57,42 @@ const MOCK_PRODUCTS = [
     },
 ];
 
-type Props = {
-    query?: string;
-};
-
-export const BusquedaPage = ({ query = "Celular" }: Props) => {
+export const VistaComercioPage = () => {
     const navigate = useNavigate();
 
-    const columns = [
-        MOCK_PRODUCTS.slice(0, 2),
-        MOCK_PRODUCTS.slice(2, 4),
-        MOCK_PRODUCTS.slice(4, 6),
-        MOCK_PRODUCTS.slice(6, 8),
-    ];
-
     const handleBack = () => {
-        navigate(-1); // Volver a la página anterior
+        navigate(-1);
     };
 
     return (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", width: "100%", backgroundColor: "#F3F3F3", paddingBottom: "44px" }}>
-
+        <div style={{ minHeight: "100vh", backgroundColor: "var(--background-soft)" }}>
+            
             {/* Breadcrumb */}
-            <div style={{ display: "flex", flexDirection: "row", alignItems: "center", marginBottom: "20px", marginLeft: "25px", marginTop: "16px", gap: "4px" }}>
+            <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "8px", padding: "16px 24px" }}>
                 <ArrowLeft
                     size={24}
                     style={{ cursor: "pointer", color: "#6b7280" }}
-                    onClick={handleBack} 
+                    onClick={handleBack}
                 />
-                <span style={{ color: "#000000", fontSize: "25px", fontWeight: "bold" }}>
-                    Resultado de Búsqueda para: {query}
-                </span>
+                <h5 style={{ fontWeight: "bold", fontSize: "20px", margin: 0 }}>
+                    Comercios / Nissei
+                </h5>
             </div>
 
-            {/* Main content */}
-            <div style={{ display: "flex", flexDirection: "row", alignItems: "flex-start", width: "100%", paddingLeft: "26px", paddingRight: "26px", gap: "28px", marginBottom: "40px", boxSizing: "border-box" }}>
+            {/* Commerce profile banner */}
+            <CommerceProfileHeader
+                name="Nissei"
+                category="Productos varios"
+                isOpen={true}
+                rating={4.7}
+                reviews={542}
+                closesAt="20:00"
+            />
 
-                {/* Sidebar */}
-                <div style={{ flexShrink: 0, width: "220px" }}>
-                    <SearchFilterSidebar
-                        onPriceApply={(min, max) => console.log("Precio:", min, max)}
-                    />
-                </div>
-
-                {/* 4 columnas */}
-                {columns.map((col, colIdx) => (
-                    <div key={colIdx} style={{ display: "flex", flexDirection: "column", flex: 1, gap: "29px" }}>
-                        {col.map((product) => (
-                            <SearchProductCard
-                                key={product.id}
-                                name={product.name}
-                                price={product.price}
-                                imageUrl={product.imageUrl}
-                            />
-                        ))}
-                    </div>
-                ))}
+            {/* Main content: sidebar + products */}
+            <div style={{ display: "flex", flexDirection: "row", gap: "24px", padding: "40px 24px 24px 24px" }}>
+                <CategorySidebar />
+                <FeaturedProducts products={MOCK_PRODUCTS} />
             </div>
 
             {/* Pagination */}

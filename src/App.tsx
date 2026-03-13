@@ -1,5 +1,6 @@
 import './App.css'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import './index.css'
 
 /**
  * Layouts
@@ -20,13 +21,18 @@ import { HomePage } from './features/clients/pages/HomePage'
 import { BusquedaPage } from './features/clients/pages/BusquedaPage'
 import { CommentsPage } from './features/clients/pages/CommentsPage'
 import { CreateCommercePage } from './features/clients/pages/CreateCommercePage'
+import { EditCommercePage } from './features/commerces/pages/EditCommercePage'
 import AuthPage from './features/clients/pages/AuthPage';
 
 import ComercioVerProducto from './features/commerces/pages/ComercioVerProducto';
 import PriceComparisonPage from './features/clients/pages/PriceComparisonPage';
 import DetalleProducto from './features/commerces/pages/DetalleProducto';
 import CreateProductPage from './features/commerces/pages/CreateProductPage';
+<<<<<<< HEAD
 import { EditClientProfile } from './features/clients/pages/EditClientProfile';
+=======
+import EditProductPage from './features/commerces/pages/EditProductPage';
+>>>>>>> 082528ed6902cd14310c4bfafc4bb85dd2987c7e
 
 const HomePageRoutes = () => (
   <div className="p-10 text-center">
@@ -74,6 +80,8 @@ function App() {
           </VistaComercioLayout>
         } />
         <Route path="/crear-comercio" element={<CreateCommercePage />} />
+        
+        <Route path="/comercio/editar" element={<EditCommercePage />} />
 
         <Route
           path="/producto-detalle"
@@ -131,6 +139,15 @@ function App() {
           element={
             <MyCommerceLayout>
               <CreateProductPage />
+            </MyCommerceLayout>
+          }
+        />
+
+        <Route
+          path="/comercio/productos/:id/editar"
+          element={
+            <MyCommerceLayout>
+              <EditProductPage />
             </MyCommerceLayout>
           }
         />
