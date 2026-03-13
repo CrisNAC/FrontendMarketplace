@@ -28,11 +28,11 @@ import ComercioVerProducto from './features/commerces/pages/ComercioVerProducto'
 import PriceComparisonPage from './features/clients/pages/PriceComparisonPage';
 import DetalleProducto from './features/commerces/pages/DetalleProducto';
 import CreateProductPage from './features/commerces/pages/CreateProductPage';
-<<<<<<< HEAD
+
 import { EditClientProfile } from './features/clients/pages/EditClientProfile';
-=======
+
 import EditProductPage from './features/commerces/pages/EditProductPage';
->>>>>>> 082528ed6902cd14310c4bfafc4bb85dd2987c7e
+
 
 const HomePageRoutes = () => (
   <div className="p-10 text-center">
