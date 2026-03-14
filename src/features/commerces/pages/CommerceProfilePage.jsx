@@ -213,11 +213,11 @@ export function CommerceProfilePage() {
                         <StatRow label="Calificación:">
                             <span style={{ display: "flex", alignItems: "center", gap: "4px", color: "#f59e0b" }}>
                                 <Star size={13} color="#f59e0b" fill="#f59e0b" />
-                                4.8
+                                {commerce?.average_rating ?? "—"}
                             </span>
                         </StatRow>
                         <StatRow label="Total reseñas:">
-                            <span style={{ color: "#3b82f6" }}>147</span>
+                            <span style={{ color: "#3b82f6" }}>{commerce?.total_reviews ?? "—"}</span>
                         </StatRow>
                         <StatRow label="Miembro desde:">
                             <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
@@ -226,7 +226,7 @@ export function CommerceProfilePage() {
                             </span>
                         </StatRow>
                         <StatRow label="ID del comercio:">
-                            {commerce?.id_store}
+                            {commerce?.id_store ?? "—"}
                         </StatRow>
                     </div>
 

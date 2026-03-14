@@ -28,10 +28,13 @@ export const SidebarMyCommerce = ({ collapsed, onToggle }) => {
         { label: "Cerrar Sesión", icon: LogOut,          onClick: logout },
     ];
 
-    // Activo basado en la URL actual — /comercio/editar también resalta "Mi Comercio"
-    const active = NAV_ITEMS.find(item =>
-        item.route && (location.pathname === item.route || location.pathname.startsWith(item.route + "/"))
-    )?.label || "Dashboard";
+    // Activo basado en la URL actual — ordena por especificidad (rutas más largas primero)
+    // para evitar que /comercio matchee antes que /comercio/perfil o /comercio/editar
+    const active = [...NAV_ITEMS]
+        .filter(item => item.route)
+        .sort((a, b) => b.route.length - a.route.length)
+        .find(item => location.pathname === item.route || location.pathname.startsWith(item.route + "/"))
+        ?.label || "Dashboard";
 
     return (
         <div style={{

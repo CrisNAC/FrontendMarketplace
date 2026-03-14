@@ -221,12 +221,16 @@ export function EditCommercePage() {
                                         <option key={cat.id} value={cat.id}>{cat.name}</option>
                                     ))}
                                 </select>
-                                <div style={{
-                                    width: "34px", height: "36px", flexShrink: 0,
-                                    backgroundColor: "var(--primary-dark)", color: "white",
-                                    border: "none", borderRadius: "8px", fontSize: "20px",
-                                    display: "flex", alignItems: "center", justifyContent: "center",
-                                }}>
+                                <div
+                                    title="Funcionalidad de múltiples categorías próximamente"
+                                    style={{
+                                        width: "34px", height: "36px", flexShrink: 0,
+                                        backgroundColor: "var(--primary-dark)", color: "white",
+                                        border: "none", borderRadius: "8px", fontSize: "20px",
+                                        display: "flex", alignItems: "center", justifyContent: "center",
+                                        opacity: 0.4, cursor: "not-allowed",
+                                    }}
+                                >
                                     +
                                 </div>
                             </div>
@@ -322,26 +326,28 @@ export function EditCommercePage() {
                         {validationErrors.logoUrl && <p style={errorMsg}>{validationErrors.logoUrl}</p>}
 
                         <label style={{ ...labelStyle, marginTop: "4px" }}>Banner</label>
+                        {/* Banner: campo reservado para sprint futuro, aún no persiste en el backend */}
                         <input
-                            disabled={isFormDisabled}
-                            placeholder="https://images.unsplash.com/..."
-                            style={{ ...inputStyle, fontSize: "12px" }}
+                            name="bannerUrl"
+                            disabled
+                            placeholder="Próximamente disponible"
+                            style={{ ...inputStyle, fontSize: "12px", opacity: 0.5, cursor: "not-allowed" }}
                         />
                     </div>
 
-                    {/* Estadísticas - solo lectura */}
+                    {/* Estadísticas - solo lectura, datos reales cuando el backend los provea */}
                     <div style={card}>
                         <h6 style={sectionTitle}>Estadísticas</h6>
                         <StatRow label="Calificación:">
-                            <span style={{ color: "#f59e0b" }}>⭐ 4.8</span>
+                            <span style={{ color: "#f59e0b" }}>—</span>
                         </StatRow>
                         <StatRow label="Total reseñas:">
-                            <span style={{ color: "#3b82f6" }}>147</span>
+                            <span style={{ color: "#3b82f6" }}>—</span>
                         </StatRow>
                         <StatRow label="Miembro desde:">
-                            <span style={{ fontSize: "12px" }}>📅 15 de junio de 2023</span>
+                            <span style={{ fontSize: "12px" }}>—</span>
                         </StatRow>
-                        <StatRow label="ID del comercio:">1</StatRow>
+                        <StatRow label="ID del comercio:">—</StatRow>
                     </div>
                 </div>
             </div>
