@@ -9,28 +9,34 @@ import {
     loginTestUser
 } from "../../commerces/services/editClientProfileApi"
 
+// ****************** MENSAJE PARA EL QA ***************************************
+//si no carga los datos del cliente, tenes que crear un usuario a traves del login de la pagina, agrega el nombre, correo y contraseña
+//despues de eso tenes que ir a editClientProfileApi.js y reemplazar el email y el passwrd con los datos del nuevo usuario 
+// y en EditClientProfile.jsx tenes que cambiar el id al id del nuevo cliente
+
+
+
 export const EditClientProfile = () => {
 
-    // para testear, solo usamos el id=26, para ver si funciona el post, despues implementamos con el user logeado
+    // para testear, solo usamos el id=28, para ver si funciona el put, despues implementamos con el user logeado
     const USER_ID =28
-    const didLoad = useRef(false)
-    const [loading,setLoading] = useState(true)
-    const [saving,setSaving] = useState(false)
-    const [error,setError] = useState("")
-    const [success,setSuccess]=useState("")
-    const [addressId,setAddressId] = useState(null)
-    const [preview,setPreview]=useState(null)
-    const [formData,setFormData] = useState({
-
+    const didLoad = useRef(false) // useRef se usa aquí como bandera para evitar que el useEffect se ejecute dos veces
+    const [loading,setLoading] = useState(true) //estado para saber si el perfil se esta cargando 
+    const [saving,setSaving] = useState(false) //rstado para saber si se está guardando el formulario
+    const [error,setError] = useState("") //estado para guardar mensajes de error del backend o validaciones
+    const [success,setSuccess]=useState("") //estado para mensaje de exito
+    const [addressId,setAddressId] = useState(null)  //guarda el id de la direccion de usuario 
+    const [preview,setPreview]=useState(null) //guarda la url temporal de la imagen seleccionada para mostrar preview
+    const [formData,setFormData] = useState({ //datos editables del usuario
         name:"",
         email:"",
         phone:"",
         address:"",
         city:"",
         photo:null
-
     })
-
+// funcion que maneja los cambios en los inputs del formulario
+// Se ejecuta cada vez que el usuario escribe en un campo
     const handleChange = (e)=>{
 
         setFormData({
@@ -41,18 +47,25 @@ export const EditClientProfile = () => {
         })
 
     }
-
+// Funcion que se ejecuta cuando el usuario selecciona una imagen
     const handleFileChange = (e)=>{
+        //obtiene el primer archivo seleccionado del input 
+        // e.target.files es un array de archivos seleccionados
         const file=e.target.files[0]
+
+        // si no hay archivo seleccionado (usuario cancelo el selector)
+        // se actualiza el formData poniendo photo en null
         if(!file) return setFormData({...formData, photo:file})
         
+        // crea una url temporal del archivo para poder mostrar un preview
+        // esto no sube el archivo, solo permite mostrarlo en pantalla
         setPreview(URL.createObjectURL(file))
 
     }
 
     // cargar perfil
     useEffect(()=>{
-        if(didLoad.current) return
+        if(didLoad.current) return // Evita que el efecto se ejecute mas de una vez
         didLoad.current = true
         const loadUser = async()=>{
             try{
@@ -73,7 +86,8 @@ export const EditClientProfile = () => {
                         user.addresses[0].id_address
                     )
                 }
-
+                    // Si ocurre error (backend o conexion)
+                // obtiene el mensaje correcto y lo guarda en error state
             }catch(err){
                 setError(
                     getBackendErrorMessage(
@@ -85,10 +99,10 @@ export const EditClientProfile = () => {
                 setLoading(false)
             }
         }
-        loadUser()
+        loadUser() //ejecuta la funcion que carga el usuario
 
     },[])
-    const validateForm=()=>{
+    const validateForm=()=>{  //funcion que retorna null en caso de que todos los campos tengan texto ingresado
         if(!formData.name.trim()) return "Nombre obligatorio"
         if(!formData.email.trim()) return "Email obligatorio"
         if(!formData.phone.trim()) return "Teléfono obligatorio"
@@ -104,13 +118,13 @@ export const EditClientProfile = () => {
         setError("")
         setSuccess("")
         const validationError= validateForm()
-        if(validationError){
+        if(validationError){ //en caso de que no sea null, o sea que un campo este vacio, no se hace put y muestra el mensaje de error
             setError(validationError)
             setSaving(false)
             return
         }
         try{
-            await updateUserProfile(
+            await updateUserProfile(  //se hace put del cliente
                 USER_ID,
                 {
                     name:formData.name,
@@ -119,7 +133,7 @@ export const EditClientProfile = () => {
                 }
             )
             if(addressId){
-                await updateUserAddress(
+                await updateUserAddress( //put de la direccion
                     USER_ID,
                     addressId,
                     {
@@ -140,7 +154,7 @@ export const EditClientProfile = () => {
             )
 
         }finally{
-            setSaving(false)
+            setSaving(false) // Siempre desactiva saving (haya error o no)
         }
     }
 

@@ -7,23 +7,26 @@ const apiClient = axios.create({
     withCredentials: true
 });
 
-// login test
+
+
+
+//funcion para loguear automaticamente un usuario de prueba para probar el frontend de editClientProfile.js
 export const loginTestUser = async () => {
 
-    const response = await apiClient.post(
-        "/api/session",
+    const response = await apiClient.post( //hace una peticion post al endpoint /api/session usando el cliente axios configurado
+        "/api/session", // Endpoint de login del backend
         {
             email: "jorgitorez@gmail.com",
             password: "buenas12345"
         }
     );
-
-    return response.data;
+    return response.data; // retorna solamente los datos de la respuesta
 
 };
 
 
-// INTERCEPTOR (maneja expiración de sesión)
+//maneja expiración de sesión
+//si el back devuelve 401, intenta reloguear y repetir la request
 apiClient.interceptors.response.use(
 
     response => response,
@@ -39,14 +42,14 @@ apiClient.interceptors.response.use(
 
                 error.config._retry = true;
 
-                // relogin automático
+                // hace login automatico para obtener un nuevo jwt valido
                 await loginTestUser();
 
                 // repetir request original
                 return apiClient(error.config);
 
             }catch(loginError){
-
+                //si el relogin falla, devuelve error para que lo maneje el frontend
                 return Promise.reject(loginError);
 
             }
@@ -60,7 +63,7 @@ apiClient.interceptors.response.use(
 );
 
 
-// GET perfil usuario
+// get perfil usuario
 export const fetchUserProfile = async (userId) => {
 
     const response = await apiClient.get(
@@ -72,7 +75,7 @@ export const fetchUserProfile = async (userId) => {
 };
 
 
-// PUT actualizar usuario
+// put actualizar usuario
 export const updateUserProfile = async (userId,payload) => {
 
     const response = await apiClient.put(
@@ -87,7 +90,7 @@ export const updateUserProfile = async (userId,payload) => {
 };
 
 
-// PUT actualizar dirección
+// put actualizar dirección
 export const updateUserAddress = async (
 
     userId,
