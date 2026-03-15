@@ -1,3 +1,4 @@
+// src/features/commerces/pages/MyCommercePage.jsx
 import { useState, useEffect } from "react";
 import { Package, Star, MessageSquare, Layers } from "lucide-react";
 import { Topbar } from "../components/dashboard/Topbar";
@@ -5,9 +6,7 @@ import { StatCard } from "../components/dashboard/StatCard";
 import { BestRatedSection } from "../components/dashboard/BestRatedSection";
 import { MostSoldSection } from "../components/dashboard/MostSoldSection";
 import { CollectionsSection } from "../components/dashboard/CollectionsSection";
-import axios from "axios";
-
-const ID_STORE = 1;
+import { apiClient } from "../services/editCommerceApi";
 
 export const MyCommercePage = () => {
     const [store, setStore] = useState(null);
@@ -16,13 +15,19 @@ export const MyCommercePage = () => {
     useEffect(() => {
         const fetchStore = async () => {
             try {
-                const res = await axios.get(`/api/commerces/${ID_STORE}`);
-                if (!res) {
-                    console.log("Error al contactar la API");
+                // Obtener id_store desde la sesión activa (igual que useEditCommerce)
+                const sessionRes = await apiClient.get("/api/session/user-session");
+                const idStore = sessionRes.data?.user?.id_store;
+
+                if (!idStore) {
+                    console.warn("El usuario no tiene un comercio registrado.");
+                    return;
                 }
+
+                const res = await apiClient.get(`/api/commerces/${idStore}`);
                 setStore(res.data);
             } catch (err) {
-                console.error(err);
+                console.error("Error al cargar el comercio:", err);
             } finally {
                 setLoading(false);
             }
