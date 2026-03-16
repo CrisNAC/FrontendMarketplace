@@ -18,11 +18,9 @@ export const SidebarMyCommerce = ({ collapsed, onToggle }) => {
     const location = useLocation();
     const logout = useLogout();
 
-    const matchesPath = (path, route) => path === route || path.startsWith(route + "/");
-
     const NAV_ITEMS = [
         { label: "Dashboard",     icon: LayoutDashboard, route: "/comercio" },
-        { label: "Productos",     icon: Package,         route: "/comercio-producto" },
+        { label: "Productos",     icon: Package,         route: "/comercio/productos" },
         { label: "Colecciones",   icon: Layers,          route: "/colecciones" },
         { label: "Delivery",      icon: Truck,           route: "/delivery" },
         // ← ruta actualizada a /comercio/perfil
@@ -30,15 +28,13 @@ export const SidebarMyCommerce = ({ collapsed, onToggle }) => {
         { label: "Cerrar Sesión", icon: LogOut,          onClick: logout },
     ];
 
-    // Activo basado en la URL actual — mapea rutas especiales antes del fallback general
-    const active =
-        (matchesPath(location.pathname, "/comercio/perfil") || matchesPath(location.pathname, "/comercio/editar"))
-            ? "Mi Comercio"
-            : ([...NAV_ITEMS]
-                .filter(item => item.route)
-                .sort((a, b) => b.route.length - a.route.length)
-                .find(item => matchesPath(location.pathname, item.route))
-                ?.label || "Dashboard");
+    // Activo basado en la URL actual — ordena por especificidad (rutas más largas primero)
+    // para evitar que /comercio matchee antes que /comercio/perfil o /comercio/editar
+    const active = [...NAV_ITEMS]
+        .filter(item => item.route)
+        .sort((a, b) => b.route.length - a.route.length)
+        .find(item => location.pathname === item.route || location.pathname.startsWith(item.route + "/"))
+        ?.label || "Dashboard";
 
     return (
         <div style={{
