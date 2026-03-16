@@ -3,7 +3,7 @@ const API_BASE_URL = (import.meta.env.VITE_API_URL || "").trim().replace(/\/$/, 
 const ENDPOINT_PATHS = {
   session: "/api/session/user-session",
   categories: "/api/categories/products",
-  tags: "/api/product-tags",
+  tags: "/products/tags",
   products: "/products",
 };
 
