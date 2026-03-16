@@ -180,6 +180,7 @@ function Row({ left, right, rightClass = "" }) {
 
 export default function ComercioVerProducto() {
   const navigate = useNavigate();
+  const productId = 1;
   const comentarios = [
     {
       nombre: "María González",
@@ -232,6 +233,7 @@ export default function ComercioVerProducto() {
 
             <button
               type="button"
+              onClick={() => navigate(`/comercio/productos/${productId}/editar`)}
               className="inline-flex items-center gap-2 rounded-xl bg-emerald-200/70 px-3 py-1.5 text-[11px] font-semibold text-emerald-900 shadow-sm ring-1 ring-emerald-200 hover:bg-emerald-200"
             >
               <SvgIcon className="w-4 h-4">{I.edit}</SvgIcon>

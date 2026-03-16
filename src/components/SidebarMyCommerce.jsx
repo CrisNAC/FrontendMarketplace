@@ -1,8 +1,6 @@
-import { useState } from "react";
+// src/components/SidebarMyCommerce.jsx
 import { useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
 import { useLogout } from "../hooks/useLogout";
-
 import {
     LayoutDashboard,
     Package,
@@ -15,31 +13,32 @@ import {
     HelpCircle,
 } from "lucide-react";
 
-
 export const SidebarMyCommerce = ({ collapsed, onToggle }) => {
-    // const [active, setActive] = useState("Dashboard"); *PROBLEMA: El estado se reinicia cuando el componente se remonta.*
     const navigate = useNavigate();
     const location = useLocation();
     const logout = useLogout();
+
+    const matchesPath = (path, route) => path === route || path.startsWith(route + "/");
 
     const NAV_ITEMS = [
         { label: "Dashboard",     icon: LayoutDashboard, route: "/comercio" },
         { label: "Productos",     icon: Package,         route: "/comercio-producto" },
         { label: "Colecciones",   icon: Layers,          route: "/colecciones" },
         { label: "Delivery",      icon: Truck,           route: "/delivery" },
-        { label: "Mi Comercio",   icon: Store,           route: "/mi-comercio" },
+        // ← ruta actualizada a /comercio/perfil
+        { label: "Mi Comercio",   icon: Store,           route: "/comercio/perfil" },
         { label: "Cerrar Sesión", icon: LogOut,          onClick: logout },
     ];
 
-    // Determina el activo basándose en la URL
-    const active = NAV_ITEMS.find(
-        item => item.route === location.pathname
-    )?.label || "Dashboard";
-
-    const handleNavigation = (label, route) => {
-        // setActive(label); *SE PIERDE AL NAVEGAR*
-        navigate(route);
-    };
+    // Activo basado en la URL actual — mapea rutas especiales antes del fallback general
+    const active =
+        (matchesPath(location.pathname, "/comercio/perfil") || matchesPath(location.pathname, "/comercio/editar"))
+            ? "Mi Comercio"
+            : ([...NAV_ITEMS]
+                .filter(item => item.route)
+                .sort((a, b) => b.route.length - a.route.length)
+                .find(item => matchesPath(location.pathname, item.route))
+                ?.label || "Dashboard");
 
     return (
         <div style={{
@@ -81,14 +80,7 @@ export const SidebarMyCommerce = ({ collapsed, onToggle }) => {
                     return (
                         <div
                             key={label}
-                            onClick={() => {
-                                if (onClick) {
-                                    onClick();
-                                } else {
-                                handleNavigation(label, route)
-                                }
-                            }
-                            }
+                            onClick={() => onClick ? onClick() : navigate(route)}
                             title={collapsed ? label : undefined}
                             style={{
                                 display: "flex",
