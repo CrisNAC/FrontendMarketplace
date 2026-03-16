@@ -1,7 +1,9 @@
+// src/features/commerces/services/editProductEndpoints.js
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "").trim().replace(/\/$/, "");
 
 const ENDPOINT_PATHS = {
-    categories: "/products/categories",
+    // Categorías movidas a /api/categories/products en el backend (index.js)
+    categories: "/api/categories/products",
     tags: "/products/tags",
     products: "/products",
     productById: (id) => `/products/${id}`,
