@@ -1,4 +1,5 @@
 import { Edit2 } from "lucide-react";
+import { Link } from "react-router-dom";
 import Navbar from "../../../components/navbar/Navbar";
 import { SidebarClientProfile } from "../../../components/SidebarClientProfile";
 
