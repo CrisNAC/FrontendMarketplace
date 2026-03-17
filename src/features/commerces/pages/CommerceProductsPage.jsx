@@ -4,20 +4,25 @@ import { useNavigate } from "react-router-dom";
 import { Plus, Search, Eye, Pencil, Trash2, Star, AlertTriangle } from "lucide-react";
 import { apiClient } from "../services/editCommerceApi";
 
-// ─── Mock toggle ──────────────────────────────────────────────────────────────
-const USE_MOCK_DELETE = false;
-
 // ─── Sub-componentes ──────────────────────────────────────────────────────────
+// Normaliza visibilidad para productos que vienen de /api/commerces/:id (campo visible: boolean)
+// o de /products/:id via mapProductResponse (campo status: "active"|"pending")
+const isProductVisible = (product) => {
+    if (typeof product.visible === "boolean") return product.visible;
+    if (typeof product.status === "string") return product.status === "active";
+    return true;
+};
+
 function StatusBadge({ visible }) {
     return (
         <span style={{
             position: "absolute", top: "8px", right: "8px",
             padding: "2px 8px", borderRadius: "20px", fontSize: "10px", fontWeight: "700",
-            backgroundColor: visible ? "#dcfce7" : "#fef9c3",
-            color: visible ? "#15803d" : "#854d0e",
+            backgroundColor: visible ? "#dcfce7" : "#f1f5f9",
+            color: visible ? "#15803d" : "#475569",
             boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
         }}>
-            {visible ? "Activo" : "Nuevo"}
+            {visible ? "Activo" : "Oculto"}
         </span>
     );
 }
@@ -51,7 +56,7 @@ function Stars({ rating }) {
 }
 
 function ProductCard({ product, onView, onEdit, onDelete }) {
-    const isVisible = product.visible !== false;
+    const isVisible = isProductVisible(product);
     const categoryName = product.product_category?.name ?? product.category?.name ?? null;
     const imageUrl = product.image_url ?? product.imageUrl ?? null;
 
@@ -135,7 +140,7 @@ function ProductCard({ product, onView, onEdit, onDelete }) {
 }
 
 // ─── Modal de confirmación ────────────────────────────────────────────────────
-function DeleteModal({ product, isDeleting, onConfirm, onCancel }) {
+function DeleteModal({ product, isDeleting, onConfirm, onCancel, deleteError }) {
     if (!product) return null;
     return (
         <div
@@ -172,6 +177,16 @@ function DeleteModal({ product, isDeleting, onConfirm, onCancel }) {
                     Esta acción no puede ser deshecha.
                 </p>
 
+                {deleteError && (
+                    <div style={{
+                        backgroundColor: "#fff1f2", border: "1px solid #fecdd3",
+                        borderRadius: "8px", padding: "10px 12px",
+                        color: "#be123c", fontSize: "13px", marginBottom: "16px",
+                    }}>
+                        {deleteError}
+                    </div>
+                )}
+
                 <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
                     <button type="button" onClick={onCancel} disabled={isDeleting} style={{
                         padding: "8px 20px", borderRadius: "8px",
@@ -206,6 +221,7 @@ export function CommerceProductsPage() {
     const [filterCategory, setFilterCategory] = useState("all");
     const [productToDelete, setProductToDelete] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [deleteError, setDeleteError] = useState("");
 
     useEffect(() => {
         let active = true;
@@ -238,7 +254,7 @@ export function CommerceProductsPage() {
     const filteredProducts = useMemo(() => {
         return products.filter(p => {
             const matchesSearch = !search || p.name?.toLowerCase().includes(search.toLowerCase());
-            const isVisible = p.visible !== false;
+            const isVisible = isProductVisible(p);
             const matchesStatus =
                 filterStatus === "all" ||
                 (filterStatus === "active" && isVisible) ||
@@ -257,7 +273,10 @@ export function CommerceProductsPage() {
             setProducts(prev => prev.filter(p => p.id_product !== productToDelete.id_product));
             setProductToDelete(null);
         } catch (err) {
-            console.error("Error al eliminar producto:", err);
+            const msg = err.response?.data?.error?.message
+                || err.response?.data?.message
+                || "No se pudo eliminar el producto. Intentá nuevamente.";
+            setDeleteError(msg);
         } finally {
             setIsDeleting(false);
         }
@@ -375,7 +394,7 @@ export function CommerceProductsPage() {
                             product={product}
                             onView={() => navigate(`/comercio/productos/${product.id_product}`)}
                             onEdit={() => navigate(`/comercio/productos/${product.id_product}/editar`)}
-                            onDelete={() => setProductToDelete(product)}
+                            onDelete={() => { setDeleteError(""); setProductToDelete(product); }}
                         />
                     ))}
                 </div>
@@ -392,7 +411,12 @@ export function CommerceProductsPage() {
                 product={productToDelete}
                 isDeleting={isDeleting}
                 onConfirm={handleDeleteConfirm}
-                onCancel={() => !isDeleting && setProductToDelete(null)}
+                onCancel={() => {
+                    if (isDeleting) return;
+                    setProductToDelete(null);
+                    setDeleteError("");
+                }}
+                deleteError={deleteError}
             />
         </>
     );
