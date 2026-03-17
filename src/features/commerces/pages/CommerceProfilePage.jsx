@@ -1,7 +1,7 @@
 // src/features/commerces/pages/CommerceProfilePage.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Edit, Mail, Phone, MapPin, Calendar, Star, Zap, Image } from "lucide-react";
+import { Edit, Mail, Phone, MapPin, Calendar, Star, Zap, Image, Trash2, AlertTriangle } from "lucide-react";
 import { apiClient, getBackendErrorMessage } from "../services/editCommerceApi";
 
 // ─── Estilos compartidos ──────────────────────────────────────────────────────
@@ -65,17 +65,95 @@ function StatRow({ label, children }) {
     );
 }
 
-function OutlineBtn({ onClick, color = "#6b9080", icon: Icon, children }) {
+function OutlineBtn({ onClick, color = "#6b9080", icon: Icon, children, disabled = false, title }) {
     return (
-        <button type="button" onClick={onClick} style={{
-            width: "100%", display: "flex", alignItems: "center", justifyContent: "center",
-            gap: "6px", padding: "8px 12px", marginBottom: "8px",
-            backgroundColor: "white", border: `1px solid ${color}`, borderRadius: "8px",
-            color, fontSize: "13px", fontWeight: "500", cursor: "pointer",
-        }}>
+        <button
+            type="button"
+            onClick={disabled ? undefined : onClick}
+            title={title}
+            style={{
+                width: "100%", display: "flex", alignItems: "center", justifyContent: "center",
+                gap: "6px", padding: "8px 12px", marginBottom: "8px",
+                backgroundColor: "white", border: `1px solid ${color}`, borderRadius: "8px",
+                color, fontSize: "13px", fontWeight: "500",
+                cursor: disabled ? "not-allowed" : "pointer",
+                opacity: disabled ? 0.45 : 1,
+            }}
+        >
             {Icon && <Icon size={13} />}
             {children}
         </button>
+    );
+}
+
+// ─── Modal de confirmación de eliminación ─────────────────────────────────────
+function DeleteCommerceModal({ commerceName, isDeleting, onConfirm, onCancel }) {
+    return (
+        <div
+            style={{
+                position: "fixed", inset: 0, zIndex: 50,
+                backgroundColor: "rgba(0,0,0,0.45)",
+                display: "flex", alignItems: "center", justifyContent: "center", padding: "16px",
+            }}
+            onClick={onCancel}
+        >
+            <div
+                style={{
+                    backgroundColor: "white", borderRadius: "16px", padding: "24px",
+                    maxWidth: "440px", width: "100%", boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
+                }}
+                onClick={e => e.stopPropagation()}
+            >
+                <div style={{
+                    width: "48px", height: "48px", borderRadius: "50%",
+                    backgroundColor: "#fff1f2", border: "1px solid #fecdd3",
+                    display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "16px",
+                }}>
+                    <AlertTriangle size={24} color="#dc2626" />
+                </div>
+
+                <h3 style={{ fontSize: "18px", fontWeight: "700", color: "#111827", margin: "0 0 8px 0" }}>
+                    ¿Eliminar comercio?
+                </h3>
+                <p style={{ fontSize: "14px", color: "#374151", margin: "0 0 6px 0", lineHeight: "1.5" }}>
+                    Estás por eliminar <strong>"{commerceName}"</strong> de forma permanente.
+                </p>
+                <p style={{ fontSize: "13px", color: "#6b7280", margin: "0 0 24px 0", lineHeight: "1.5" }}>
+                    También se eliminarán todos los productos asociados. Esta acción no puede deshacerse.
+                </p>
+
+                <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        disabled={isDeleting}
+                        style={{
+                            padding: "8px 20px", borderRadius: "8px",
+                            border: "1px solid #d1d5db", backgroundColor: "white",
+                            fontSize: "14px", fontWeight: "500", color: "#374151",
+                            cursor: isDeleting ? "not-allowed" : "pointer",
+                            opacity: isDeleting ? 0.6 : 1,
+                        }}
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        type="button"
+                        onClick={onConfirm}
+                        disabled={isDeleting}
+                        style={{
+                            padding: "8px 20px", borderRadius: "8px", border: "none",
+                            backgroundColor: "#dc2626", fontSize: "14px", fontWeight: "600", color: "white",
+                            cursor: isDeleting ? "not-allowed" : "pointer",
+                            opacity: isDeleting ? 0.7 : 1,
+                            display: "flex", alignItems: "center", gap: "6px",
+                        }}
+                    >
+                        {isDeleting ? "Eliminando..." : "Eliminar Comercio"}
+                    </button>
+                </div>
+            </div>
+        </div>
     );
 }
 
@@ -86,13 +164,18 @@ export function CommerceProfilePage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
+    // Estado del modal de eliminación
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [deleteError, setDeleteError] = useState("");
+
     useEffect(() => {
         let active = true;
         const load = async () => {
             try {
                 const sessionRes = await apiClient.get("/api/session/user-session");
                 const idStore = sessionRes.data?.user?.id_store;
-                if (!idStore) throw { message: "No tenés un comercio registrado. Creá tu comercio primero." };
+                if (!idStore) throw new Error("No tenés un comercio registrado. Creá tu comercio primero.");
                 const res = await apiClient.get(`/api/commerces/${idStore}`);
                 if (active) setCommerce(res.data);
             } catch (err) {
@@ -104,6 +187,20 @@ export function CommerceProfilePage() {
         load();
         return () => { active = false; };
     }, []);
+
+    const handleDeleteConfirm = async () => {
+        if (!commerce?.id_store) return;
+        setIsDeleting(true);
+        setDeleteError("");
+        try {
+            await apiClient.delete(`/api/commerces/${commerce.id_store}`);
+            setShowDeleteModal(false);
+            navigate("/homepage");
+        } catch (err) {
+            setDeleteError(getBackendErrorMessage(err, "No se pudo eliminar el comercio. Intentá nuevamente."));
+            setIsDeleting(false);
+        }
+    };
 
     if (loading) return <p style={{ color: "#6b7280", padding: "16px" }}>Cargando...</p>;
 
@@ -141,6 +238,17 @@ export function CommerceProfilePage() {
                     Editar Perfil
                 </button>
             </div>
+
+            {/* ── Error de eliminación ───────────────────────────────────────── */}
+            {deleteError && (
+                <div style={{
+                    backgroundColor: "#fff1f2", border: "1px solid #fecdd3",
+                    borderRadius: "10px", padding: "12px 16px", color: "#be123c",
+                    fontSize: "14px", marginBottom: "16px",
+                }}>
+                    {deleteError}
+                </div>
+            )}
 
             {/* ── Grid ──────────────────────────────────────────────────────── */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: "20px", alignItems: "start" }}>
@@ -236,12 +344,34 @@ export function CommerceProfilePage() {
                         <OutlineBtn onClick={() => navigate("/comercio/editar")} icon={Image}>
                             Cambiar Logo
                         </OutlineBtn>
-                        <OutlineBtn color="#3b82f6" icon={Zap}>
+                        <OutlineBtn
+                            color="#9ca3af"
+                            icon={Zap}
+                            disabled
+                            title="Estadísticas disponibles próximamente"
+                        >
                             Ver Estadísticas
+                        </OutlineBtn>
+                        <OutlineBtn
+                            color="#dc2626"
+                            icon={Trash2}
+                            onClick={() => setShowDeleteModal(true)}
+                        >
+                            Eliminar Comercio
                         </OutlineBtn>
                     </div>
                 </div>
             </div>
+
+            {/* ── Modal de confirmación ──────────────────────────────────────── */}
+            {showDeleteModal && (
+                <DeleteCommerceModal
+                    commerceName={commerce?.name ?? "este comercio"}
+                    isDeleting={isDeleting}
+                    onConfirm={handleDeleteConfirm}
+                    onCancel={() => !isDeleting && setShowDeleteModal(false)}
+                />
+            )}
         </>
     );
 }
