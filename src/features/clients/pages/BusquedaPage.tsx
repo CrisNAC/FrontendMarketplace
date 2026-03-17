@@ -1,61 +1,29 @@
 import { ArrowLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
 import { SearchFilterSidebar } from "../components/search/SearchFilterSidebar";
 import { SearchProductCard } from "../components/search/SearchProductCard";
 import { Pagination } from "../components/commerceProfile/Pagination";
 
 
-// Mock data — reemplazar con resultados reales del backend
-const MOCK_PRODUCTS = [
-    {
-        id: 1,
-        name: "Apple iPhone 15 A3092 Dual",
-        price: "6.900.000",
-        imageUrl: "https://compumarket.com.py/storage/sku/apple-smartphone-apple-iphone-15-128gb-blue-dual-chip-a3092-1-1-1717678175.jpg?v=1717678175",
-    },
-    {
-        id: 2,
-        name: "Realme C67 RMX3890 Dual",
-        price: "1.042.000",
-        imageUrl: "https://m.media-amazon.com/images/I/715bzjyJkYL.jpg_BO30,255,255,255_UF750,750_SR1910,1000,0,C_QL100_.jpg",
-    },
-    {
-        id: 3,
-        name: "Samsung Galaxy A25",
-        price: "2.045.000",
-        imageUrl: "https://compumarket.com.py/storage/sku/samsung-smartphone-samsung-galaxy-a25-duos-128gb-blue-1-1-1705093909.jpg?v=1705093909",
-    },
-    {
-        id: 4,
-        name: "Samsung Galaxy S24 Ultra",
-        price: "8.500.000",
-        imageUrl: "https://www.hardreset.info/media/resetinfo/2024/128/f171dde54dfd4fc09917a7e18b1e61e1.jpg",
-    },
-    {
-        id: 5,
-        name: "Apple iPhone 17 Pro Max",
-        price: "13.250.000",
-        imageUrl: "https://cdn.thewirecutter.com/wp-content/media/2025/09/BG-IPHONE-2048px_IPHONE-17-PRO-MAX_BACK.jpg?auto=webp&quality=75&width=1024",
-    },
-    {
-        id: 6,
-        name: "Samsung A36",
-        price: "2.350.000",
-        imageUrl: "https://www.gonzalezgimenez.com.py/storage/sku/samsung-celulares-celular-samsung-a36-256gb-5g-awesome-white-sm-a366eza-1-1-1744405011.jpg?v=1744405011",
-    },
-    {
-        id: 7,
-        name: "Apple iPhone 13",
-        price: "4.587.000",
-        imageUrl: "https://buy.gazelle.com/cdn/shop/files/iPhone_13_Pro_-_Gold_-_Overlap_Trans-cropped.jpg?v=1757019229&width=1946",
-    },
-    {
-        id: 8,
-        name: "Xiaomi Redmi Note 13 Pro Duos",
-        price: "2.679.000",
-        imageUrl: "https://compumarket.com.py/storage/sku/xiaomi-telefonia-xiaomi-redmi-note-13-pro-duos-5g-8gb256gb-ocean-teal-turquesa-2-1-1726079262.jpg?v=1726079262",
-    },
-];
+
+type BackendProduct = {
+    id_product: number;
+    name: string;
+    description?: string | null;
+    price: string | number;
+    store?: { id_store: number; name: string };
+};
+
+type BackendProductsResponse = {
+    products: BackendProduct[];
+    pagination: {
+        totalProducts: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+    };
+};
 
 type Props = {
     query?: string;
@@ -63,13 +31,84 @@ type Props = {
 
 export const BusquedaPage = ({ query = "Celular" }: Props) => {
     const navigate = useNavigate();
+    const location = useLocation();
 
-    const columns = [
-        MOCK_PRODUCTS.slice(0, 2),
-        MOCK_PRODUCTS.slice(2, 4),
-        MOCK_PRODUCTS.slice(4, 6),
-        MOCK_PRODUCTS.slice(6, 8),
-    ];
+    const [products, setProducts] = useState<BackendProduct[]>([]);
+    const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+    const [error, setError] = useState("");
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+
+    const apiBase = useMemo(() => {
+        return (import.meta.env.VITE_API_URL || "").trim().replace(/\/$/, "");
+    }, []);
+
+    const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+    const categoryId = searchParams.get("categoryId") || "";
+    const categoryName = searchParams.get("categoryName") || "";
+    const search = searchParams.get("search") || "";
+
+    const title = categoryName
+        ? `Resultado de Búsqueda para: ${categoryName}`
+        : search
+            ? `Resultado de Búsqueda para: ${search}`
+            : `Resultado de Búsqueda para: ${query}`;
+
+    useEffect(() => {
+        let isActive = true;
+        const controller = new AbortController();
+
+        const load = async () => {
+            try {
+                setStatus("loading");
+                setError("");
+
+                const url = new URL(`${apiBase || "http://localhost:3000"}/products`);
+                if (search) url.searchParams.set("search", search);
+                if (categoryId) url.searchParams.set("categoryId", categoryId);
+                url.searchParams.set("page", String(page));
+                url.searchParams.set("limit", "20");
+
+                const res = await fetch(url.toString(), {
+                    signal: controller.signal,
+                    headers: { Accept: "application/json" },
+                });
+
+                if (!res.ok) {
+                    throw new Error(`Error HTTP ${res.status}`);
+                }
+
+                const data = (await res.json()) as BackendProductsResponse;
+                const list = Array.isArray(data?.products) ? data.products : [];
+                const tp = Number(data?.pagination?.totalPages) || 1;
+
+                if (!isActive) return;
+                setProducts(list);
+                setTotalPages(tp);
+                setStatus("success");
+            } catch (e: any) {
+                if (e?.name === "AbortError") return;
+                if (!isActive) return;
+                setProducts([]);
+                setTotalPages(1);
+                setStatus("error");
+                setError(e instanceof Error ? e.message : "No se pudieron cargar productos.");
+            }
+        };
+
+        load();
+
+        return () => {
+            isActive = false;
+            controller.abort();
+        };
+    }, [apiBase, categoryId, page, search]);
+
+    const columns = useMemo(() => {
+        const cols: BackendProduct[][] = [[], [], [], []];
+        products.forEach((p, idx) => cols[idx % 4].push(p));
+        return cols;
+    }, [products]);
 
     const handleBack = () => {
         navigate(-1); // Volver a la página anterior
@@ -86,7 +125,7 @@ export const BusquedaPage = ({ query = "Celular" }: Props) => {
                     onClick={handleBack} 
                 />
                 <span style={{ color: "#000000", fontSize: "25px", fontWeight: "bold" }}>
-                    Resultado de Búsqueda para: {query}
+                    {title}
                 </span>
             </div>
 
@@ -101,14 +140,25 @@ export const BusquedaPage = ({ query = "Celular" }: Props) => {
                 </div>
 
                 {/* 4 columnas */}
+                {status === "loading" && (
+                    <div style={{ color: "#6b7280" }}>Cargando productos...</div>
+                )}
+                {status === "error" && (
+                    <div style={{ color: "#dc2626" }}>
+                        No se pudieron cargar productos{error ? `: ${error}` : "."}
+                    </div>
+                )}
+                {status === "success" && products.length === 0 && (
+                    <div style={{ color: "#6b7280" }}>No hay productos para ese filtro.</div>
+                )}
                 {columns.map((col, colIdx) => (
                     <div key={colIdx} style={{ display: "flex", flexDirection: "column", flex: 1, gap: "29px" }}>
                         {col.map((product) => (
                             <SearchProductCard
-                                key={product.id}
+                                key={product.id_product}
                                 name={product.name}
-                                price={product.price}
-                                imageUrl={product.imageUrl}
+                                price={String(product.price)}
+                                imageUrl={"https://placehold.co/600x600?text=Producto"}
                             />
                         ))}
                     </div>
@@ -116,7 +166,7 @@ export const BusquedaPage = ({ query = "Celular" }: Props) => {
             </div>
 
             {/* Pagination */}
-            <Pagination totalPages={68} />
+            <Pagination totalPages={totalPages} />
         </div>
     );
 };

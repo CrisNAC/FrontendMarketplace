@@ -1,7 +1,10 @@
 import './App.css'
-import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
-import './index.css'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+
 import { Toaster } from "react-hot-toast";
+
+import './index.css'
+
 
 /**
  * Layouts
@@ -22,6 +25,9 @@ import { HomePage } from './features/clients/pages/HomePage'
 import { BusquedaPage } from './features/clients/pages/BusquedaPage'
 import { CommentsPage } from './features/clients/pages/CommentsPage'
 import { CreateCommercePage } from './features/clients/pages/CreateCommercePage'
+import { CommerceProfilePage } from './features/commerces/pages/CommerceProfilePage';
+import { CommerceProductsPage } from './features/commerces/pages/CommerceProductsPage'
+import { EditCommercePage } from './features/commerces/pages/EditCommercePage'
 import AuthPage from './features/clients/pages/AuthPage';
 
 import ComercioVerProducto from './features/commerces/pages/ComercioVerProducto';
@@ -29,93 +35,45 @@ import PriceComparisonPage from './features/clients/pages/PriceComparisonPage';
 import DetalleProducto from './features/commerces/pages/DetalleProducto';
 import CreateProductPage from './features/commerces/pages/CreateProductPage';
 
-/**
- * Página de prueba
- */
-import SeleccionarId from './features/commerces/pages/SeleccionarId';
+import { EditClientProfile } from './features/clients/pages/EditClientProfile';
+
+import EditProductPage from './features/commerces/pages/EditProductPage';
+import Wishlist from "./features/clients/pages/Wishlist"
+
 
 const HomePageRoutes = () => (
-
   <div className="p-10 text-center">
-
-    <h1 className="text-3xl font-bold">
-      Bienvenido al Marketplace
-    </h1>
-
-    <p className="mt-4">
-      Navega a <Link to="/login" className="text-blue-500 underline">Login/Registro</Link>
-    </p>
-
-    <p className="mt-4">
-      Navega a <Link to="/comparar" className="text-blue-500 underline">Comparar Precios</Link>
-    </p>
-
-    <p className="mt-4">
-      Navega a <Link to="/perfil" className="text-blue-500 underline">Mi Perfil</Link>
-    </p>
-
-    <p className="mt-4">
-      Navega a <Link to="/producto-detalle" className="text-blue-500 underline">Detalle de Producto</Link>
-    </p>
-
-    <p className="mt-4">
-      Navega a <Link to="/comercio" className="text-blue-500 underline">Mi Comercio</Link>
-    </p>
-
-    <p className="mt-4">
-      Navega a <Link to="/perfil-comercio" className="text-blue-500 underline">Perfil comercio</Link>
-    </p>
-
-    <p className="mt-4">
-      Navega a <Link to="/test-producto" className="text-blue-500 underline">Ver Producto Comercio</Link>
-    </p>
-
-    <p className="mt-4">
-      Navega a <Link to="/comercio/productos/nuevo" className="text-blue-500 underline">Crear Producto Comercio</Link>
-    </p>
-
-    <p className="mt-4">
-      Navega a <Link to="/pedidos" className="text-blue-500 underline">Ver pedidos</Link>
-    </p>
-
-    <p className="mt-4">
-      Navega a <Link to="/homepage" className="text-blue-500 underline">Homepage</Link>
-    </p>
-
-    <p className="mt-4">
-      Navega a <Link to="/busqueda" className="text-blue-500 underline">Busqueda</Link>
-    </p>
-
-    <p className="mt-4">
-      Navega a <Link to="/comentarios" className="text-blue-500 underline">Comentarios</Link>
-    </p>
-
-    <p className="mt-4">
-      Navega a <Link to="/crear-comercio" className="text-blue-500 underline">Crear Comercio</Link>
-    </p>
-
+    <h1 className="text-3xl font-bold">Bienvenido al Marketplace</h1>
+    <p className="mt-4">Navega a <a href="/login" className="text-blue-500 underline">Login/Registro</a></p>
+    <p className="mt-4">Navega a <a href="/comparar" className="text-blue-500 underline">Comparar Precios</a></p>
+    <p className="mt-4">Navega a <a href="/perfil" className="text-blue-500 underline">Mi Perfil</a></p>
+    <p className="mt-4">Navega a <a href="/producto-detalle" className="text-blue-500 underline">Detalle de Producto</a></p>
+    <p className="mt-4">Navega a <a href="/comercio" className="text-blue-500 underline">Mi Comercio (Dashboard)</a></p>
+    <p className="mt-4">Navega a <a href="/perfil-comercio" className="text-blue-500 underline">Perfil comercio</a></p>
+    <p className="mt-4">Navega a <a href="/comercio-producto" className="text-blue-500 underline">Ver Producto Comercio</a></p>
+    <p className="mt-4">Navega a <a href="/comercio/productos/nuevo" className="text-blue-500 underline">Crear Producto Comercio</a></p>
+    <p className="mt-4">Navega a <a href="/pedidos" className="text-blue-500 underline">Ver pedidos</a></p>
+    <p className="mt-4">Navega a <a href="/homepage" className="text-blue-500 underline">Homepage</a></p>
+    <p className="mt-4">Navega a <a href="/busqueda" className="text-blue-500 underline">Busqueda</a></p>
+    <p className="mt-4">Navega a <a href="/comentarios" className="text-blue-500 underline">Comentarios</a></p>
+    <p className="mt-4">Navega a <a href="/crear-comercio" className="text-blue-500 underline">Crear Comercio</a></p>
+    <p className="mt-4">Navega a <a href="/mi-perfil" className="text-blue-500 underline">Editar Perfil</a></p>
+    
   </div>
-
 );
 
 function App() {
-
   return (
-
     <Router>
-
-      <Toaster position="top-right"/>
-
+      <Toaster position="top-right" reverseOrder={false} />
       <Routes>
-
         <Route path="/" element={<HomePageRoutes />} />
 
         <Route path="/login" element={<AuthPage />} />
-
+        
         <Route path="/perfil" element={<MyAccountPage />} />
-
+        <Route path="/mi-perfil" element={<EditClientProfile />} />
         <Route path="/comparar" element={<PriceComparisonPage />} />
-
         <Route
           path="/producto-detalle"
           element={
@@ -124,24 +82,17 @@ function App() {
             </VistaComercioLayout>
           }
         />
-
-        <Route
-          path="/perfil-comercio"
-          element={
-            <VistaComercioLayout>
-              <VistaComercioPage />
-            </VistaComercioLayout>
-          }
-        />
-
+        <Route path="/perfil-comercio" element={
+          <VistaComercioLayout>
+            <VistaComercioPage />
+          </VistaComercioLayout>
+        } />
         <Route path="/crear-comercio" element={<CreateCommercePage />} />
 
         <Route path="/pedidos" element={<ClientOrdersPage />} />
-
         <Route path="/pedidos/:orderId" element={<ClientOrderDetailsPage />} />
-
         <Route path="/homepage" element={<HomePage />} />
-
+        <Route path="/wishlist" element={<VistaComercioLayout><Wishlist/></VistaComercioLayout>}/>
         <Route
           path="/busqueda"
           element={
@@ -160,44 +111,34 @@ function App() {
           }
         />
 
-        {/* Producto por ID */}
-        <Route
-          path="/comercio-producto/:id"
-          element={<ComercioVerProducto />}
-        />
+        {/* ── Área del comercio (con sidebar) ───────────────────────────── */}
+        <Route path="/comercio" element={
+          <MyCommerceLayout><MyCommercePage /></MyCommerceLayout>
+        } />
+        <Route path="/comercio/perfil" element={
+          <MyCommerceLayout><CommerceProfilePage /></MyCommerceLayout>
+        } />
+        <Route path="/comercio/editar" element={
+          <MyCommerceLayout><EditCommercePage /></MyCommerceLayout>
+        } />
 
-        {/* Página test */}
-        <Route
-          path="/test-producto"
-          element={<SeleccionarId />}
-        />
-
-        <Route
-          path="/comercio"
-          element={
-            <MyCommerceLayout>
-              <MyCommercePage />
-            </MyCommerceLayout>
-          }
-        />
-
-        <Route
-          path="/comercio/productos/nuevo"
-          element={
-            <MyCommerceLayout>
-              <CreateProductPage />
-            </MyCommerceLayout>
-          }
-        />
-
+        <Route path="/comercio/productos" element={
+          <MyCommerceLayout><CommerceProductsPage /></MyCommerceLayout>
+        } />
+        <Route path="/comercio/productos/nuevo" element={
+          <MyCommerceLayout><CreateProductPage /></MyCommerceLayout>
+        } />
+        <Route path="/comercio/productos/:id" element={
+          <MyCommerceLayout><ComercioVerProducto /></MyCommerceLayout>
+        } />
+        <Route path="/comercio/productos/:id/editar" element={
+          <MyCommerceLayout><EditProductPage /></MyCommerceLayout>
+        } />
+          
         <Route path="*" element={<Navigate to="/" />} />
-
       </Routes>
-
     </Router>
-
   )
-
 }
 
-export default App;
+export default App

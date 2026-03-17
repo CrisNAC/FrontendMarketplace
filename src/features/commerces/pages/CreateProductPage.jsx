@@ -1,80 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import {
-  createProduct,
-  fetchProductCategories,
-  fetchProductTags,
-  getBackendErrorMessage,
-} from "../services/createProductApi";
 import { CreationResultModal } from "../components/createProduct/CreationResultModal";
 import Toggle from "../components/createProduct/Toggle";
-
-const MAX_TAGS = 10;
-const MAX_VISIBLE_TAG_SUGGESTIONS = 6;
-
-const INITIAL_FORM_STATE = {
-  name: "",
-  description: "",
-  price: "",
-  categoryId: "",
-  quantity: "",
-  imageUrl: "",
-  isVisible: true,
-};
-
-const validateForm = (formData, selectedTags) => {
-  const errors = {};
-
-  if (!formData.name.trim()) {
-    errors.name = "El nombre del producto es obligatorio.";
-  }
-
-  if (!formData.description.trim()) {
-    errors.description = "La descripción es obligatoria.";
-  }
-
-  if (formData.price === "" || formData.price === null) {
-    errors.price = "El precio es obligatorio.";
-  } else {
-    const numericPrice = Number(formData.price);
-    if (!Number.isFinite(numericPrice) || numericPrice <= 0) {
-      errors.price = "El precio debe ser mayor a 0.";
-    }
-  }
-
-  if (!formData.categoryId) {
-    errors.categoryId = "Selecciona una categoría.";
-  }
-
-  if (formData.quantity === "" || formData.quantity === null) {
-    errors.quantity = "El stock disponible es obligatorio.";
-  } else {
-    const numericQuantity = Number(formData.quantity);
-    if (
-      !Number.isInteger(numericQuantity) ||
-      Number.isNaN(numericQuantity) ||
-      numericQuantity < 0
-    ) {
-      errors.quantity = "El stock debe ser un número entero mayor o igual a 0.";
-    }
-  }
-
-  if (selectedTags.length > MAX_TAGS) {
-    errors.tags = `No puedes seleccionar más de ${MAX_TAGS} tags.`;
-  }
-
-  if (formData.imageUrl.trim()) {
-    try {
-      // eslint-disable-next-line no-new
-      new URL(formData.imageUrl.trim());
-    } catch (_error) {
-      errors.imageUrl = "Ingresa una URL válida para la imagen.";
-    }
-  }
-
-  return errors;
-};
+import {
+  MAX_TAGS,
+  MAX_VISIBLE_TAG_SUGGESTIONS,
+  useCreateProduct,
+} from "../hooks/useCreateProduct";
 
 const inputClassName =
   "mb-3 w-full rounded-[10px] border border-[#d2d8d4] bg-[#f0f2f1] px-3 py-2 text-[14px] text-[#1f2e27] outline-none transition focus:border-[#8fb6a3] focus:ring-4 focus:ring-[rgba(107,144,128,0.16)] disabled:cursor-not-allowed disabled:opacity-60";
@@ -87,183 +19,30 @@ const cardTitleClassName =
 
 export default function CreateProductPage() {
   const navigate = useNavigate();
-
-  const [formData, setFormData] = useState(INITIAL_FORM_STATE);
-  const [categories, setCategories] = useState([]);
-  const [availableTags, setAvailableTags] = useState([]);
-  const [selectedTags, setSelectedTags] = useState([]);
-  const [showAllTagSuggestions, setShowAllTagSuggestions] = useState(false);
-  const [validationErrors, setValidationErrors] = useState({});
-  const [loadError, setLoadError] = useState("");
-  const [resultModal, setResultModal] = useState({
-    isOpen: false,
-    variant: "success",
-    title: "",
-    message: "",
-  });
-  const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const isFormDisabled = isLoadingInitialData || isSubmitting;
-
-  useEffect(() => {
-    let active = true;
-
-    const loadInitialData = async () => {
-      setIsLoadingInitialData(true);
-      setLoadError("");
-
-      try {
-        const [categoriesData, tagsData] = await Promise.all([
-          fetchProductCategories(),
-          fetchProductTags(),
-        ]);
-
-        if (!active) {
-          return;
-        }
-
-        const activeCategories = categoriesData.filter(
-          (category) => category?.status !== false
-        );
-        setCategories(activeCategories);
-        setAvailableTags(tagsData);
-        setShowAllTagSuggestions(false);
-      } catch (error) {
-        if (!active) {
-          return;
-        }
-        setLoadError(
-          getBackendErrorMessage(
-            error,
-            "No se pudieron cargar categorias/tags desde el backend."
-          )
-        );
-      } finally {
-        if (active) {
-          setIsLoadingInitialData(false);
-        }
-      }
-    };
-
-    loadInitialData();
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const displayedTagOptions = useMemo(() => {
-    if (showAllTagSuggestions) {
-      return availableTags;
-    }
-    return availableTags.slice(0, MAX_VISIBLE_TAG_SUGGESTIONS);
-  }, [availableTags, showAllTagSuggestions]);
-
-  const selectedTagNames = useMemo(
-    () => selectedTags.map((tag) => tag.name).join(", "),
-    [selectedTags]
-  );
-
-  const onFieldChange = (event) => {
-    const { name, value, type, checked } = event.target;
-    setFormData((previous) => ({
-      ...previous,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-
-    setValidationErrors((previous) => ({
-      ...previous,
-      [name]: "",
-    }));
-  };
-
-  const addTag = (tag) => {
-    if (!tag || selectedTags.length >= MAX_TAGS) {
-      return;
-    }
-
-    const alreadySelected = selectedTags.some(
-      (selectedTag) => selectedTag.id === tag.id
-    );
-    if (alreadySelected) {
-      return;
-    }
-
-    setSelectedTags((previous) => [...previous, tag]);
-    setValidationErrors((previous) => ({
-      ...previous,
-      tags: "",
-    }));
-  };
-
-  const removeTag = (tagId) => {
-    setSelectedTags((previous) =>
-      previous.filter((tag) => tag.id !== tagId)
-    );
-  };
-
-  const toggleTag = (tag) => {
-    const isSelected = selectedTags.some((selectedTag) => selectedTag.id === tag.id);
-    if (isSelected) {
-      removeTag(tag.id);
-      return;
-    }
-
-    addTag(tag);
-  };
-
-  const resetForm = () => {
-    setFormData(INITIAL_FORM_STATE);
-    setSelectedTags([]);
-    setValidationErrors({});
-  };
+  const {
+    formData,
+    categories,
+    availableTags,
+    selectedTags,
+    displayedTagOptions,
+    selectedTagNames,
+    showAllTagSuggestions,
+    validationErrors,
+    loadError,
+    resultModal,
+    isLoadingInitialData,
+    isSubmitting,
+    isFormDisabled,
+    setFormData,
+    setShowAllTagSuggestions,
+    closeModal,
+    onFieldChange,
+    toggleTag,
+    handleSubmit,
+  } = useCreateProduct();
 
   const handleCancel = () => {
     navigate("/comercio");
-  };
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-
-    const errors = validateForm(formData, selectedTags);
-    if (Object.keys(errors).length > 0) {
-      setValidationErrors(errors);
-      return;
-    }
-
-    const payload = {
-      name: formData.name.trim(),
-      description: formData.description.trim(),
-      price: Number(formData.price),
-      categoryId: Number(formData.categoryId),
-      quantity: Number(formData.quantity),
-      visible: formData.isVisible,
-      tags: selectedTags.map((tag) => tag.id),
-    };
-
-    setIsSubmitting(true);
-    try {
-      await createProduct({ payload });
-      setResultModal({
-        isOpen: true,
-        variant: "success",
-        title: "Producto creado",
-        message: "El producto se creó correctamente.",
-      });
-      resetForm();
-    } catch (error) {
-      setResultModal({
-        isOpen: true,
-        variant: "error",
-        title: "No se pudo crear",
-        message: getBackendErrorMessage(
-          error,
-          "No se pudo crear el producto. Intenta nuevamente."
-        ),
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
   };
 
   return (
@@ -282,7 +61,7 @@ export default function CreateProductPage() {
             Crear Nuevo Producto
           </h1>
           <p className="mt-1 text-[14px] text-[#2f3b35]">
-            Completa la información para agregar un nuevo producto
+            Completa la informacion para agregar un nuevo producto
           </p>
         </div>
       </header>
@@ -302,7 +81,7 @@ export default function CreateProductPage() {
         noValidate
       >
         <section className={cardClassName}>
-          <h2 className={cardTitleClassName}>Información Básica</h2>
+          <h2 className={cardTitleClassName}>Informacion Basica</h2>
 
           <label className={labelClassName} htmlFor="name">
             Nombre del Producto *
@@ -322,7 +101,7 @@ export default function CreateProductPage() {
           )}
 
           <label className={labelClassName} htmlFor="description">
-            Descripción *
+            Descripcion *
           </label>
           <textarea
             id="description"
@@ -330,7 +109,7 @@ export default function CreateProductPage() {
             value={formData.description}
             onChange={onFieldChange}
             className={`${inputClassName} min-h-[90px] resize-y`}
-            placeholder="Describe las características del producto"
+            placeholder="Describe las caracteristicas del producto"
             disabled={isFormDisabled}
           />
           {validationErrors.description && (
@@ -361,7 +140,7 @@ export default function CreateProductPage() {
 
             <div>
               <label className={labelClassName} htmlFor="categoryId">
-                Categoría *
+                Categoria *
               </label>
               <select
                 id="categoryId"
@@ -373,8 +152,8 @@ export default function CreateProductPage() {
               >
                 <option value="">
                   {isLoadingInitialData
-                    ? "Cargando categorías..."
-                    : "Selecciona una categoría"}
+                    ? "Cargando categorias..."
+                    : "Selecciona una categoria"}
                 </option>
                 {categories.map((category) => (
                   <option key={category.id} value={category.id}>
@@ -434,21 +213,30 @@ export default function CreateProductPage() {
                 Sugerencias
               </p>
               <div className="flex flex-wrap gap-2">
-                {displayedTagOptions.map((tag) => (
-                  <button
-                    key={tag.id}
-                    type="button"
-                    onClick={() => toggleTag(tag)}
-                    className={`rounded-full border px-2.5 py-1 text-xs font-semibold transition ${
-                      selectedTags.some((selectedTag) => selectedTag.id === tag.id)
-                        ? "border-emerald-400 bg-emerald-100 text-emerald-800"
-                        : "border-[#b8d4c7] bg-[#eef7f2] text-[#356852] hover:bg-[#dff0e8]"
-                    }`}
-                    disabled={isFormDisabled}
-                  >
-                    {tag.name}
-                  </button>
-                ))}
+                {displayedTagOptions.map((tag) => {
+                  const isSelected = selectedTags.some(
+                    (selectedTag) => selectedTag.id === tag.id
+                  );
+
+                  return (
+                    <button
+                      key={tag.id}
+                      type="button"
+                      onClick={() => toggleTag(tag)}
+                      className={`rounded-full border px-2.5 py-1 text-xs font-semibold transition ${
+                        isSelected
+                          ? "border-emerald-400 bg-emerald-100 text-emerald-800"
+                          : "border-[#b8d4c7] bg-[#eef7f2] text-[#356852] hover:bg-[#dff0e8]"
+                      }`}
+                      disabled={
+                        isFormDisabled ||
+                        (!isSelected && selectedTags.length >= MAX_TAGS)
+                      }
+                    >
+                      {tag.name}
+                    </button>
+                  );
+                })}
               </div>
 
               {!showAllTagSuggestions &&
@@ -529,7 +317,7 @@ export default function CreateProductPage() {
             >
               {formData.isVisible
                 ? "Los clientes pueden ver y comprar este producto."
-                : "El producto está oculto y no se mostrará a clientes."}
+                : "El producto esta oculto y no se mostrara a clientes."}
             </div>
           </section>
         </aside>
@@ -558,9 +346,7 @@ export default function CreateProductPage() {
         variant={resultModal.variant}
         title={resultModal.title}
         message={resultModal.message}
-        onClose={() =>
-          setResultModal((previous) => ({ ...previous, isOpen: false }))
-        }
+        onClose={closeModal}
       />
     </div>
   );
