@@ -2,7 +2,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Search, Eye, Pencil, Trash2, Star, AlertTriangle } from "lucide-react";
-import { apiClient } from "../services/editCommerceApi";
+import { apiClient as commerceApiClient } from "../services/editCommerceApi";
+import { apiClient as productApiClient } from "../services/editProductApi";
+import { EDIT_PRODUCT_ENDPOINT_PATHS } from "../services/editProductEndpoints";
 
 // ─── Sub-componentes ──────────────────────────────────────────────────────────
 // Normaliza visibilidad para productos que vienen de /api/commerces/:id (campo visible: boolean)
@@ -56,6 +58,7 @@ function Stars({ rating }) {
 }
 
 function ProductCard({ product, onView, onEdit, onDelete }) {
+    const [imgError, setImgError] = useState(false);
     const isVisible = isProductVisible(product);
     const categoryName = product.product_category?.name ?? product.category?.name ?? null;
     const imageUrl = product.image_url ?? product.imageUrl ?? null;
@@ -68,11 +71,11 @@ function ProductCard({ product, onView, onEdit, onDelete }) {
         }}>
             {/* Imagen */}
             <div style={{ position: "relative", height: "160px", backgroundColor: "#f3f4f6", flexShrink: 0 }}>
-                {imageUrl ? (
+                {imageUrl && !imgError ? (
                     <img
                         src={imageUrl} alt={product.name}
                         style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                        onError={e => { e.currentTarget.style.display = "none"; }}
+                        onError={() => setImgError(true)}
                     />
                 ) : (
                     <div style={{
@@ -99,7 +102,7 @@ function ProductCard({ product, onView, onEdit, onDelete }) {
                     {product.description || "Sin descripción."}
                 </p>
                 <p style={{ fontSize: "14px", fontWeight: "700", color: "#15803d", margin: 0 }}>
-                    $ {Number(product.price).toLocaleString("es-PY")}
+                    $ {(Number(product.price) || 0).toLocaleString("es-PY")}
                 </p>
                 <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                     <Stars rating={product.average_rating} />
@@ -227,10 +230,10 @@ export function CommerceProductsPage() {
         let active = true;
         const load = async () => {
             try {
-                const sessionRes = await apiClient.get("/api/session/user-session");
+                const sessionRes = await commerceApiClient.get("/api/session/user-session");
                 const idStore = sessionRes.data?.user?.id_store;
                 if (!idStore) throw new Error("No tenés un comercio registrado.");
-                const res = await apiClient.get(`/api/commerces/${idStore}`);
+                const res = await commerceApiClient.get(`/api/commerces/${idStore}`);
                 if (active) setProducts(res.data?.products ?? []);
             } catch (err) {
                 if (active) setError(err.response?.data?.message || err.message || "No se pudieron cargar los productos.");
@@ -269,7 +272,7 @@ export function CommerceProductsPage() {
         if (!productToDelete) return;
         setIsDeleting(true);
         try {
-            await apiClient.delete(`/products/${productToDelete.id_product}`);
+            await productApiClient.delete(EDIT_PRODUCT_ENDPOINT_PATHS.productById(productToDelete.id_product));
             setProducts(prev => prev.filter(p => p.id_product !== productToDelete.id_product));
             setProductToDelete(null);
         } catch (err) {

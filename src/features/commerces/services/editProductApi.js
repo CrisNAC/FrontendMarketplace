@@ -8,7 +8,7 @@ import {
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "").trim();
 
 // Usa cookie JWT igual que el resto del proyecto (withCredentials: true)
-const apiClient = axios.create({
+export const apiClient = axios.create({
     baseURL: API_BASE_URL || "http://localhost:3000",
     withCredentials: true,
 });
