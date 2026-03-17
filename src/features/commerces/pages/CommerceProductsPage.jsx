@@ -1,57 +1,196 @@
 // src/features/commerces/pages/CommerceProductsPage.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search, Eye, Pencil, Package } from "lucide-react";
+import { Plus, Search, Eye, Pencil, Trash2, Star, AlertTriangle } from "lucide-react";
 import { apiClient } from "../services/editCommerceApi";
 
-// ─── Estilos compartidos ──────────────────────────────────────────────────────
-const card = {
-    backgroundColor: "white",
-    borderRadius: "16px",
-    padding: "20px",
-    boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
-};
+// ─── Mock toggle ──────────────────────────────────────────────────────────────
+const USE_MOCK_DELETE = false;
 
-function StatusPill({ visible }) {
+// ─── Sub-componentes ──────────────────────────────────────────────────────────
+function StatusBadge({ visible }) {
     return (
         <span style={{
-            display: "inline-flex", alignItems: "center",
-            padding: "2px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: "600",
-            backgroundColor: visible ? "#dcfce7" : "#f1f5f9",
-            color: visible ? "#15803d" : "#475569",
+            position: "absolute", top: "8px", right: "8px",
+            padding: "2px 8px", borderRadius: "20px", fontSize: "10px", fontWeight: "700",
+            backgroundColor: visible ? "#dcfce7" : "#fef9c3",
+            color: visible ? "#15803d" : "#854d0e",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
         }}>
-            {visible ? "Activo" : "Oculto"}
+            {visible ? "Activo" : "Nuevo"}
         </span>
     );
 }
 
-function EmptyState({ onCreateClick }) {
+function CategoryPill({ name }) {
+    return (
+        <span style={{
+            display: "inline-flex", alignItems: "center",
+            padding: "2px 8px", borderRadius: "20px", fontSize: "10px", fontWeight: "600",
+            backgroundColor: "#ede9fe", color: "#6d28d9",
+        }}>
+            {name}
+        </span>
+    );
+}
+
+function Stars({ rating }) {
+    const count = Math.round(rating ?? 0);
+    return (
+        <div style={{ display: "flex", alignItems: "center", gap: "1px" }}>
+            {Array.from({ length: 5 }).map((_, i) => (
+                <Star
+                    key={i}
+                    size={11}
+                    fill={i < count ? "#f59e0b" : "none"}
+                    color={i < count ? "#f59e0b" : "#d1d5db"}
+                />
+            ))}
+        </div>
+    );
+}
+
+function ProductCard({ product, onView, onEdit, onDelete }) {
+    const isVisible = product.visible !== false;
+    const categoryName = product.product_category?.name ?? product.category?.name ?? null;
+    const imageUrl = product.image_url ?? product.imageUrl ?? null;
+
     return (
         <div style={{
-            display: "flex", flexDirection: "column", alignItems: "center",
-            justifyContent: "center", padding: "60px 20px", gap: "12px",
+            backgroundColor: "white", borderRadius: "14px", overflow: "hidden",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
+            display: "flex", flexDirection: "column",
         }}>
-            <Package size={48} color="#d1d5db" />
-            <p style={{ fontSize: "15px", fontWeight: "600", color: "#374151", margin: 0 }}>
-                Aún no tenés productos
-            </p>
-            <p style={{ fontSize: "13px", color: "#6b7280", margin: 0 }}>
-                Creá tu primer producto para que aparezca en el marketplace.
-            </p>
-            <button
-                type="button"
-                onClick={onCreateClick}
+            {/* Imagen */}
+            <div style={{ position: "relative", height: "160px", backgroundColor: "#f3f4f6", flexShrink: 0 }}>
+                {imageUrl ? (
+                    <img
+                        src={imageUrl} alt={product.name}
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        onError={e => { e.currentTarget.style.display = "none"; }}
+                    />
+                ) : (
+                    <div style={{
+                        width: "100%", height: "100%",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        backgroundColor: "#e5e7eb",
+                    }}>
+                        <span style={{ fontSize: "12px", color: "#9ca3af" }}>Sin imagen</span>
+                    </div>
+                )}
+                <StatusBadge visible={isVisible} />
+            </div>
+
+            {/* Contenido */}
+            <div style={{ padding: "12px", flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
+                <h3 style={{ fontSize: "13px", fontWeight: "700", color: "#1f2e27", margin: 0, lineHeight: "1.3" }}>
+                    {product.name}
+                </h3>
+                <p style={{
+                    fontSize: "11px", color: "#6b7280", margin: 0, lineHeight: "1.5",
+                    display: "-webkit-box", WebkitLineClamp: 3,
+                    WebkitBoxOrient: "vertical", overflow: "hidden",
+                }}>
+                    {product.description || "Sin descripción."}
+                </p>
+                <p style={{ fontSize: "14px", fontWeight: "700", color: "#15803d", margin: 0 }}>
+                    $ {Number(product.price).toLocaleString("es-PY")}
+                </p>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <Stars rating={product.average_rating} />
+                    <span style={{ fontSize: "11px", color: "#6b7280" }}>
+                        ({product.total_reviews ?? 0} reseñas)
+                    </span>
+                </div>
+                {categoryName && <CategoryPill name={categoryName} />}
+            </div>
+
+            {/* Botones */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: "6px", padding: "0 12px 12px" }}>
+                <button type="button" onClick={onView} style={{
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: "4px",
+                    padding: "6px 0", borderRadius: "8px", fontSize: "11px", fontWeight: "600",
+                    backgroundColor: "#eff6ff", color: "#2563eb", border: "1px solid #bfdbfe", cursor: "pointer",
+                }}>
+                    <Eye size={12} /> Ver
+                </button>
+                <button type="button" onClick={onEdit} style={{
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: "4px",
+                    padding: "6px 0", borderRadius: "8px", fontSize: "11px", fontWeight: "600",
+                    backgroundColor: "#f0fdf4", color: "#15803d", border: "1px solid #bbf7d0", cursor: "pointer",
+                }}>
+                    <Pencil size={12} /> Editar
+                </button>
+                <button type="button" onClick={onDelete} title="Eliminar producto" style={{
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    width: "32px", borderRadius: "8px",
+                    backgroundColor: "#fff1f2", color: "#dc2626",
+                    border: "1px solid #fecdd3", cursor: "pointer",
+                }}>
+                    <Trash2 size={13} />
+                </button>
+            </div>
+        </div>
+    );
+}
+
+// ─── Modal de confirmación ────────────────────────────────────────────────────
+function DeleteModal({ product, isDeleting, onConfirm, onCancel }) {
+    if (!product) return null;
+    return (
+        <div
+            style={{
+                position: "fixed", inset: 0, zIndex: 50,
+                backgroundColor: "rgba(0,0,0,0.45)",
+                display: "flex", alignItems: "center", justifyContent: "center", padding: "16px",
+            }}
+            onClick={onCancel}
+        >
+            <div
                 style={{
-                    display: "flex", alignItems: "center", gap: "6px",
-                    marginTop: "8px", padding: "8px 16px",
-                    backgroundColor: "var(--primary-dark)", color: "white",
-                    border: "none", borderRadius: "8px",
-                    fontSize: "14px", fontWeight: "500", cursor: "pointer",
+                    backgroundColor: "white", borderRadius: "16px", padding: "24px",
+                    maxWidth: "420px", width: "100%", boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
                 }}
+                onClick={e => e.stopPropagation()}
             >
-                <Plus size={14} />
-                Crear Producto
-            </button>
+                <div style={{
+                    width: "48px", height: "48px", borderRadius: "50%",
+                    backgroundColor: "#fff1f2", border: "1px solid #fecdd3",
+                    display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "16px",
+                }}>
+                    <AlertTriangle size={24} color="#dc2626" />
+                </div>
+
+                <h3 style={{ fontSize: "18px", fontWeight: "700", color: "#111827", margin: "0 0 8px 0" }}>
+                    ¿Estás seguro?
+                </h3>
+                <p style={{ fontSize: "14px", color: "#374151", margin: "0 0 6px 0", lineHeight: "1.5" }}>
+                    Esta acción eliminará permanentemente el producto{" "}
+                    <strong>"{product.name}"</strong>.
+                </p>
+                <p style={{ fontSize: "13px", color: "#6b7280", margin: "0 0 24px 0" }}>
+                    Esta acción no puede ser deshecha.
+                </p>
+
+                <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+                    <button type="button" onClick={onCancel} disabled={isDeleting} style={{
+                        padding: "8px 20px", borderRadius: "8px",
+                        border: "1px solid #d1d5db", backgroundColor: "white",
+                        fontSize: "14px", fontWeight: "500", color: "#374151",
+                        cursor: isDeleting ? "not-allowed" : "pointer", opacity: isDeleting ? 0.6 : 1,
+                    }}>
+                        Cancelar
+                    </button>
+                    <button type="button" onClick={onConfirm} disabled={isDeleting} style={{
+                        padding: "8px 20px", borderRadius: "8px", border: "none",
+                        backgroundColor: "#dc2626", fontSize: "14px", fontWeight: "600", color: "white",
+                        cursor: isDeleting ? "not-allowed" : "pointer", opacity: isDeleting ? 0.7 : 1,
+                        display: "flex", alignItems: "center", gap: "6px",
+                    }}>
+                        {isDeleting ? "Eliminando..." : "Eliminar"}
+                    </button>
+                </div>
+            </div>
         </div>
     );
 }
@@ -63,17 +202,18 @@ export function CommerceProductsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [search, setSearch] = useState("");
+    const [filterStatus, setFilterStatus] = useState("all");
+    const [filterCategory, setFilterCategory] = useState("all");
+    const [productToDelete, setProductToDelete] = useState(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     useEffect(() => {
         let active = true;
         const load = async () => {
             try {
-                // 1. Obtener id_store desde la sesión
                 const sessionRes = await apiClient.get("/api/session/user-session");
                 const idStore = sessionRes.data?.user?.id_store;
                 if (!idStore) throw new Error("No tenés un comercio registrado.");
-
-                // 2. Cargar productos del comercio
                 const res = await apiClient.get(`/api/commerces/${idStore}`);
                 if (active) setProducts(res.data?.products ?? []);
             } catch (err) {
@@ -86,38 +226,71 @@ export function CommerceProductsPage() {
         return () => { active = false; };
     }, []);
 
-    const filteredProducts = products.filter(p =>
-        p.name?.toLowerCase().includes(search.toLowerCase())
-    );
+    // Categorías únicas para el filtro
+    const categories = useMemo(() => {
+        const seen = new Set();
+        return products
+            .map(p => p.product_category?.name ?? p.category?.name ?? null)
+            .filter(name => name && !seen.has(name) && seen.add(name));
+    }, [products]);
+
+    // Productos filtrados
+    const filteredProducts = useMemo(() => {
+        return products.filter(p => {
+            const matchesSearch = !search || p.name?.toLowerCase().includes(search.toLowerCase());
+            const isVisible = p.visible !== false;
+            const matchesStatus =
+                filterStatus === "all" ||
+                (filterStatus === "active" && isVisible) ||
+                (filterStatus === "hidden" && !isVisible);
+            const catName = p.product_category?.name ?? p.category?.name ?? "";
+            const matchesCategory = filterCategory === "all" || catName === filterCategory;
+            return matchesSearch && matchesStatus && matchesCategory;
+        });
+    }, [products, search, filterStatus, filterCategory]);
+
+    const handleDeleteConfirm = async () => {
+        if (!productToDelete) return;
+        setIsDeleting(true);
+        try {
+            await apiClient.delete(`/products/${productToDelete.id_product}`);
+            setProducts(prev => prev.filter(p => p.id_product !== productToDelete.id_product));
+            setProductToDelete(null);
+        } catch (err) {
+            console.error("Error al eliminar producto:", err);
+        } finally {
+            setIsDeleting(false);
+        }
+    };
 
     if (loading) return <p style={{ color: "#6b7280", padding: "16px" }}>Cargando...</p>;
 
+    const selectStyle = {
+        padding: "6px 10px", borderRadius: "8px", fontSize: "12px", fontWeight: "500",
+        border: "1px solid #e5e7eb", backgroundColor: "white", color: "#374151",
+        cursor: "pointer", outline: "none",
+    };
+
     return (
         <>
-            {/* ── Header ─────────────────────────────────────────────────────── */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "24px" }}>
+            {/* Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px" }}>
                 <div>
-                    <h4 style={{ fontWeight: "600", margin: "0 0 4px 0" }}>Productos</h4>
+                    <h4 style={{ fontWeight: "600", margin: "0 0 4px 0" }}>Gestión de Productos</h4>
                     <p style={{ color: "#6b7280", margin: 0, fontSize: "14px" }}>
-                        Gestioná el catálogo de tu comercio
+                        Administrá tu catálogo de productos de forma sencilla
                     </p>
                 </div>
-                <button
-                    type="button"
-                    onClick={() => navigate("/comercio/productos/nuevo")}
-                    style={{
-                        display: "flex", alignItems: "center", gap: "6px",
-                        backgroundColor: "var(--primary-dark)", color: "white",
-                        border: "none", borderRadius: "8px", padding: "8px 16px",
-                        fontSize: "14px", fontWeight: "500", cursor: "pointer",
-                    }}
-                >
-                    <Plus size={14} />
-                    Nuevo Producto
+                <button type="button" onClick={() => navigate("/comercio/productos/nuevo")} style={{
+                    display: "flex", alignItems: "center", gap: "6px",
+                    backgroundColor: "var(--primary-dark)", color: "white",
+                    border: "none", borderRadius: "8px", padding: "8px 16px",
+                    fontSize: "13px", fontWeight: "500", cursor: "pointer",
+                }}>
+                    <Plus size={14} /> Nuevo Producto
                 </button>
             </div>
 
-            {/* ── Error ──────────────────────────────────────────────────────── */}
             {error && (
                 <div style={{
                     backgroundColor: "#fff1f2", border: "1px solid #fecdd3",
@@ -128,141 +301,99 @@ export function CommerceProductsPage() {
                 </div>
             )}
 
-            {/* ── Buscador ───────────────────────────────────────────────────── */}
-            <div style={{ ...card, marginBottom: "16px", padding: "12px 16px" }}>
-                <div style={{ position: "relative" }}>
-                    <Search size={14} color="#9ca3af" style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)" }} />
+            {/* Barra de búsqueda y filtros */}
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px", flexWrap: "wrap" }}>
+                <div style={{ position: "relative", flex: 1, minWidth: "180px" }}>
+                    <Search size={13} color="#9ca3af" style={{
+                        position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)",
+                    }} />
                     <input
                         value={search}
                         onChange={e => setSearch(e.target.value)}
-                        placeholder="Buscar por nombre..."
+                        placeholder="Buscar productos..."
                         style={{
-                            width: "100%", padding: "7px 12px 7px 32px",
+                            width: "100%", padding: "7px 12px 7px 30px",
                             border: "1px solid #e5e7eb", borderRadius: "8px",
-                            fontSize: "13px", backgroundColor: "#f9fafb",
-                            outline: "none", boxSizing: "border-box",
+                            fontSize: "12px", backgroundColor: "white",
+                            outline: "none", boxSizing: "border-box", color: "#374151",
                         }}
                     />
                 </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span style={{ fontSize: "12px", color: "#6b7280", whiteSpace: "nowrap" }}>🔽 Estado:</span>
+                    <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={selectStyle}>
+                        <option value="all">Todos</option>
+                        <option value="active">Activo</option>
+                        <option value="hidden">Oculto</option>
+                    </select>
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span style={{ fontSize: "12px", color: "#6b7280", whiteSpace: "nowrap" }}>🔽 Categoría:</span>
+                    <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} style={selectStyle}>
+                        <option value="all">Todas</option>
+                        {categories.map(cat => (
+                            <option key={cat} value={cat}>{cat}</option>
+                        ))}
+                    </select>
+                </div>
             </div>
 
-            {/* ── Lista ──────────────────────────────────────────────────────── */}
-            <div style={card}>
-                {filteredProducts.length === 0 && !search && (
-                    <EmptyState onCreateClick={() => navigate("/comercio/productos/nuevo")} />
-                )}
-
-                {filteredProducts.length === 0 && search && (
-                    <p style={{ textAlign: "center", color: "#6b7280", fontSize: "13px", padding: "32px 0" }}>
-                        No se encontraron productos con "{search}".
+            {/* Grid de cards */}
+            {filteredProducts.length === 0 ? (
+                <div style={{
+                    backgroundColor: "white", borderRadius: "16px", padding: "48px 20px",
+                    textAlign: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
+                }}>
+                    <p style={{ fontSize: "15px", fontWeight: "600", color: "#374151", margin: "0 0 6px 0" }}>
+                        {search || filterStatus !== "all" || filterCategory !== "all"
+                            ? "No se encontraron productos con esos filtros."
+                            : "Aún no tenés productos."}
                     </p>
-                )}
+                    {!search && filterStatus === "all" && filterCategory === "all" && (
+                        <button type="button" onClick={() => navigate("/comercio/productos/nuevo")} style={{
+                            marginTop: "12px", padding: "8px 16px",
+                            backgroundColor: "var(--primary-dark)", color: "white",
+                            border: "none", borderRadius: "8px", fontSize: "13px",
+                            fontWeight: "500", cursor: "pointer",
+                            display: "inline-flex", alignItems: "center", gap: "6px",
+                        }}>
+                            <Plus size={13} /> Crear primer producto
+                        </button>
+                    )}
+                </div>
+            ) : (
+                <div style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+                    gap: "16px",
+                }}>
+                    {filteredProducts.map(product => (
+                        <ProductCard
+                            key={product.id_product}
+                            product={product}
+                            onView={() => navigate(`/comercio/productos/${product.id_product}`)}
+                            onEdit={() => navigate(`/comercio/productos/${product.id_product}/editar`)}
+                            onDelete={() => setProductToDelete(product)}
+                        />
+                    ))}
+                </div>
+            )}
 
-                {filteredProducts.length > 0 && (
-                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                        <thead>
-                            <tr style={{ borderBottom: "1px solid #f3f4f6" }}>
-                                {["Producto", "Precio", "Estado", "Acciones"].map(h => (
-                                    <th key={h} style={{
-                                        textAlign: h === "Acciones" ? "right" : "left",
-                                        fontSize: "11px", fontWeight: "600",
-                                        color: "#6b7280", textTransform: "uppercase",
-                                        letterSpacing: "0.05em", padding: "8px 12px",
-                                    }}>{h}</th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredProducts.map((product, idx) => (
-                                <tr
-                                    key={product.id_product}
-                                    style={{
-                                        borderBottom: idx < filteredProducts.length - 1 ? "1px solid #f9fafb" : "none",
-                                        transition: "background 0.1s",
-                                    }}
-                                    onMouseEnter={e => e.currentTarget.style.backgroundColor = "#f9fafb"}
-                                    onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}
-                                >
-                                    {/* Producto */}
-                                    <td style={{ padding: "12px" }}>
-                                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                                            <div style={{
-                                                width: "40px", height: "40px", borderRadius: "8px",
-                                                overflow: "hidden", backgroundColor: "#f3f4f6", flexShrink: 0,
-                                            }}>
-                                                {product.image_url
-                                                    ? <img src={product.image_url} alt={product.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                                                    : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                                        <Package size={16} color="#d1d5db" />
-                                                    </div>
-                                                }
-                                            </div>
-                                            <div>
-                                                <p style={{ fontSize: "13px", fontWeight: "600", color: "#111827", margin: 0 }}>
-                                                    {product.name}
-                                                </p>
-                                                <p style={{ fontSize: "11px", color: "#6b7280", margin: 0 }}>
-                                                    ID: {product.id_product}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </td>
-
-                                    {/* Precio */}
-                                    <td style={{ padding: "12px", fontSize: "13px", fontWeight: "600", color: "#15803d" }}>
-                                        Gs. {Number(product.price).toLocaleString("es-PY")}
-                                    </td>
-
-                                    {/* Estado */}
-                                    <td style={{ padding: "12px" }}>
-                                        <StatusPill visible={product.visible} />
-                                    </td>
-
-                                    {/* Acciones */}
-                                    <td style={{ padding: "12px", textAlign: "right" }}>
-                                        <div style={{ display: "flex", justifyContent: "flex-end", gap: "6px" }}>
-                                            <button
-                                                type="button"
-                                                onClick={() => navigate(`/comercio/productos/${product.id_product}`)}
-                                                title="Ver detalle"
-                                                style={{
-                                                    display: "flex", alignItems: "center", justifyContent: "center",
-                                                    width: "30px", height: "30px", borderRadius: "6px",
-                                                    border: "1px solid #e5e7eb", backgroundColor: "white",
-                                                    cursor: "pointer", color: "#374151",
-                                                }}
-                                            >
-                                                <Eye size={13} />
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => navigate(`/comercio/productos/${product.id_product}/editar`)}
-                                                title="Editar"
-                                                style={{
-                                                    display: "flex", alignItems: "center", justifyContent: "center",
-                                                    width: "30px", height: "30px", borderRadius: "6px",
-                                                    border: "1px solid #e5e7eb", backgroundColor: "white",
-                                                    cursor: "pointer", color: "#374151",
-                                                }}
-                                            >
-                                                <Pencil size={13} />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                )}
-            </div>
-
-            {/* ── Footer con total ───────────────────────────────────────────── */}
             {filteredProducts.length > 0 && (
-                <p style={{ fontSize: "12px", color: "#9ca3af", marginTop: "10px", textAlign: "right" }}>
+                <p style={{ fontSize: "12px", color: "#9ca3af", marginTop: "12px", textAlign: "right" }}>
                     {filteredProducts.length} producto{filteredProducts.length !== 1 ? "s" : ""}
-                    {search ? ` encontrado${filteredProducts.length !== 1 ? "s" : ""}` : " en total"}
                 </p>
             )}
+
+            {/* Modal de eliminación */}
+            <DeleteModal
+                product={productToDelete}
+                isDeleting={isDeleting}
+                onConfirm={handleDeleteConfirm}
+                onCancel={() => !isDeleting && setProductToDelete(null)}
+            />
         </>
     );
 }
