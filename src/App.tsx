@@ -1,6 +1,10 @@
 import './App.css'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+
+import { Toaster } from "react-hot-toast";
+
 import './index.css'
+
 
 /**
  * Layouts
@@ -34,6 +38,7 @@ import CreateProductPage from './features/commerces/pages/CreateProductPage';
 import { EditClientProfile } from './features/clients/pages/EditClientProfile';
 
 import EditProductPage from './features/commerces/pages/EditProductPage';
+import Wishlist from "./features/clients/pages/Wishlist"
 
 
 const HomePageRoutes = () => (
@@ -60,6 +65,7 @@ const HomePageRoutes = () => (
 function App() {
   return (
     <Router>
+      <Toaster position="top-right" reverseOrder={false} />
       <Routes>
         <Route path="/" element={<HomePageRoutes />} />
 
@@ -86,7 +92,7 @@ function App() {
         <Route path="/pedidos" element={<ClientOrdersPage />} />
         <Route path="/pedidos/:orderId" element={<ClientOrderDetailsPage />} />
         <Route path="/homepage" element={<HomePage />} />
-
+        <Route path="/wishlist" element={<VistaComercioLayout><Wishlist/></VistaComercioLayout>}/>
         <Route
           path="/busqueda"
           element={
