@@ -26,6 +26,7 @@ import { BusquedaPage } from './features/clients/pages/BusquedaPage'
 import { CommentsPage } from './features/clients/pages/CommentsPage'
 import { CreateCommercePage } from './features/clients/pages/CreateCommercePage'
 import { CommerceProfilePage } from './features/commerces/pages/CommerceProfilePage';
+import { CommerceProductsPage } from './features/commerces/pages/CommerceProductsPage'
 import { EditCommercePage } from './features/commerces/pages/EditCommercePage'
 import AuthPage from './features/clients/pages/AuthPage';
 
@@ -33,7 +34,11 @@ import ComercioVerProducto from './features/commerces/pages/ComercioVerProducto'
 import PriceComparisonPage from './features/clients/pages/PriceComparisonPage';
 import DetalleProducto from './features/commerces/pages/DetalleProducto';
 import CreateProductPage from './features/commerces/pages/CreateProductPage';
+
+import { EditClientProfile } from './features/clients/pages/EditClientProfile';
+
 import EditProductPage from './features/commerces/pages/EditProductPage';
+
 
 const HomePageRoutes = () => (
   <div className="p-10 text-center">
@@ -51,6 +56,7 @@ const HomePageRoutes = () => (
     <p className="mt-4">Navega a <a href="/busqueda" className="text-blue-500 underline">Busqueda</a></p>
     <p className="mt-4">Navega a <a href="/comentarios" className="text-blue-500 underline">Comentarios</a></p>
     <p className="mt-4">Navega a <a href="/crear-comercio" className="text-blue-500 underline">Crear Comercio</a></p>
+    <p className="mt-4">Navega a <a href="/mi-perfil" className="text-blue-500 underline">Editar Perfil</a></p>
     
   </div>
 );
@@ -65,6 +71,7 @@ function App() {
         <Route path="/login" element={<AuthPage />} />
         
         <Route path="/perfil" element={<MyAccountPage />} />
+        <Route path="/mi-perfil" element={<EditClientProfile />} />
         <Route path="/comparar" element={<PriceComparisonPage />} />
         <Route
           path="/producto-detalle"
@@ -80,24 +87,6 @@ function App() {
           </VistaComercioLayout>
         } />
         <Route path="/crear-comercio" element={<CreateCommercePage />} />
-
-        <Route
-          path="/producto-detalle"
-          element={
-            <VistaComercioLayout>
-              <DetalleProducto />
-            </VistaComercioLayout>
-          }
-        />
-
-        <Route
-          path="/perfil-comercio"
-          element={
-            <VistaComercioLayout>
-              <VistaComercioPage />
-            </VistaComercioLayout>
-          }
-        />
 
         <Route path="/pedidos" element={<ClientOrdersPage />} />
         <Route path="/pedidos/:orderId" element={<ClientOrderDetailsPage />} />
@@ -121,16 +110,10 @@ function App() {
           }
         />
 
-        <Route path="/comercio-producto" element={<ComercioVerProducto />} />
-
-        <Route
-          path="/comercio"
-          element={
-            <MyCommerceLayout>
-              <MyCommercePage />
-            </MyCommerceLayout>
-          }
-        />
+        {/* ── Área del comercio (con sidebar) ───────────────────────────── */}
+        <Route path="/comercio" element={
+          <MyCommerceLayout><MyCommercePage /></MyCommerceLayout>
+        } />
         <Route path="/comercio/perfil" element={
           <MyCommerceLayout><CommerceProfilePage /></MyCommerceLayout>
         } />
@@ -138,23 +121,18 @@ function App() {
           <MyCommerceLayout><EditCommercePage /></MyCommerceLayout>
         } />
 
-        <Route
-          path="/comercio/productos/nuevo"
-          element={
-            <MyCommerceLayout>
-              <CreateProductPage />
-            </MyCommerceLayout>
-          }
-        />
-
-        <Route
-          path="/comercio/productos/:id/editar"
-          element={
-            <MyCommerceLayout>
-              <EditProductPage />
-            </MyCommerceLayout>
-          }
-        />
+        <Route path="/comercio/productos" element={
+          <MyCommerceLayout><CommerceProductsPage /></MyCommerceLayout>
+        } />
+        <Route path="/comercio/productos/nuevo" element={
+          <MyCommerceLayout><CreateProductPage /></MyCommerceLayout>
+        } />
+        <Route path="/comercio/productos/:id" element={
+          <MyCommerceLayout><ComercioVerProducto /></MyCommerceLayout>
+        } />
+        <Route path="/comercio/productos/:id/editar" element={
+          <MyCommerceLayout><EditProductPage /></MyCommerceLayout>
+        } />
           
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

@@ -1,7 +1,8 @@
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "").trim().replace(/\/$/, "");
 
 const ENDPOINT_PATHS = {
-  categories: "/products/categories",
+  session: "/api/session/user-session",
+  categories: "/api/categories/products",
   tags: "/products/tags",
   products: "/products",
 };
@@ -10,6 +11,9 @@ export const CREATE_PRODUCT_ENDPOINT_PATHS = ENDPOINT_PATHS;
 
 // Links centralizados para debug/cambios de entorno.
 export const CREATE_PRODUCT_ENDPOINT_LINKS = {
+  session: API_BASE_URL
+    ? `${API_BASE_URL}${ENDPOINT_PATHS.session}`
+    : ENDPOINT_PATHS.session,
   categories: API_BASE_URL
     ? `${API_BASE_URL}${ENDPOINT_PATHS.categories}`
     : ENDPOINT_PATHS.categories,

@@ -5,31 +5,89 @@ import {
 } from "./createProductEndpoints";
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "").trim();
-const SELLER_USER_ID = (import.meta.env.VITE_SELLER_USER_ID || "").trim();
 
-const apiClient = axios.create({
-  baseURL: API_BASE_URL || undefined,
+export const apiClient = axios.create({
+  baseURL: API_BASE_URL || "http://localhost:3000",
+  withCredentials: true,
 });
 
 const buildParams = (params) => {
   const cleaned = {};
+
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== "") {
       cleaned[key] = value;
     }
   });
+
   return cleaned;
 };
 
-const parseArrayResponse = (data) => (Array.isArray(data) ? data : []);
+const parseArrayResponse = (data) => {
+  if (Array.isArray(data)) {
+    return data;
+  }
 
-export const resolveSellerUserId = () => {
-  const localStorageUserId =
-    typeof window !== "undefined"
-      ? window.localStorage.getItem("seller_user_id")
-      : "";
+  if (Array.isArray(data?.data)) {
+    return data.data;
+  }
 
-  return (SELLER_USER_ID || localStorageUserId || "").trim();
+  if (Array.isArray(data?.items)) {
+    return data.items;
+  }
+
+  return [];
+};
+
+const normalizeId = (item, fallbacks = []) => {
+  const keys = ["id", ...fallbacks];
+
+  for (const key of keys) {
+    if (item?.[key] !== undefined && item?.[key] !== null && item?.[key] !== "") {
+      return item[key];
+    }
+  }
+
+  return undefined;
+};
+
+const normalizeProductCategory = (category) => ({
+  ...category,
+  id: normalizeId(category, ["id_product_category"]),
+  name: category?.name ?? "",
+});
+
+const normalizeProductTag = (tag) => ({
+  ...tag,
+  id: normalizeId(tag, ["id_product_tag"]),
+  name: tag?.name ?? "",
+});
+
+const getFriendlyBackendMessage = (message, status) => {
+  const normalizedMessage = String(message || "").toLowerCase();
+
+  if (
+    status === 401 ||
+    normalizedMessage.includes("token") ||
+    normalizedMessage.includes("sesion") ||
+    normalizedMessage.includes("session") ||
+    normalizedMessage.includes("autentic")
+  ) {
+    return "Necesitas iniciar sesion para publicar un producto.";
+  }
+
+  return message;
+};
+
+export const fetchCurrentSessionUser = async () => {
+  const response = await apiClient.get(CREATE_PRODUCT_ENDPOINT_PATHS.session);
+  const sessionUser = response.data?.user ?? response.data?.data?.user ?? null;
+
+  if (!sessionUser?.id_user) {
+    throw new Error("Necesitas iniciar sesion para publicar un producto.");
+  }
+
+  return sessionUser;
 };
 
 export const fetchProductCategories = async ({
@@ -40,7 +98,14 @@ export const fetchProductCategories = async ({
     params: buildParams({ search, limit }),
   });
 
-  return parseArrayResponse(response.data);
+  return parseArrayResponse(response.data)
+    .map(normalizeProductCategory)
+    .filter(
+      (category) =>
+        category.id !== undefined &&
+        category.id !== null &&
+        Boolean(category.name)
+    );
 };
 
 export const fetchProductTags = async ({
@@ -51,23 +116,33 @@ export const fetchProductTags = async ({
     params: buildParams({ search, limit }),
   });
 
-  return parseArrayResponse(response.data);
+  return parseArrayResponse(response.data)
+    .map(normalizeProductTag)
+    .filter(
+      (tag) =>
+        tag.id !== undefined &&
+        tag.id !== null &&
+        Boolean(tag.name)
+    );
 };
 
-export const createProduct = async ({ payload, userId }) => {
-  const sellerId = (userId || resolveSellerUserId()).trim();
+const ensureAuthenticatedUser = async (sessionUser) => {
+  const currentSessionUser = await fetchCurrentSessionUser();
 
-  if (!sellerId) {
-    throw new Error(
-      "Falta x-user-id. Configura VITE_SELLER_USER_ID o localStorage.seller_user_id."
-    );
+  if (sessionUser?.id_user && currentSessionUser.id_user !== sessionUser.id_user) {
+    return currentSessionUser;
   }
 
-  const response = await apiClient.post(CREATE_PRODUCT_ENDPOINT_PATHS.products, payload, {
-    headers: {
-      "x-user-id": sellerId,
-    },
-  });
+  return currentSessionUser;
+};
+
+export const createProduct = async ({ payload, sessionUser }) => {
+  await ensureAuthenticatedUser(sessionUser);
+
+  const response = await apiClient.post(
+    CREATE_PRODUCT_ENDPOINT_PATHS.products,
+    payload
+  );
 
   return response.data;
 };
@@ -80,23 +155,30 @@ export const getBackendErrorMessage = (error, fallbackMessage) => {
       error.response?.data?.detail;
 
     if (backendMessage) {
-      return backendMessage;
+      return getFriendlyBackendMessage(
+        backendMessage,
+        error.response?.status
+      );
     }
 
     if (error.response?.status === 400) {
-      return "Datos invalidos. Revisa campos requeridos, categoria y tags.";
+      return "Datos invalidos. Revisa los campos requeridos del producto.";
     }
 
     if (error.response?.status === 401) {
-      return "Falta x-user-id para crear el producto.";
+      return "Necesitas iniciar sesion para publicar un producto.";
     }
 
     if (error.response?.status === 403) {
-      return "El usuario no tiene permisos de vendedor.";
+      return "No tienes permisos para crear productos con esta cuenta.";
     }
 
     if (error.response?.status === 404) {
-      return "Vendedor o comercio no activo.";
+      return "No se encontro el comercio o alguna referencia del producto.";
+    }
+
+    if (error.response?.status === 409) {
+      return "Ya existe un producto con los datos enviados.";
     }
 
     if (error.response?.status === 500) {

@@ -42,6 +42,7 @@ export default function EditProductPage() {
         availableTags,
     } = useEditProduct(id);
 
+
     return (
         <div className="ml-0 mr-auto w-full max-w-[1160px] text-[#22312a]">
 
@@ -393,7 +394,11 @@ export default function EditProductPage() {
                 variant={resultModal.variant}
                 title={resultModal.title}
                 message={resultModal.message}
-                onClose={closeModal}
+                onClose={resultModal.variant === "success"
+                    ? () => navigate("/comercio/productos")
+                    : closeModal
+                }
+                closeLabel={resultModal.variant === "success" ? "Ir a Productos" : "Cerrar"}
             />
         </div>
     );

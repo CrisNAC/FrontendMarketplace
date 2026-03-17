@@ -6,6 +6,7 @@ export const CreationResultModal = ({
   title,
   message,
   variant = "success",
+  closeLabel = "Cerrar",  // ← permite personalizar el texto del botón
 }) => {
   if (!isOpen) {
     return null;
@@ -65,7 +66,7 @@ export const CreationResultModal = ({
                 : "bg-red-600 hover:bg-red-700"
             }`}
           >
-            Cerrar
+            {closeLabel}
           </button>
         </div>
       </div>
