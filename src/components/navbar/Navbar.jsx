@@ -89,16 +89,19 @@ const Navbar = () => {
 
         {/* Icons */}
         <div className="flex gap-[15px] items-center">
+          <Link to="/wishlist">
 
-          <div className="relative">
-            <ShoppingCart size={25} />
+            <div className="relative cursor-pointer">
 
-            {cartCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] px-1 rounded-full">
-                {cartCount}
-              </span>
-            )}
-          </div>
+              <ShoppingCart size={25} />
+
+              {cartCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] px-1 rounded-full">
+                  {cartCount}
+                </span>
+              )}
+            </div>
+          </Link>
 
           <Link 
             to="/perfil" 

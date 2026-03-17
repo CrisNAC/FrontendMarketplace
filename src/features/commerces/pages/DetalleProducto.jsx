@@ -313,22 +313,10 @@ export default function DetalleProducto() {
               className="px-8 py-2 rounded-md text-white text-[12px] font-medium"
               style={{ backgroundColor: VERDE }}
             >
-              Agregar al Carrito
+              Agregar a lista de deseados
             </button>
 
-            <button
-              type="button"
-              onClick={toggleFavorito}
-              className="w-10 h-10 rounded-full border border-gray-300 bg-white flex items-center justify-center"
-            >
-              <SvgIcon
-                className={`w-5 h-5 ${
-                  favorito ? "text-red-500" : "text-gray-600"
-                }`}
-              >
-                {I.heart}
-              </SvgIcon>
-            </button>
+            
           </div>
 
         </div>

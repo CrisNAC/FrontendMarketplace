@@ -38,6 +38,7 @@ import CreateProductPage from './features/commerces/pages/CreateProductPage';
 import { EditClientProfile } from './features/clients/pages/EditClientProfile';
 
 import EditProductPage from './features/commerces/pages/EditProductPage';
+import Wishlist from "./features/clients/pages/Wishlist"
 
 
 const HomePageRoutes = () => (
@@ -91,7 +92,7 @@ function App() {
         <Route path="/pedidos" element={<ClientOrdersPage />} />
         <Route path="/pedidos/:orderId" element={<ClientOrderDetailsPage />} />
         <Route path="/homepage" element={<HomePage />} />
-
+        <Route path="/wishlist" element={<VistaComercioLayout><Wishlist/></VistaComercioLayout>}/>
         <Route
           path="/busqueda"
           element={
