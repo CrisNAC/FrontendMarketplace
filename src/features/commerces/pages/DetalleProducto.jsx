@@ -1,11 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-<<<<<<< HEAD
+
 import toast from "react-hot-toast";
-=======
 import { ArrowLeft } from "lucide-react";
 
->>>>>>> eddfd91af66419a8957480ba45adf3dd3d29acf9
 import iphoneImg from "../../../assets/iphone.png";
 import negroImg from "../../../assets/iphonenegrito.png";
 import naranjaImg from "../../../assets/iphonenaranja.png";

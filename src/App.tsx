@@ -1,11 +1,11 @@
 import './App.css'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-<<<<<<< HEAD
+
 import { Toaster } from "react-hot-toast";
-=======
+
 import './index.css'
 
->>>>>>> eddfd91af66419a8957480ba45adf3dd3d29acf9
+
 /**
  * Layouts
  */
