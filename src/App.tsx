@@ -30,6 +30,7 @@ import PriceComparisonPage from './features/clients/pages/PriceComparisonPage';
 import DetalleProducto from './features/commerces/pages/DetalleProducto';
 import CreateProductPage from './features/commerces/pages/CreateProductPage';
 import EditProductPage from './features/commerces/pages/EditProductPage';
+import AddressesPage from './features/clients/components/addresses/AddressesPage';
 
 const HomePageRoutes = () => (
   <div className="p-10 text-center">
@@ -60,7 +61,11 @@ function App() {
         <Route path="/login" element={<AuthPage />} />
         
         <Route path="/perfil" element={<MyAccountPage />} />
+
+        <Route path='/direcciones' element={<AddressesPage />} />
+
         <Route path="/comparar" element={<PriceComparisonPage />} />
+        
         <Route
           path="/producto-detalle"
           element={
