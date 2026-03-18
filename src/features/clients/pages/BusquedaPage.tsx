@@ -156,6 +156,7 @@ export const BusquedaPage = ({ query = "Celular" }: Props) => {
                         {col.map((product) => (
                             <SearchProductCard
                                 key={product.id_product}
+                                productId={product.id_product}
                                 name={product.name}
                                 price={String(product.price)}
                                 imageUrl={"https://placehold.co/600x600?text=Producto"}
