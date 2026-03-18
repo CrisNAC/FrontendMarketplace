@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom"; 
 import { getProductById } from "../../commerces/services/productDetailApi";
 import { getProductReviews } from "../../commerces/services/productReviewApi";
 
-const STATIC_PRODUCT_ID = 1;
 
 const TITLE="text-[#6B9080]";
 const BODY="text-slate-900";
@@ -45,9 +44,8 @@ return(
 
 export default function ProductDetailView(){
 
-const navigate=useNavigate();
-
-const id=STATIC_PRODUCT_ID;
+const navigate = useNavigate();
+const { id } = useParams(); 
 
 const [product,setProduct]=useState(null);
 const [reviews,setReviews]=useState([]);
