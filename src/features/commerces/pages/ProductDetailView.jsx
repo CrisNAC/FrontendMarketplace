@@ -123,7 +123,7 @@ export default function ProductDetailView() {
     const navigate = useNavigate();
     const { id } = useParams();
 
-    const STATIC_PRODUCT_ID = id ?? 2;
+    const STATIC_PRODUCT_ID = id ?? 1;
 
     const [product, setProduct] = useState(null);
     const [reviews, setReviews] = useState([]);

@@ -71,7 +71,7 @@ const HomePageRoutes = () => (
     <p className="mt-4">Navega a <a href="/producto-detalle/:id" className="text-blue-500 underline">Detalle de Producto</a></p>
     <p className="mt-4">Navega a <a href="/comercio" className="text-blue-500 underline">Mi Comercio (Dashboard)</a></p>
     <p className="mt-4">Navega a <a href="/perfil-comercio" className="text-blue-500 underline">Perfil comercio</a></p>
-    <p className="mt-4">Navega a <a href="/comercio/productos/2" className="text-blue-500 underline">Ver Producto Comercio (ID 1)</a></p>
+    <p className="mt-4">Navega a <a href="/comercio/productos/1" className="text-blue-500 underline">Ver Producto Comercio (ID 1)</a></p>
     <p className="mt-4">Navega a <a href="/comercio/productos/nuevo" className="text-blue-500 underline">Crear Producto Comercio</a></p>
     <p className="mt-4">Navega a <a href="/pedidos" className="text-blue-500 underline">Ver pedidos</a></p>
     <p className="mt-4">Navega a <a href="/homepage" className="text-blue-500 underline">Homepage</a></p>
