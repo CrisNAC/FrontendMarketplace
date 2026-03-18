@@ -14,25 +14,30 @@ export default defineConfig({
     proxy: process.env.CI
       ? undefined
       : {
-      "/api": {
-        target: "http://localhost:3000",
-        changeOrigin: true,
-        secure: false,
-        selfHandleResponse: false,
-        configure: (proxy, _options) => {
-          proxy.on("proxyRes", (proxyRes, _req, res) => {
-            if (proxyRes.statusCode === 401) {
-              console.log("No autenticado, redirigiendo...");
-              res.writeHead(401, {
-                Location: "/login",
-              });
-              res.end();
-              return;
-            }
-            proxyRes.pipe(res);
-          });
+        "/api": {
+          target: "http://localhost:3000",
+          changeOrigin: true,
+          secure: false,
+          selfHandleResponse: false,
+          configure: (proxy, _options) => {
+            proxy.on("proxyRes", (proxyRes, _req, res) => {
+              if (proxyRes.statusCode === 401) {
+                console.log("No autenticado, redirigiendo...");
+                res.writeHead(401, {
+                  Location: "/login",
+                });
+                res.end();
+                return;
+              }
+              proxyRes.pipe(res);
+            });
+          },
         },
+        "/products": { // agregue esto para que funcionen algunas rutas que no llevan /api, ver eso luego y unificar
+          target: "http://localhost:3000",
+          changeOrigin: true,
+          secure: false,
+        }
       },
-    },
   },
 })
