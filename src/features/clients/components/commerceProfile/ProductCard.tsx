@@ -1,15 +1,20 @@
 import { useNavigate } from "react-router-dom";
 
 type Props = {
+    productId?: number;
     name: string;
     price: string;
     imageUrl?: string;
 };
 
-export const ProductCard = ({ name, price, imageUrl }: Props) => {
+export const ProductCard = ({ productId, name, price, imageUrl }: Props) => {
     const navigate = useNavigate();
 
     const handleCategoryClick = () => {
+        if (productId) {
+            navigate(`/producto-detalle/${productId}`);
+            return;
+        }
         navigate(`/producto-detalle`);
     };
 
