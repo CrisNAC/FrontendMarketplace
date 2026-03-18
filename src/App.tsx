@@ -41,7 +41,7 @@ import { CommerceProductsPage } from './features/commerces/pages/CommerceProduct
 import { EditCommercePage } from './features/commerces/pages/EditCommercePage'
 import AuthPage from './features/clients/pages/AuthPage';
 
-import ComercioVerProducto from './features/commerces/pages/ComercioVerProducto';
+import ProductDetailView from './features/commerces/pages/ProductDetailView';
 import PriceComparisonPage from './features/clients/pages/PriceComparisonPage';
 import DetalleProducto from './features/commerces/pages/DetalleProducto';
 import CreateProductPage from './features/commerces/pages/CreateProductPage';
@@ -71,7 +71,7 @@ const HomePageRoutes = () => (
     <p className="mt-4">Navega a <a href="/producto-detalle/:id" className="text-blue-500 underline">Detalle de Producto</a></p>
     <p className="mt-4">Navega a <a href="/comercio" className="text-blue-500 underline">Mi Comercio (Dashboard)</a></p>
     <p className="mt-4">Navega a <a href="/perfil-comercio" className="text-blue-500 underline">Perfil comercio</a></p>
-    <p className="mt-4">Navega a <a href="/comercio-producto" className="text-blue-500 underline">Ver Producto Comercio</a></p>
+    <p className="mt-4">Navega a <a href="/comercio/productos/1" className="text-blue-500 underline">Ver Producto Comercio (ID 1)</a></p>
     <p className="mt-4">Navega a <a href="/comercio/productos/nuevo" className="text-blue-500 underline">Crear Producto Comercio</a></p>
     <p className="mt-4">Navega a <a href="/pedidos" className="text-blue-500 underline">Ver pedidos</a></p>
     <p className="mt-4">Navega a <a href="/homepage" className="text-blue-500 underline">Homepage</a></p>
@@ -79,7 +79,6 @@ const HomePageRoutes = () => (
     <p className="mt-4">Navega a <a href="/comentarios" className="text-blue-500 underline">Comentarios</a></p>
     <p className="mt-4">Navega a <a href="/crear-comercio" className="text-blue-500 underline">Crear Comercio</a></p>
     <p className="mt-4">Navega a <a href="/mi-perfil" className="text-blue-500 underline">Editar Perfil</a></p>
-
   </div>
 );
 
@@ -151,7 +150,7 @@ function App() {
           <MyCommerceLayout><CreateProductPage /></MyCommerceLayout>
         } />
         <Route path="/comercio/productos/:id" element={
-          <MyCommerceLayout><ComercioVerProducto /></MyCommerceLayout>
+          <MyCommerceLayout><ProductDetailView /></MyCommerceLayout>
         } />
         <Route path="/comercio/productos/:id/editar" element={
           <MyCommerceLayout><EditProductPage /></MyCommerceLayout>
