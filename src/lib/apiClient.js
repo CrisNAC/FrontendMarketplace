@@ -42,10 +42,11 @@ const apiClient = axios.create({
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    const code =
-      error?.response?.data?.error?.code || error?.response?.status;
+    const rawCode =
+      error?.response?.data?.error?.code ?? error?.response?.status;
+    const code = Number(rawCode);
 
-    if (_navigate) {
+    if (!Number.isNaN(code) && _navigate) {
       if (code === 401) _navigate('/login');
       else if (code === 403) _navigate('/error/403');
       else if (code >= 500) _navigate('/error/500');

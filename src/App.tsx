@@ -13,7 +13,9 @@ import { setNavigate } from './lib/apiClient';
 import { NotFoundPage } from './pages/errors/NotFoundPage';
 import { ForbiddenPage } from './pages/errors/ForbiddenPage';
 import { ServerErrorPage } from './pages/errors/ServerErrorPage';
-import { TestErrorsPage } from './pages/errors/TestErrorsPage'; // TODO: eliminar luego de validar OM-274
+import { TestErrorsPage } from './pages/errors/TestErrorsPage'; // solo para desarrollo
+
+const isDev = import.meta.env.DEV;
 
 /**
  * Layouts
@@ -156,7 +158,7 @@ function App() {
         } />
 
         {/* ── Páginas de error ───────────────────────────────────────────── */}
-        <Route path="/test-errors" element={<TestErrorsPage />} /> {/* TODO: eliminar luego de validar OM-274 */}
+        {isDev && <Route path="/test-errors" element={<TestErrorsPage />} />}
         <Route path="/error/403" element={<ForbiddenPage />} />
         <Route path="/error/500" element={<ServerErrorPage />} />
         <Route path="/error/404" element={<NotFoundPage />} />

@@ -29,8 +29,10 @@ export const useErrorHandler = ({ redirect404 = false } = {}) => {
   const navigate = useNavigate();
 
   return (error) => {
-    const code =
-      error?.response?.data?.error?.code || error?.response?.status;
+    const rawCode =
+      error?.response?.data?.error?.code ?? error?.response?.status;
+    const code = Number(rawCode);
+    if (Number.isNaN(code)) return;
 
     if (code === 401) navigate('/login');
     else if (code === 403) navigate('/error/403');
