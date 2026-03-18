@@ -11,6 +11,8 @@ const Navbar = () => {
   const urlSearch = location.pathname === "/busqueda" ? (searchParams.get("search") || "") : "";
 
   const [search, setSearch] = useState("");
+    const [cartCount, setCartCount] = useState(0);
+
 
   useEffect(() => {
     if (location.pathname === "/busqueda") {
@@ -19,6 +21,20 @@ const Navbar = () => {
       setSearch("");
     }
   }, [location.pathname, urlSearch]);
+   useEffect(() => {
+
+    const actualizar = () => {
+      const carrito = JSON.parse(localStorage.getItem("carrito")) || [];
+      setCartCount(carrito.length);
+    };
+
+    actualizar();
+
+    window.addEventListener("cartUpdated", actualizar);
+
+    return () => window.removeEventListener("cartUpdated", actualizar);
+
+  }, []);
 
   const submitSearch = () => {
     const term = search.trim();
@@ -110,6 +126,20 @@ const Navbar = () => {
 
         {/* Icons */}
         <div className="flex gap-[15px] items-center">
+          <Link to="/wishlist">
+
+            <div className="relative cursor-pointer">
+
+              <ShoppingCart size={25} />
+
+              {cartCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] px-1 rounded-full">
+                  {cartCount}
+                </span>
+              )}
+            </div>
+          </Link>
+
           <Link 
             to="/perfil" 
             className="!text-[#333] hover:!text-[#2e6b4f] transition-colors !no-underline"
