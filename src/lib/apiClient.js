@@ -34,8 +34,13 @@ export const setNavigate = (nav) => {
   _navigate = nav;
 };
 
+const apiBaseUrl = import.meta.env.VITE_API_URL;
+if (!apiBaseUrl && !import.meta.env.DEV) {
+  throw new Error('VITE_API_URL es obligatoria fuera de desarrollo');
+}
+
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
+  baseURL: apiBaseUrl ?? 'http://localhost:3000',
   withCredentials: true,
 });
 
@@ -49,7 +54,7 @@ apiClient.interceptors.response.use(
     if (!Number.isNaN(code) && _navigate) {
       if (code === 401) _navigate('/login');
       else if (code === 403) _navigate('/error/403');
-      else if (code >= 500) _navigate('/error/500');
+      else if (code >= 500 && code < 600) _navigate('/error/500');
     }
 
     return Promise.reject(error);

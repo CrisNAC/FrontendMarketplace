@@ -37,6 +37,6 @@ export const useErrorHandler = ({ redirect404 = false } = {}) => {
     if (code === 401) navigate('/login');
     else if (code === 403) navigate('/error/403');
     else if (code === 404 && redirect404) navigate('/error/404');
-    else if (code >= 500) navigate('/error/500');
+    else if (code >= 500 && code < 600) navigate('/error/500');
   };
 };
