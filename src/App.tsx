@@ -68,7 +68,7 @@ const HomePageRoutes = () => (
     <p className="mt-4">Navega a <a href="/login" className="text-blue-500 underline">Login/Registro</a></p>
     <p className="mt-4">Navega a <a href="/comparar" className="text-blue-500 underline">Comparar Precios</a></p>
     <p className="mt-4">Navega a <a href="/perfil" className="text-blue-500 underline">Mi Perfil</a></p>
-    <p className="mt-4">Navega a <a href="/producto-detalle" className="text-blue-500 underline">Detalle de Producto</a></p>
+    <p className="mt-4">Navega a <a href="/producto-detalle/:id" className="text-blue-500 underline">Detalle de Producto</a></p>
     <p className="mt-4">Navega a <a href="/comercio" className="text-blue-500 underline">Mi Comercio (Dashboard)</a></p>
     <p className="mt-4">Navega a <a href="/perfil-comercio" className="text-blue-500 underline">Perfil comercio</a></p>
     <p className="mt-4">Navega a <a href="/comercio/productos/2" className="text-blue-500 underline">Ver Producto Comercio (ID 1)</a></p>
@@ -96,7 +96,7 @@ function App() {
         <Route path="/mi-perfil" element={<EditClientProfile />} />
         <Route path="/comparar" element={<PriceComparisonPage />} />
         <Route
-          path="/producto-detalle"
+          path="/producto-detalle/:id"
           element={
             <VistaComercioLayout>
               <DetalleProducto />

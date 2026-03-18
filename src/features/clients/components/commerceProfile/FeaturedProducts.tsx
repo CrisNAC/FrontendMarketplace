@@ -24,6 +24,7 @@ export const FeaturedProducts = ({ products }: Props) => {
                 {products.map((product) => (
                     <ProductCard
                         key={product.id}
+                        productId={product.id}
                         name={product.name}
                         price={product.price}
                         imageUrl={product.imageUrl}
