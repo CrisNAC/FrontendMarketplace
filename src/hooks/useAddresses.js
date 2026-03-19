@@ -3,11 +3,9 @@ import axios from "axios";
 
 /**
  * Instancia de axios con configuración base.
- * withCredentials: true equivale a credentials: "include" en fetch,
- * necesario para enviar las cookies de sesión en cada petición.
  */
 const api = axios.create({
-    baseURL: "http://localhost:3000/api/users",
+    baseURL: (import.meta.env.VITE_API_URL || "http://localhost:3000").trim() + "/api/users",
     withCredentials: true,
 });
 
@@ -34,7 +32,6 @@ export const useAddresses = (userId) => {
             const { data } = await api.get(`/${userId}/addresses`);
             setAddresses(data.data);
         } catch (err) {
-            // axios envuelve los errores HTTP en err.response
             setError(err.response?.data?.message || "Error al obtener direcciones");
         } finally {
             setLoading(false);
@@ -46,6 +43,8 @@ export const useAddresses = (userId) => {
     }, [fetchAddresses]);
 
     const createAddress = async (payload) => {
+        if (!userId) throw new Error("Usuario no autenticado");
+
         try {
             const { data } = await api.post(`/${userId}/addresses`, payload);
             setAddresses((prev) => [data.data, ...prev]);
@@ -56,6 +55,8 @@ export const useAddresses = (userId) => {
     };
 
     const updateAddress = async (addressId, payload) => {
+        if (!userId) throw new Error("Usuario no autenticado");
+
         try {
             const { data } = await api.put(`/${userId}/addresses/${addressId}`, payload);
             setAddresses((prev) =>
@@ -68,6 +69,8 @@ export const useAddresses = (userId) => {
     };
 
     const deleteAddress = async (addressId) => {
+        if (!userId) throw new Error("Usuario no autenticado");
+
         try {
             const { data } = await api.delete(`/${userId}/addresses/${addressId}`);
             setAddresses((prev) => prev.filter((a) => a.id_address !== addressId));

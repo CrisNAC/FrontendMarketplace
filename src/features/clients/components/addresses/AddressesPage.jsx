@@ -1,9 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect} from "react";
 import { MapPin, Plus, Pencil, Trash2, X, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import Navbar from "../../../../components/navbar/Navbar";
 import { SidebarClientProfile } from "../../../../components/SidebarClientProfile";
 import { useAddresses } from "../../../../hooks/useAddresses";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
+
+const API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:3000").trim();
 
 const useSession = () => {
     const [userId, setUserId] = useState(null);
@@ -11,7 +14,7 @@ const useSession = () => {
 
     useEffect(() => {
         axios
-            .get("http://localhost:3000/api/session/user-session", { withCredentials: true })
+            .get(`${API_BASE}/api/session/user-session`, { withCredentials: true })
             .then(({ data }) => {
                 if (data.success) setUserId(data.user.id_user);
             })
@@ -36,7 +39,7 @@ const Toast = ({ message, type, onClose }) => {
         <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-md shadow-lg text-white text-sm font-medium transition-all ${isError ? "bg-red-500" : "bg-[#2d6a4f]"}`}>
             { isError ? <AlertCircle size={16} /> : <CheckCircle2 size={16} />}
             <span>{message}</span>
-            <button onClick={onClose} className="m1-2 hover:opacity-75">
+            <button onClick={onClose} className="ml-2 hover:opacity-75">
                 <X size={14} />
             </button>
         </div>
@@ -286,6 +289,7 @@ const SectionHeader = ({ title, rightContent }) => (
 const MAX_ADDRESSES = 5;
 
 export const AddressesPage = () => {
+    const navigate = useNavigate();
     const { userId , sessionLoading } = useSession();
     //const userId = user?.id_user;
 
@@ -375,6 +379,34 @@ export const AddressesPage = () => {
                 <Navbar />
                 < div className="flex-1 flex items-center justify-center" >
                     <Loader2 size={28} className="animate-spin text-[#2d4030]" />
+                </div>
+            </div>
+        );
+    }
+
+    // Si la sesión ya resolvió pero no hay usuario, redirigir al login
+    if (!userId) {
+        return (
+            <div className="min-h-screen flex flex-col">
+                <Navbar />
+                <div className="flex-1 flex items-center justify-center px-4">
+                    <div className="bg-white border border-gray-200 rounded-md shadow-xl p-8 w-full max-w-sm text-center">
+                        <div className="bg-[#e8f0e9] p-3 rounded-full w-fit mx-auto mb-4">
+                            <MapPin size={24} className="text-[#2d4030]" />
+                        </div>
+                        <h2 className="font-semibold text-[#2d4030] text-[18px] mb-2">
+                            Inicia sesion para continuar
+                        </h2>
+                        <p className="text-gray-500 text-sm mb-6">
+                            Necesitas estar autenticado para ver tu libreta de direcciones.
+                        </p>
+                        <button
+                            onClick={() => navigate("/login")}
+                            className="w-full px-4 py-2 text-sm font-medium text-white bg-[#2d4030] hover:bg-[#3d5540] rounded-md transition-colors"
+                        >
+                            Ir al login
+                        </button>
+                    </div>
                 </div>
             </div>
         );
