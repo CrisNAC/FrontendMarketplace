@@ -29,7 +29,7 @@ export const CommentsPage = () => {
         id: r.id,
         author: r.customerName,
         rating: r.rating,
-        title: `${r.rating}/10`,
+        title: `${r.rating}/5`,
         content: r.comment,
         verified: r.isVerified,
         location: '',
@@ -90,7 +90,7 @@ export const CommentsPage = () => {
     }
     catch (error) {
       const data = error.response?.data;
-      const message = data?.errors?.auth?.message || data?.message || 'No se pudo enviar la reseña.';
+      const message = data?.errors?.auth?.messsage || data?.message || 'No se pudo enviar la reseña.';
       toast.error(message);
     }
   };
