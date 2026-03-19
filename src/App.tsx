@@ -43,7 +43,7 @@ import AuthPage from './features/clients/pages/AuthPage';
 
 import ProductDetailView from './features/commerces/pages/ProductDetailView';
 import PriceComparisonPage from './features/clients/pages/PriceComparisonPage';
-import DetalleProducto from './features/commerces/pages/DetalleProducto';
+import DetalleProducto from './features/clients/pages/DetalleProducto';
 import CreateProductPage from './features/commerces/pages/CreateProductPage';
 
 import { EditClientProfile } from './features/clients/pages/EditClientProfile';
