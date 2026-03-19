@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { Spinner } from "../../../components/Spinner"
 
 const inputCls = "w-full px-3 py-2 border border-green-100 rounded-md bg-green-50/30 focus:outline-none focus:ring-1 focus:ring-[#5B7B6D] focus:border-[#5B7B6D] disabled:cursor-not-allowed disabled:opacity-60"
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:3000").trim()
 
 export const CommerceCreationForm = () => {
     const navigate = useNavigate()
@@ -31,7 +32,7 @@ export const CommerceCreationForm = () => {
     // ── Cargar userId y categorías al montar ──────────────────────────────────
     useEffect(() => {
         // 1. Obtener usuario autenticado desde la cookie JWT
-        fetch("http://localhost:3000/api/session/user-session", {
+        fetch(`${API_BASE_URL}/api/session/user-session`, {
             credentials: "include"  // necesario para enviar la cookie userToken
         })
             .then(r => r.json())
@@ -45,7 +46,7 @@ export const CommerceCreationForm = () => {
             .catch(() => setError("No se pudo conectar con el servidor."))
 
         // 2. Cargar categorías de comercio
-        fetch("http://localhost:3000/api/commerces/categories", {
+        fetch(`${API_BASE_URL}/api/commerces/categories`, {
             credentials: "include"
         })
             .then(r => r.json())
@@ -101,7 +102,7 @@ export const CommerceCreationForm = () => {
                 postal_code: formData.postalCode || undefined,
             }
 
-            const response = await fetch("http://localhost:3000/api/commerces", {
+            const response = await fetch(`${API_BASE_URL}/api/commerces`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",  // enviar cookie
