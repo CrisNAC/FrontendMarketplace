@@ -1,46 +1,108 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { RatingsDistribution } from '../components/comments/RatingsDistribution';
 import { CommentsList } from '../components/comments/CommentsList';
 import { AddReviewModal } from '../components/comments/AddReviewModal';
 import { ArrowLeft } from "lucide-react";
+import axios from "axios";
+import toast from 'react-hot-toast';
 
-export const CommentsPage = ({ productId = '123' }) => {
+
+export const CommentsPage = () => {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
   const [comments, setComments] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [ratings, setRatings] = useState({ 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { id } = useParams();
 
-  const handleAddReview = (reviewData) => {
-    const newComment = {
-      id: comments.length + 1,
-      author: 'Tú',
-      rating: reviewData.rating,
-      title: `${reviewData.rating}/10 would recommend!!`,
-      content: reviewData.comment,
-      verified: false,
-      location: 'Paraguay',
-      date: reviewData.date,
-      productDetails: {
-        'Tamaño': '128GB',
-        'Color': 'Rosado'
-      }
-    };
 
-    setComments([newComment, ...comments]);
-    alert('¡Tu reseña ha sido enviada exitosamente!');
+  const fetchReviews = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const { data } = await axios.get(`/products/reviews/${id}`);
+
+      const mapped = data.reviews.map((r) => ({
+        id: r.id,
+        author: r.customerName,
+        rating: r.rating,
+        title: `${r.rating}/5`,
+        content: r.comment,
+        verified: r.isVerified,
+        location: '',
+        date: new Date(r.date).toLocaleDateString('es-PY', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        }),
+        productDetails: {},
+      }));
+
+      setComments(mapped);
+      setStats(data.stats);
+
+      const dist = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+      data.reviews.forEach((r) => {
+        if (dist[r.rating] !== undefined) dist[r.rating]++;
+      });
+      setRatings(dist);
+
+    } catch (error) {
+      setError(error.response?.data?.message || 'No se pudieron cargar las reseñas.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    fetchReviews();
+  }, [id]);
+
+  const handleAddReview = async (reviewData) => {
+    try {
+      const { data } = await axios.post(`/products/${id}/reviews`, {
+        rating: reviewData.rating,
+        comment: reviewData.comment,
+      });
+
+      //mapear respuesta
+      const newComment = {
+        id: data.id,
+        author: data.customerName,
+        rating: data.rating,
+        title: `${data.rating}/10`,
+        content: data.comment,
+        verified: data.isVerified,
+        location: 'Paraguay',
+        date: new Date().toLocaleDateString('es-PY', {
+          year: 'numeric', month: 'long', day: 'numeric',
+        }),
+        productDetails: {},
+      };
+
+      setComments([newComment, ...comments]);
+      setShowModal(false);
+      await fetchReviews(); //recargar para actualizar
+      toast.success('¡Reseña enviada exitosamente!');
+    }
+    catch (error) {
+      const data = error.response?.data;
+      const message = data?.errors?.auth?.messsage || data?.message || 'No se pudo enviar la reseña.';
+      toast.error(message);
+    }
   };
 
-  const handleBack = () => {
-    navigate('/homepage');
-  };
 
   return (
     <div className="min-h-screen p-0" style={{ background: '#F5F5F5' }}>
       <div className="max-w-6xl mx-auto min-h-screen">
         {/* Header - SIN fondo blanco, sobre el fondo gris */}
         <div className="px-6 py-4 flex items-center">
-           <ArrowLeft className="w-6 h-6 cursor-pointer" onClick={() => navigate("/homepage")}/>
-            <h1 className="text-2xl font-bold">Comentarios</h1>
+          <ArrowLeft className="w-6 h-6 cursor-pointer" onClick={() => navigate(-1)} />
+          <h1 className="text-2xl font-bold">Comentarios</h1>
         </div>
 
         {/* Contenido principal */}
@@ -49,15 +111,7 @@ export const CommentsPage = ({ productId = '123' }) => {
           <aside className="flex flex-col gap-4">
             {/* Card de ratings */}
             <div className="bg-white border border-gray-200 rounded-lg">
-              <RatingsDistribution
-                ratings={{
-                  5: 56,
-                  4: 33,
-                  3: 11,
-                  2: 0,
-                  1: 0
-                }}
-              />
+              <RatingsDistribution ratings={ratings} averageRating={stats?.averageRating ?? 0} /> {/**ahora se le pasa averageRating como prop */}
 
               {/* Texto escribir opinión - dentro del card */}
               <div className="px-4 pb-4 pt-2 border-t border-gray-200">
@@ -71,7 +125,7 @@ export const CommentsPage = ({ productId = '123' }) => {
             </div>
 
             {/* Botón fuera del card, directamente sobre el fondo gris */}
-            <button 
+            <button
               className="w-full py-2.5 px-4 text-white rounded-full text-sm font-semibold cursor-pointer transition-all hover:opacity-90 active:translate-y-0.5"
               style={{ background: '#6B9080' }}
               onClick={() => setShowModal(true)}
@@ -82,13 +136,21 @@ export const CommentsPage = ({ productId = '123' }) => {
 
           {/* Contenido principal: Comentarios */}
           <main className="flex flex-col gap-0">
-            <CommentsList comments={comments} />
+            {loading && (
+              <p className="text-gray-500 text-sm">Cargando reseñas...</p>
+            )}
+            {error && (
+              <p className="text-red-500 text-sm">{error}</p>
+            )}
+            {!loading && !error && (
+              <CommentsList comments={comments} />
+            )}
           </main>
         </div>
       </div>
 
       {/* Modal para agregar reseña */}
-      <AddReviewModal 
+      <AddReviewModal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
         onSubmit={handleAddReview}
