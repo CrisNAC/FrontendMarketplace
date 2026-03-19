@@ -18,12 +18,13 @@ export const FeaturedProducts = ({ products }: Props) => {
 
             <div style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(4, 1fr)",
-                gap: "16px",
+                gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
+                gap: "12px",
             }}>
                 {products.map((product) => (
                     <ProductCard
                         key={product.id}
+                        productId={product.id}
                         name={product.name}
                         price={product.price}
                         imageUrl={product.imageUrl}

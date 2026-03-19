@@ -1,16 +1,22 @@
 import { useNavigate } from "react-router-dom";
 
 type Props = {
+    productId?: number;
     name: string;
     price: string;
     imageUrl?: string;
 };
 
-export const SearchProductCard = ({ name, price, imageUrl }: Props) => {
+export const SearchProductCard = ({ productId, name, price, imageUrl }: Props) => {
     const navigate = useNavigate();
 
-    const handleVerOfertas = () => {
-        navigate('/comparar');
+    const handleCompararPrecios = () => {
+        // Usamos el nombre como término de búsqueda para la comparación
+        const term = name.trim();
+        if (!term) {
+            return;
+        }
+        navigate(`/comparar?search=${encodeURIComponent(term)}`);
     };
     return (
         <div style={{
@@ -47,7 +53,7 @@ export const SearchProductCard = ({ name, price, imageUrl }: Props) => {
                 <p style={{ fontSize: "14px", fontWeight: "600", lineHeight: "1.3", margin: "0 0 4px 0", color: "#000" }}>{name}</p>
                 <p style={{ fontSize: "12px", color: "#6b7280", margin: "0 0 8px 0" }}>Desde Gs. {price}</p>
                 <button
-                    onClick={handleVerOfertas}
+                    onClick={handleCompararPrecios}
                     style={{
                         width: "100%",
                         padding: "6px 0",
@@ -58,7 +64,7 @@ export const SearchProductCard = ({ name, price, imageUrl }: Props) => {
                         border: "1px solid #658D7B",
                         cursor: "pointer",
                     }}>
-                    Ver Ofertas
+                    Comparar precios
                 </button>
             </div>
         </div>

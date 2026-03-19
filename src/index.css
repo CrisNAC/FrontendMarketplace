@@ -1,6 +1,5 @@
 @import "tailwindcss";
 
-
 /* esto es solo para darle la forma a un select de CommerceCreationForm */
 @layer components {
   .select-category {
@@ -15,14 +14,53 @@
   }
 }
 
-
 @layer base {
-  /* Evita que el reset de Tailwind rompa Bootstrap */
   *, *::before, *::after {
     box-sizing: border-box;
   }
+
+  body {
+    @apply bg-gray-50 text-gray-900 font-sans;
+  }
+
+  h1 {
+    @apply text-xl font-bold;
+  }
+
+  h2 {
+    @apply text-2xl font-bold;
+  }
+
+  h3 {
+    @apply text-lg font-bold;
+  }
 }
 
+@layer components {
+  .btn {
+    @apply px-6 py-2 rounded-xl text-sm cursor-pointer transition;
+  }
+
+  .btn-primary {
+    @apply bg-[#6A907F] text-white hover:bg-[#5a7d6f];
+  }
+
+  .btn-secondary {
+    @apply bg-white text-black hover:bg-gray-100;
+  }
+
+  .banner-card {
+    @apply rounded-[30px] overflow-hidden shadow-lg relative;
+  }
+
+  .page-container {
+    @apply flex justify-center mt-10;
+  }
+
+  .app-page {
+    @apply min-h-screen w-full bg-gray-50 text-gray-900;
+  }
+}
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;

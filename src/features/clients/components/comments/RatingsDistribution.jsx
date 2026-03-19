@@ -1,18 +1,15 @@
-export const RatingsDistribution = ({ ratings = {} }) => {
+
+export const RatingsDistribution = ({ ratings = {}, averageRating = 0 }) => { //se reciben como props ratings y averageRating
   const totalRatings = Object.values(ratings).reduce((a, b) => a + b, 0);
   
   const ratingData = {
-    5: ratings[5] || 56,
-    4: ratings[4] || 33,
-    3: ratings[3] || 11,
-    2: ratings[2] || 0,
-    1: ratings[1] || 0,
+    5: ratings[5] ?? 0,
+    4: ratings[4] ?? 0,
+    3: ratings[3] ?? 0,
+    2: ratings[2] ?? 0,
+    1: ratings[1] ?? 0,
   };
 
-  const averageRating = (
-    (ratingData[5] * 5 + ratingData[4] * 4 + ratingData[3] * 3 + ratingData[2] * 2 + ratingData[1] * 1) /
-    (totalRatings || 1)
-  ).toFixed(1);
 
   return (
     <div className="bg-transparent px-4 pt-4 pb-2">
