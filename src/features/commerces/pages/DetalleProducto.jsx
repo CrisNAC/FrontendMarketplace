@@ -330,7 +330,7 @@ export default function DetalleProducto() {
 
           <button
             type="button"
-            onClick={() => navigate("/comentarios")}
+            onClick={() => navigate(`/comentarios/${productId}`)}
             className="text-[18px] font-semibold text-black border-b border-black pb-[2px]"
           >
             <h2>Comentarios</h2>
