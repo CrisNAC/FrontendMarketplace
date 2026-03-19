@@ -126,7 +126,7 @@ export default function EditProductPage() {
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div>
                             <label className={labelClassName} htmlFor="price">
-                                Precio (CLP) *
+                                Precio *
                             </label>
                             <input
                                 id="price"

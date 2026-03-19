@@ -150,7 +150,7 @@ export const VistaComercioPage = () => {
                 {status === "loading" && <div style={{ color: "#6b7280" }}>Cargando productos...</div>}
                 {status === "error" && (
                     <div style={{ color: "#dc2626" }}>
-                        No se pudo cargar el comercio{error ? `: ${error}` : "."}
+                        No se encontraron productos para esta tienda
                     </div>
                 )}
                 {status === "success" && (

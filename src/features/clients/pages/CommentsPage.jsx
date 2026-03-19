@@ -100,7 +100,7 @@ export const CommentsPage = () => {
     <div className="min-h-screen p-0" style={{ background: '#F5F5F5' }}>
       <div className="max-w-6xl mx-auto min-h-screen">
         {/* Header - SIN fondo blanco, sobre el fondo gris */}
-        <div className="px-6 py-4 flex items-center">
+        <div className="px-6 py-4 flex items-center gap-4">
           <ArrowLeft className="w-6 h-6 cursor-pointer" onClick={() => navigate(-1)} />
           <h1 className="text-2xl font-bold">Comentarios</h1>
         </div>

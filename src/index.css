@@ -1,6 +1,5 @@
 @import "tailwindcss";
 
-
 /* esto es solo para darle la forma a un select de CommerceCreationForm */
 @layer components {
   .select-category {
@@ -14,9 +13,6 @@
     background-size: 1.25rem 1.25rem;
   }
 }
-
-
-@import "tailwindcss";
 
 @layer base {
   *, *::before, *::after {
