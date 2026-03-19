@@ -16,7 +16,7 @@ export default function Wishlist() {
   const [productos, setProductos] = useState([]);
   const [status, setStatus] = useState("idle"); // idle | loading | error
   const [userId, setUserId] = useState(null);
-  const [removingId, setRemovingId] = useState(null); // productId que se está eliminando
+  const [removingId, setRemovingId] = useState(null);
 
   // ─── Cargar sesión y wishlist ────────────────────────────────────────────────
 
@@ -122,7 +122,6 @@ export default function Wishlist() {
 
   const seleccionados = productos.filter((p) => p.checked);
 
-  // Total considera precio × cantidad (fix CodeRabbit)
   const total = seleccionados.reduce(
     (acc, p) => acc + p.precio * p.cantidad,
     0
@@ -204,11 +203,17 @@ export default function Wishlist() {
                         Cantidad: {producto.cantidad}
                       </div>
 
-                      <div className="mt-1 font-semibold text-[18px]">
-                        Gs.{" "}
-                        {typeof producto.precio === "number"
-                          ? producto.precio.toLocaleString()
-                          : "-"}
+                      {/* Precio unitario */}
+                      <div className="mt-1 flex items-baseline gap-2">
+                        <span className="text-gray-400 text-[11px] uppercase tracking-wide">
+                          c/u
+                        </span>
+                        <span className="font-semibold text-[18px]">
+                          Gs.{" "}
+                          {typeof producto.precio === "number"
+                            ? producto.precio.toLocaleString()
+                            : "-"}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -244,18 +249,24 @@ export default function Wishlist() {
                 ) : (
                   <div className="flex flex-col gap-3">
                     {seleccionados.map((p) => (
-                      <div
-                        key={p.itemId}
-                        className="flex justify-between text-[14px]"
-                      >
-                        <span>{p.nombre}</span>
-                        {/* precio × cantidad (fix CodeRabbit) */}
-                        <span>
-                          Gs.{" "}
+                      <div key={p.itemId} className="flex flex-col gap-[2px]">
+                        {/* nombre + subtotal */}
+                        <div className="flex justify-between text-[14px]">
+                          <span className="font-medium">{p.nombre}</span>
+                          <span>
+                            Gs.{" "}
+                            {typeof p.precio === "number"
+                              ? (p.precio * p.cantidad).toLocaleString()
+                              : "-"}
+                          </span>
+                        </div>
+                        {/* desglose: cantidad × precio unitario */}
+                        <div className="flex justify-end text-[11px] text-gray-400">
+                          {p.cantidad} × Gs.{" "}
                           {typeof p.precio === "number"
-                            ? (p.precio * p.cantidad).toLocaleString()
+                            ? p.precio.toLocaleString()
                             : "-"}
-                        </span>
+                        </div>
                       </div>
                     ))}
 
