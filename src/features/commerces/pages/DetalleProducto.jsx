@@ -1,85 +1,37 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-
 import toast from "react-hot-toast";
 import { ArrowLeft } from "lucide-react";
+import axios from "axios";
 
 import iphoneImg from "../../../assets/iphone.png";
 import negroImg from "../../../assets/iphonenegrito.png";
 import naranjaImg from "../../../assets/iphonenaranja.png";
 import whiteImg from "../../../assets/iphonewhite.png";
 
-/* svg icon*/
-
 function SvgIcon({ children, className = "w-4 h-4" }) {
   return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-    >
+    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       {children}
     </svg>
   );
 }
 
 const I = {
-  back: (
-    <path
-      d="M15 18l-6-6 6-6"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  ),
-  star: (
-    <path
-      d="M12 3l2.9 6 6.6.6-5 4.4 1.5 6.4L12 17l-6 3.4 1.5-6.4-5-4.4 6.6-.6L12 3z"
-      fill="currentColor"
-    />
-  ),
-  heart: (
-    <path
-      d="M12 21s-7-4.6-9.5-8.4C-0.2 8.5 2.1 3 7 5.5 9 6.5 12 10 12 10s3-3.5 5-4.5c4.9-2.5 7.2 3 4.5 7.1C19 16.4 12 21 12 21z"
-      fill="currentColor"
-    />
-  ),
-  minus: (
-    <path
-      d="M5 12h14"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    />
-  ),
+  star: <path d="M12 3l2.9 6 6.6.6-5 4.4 1.5 6.4L12 17l-6 3.4 1.5-6.4-5-4.4 6.6-.6L12 3z" fill="currentColor" />,
+  minus: <path d="M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />,
   plus: (
     <>
-      <path
-        d="M12 5v14"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-      <path
-        d="M5 12h14"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
+      <path d="M12 5v14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
     </>
   ),
 };
 
 const VERDE = "#8BB2A1";
 
-/*componente*/
-
 export default function DetalleProducto() {
   const navigate = useNavigate();
-  
   const { id } = useParams();
   const productId = id ? Number(id) : null;
 
@@ -87,56 +39,55 @@ export default function DetalleProducto() {
     return (import.meta.env.VITE_API_URL || "").trim().replace(/\/$/, "");
   }, []);
 
-  const [status, setStatus] = useState("idle"); // idle | loading | success | error
+  const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
   const [product, setProduct] = useState(null);
-
-  const [memoria, setMemoria] = useState("256 GB");
   const [cantidad, setCantidad] = useState(1);
-  const [favorito, setFavorito] = useState(false);
+  const [addingToWishlist, setAddingToWishlist] = useState(false);
 
   const colores = [
     { id: "deep-blue", nombre: "Deep Blue", img: negroImg },
     { id: "orange", nombre: "Orange", img: naranjaImg },
     { id: "white", nombre: "White", img: whiteImg },
   ];
-
   const [colorSel, setColorSel] = useState(colores[0]);
 
-  const agregarAlCarrito = () => {
+  const agregarAListaDeseados = async () => {
+    if (addingToWishlist || !productId) return;
 
-    const producto = {
-      id: 1,
-      nombre: "Apple iPhone 17 Pro A3256 Dual",
-      precio: 13290000,
-      cantidad: cantidad,
-      color: colorSel.nombre,
-      memoria: memoria
-    };
+    try {
+      setAddingToWishlist(true);
 
-    const carritoActual = JSON.parse(localStorage.getItem("carrito")) || [];
+      const sessionRes = await axios.get(
+        `${apiBase || "http://localhost:3000"}/api/session/user-session`,
+        { withCredentials: true }
+      );
+      const userId = sessionRes.data?.user?.id_user;
 
-    carritoActual.push(producto);
+      if (!userId) {
+        toast.error("Iniciá sesión para agregar a tu lista de deseos");
+        return;
+      }
 
-    localStorage.setItem("carrito", JSON.stringify(carritoActual));
+      await axios.post(
+        `${apiBase || "http://localhost:3000"}/api/users/${userId}/wishlist/items`,
+        { productId, quantity: cantidad },
+        { withCredentials: true }
+      );
 
-    window.dispatchEvent(new Event("cartUpdated"));
-
-    toast.success("Producto agregado al carrito");
-
-  };
-
-  const toggleFavorito = () => {
-
-    setFavorito((v) => !v);
-
-    if (!favorito) {
-      toast.success("Producto agregado a favoritos");
-    } else {
-      toast("Producto removido de favoritos");
+      toast.success("Producto agregado a la lista de deseos");
+    } catch (e) {
+      const code = e?.response?.status;
+      if (code === 401) {
+        toast.error("Iniciá sesión para agregar a tu lista de deseos");
+      } else {
+        toast.error("No se pudo agregar el producto");
+      }
+    } finally {
+      setAddingToWishlist(false);
     }
-
   };
+
   useEffect(() => {
     let isActive = true;
     const controller = new AbortController();
@@ -159,9 +110,7 @@ export default function DetalleProducto() {
           headers: { Accept: "application/json" },
         });
 
-        if (!res.ok) {
-          throw new Error(`Error HTTP ${res.status}`);
-        }
+        if (!res.ok) throw new Error(`Error HTTP ${res.status}`);
 
         const data = await res.json();
         if (!isActive) return;
@@ -177,54 +126,34 @@ export default function DetalleProducto() {
     };
 
     load();
-
-    return () => {
-      isActive = false;
-      controller.abort();
-    };
+    return () => { isActive = false; controller.abort(); };
   }, [apiBase, productId]);
 
   const titleText = product?.commerce?.name && product?.category?.name
     ? `${product.commerce.name} / ${product.category.name}`
-    : product?.category?.name
-      ? product.category.name
-      : "Detalle del producto";
+    : product?.category?.name ?? "Detalle del producto";
 
   const productName = product?.name || "Producto";
   const productPrice = product?.price != null ? String(product.price) : "-";
   const productDescription = product?.description || "";
   const inStock = product?.quantity == null ? null : Number(product.quantity) > 0;
 
-
   return (
     <div className="min-h-screen flex flex-col">
-        <div className="max-w-7xl mx-auto w-full px-6 py-6">
-        {/* Titulo */}
+      <div className="max-w-7xl mx-auto w-full px-6 py-6">
         <div className="flex items-center gap-4 mb-8">
-            <ArrowLeft className="w-6 h-6 cursor-pointer" onClick={() => navigate(-1)}/>
-            <h1 className="text-2xl font-bold">{titleText}</h1>
+          <ArrowLeft className="w-6 h-6 cursor-pointer" onClick={() => navigate(-1)} />
+          <h1 className="text-2xl font-bold">{titleText}</h1>
         </div>
-        {/*contenido*/}
-        <div className="grid grid-cols-2 gap-16 items-start">
 
-          {/*imagen aifon*/}
+        <div className="grid grid-cols-2 gap-16 items-start">
           <div className="flex justify-center">
-            <img
-              src={iphoneImg}
-              alt="iPhone"
-              className="w-[400px] object-contain"
-              draggable={false}
-            />
+            <img src={iphoneImg} alt="iPhone" className="w-[400px] object-contain" draggable={false} />
           </div>
 
-          {/*info aifon */}
           <div className="flex flex-col items-start">
+            <h2 className="text-[21px] font-semibold text-black">{productName}</h2>
 
-            <h2 className="text-[21px] font-semibold text-black">
-              {productName}
-            </h2>
-
-            {/*rating*/}
             <button
               type="button"
               onClick={() => navigate(`/comentarios/${productId}`)}
@@ -239,13 +168,9 @@ export default function DetalleProducto() {
               </span>
             </button>
 
-            {/*presio*/}
-            <div className="mt-3 text-[30px] font-semibold text-black">
-              Gs. {productPrice}
-            </div>
+            <div className="mt-3 text-[30px] font-semibold text-black">Gs. {productPrice}</div>
 
-            {/*stock*/}
-            {inStock === null ? null : (
+            {inStock !== null && (
               <span
                 className="mt-1 text-white text-[10px] px-3 py-[2px] rounded w-fit"
                 style={{ backgroundColor: inStock ? VERDE : "#b91c1c" }}
@@ -254,80 +179,38 @@ export default function DetalleProducto() {
               </span>
             )}
 
-            {status === "loading" && (
-              <div className="mt-3 text-[12px] text-gray-500">Cargando producto...</div>
-            )}
-            {status === "error" && (
-              <div className="mt-3 text-[12px] text-red-600">No se pudo cargar el producto{error ? `: ${error}` : "."}</div>
-            )}
-            {!productId && (
-              <div className="mt-3 text-[12px] text-gray-500">
-                No se especificó un producto. Volvé a la búsqueda y elegí uno.
-              </div>
-            )}
+            {status === "loading" && <div className="mt-3 text-[12px] text-gray-500">Cargando producto...</div>}
+            {status === "error" && <div className="mt-3 text-[12px] text-red-600">No se pudo cargar el producto{error ? `: ${error}` : "."}</div>}
+            {!productId && <div className="mt-3 text-[12px] text-gray-500">No se especificó un producto. Volvé a la búsqueda y elegí uno.</div>}
 
-            {/*caracteristicas */}
             <div className="mt-6">
-              <h3 className="text-[13px] font-semibold mb-2 text-black">
-                Detalles
-              </h3>
+              <h3 className="text-[13px] font-semibold mb-2 text-black">Detalles</h3>
               {productDescription ? (
-                <div className="text-[12px] text-black leading-relaxed max-w-xl">
-                  {productDescription}
-                </div>
+                <div className="text-[12px] text-black leading-relaxed max-w-xl">{productDescription}</div>
               ) : (
                 <ul className="text-[12px] text-black list-disc pl-5 space-y-1">
-                  {(product?.tags || []).slice(0, 6).map((t) => (
-                    <li key={t.id}>{t.name}</li>
-                  ))}
-                  {(!product?.tags || product.tags.length === 0) && (
-                    <li>Sin detalles adicionales.</li>
-                  )}
+                  {(product?.tags || []).slice(0, 6).map((t) => <li key={t.id}>{t.name}</li>)}
+                  {(!product?.tags || product.tags.length === 0) && <li>Sin detalles adicionales.</li>}
                 </ul>
               )}
             </div>
 
-            {/*cantidad*/}
             <div className="mt-6">
-              <h3 className="text-[13px] font-semibold mb-2 text-black">
-                Cantidad
-              </h3>
-
+              <h3 className="text-[13px] font-semibold mb-2 text-black">Cantidad</h3>
               <div className="inline-flex border border-gray-300 rounded-md overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setCantidad((v) => (v > 1 ? v - 1 : 1))
-                  }
-                  className="w-9 h-9 flex items-center justify-center"
-                >
-                  <SvgIcon className="w-4 h-4 text-gray-600">
-                    {I.minus}
-                  </SvgIcon>
+                <button type="button" onClick={() => setCantidad((v) => (v > 1 ? v - 1 : 1))} className="w-9 h-9 flex items-center justify-center">
+                  <SvgIcon className="w-4 h-4 text-gray-600">{I.minus}</SvgIcon>
                 </button>
-
-                <div className="w-10 h-9 flex items-center justify-center text-[12px] text-black">
-                  {cantidad}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setCantidad((v) => v + 1)}
-                  className="w-9 h-9 flex items-center justify-center"
-                >
-                  <SvgIcon className="w-4 h-4 text-gray-600">
-                    {I.plus}
-                  </SvgIcon>
+                <div className="w-10 h-9 flex items-center justify-center text-[12px] text-black">{cantidad}</div>
+                <button type="button" onClick={() => setCantidad((v) => v + 1)} className="w-9 h-9 flex items-center justify-center">
+                  <SvgIcon className="w-4 h-4 text-gray-600">{I.plus}</SvgIcon>
                 </button>
               </div>
             </div>
-
           </div>
         </div>
 
-        {/*footer*/}
         <div className="flex items-center justify-between pt-6 border-t border-gray-300">
-
           <button
             type="button"
             onClick={() => navigate(`/comentarios/${productId}`)}
@@ -339,16 +222,14 @@ export default function DetalleProducto() {
           <div className="flex items-center gap-4">
             <button
               type="button"
-              onClick={agregarAlCarrito}
-              className="px-8 py-2 rounded-md text-white text-[12px] font-medium"
+              onClick={agregarAListaDeseados}
+              disabled={addingToWishlist}
+              className="px-8 py-2 rounded-md text-white text-[12px] font-medium disabled:opacity-60"
               style={{ backgroundColor: VERDE }}
             >
-              Agregar a lista de deseados
+              {addingToWishlist ? "Agregando..." : "Agregar a lista de deseados"}
             </button>
-
-            
           </div>
-
         </div>
       </div>
     </div>
