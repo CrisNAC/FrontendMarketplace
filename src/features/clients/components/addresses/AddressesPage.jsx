@@ -1,9 +1,26 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MapPin, Plus, Pencil, Trash2, X, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import Navbar from "../../../../components/navbar/Navbar";
 import { SidebarClientProfile } from "../../../../components/SidebarClientProfile";
 import { useAddresses } from "../../../../hooks/useAddresses";
-import { useAuth } from "../context/AuthContext";
+import axios from "axios";
+
+const useSession = () => {
+    const [userId, setUserId] = useState(null);
+    const [sessionLoading, setSessionLoading] = useState(true);
+
+    useEffect(() => {
+        axios
+            .get("http://localhost:3000/api/session/user-session", { withCredentials: true })
+            .then(({ data }) => {
+                if (data.success) setUserId(data.user.id_user);
+            })
+            .catch(() => setUserId(null))
+            .finally(() => setSessionLoading(false));
+    }, []);
+
+    return { userId, sessionLoading };
+};
 
 const EMPTY_FORM = {
     address: "",
@@ -257,9 +274,6 @@ const AddressCard = ({ address, onEdit, onDelete }) => {
     );
 };
 
-// ─── Pagina Principal ────────────────────────────────────────────────────────────
-const MAX_ADDRESSES = 5;
-
 // ─── Section header (reutiliza el estilo de MyAccountPage) ──────────────────
 const SectionHeader = ({ title, rightContent }) => (
     <div className="bg-[#f0f2f1] border border-gray-200 px-4 py-3 font-semibold text-black flex justify-between items-center rounded-sm">
@@ -268,13 +282,16 @@ const SectionHeader = ({ title, rightContent }) => (
     </div>
 );
 
+// ─── Pagina Principal ────────────────────────────────────────────────────────────
+const MAX_ADDRESSES = 5;
+
 export const AddressesPage = () => {
-    const { user } = useAuth();
-    const userId = user?.id_user;
+    const { userId , sessionLoading } = useSession();
+    //const userId = user?.id_user;
 
     const { addresses, loading, error, createAddress, updateAddress, deleteAddress } = useAddresses(userId);
 
-    // Modal para creaciion/edicion
+    // Modal para crear/editar
     const [modalOpen, setModalOpen] = useState(false);
     const [editingAddress, setEditingAddress] = useState(null);
     const [formLoading, setFormLoading] = useState(false);
@@ -351,8 +368,20 @@ export const AddressesPage = () => {
         }
     };
 
+    // Espera a que se verifique la sesión antes de renderizar
+    if (sessionLoading) {
+        return (
+            <div className="min-h-screen flex flex-col" >
+                <Navbar />
+                < div className="flex-1 flex items-center justify-center" >
+                    <Loader2 size={28} className="animate-spin text-[#2d4030]" />
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div className="min-h-screen flex flex-col">
+        <div className="min-h-screen flex flex-col" >
             <Navbar />
 
             <main className="max-w-[1400px] mx-auto w-full px-6 py-10">
