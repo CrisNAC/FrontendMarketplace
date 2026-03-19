@@ -1,9 +1,27 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
 
 const VERDE = "#8BB2A1";
+
+function SvgIcon({ children, className = "w-4 h-4" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      {children}
+    </svg>
+  );
+}
+
+const I = {
+  minus: <path d="M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />,
+  plus: (
+    <>
+      <path d="M12 5v14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </>
+  ),
+};
 
 export default function Wishlist() {
   const navigate = useNavigate();
@@ -14,11 +32,14 @@ export default function Wishlist() {
 
   const [cupon, setCupon] = useState("");
   const [productos, setProductos] = useState([]);
-  const [status, setStatus] = useState("idle"); // idle | loading | error
+  const [status, setStatus] = useState("idle");
   const [userId, setUserId] = useState(null);
   const [removingId, setRemovingId] = useState(null);
 
-  // ─── Cargar sesión y wishlist ────────────────────────────────────────────────
+  // Timers de debounce por productId para no spamear el PUT
+  const debounceTimers = useRef({});
+
+  // ─── Sesión + wishlist ───────────────────────────────────────────────────────
 
   const fetchWishlist = useCallback(async (uid) => {
     try {
@@ -26,9 +47,7 @@ export default function Wishlist() {
         `${apiBase || "http://localhost:3000"}/api/users/${uid}/wishlist`,
         { withCredentials: true }
       );
-
       const items = res.data?.items ?? [];
-
       setProductos(
         items.map((item) => ({
           itemId: item.id,
@@ -37,6 +56,7 @@ export default function Wishlist() {
           precio: item.product.price,
           cantidad: item.quantity,
           checked: false,
+          updatingQty: false,
         }))
       );
     } catch (e) {
@@ -55,20 +75,16 @@ export default function Wishlist() {
     const init = async () => {
       try {
         setStatus("loading");
-
         const sessionRes = await axios.get(
           `${apiBase || "http://localhost:3000"}/api/session/user-session`,
           { withCredentials: true }
         );
-
         const uid = sessionRes.data?.user?.id_user;
-
         if (!uid) {
           toast.error("Iniciá sesión para ver tu lista de deseos");
           navigate("/login");
           return;
         }
-
         setUserId(uid);
         await fetchWishlist(uid);
         setStatus("idle");
@@ -82,18 +98,70 @@ export default function Wishlist() {
         }
       }
     };
-
     init();
   }, [apiBase, navigate, fetchWishlist]);
+
+  // Limpiar timers al desmontar
+  useEffect(() => {
+    const timers = debounceTimers.current;
+    return () => Object.values(timers).forEach(clearTimeout);
+  }, []);
 
   // ─── Checkbox ────────────────────────────────────────────────────────────────
 
   const toggleCheck = (productId) => {
     setProductos((prev) =>
-      prev.map((p) =>
-        p.productId === productId ? { ...p, checked: !p.checked } : p
-      )
+      prev.map((p) => p.productId === productId ? { ...p, checked: !p.checked } : p)
     );
+  };
+
+  // ─── Cambiar cantidad ────────────────────────────────────────────────────────
+
+  const cambiarCantidad = (productId, delta) => {
+    // Actualización visual inmediata
+    setProductos((prev) =>
+      prev.map((p) => {
+        if (p.productId !== productId) return p;
+        return { ...p, cantidad: Math.max(1, p.cantidad + delta) };
+      })
+    );
+
+    // Cancelar timer previo para este producto
+    if (debounceTimers.current[productId]) {
+      clearTimeout(debounceTimers.current[productId]);
+    }
+
+    // Persistir al back 600ms después del último click
+    debounceTimers.current[productId] = setTimeout(() => {
+      setProductos((prev) => {
+        const producto = prev.find((p) => p.productId === productId);
+        if (!producto) return prev;
+
+        const cantidad = producto.cantidad;
+
+        // Marcar como guardando
+        const conFlag = prev.map((p) =>
+          p.productId === productId ? { ...p, updatingQty: true } : p
+        );
+
+        axios
+          .put(
+            `${apiBase || "http://localhost:3000"}/api/users/${userId}/wishlist/items/${productId}`,
+            { quantity: cantidad },
+            { withCredentials: true }
+          )
+          .catch(() => toast.error("No se pudo actualizar la cantidad"))
+          .finally(() => {
+            setProductos((latest) =>
+              latest.map((p) =>
+                p.productId === productId ? { ...p, updatingQty: false } : p
+              )
+            );
+          });
+
+        return conFlag;
+      });
+    }, 600);
   };
 
   // ─── Eliminar item ───────────────────────────────────────────────────────────
@@ -101,14 +169,18 @@ export default function Wishlist() {
   const eliminarProducto = async (productId) => {
     if (removingId) return;
 
+    // Cancelar PUT pendiente antes de eliminar
+    if (debounceTimers.current[productId]) {
+      clearTimeout(debounceTimers.current[productId]);
+      delete debounceTimers.current[productId];
+    }
+
     try {
       setRemovingId(productId);
-
       await axios.delete(
         `${apiBase || "http://localhost:3000"}/api/users/${userId}/wishlist/items/${productId}`,
         { withCredentials: true }
       );
-
       setProductos((prev) => prev.filter((p) => p.productId !== productId));
       toast.success("Producto eliminado de la lista");
     } catch {
@@ -121,19 +193,12 @@ export default function Wishlist() {
   // ─── Cálculos ────────────────────────────────────────────────────────────────
 
   const seleccionados = productos.filter((p) => p.checked);
-
-  const total = seleccionados.reduce(
-    (acc, p) => acc + p.precio * p.cantidad,
-    0
-  );
+  const total = seleccionados.reduce((acc, p) => acc + p.precio * p.cantidad, 0);
 
   // ─── Cupón ───────────────────────────────────────────────────────────────────
 
   const aplicarCupon = () => {
-    if (!cupon.trim()) {
-      toast.error("Ingresá un cupón");
-      return;
-    }
+    if (!cupon.trim()) { toast.error("Ingresá un cupón"); return; }
     toast.success("Cupón aplicado");
   };
 
@@ -159,17 +224,12 @@ export default function Wishlist() {
     <div className="min-h-screen bg-[#E5EAE9] py-10">
       <div className="max-w-7xl mx-auto px-6">
 
-        <h1 className="text-3xl font-bold text-[#2f3e39] mb-8">
-          Lista de deseos
-        </h1>
+        <h1 className="text-3xl font-bold text-[#2f3e39] mb-8">Lista de deseos</h1>
 
         {productos.length === 0 ? (
           <p className="text-gray-500 text-[14px]">
             Tu lista de deseos está vacía.{" "}
-            <button
-              className="underline text-[#2f3e39]"
-              onClick={() => navigate("/busqueda")}
-            >
+            <button className="underline text-[#2f3e39]" onClick={() => navigate("/busqueda")}>
               Explorá productos
             </button>
           </p>
@@ -191,23 +251,39 @@ export default function Wishlist() {
                       className="w-5 h-5 cursor-pointer"
                     />
 
-                    {/* placeholder imagen */}
                     <div className="w-[110px] h-[80px] rounded-md bg-[#E8DCCB]" />
 
                     <div>
-                      <h2 className="font-semibold text-[17px]">
-                        {producto.nombre}
-                      </h2>
+                      <h2 className="font-semibold text-[17px]">{producto.nombre}</h2>
 
-                      <div className="mt-1 text-gray-500 text-[13px]">
-                        Cantidad: {producto.cantidad}
+                      {/* Contador */}
+                      <div className="mt-2 flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => cambiarCantidad(producto.productId, -1)}
+                          disabled={producto.cantidad <= 1 || producto.updatingQty || !!removingId}
+                          className="w-7 h-7 flex items-center justify-center border border-gray-300 rounded disabled:opacity-40 hover:bg-gray-100"
+                        >
+                          <SvgIcon className="w-3 h-3 text-gray-600">{I.minus}</SvgIcon>
+                        </button>
+
+                        <span className={`w-6 text-center text-[14px] font-medium ${producto.updatingQty ? "text-gray-400" : "text-black"}`}>
+                          {producto.cantidad}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() => cambiarCantidad(producto.productId, +1)}
+                          disabled={producto.updatingQty || !!removingId}
+                          className="w-7 h-7 flex items-center justify-center border border-gray-300 rounded disabled:opacity-40 hover:bg-gray-100"
+                        >
+                          <SvgIcon className="w-3 h-3 text-gray-600">{I.plus}</SvgIcon>
+                        </button>
                       </div>
 
                       {/* Precio unitario */}
                       <div className="mt-1 flex items-baseline gap-2">
-                        <span className="text-gray-400 text-[11px] uppercase tracking-wide">
-                          c/u
-                        </span>
+                        <span className="text-gray-400 text-[11px] uppercase tracking-wide">c/u</span>
                         <span className="font-semibold text-[18px]">
                           Gs.{" "}
                           {typeof producto.precio === "number"
@@ -219,12 +295,10 @@ export default function Wishlist() {
                   </div>
 
                   <div className="flex flex-col items-end gap-2">
-                    {producto.checked ? (
-                      <span className="text-gray-500 text-[13px]">Seleccionado</span>
-                    ) : (
-                      <span className="text-gray-400 text-[13px]">No seleccionado</span>
-                    )}
-
+                    {producto.checked
+                      ? <span className="text-gray-500 text-[13px]">Seleccionado</span>
+                      : <span className="text-gray-400 text-[13px]">No seleccionado</span>
+                    }
                     <button
                       onClick={() => eliminarProducto(producto.productId)}
                       disabled={removingId === producto.productId}
@@ -243,14 +317,11 @@ export default function Wishlist() {
                 <h3 className="font-semibold mb-4">Resumen de selección</h3>
 
                 {seleccionados.length === 0 ? (
-                  <p className="text-gray-500 text-[13px]">
-                    No hay productos seleccionados
-                  </p>
+                  <p className="text-gray-500 text-[13px]">No hay productos seleccionados</p>
                 ) : (
                   <div className="flex flex-col gap-3">
                     {seleccionados.map((p) => (
                       <div key={p.itemId} className="flex flex-col gap-[2px]">
-                        {/* nombre + subtotal */}
                         <div className="flex justify-between text-[14px]">
                           <span className="font-medium">{p.nombre}</span>
                           <span>
@@ -260,12 +331,9 @@ export default function Wishlist() {
                               : "-"}
                           </span>
                         </div>
-                        {/* desglose: cantidad × precio unitario */}
                         <div className="flex justify-end text-[11px] text-gray-400">
                           {p.cantidad} × Gs.{" "}
-                          {typeof p.precio === "number"
-                            ? p.precio.toLocaleString()
-                            : "-"}
+                          {typeof p.precio === "number" ? p.precio.toLocaleString() : "-"}
                         </div>
                       </div>
                     ))}
@@ -275,11 +343,8 @@ export default function Wishlist() {
                       <span>Gs. {total.toLocaleString()}</span>
                     </div>
 
-                    {/* cupón */}
                     <div className="mt-4">
-                      <p className="text-[14px] font-semibold mb-2">
-                        Cupón de descuento
-                      </p>
+                      <p className="text-[14px] font-semibold mb-2">Cupón de descuento</p>
                       <div className="flex gap-2 w-full">
                         <input
                           type="text"
