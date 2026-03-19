@@ -1,53 +1,8 @@
 import { CommentCard } from './CommentCard';
 
 export const CommentsList = ({ comments = [] }) => {
-  // Datos de ejemplo si no hay comentarios
-  const defaultComments = [
-    {
-      id: 1,
-      author: 'Tamara',
-      rating: 5,
-      title: '10/10 would recommend!!',
-      content: 'great phone, came with apple charging cord, no scratches, no imperfections!! Beautiful color!! Perfect condition! Would definitely buy other phones from this seller! I was a little skeptical, but it really is in perfect condition!!',
-      verified: true,
-      location: 'Estados Unidos',
-      date: new Date('2025-08-12'),
-      productDetails: {
-        'Tamaño': '128GB',
-        'Color': 'Rosado'
-      }
-    },
-    {
-      id: 2,
-      author: 'Tamara',
-      rating: 5,
-      title: '10/10 would recommend!!',
-      content: 'great phone, came with apple charging cord, no scratches, no imperfections!! Beautiful color!! Perfect condition! Would definitely buy other phones from this seller! I was a little skeptical, but it really is in perfect condition!!',
-      verified: true,
-      location: 'Estados Unidos',
-      date: new Date('2025-08-12'),
-      productDetails: {
-        'Tamaño': '128GB',
-        'Color': 'Rosado'
-      }
-    },
-    {
-      id: 3,
-      author: 'Tamara',
-      rating: 5,
-      title: '10/10 would recommend!!',
-      content: 'great phone, came with apple charging cord, no scratches, no imperfections!! Beautiful color!! Perfect condition! Would definitely buy other phones from this seller! I was a little skeptical, but it really is in perfect condition!!',
-      verified: true,
-      location: 'Estados Unidos',
-      date: new Date('2025-08-12'),
-      productDetails: {
-        'Tamaño': '128GB',
-        'Color': 'Rosado'
-      }
-    }
-  ];
 
-  const commentsToShow = comments.length > 0 ? [...comments, ...defaultComments] : defaultComments;
+  const commentsToShow = comments; //comentarios a mostrar
 
   return (
     <div className="w-full">

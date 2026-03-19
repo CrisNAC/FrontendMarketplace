@@ -1,9 +1,9 @@
-// src/features/commerces/pages/ComercioVerProducto.jsx
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { apiClient } from "../services/editCommerceApi";
+import { getProductById } from "../../commerces/services/productDetailApi";
+import { getProductReviews } from "../../commerces/services/productReviewApi";
 
-// ─── Íconos SVG inline ────────────────────────────────────────────────────────
+//iconos svg
 function SvgIcon({ children, className = "w-4 h-4" }) {
     return (
         <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -40,9 +40,18 @@ const I = {
             <path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </>
     ),
+    star: (
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    ),
+    starFill: (
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="currentColor" />
+    ),
+    check: (
+        <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    ),
 };
 
-// ─── Estilos constantes ───────────────────────────────────────────────────────
+
 const TITLE = "text-[#6B9080]";
 const BODY = "text-slate-900";
 const SUBTLE = "text-slate-600";
@@ -80,32 +89,87 @@ function Row({ left, right, rightClass = "" }) {
     );
 }
 
-// ─── Página principal ─────────────────────────────────────────────────────────
-export default function ComercioVerProducto() {
+function StarRating({ rating, max = 5 }) {
+    return (
+        <div className="flex items-center gap-0.5">
+            {Array.from({ length: max }).map((_, i) => (
+                <span key={i} className={i < Math.round(rating) ? "text-amber-400" : "text-slate-200"}>
+                    <SvgIcon className="w-3 h-3">{i < Math.round(rating) ? I.starFill : I.star}</SvgIcon>
+                </span>
+            ))}
+        </div>
+    );
+}
+
+function ReviewSkeleton() {
+    return (
+        <div className="space-y-3">
+            {[1, 2, 3].map(i => (
+                <div key={i} className="rounded-xl border border-slate-100 p-3 animate-pulse">
+                    <div className="flex justify-between mb-2">
+                        <div className="h-3 w-24 bg-slate-100 rounded" />
+                        <div className="h-3 w-16 bg-slate-100 rounded" />
+                    </div>
+                    <div className="h-2 w-full bg-slate-100 rounded mt-2" />
+                    <div className="h-2 w-3/4 bg-slate-100 rounded mt-1" />
+                </div>
+            ))}
+        </div>
+    );
+}
+
+// pagina principal
+export default function ProductDetailView() {
     const navigate = useNavigate();
     const { id } = useParams();
 
+    const STATIC_PRODUCT_ID = id ?? 1;
+
     const [product, setProduct] = useState(null);
+    const [reviews, setReviews] = useState([]);
+    const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [reviewLoading, setReviewLoading] = useState(true);
     const [error, setError] = useState("");
 
+    // producto
     useEffect(() => {
-        if (!id) return;
         let active = true;
         const load = async () => {
             try {
-                const res = await apiClient.get(`/products/${id}`);
-                if (active) setProduct(res.data);
-            } catch (err) {
-                if (active) setError(err.response?.data?.message || "No se pudo cargar el producto.");
+                const data = await getProductById(STATIC_PRODUCT_ID);
+                if (active) setProduct(data);
+            } catch (e) {
+                if (active) setError(e.response?.data?.message || "Error cargando producto");
             } finally {
                 if (active) setLoading(false);
             }
         };
         load();
         return () => { active = false; };
-    }, [id]);
+    }, [STATIC_PRODUCT_ID]);
 
+    // reviews
+    useEffect(() => {
+        let active = true;
+        const loadReviews = async () => {
+            try {
+                const data = await getProductReviews(STATIC_PRODUCT_ID);
+                if (active) {
+                    setReviews(data.reviews || []);
+                    setStats(data.stats || {});
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                if (active) setReviewLoading(false);
+            }
+        };
+        loadReviews();
+        return () => { active = false; };
+    }, [STATIC_PRODUCT_ID]);
+
+    //estados de carga/error
     if (loading) return (
         <div className="min-h-screen bg-[#ECF7F0] flex items-center justify-center">
             <p className="text-slate-500 text-sm">Cargando producto...</p>
@@ -151,7 +215,7 @@ export default function ComercioVerProducto() {
 
                     <button
                         type="button"
-                        onClick={() => navigate(`/comercio/productos/${id}/editar`)}
+                        onClick={() => navigate(`/comercio/productos/${STATIC_PRODUCT_ID}/editar`)}
                         className="inline-flex items-center gap-2 rounded-xl bg-emerald-200/70 px-3 py-1.5 text-[11px] font-semibold text-emerald-900 shadow-sm ring-1 ring-emerald-200 hover:bg-emerald-200"
                     >
                         <SvgIcon className="w-4 h-4">{I.edit}</SvgIcon>
@@ -216,7 +280,14 @@ export default function ComercioVerProducto() {
 
                                         <div className="flex items-center justify-between">
                                             <span className={SUBTLE}>Calificación:</span>
-                                            <span className={`${BODY} font-semibold`}>—</span>
+                                            {product.averageRating ? (
+                                                <div className="flex items-center gap-1">
+                                                    <StarRating rating={product.averageRating} />
+                                                    <span className="font-semibold text-amber-600">{product.averageRating}</span>
+                                                </div>
+                                            ) : (
+                                                <span className={`${BODY} font-semibold`}>—</span>
+                                            )}
                                         </div>
 
                                         {product.tags?.length > 0 && (
@@ -234,17 +305,68 @@ export default function ComercioVerProducto() {
                             </div>
                         </section>
 
-                        {/* Comentarios — placeholder hasta que exista el endpoint */}
+                        {/* Reviews */}
                         <section className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
-                            <div className="px-4 pt-3 pb-2 text-left">
+                            <div className="px-4 pt-3 pb-2 text-left flex items-center justify-between">
                                 <h3 className={`text-[12px] font-semibold ${TITLE}`}>
                                     Calificaciones y Comentarios
                                 </h3>
+                                {!reviewLoading && reviews.length > 0 && (
+                                    <span className="text-[10px] text-slate-400">{reviews.length} reseña{reviews.length !== 1 ? "s" : ""}</span>
+                                )}
                             </div>
+
                             <div className="px-4 pb-4">
-                                <p className="text-[12px] text-slate-400 italic">
-                                    Las reseñas estarán disponibles próximamente.
-                                </p>
+                                {reviewLoading && <ReviewSkeleton />}
+
+                                {!reviewLoading && reviews.length === 0 && (
+                                    <p className="text-[12px] text-slate-400 italic">
+                                        Este producto aún no tiene reseñas.
+                                    </p>
+                                )}
+
+                                {!reviewLoading && reviews.length > 0 && (
+                                    <div className="space-y-3">
+                                        {reviews.map((r) => (
+                                            <div
+                                                key={r.id}
+                                                className="rounded-xl border border-slate-100 bg-slate-50/60 p-3"
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-[11px] font-semibold text-slate-800">
+                                                            {r.customerName}
+                                                        </span>
+                                                        {r.isVerified && (
+                                                            <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 px-1.5 py-[1px] text-[9px] font-medium text-emerald-700 ring-1 ring-emerald-100">
+                                                                <SvgIcon className="w-2.5 h-2.5">{I.check}</SvgIcon>
+                                                                Verificada
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center gap-1">
+                                                        <StarRating rating={r.rating} />
+                                                        <span className="text-[10px] font-semibold text-amber-600">{r.rating}</span>
+                                                    </div>
+                                                </div>
+
+                                                {r.comment && (
+                                                    <p className="mt-1.5 text-[11px] leading-relaxed text-slate-600">
+                                                        {r.comment}
+                                                    </p>
+                                                )}
+
+                                                <div className="mt-1.5 text-[10px] text-slate-400">
+                                                    {new Date(r.date).toLocaleDateString("es-PY", {
+                                                        day: "numeric",
+                                                        month: "long",
+                                                        year: "numeric"
+                                                    })}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </section>
                     </div>
@@ -276,15 +398,25 @@ export default function ComercioVerProducto() {
 
                                 <div className="pt-0.5">
                                     <div className={`text-[11px] font-semibold ${TITLE}`}>ID del producto</div>
-                                    <div className="mt-0.5 text-[11px] text-slate-600">{product.id ?? id}</div>
+                                    <div className="mt-0.5 text-[11px] text-slate-600">{product.id ?? STATIC_PRODUCT_ID}</div>
                                 </div>
                             </div>
                         </SideCard>
 
                         <SideCard title="Estadísticas">
                             <div className="space-y-2.5">
-                                <Row left="Calificación promedio:" right="—" />
-                                <Row left="Total de reseñas:" right="—" />
+                                <Row
+                                    left="Calificación promedio:"
+                                    right={stats?.averageRating ?? "—"}
+                                />
+                                <Row
+                                    left="Total de reseñas:"
+                                    right={stats?.totalReviews ?? 0}
+                                />
+                                <Row
+                                    left="Verificadas:"
+                                    right={stats?.verifiedReviews ?? 0}
+                                />
                             </div>
                         </SideCard>
 
@@ -292,7 +424,7 @@ export default function ComercioVerProducto() {
                             <div className="space-y-2">
                                 <button
                                     type="button"
-                                    onClick={() => navigate(`/comercio/productos/${id}/editar`)}
+                                    onClick={() => navigate(`/comercio/productos/${STATIC_PRODUCT_ID}/editar`)}
                                     className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-100/70 px-3 py-1.5 text-[11px] font-semibold text-emerald-900 hover:bg-emerald-100"
                                 >
                                     <SvgIcon className="w-4 h-4">{I.edit}</SvgIcon>

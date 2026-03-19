@@ -1,13 +1,27 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ShoppingCart, User, Search, X } from "lucide-react";
 import logo from "/src/assets/feather.png";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 const Navbar = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const urlSearch = location.pathname === "/busqueda" ? (searchParams.get("search") || "") : "";
+
   const [search, setSearch] = useState("");
-  const [cartCount, setCartCount] = useState(0);
+    const [cartCount, setCartCount] = useState(0);
+
 
   useEffect(() => {
+    if (location.pathname === "/busqueda") {
+      setSearch(urlSearch);
+    } else {
+      setSearch("");
+    }
+  }, [location.pathname, urlSearch]);
+   useEffect(() => {
 
     const actualizar = () => {
       const carrito = JSON.parse(localStorage.getItem("carrito")) || [];
@@ -21,6 +35,16 @@ const Navbar = () => {
     return () => window.removeEventListener("cartUpdated", actualizar);
 
   }, []);
+
+  const submitSearch = () => {
+    const term = search.trim();
+    if (!term) {
+      navigate("/busqueda");
+      return;
+    }
+    const params = new URLSearchParams({ search: term });
+    navigate(`/busqueda?${params.toString()}`);
+  };
 
   return (
     <header className="w-full border-b border-gray-200 shadow-sm font-sans">
@@ -69,8 +93,20 @@ const Navbar = () => {
               className="flex-1 border-none outline-none text-[13px]"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") submitSearch();
+              }}
             />
-            <X className="text-gray-500 cursor-pointer mr-[6px]" size={16} onClick={() => setSearch("")} />
+            <X
+              className="text-gray-500 cursor-pointer mr-[6px]"
+              size={16}
+              onClick={() => {
+                setSearch("");
+                if (location.pathname === "/busqueda") {
+                  navigate("/busqueda");
+                }
+              }}
+            />
           </div>
 
          <button
@@ -82,6 +118,7 @@ const Navbar = () => {
               color: "#fff",
               cursor: "pointer",
             }}
+            onClick={submitSearch}
           >
             <Search size={16} />
           </button>
@@ -109,7 +146,6 @@ const Navbar = () => {
           >
             <User size={25} />
           </Link>
-
         </div>
       </div>
 
