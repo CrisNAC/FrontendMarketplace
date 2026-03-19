@@ -129,7 +129,7 @@ function App() {
         />
 
         <Route
-          path="/comentarios"
+          path="/comentarios/:id" //ruta de comentarios con id del producto
           element={
             <CommentsLayout>
               <CommentsPage />

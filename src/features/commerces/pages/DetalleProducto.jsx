@@ -227,7 +227,7 @@ export default function DetalleProducto() {
             {/*rating*/}
             <button
               type="button"
-              onClick={() => navigate("/comentarios")}
+              onClick={() => navigate(`/comentarios/${productId}`)}
               className="flex items-center gap-2 mt-1 text-[12px] w-fit"
             >
               <span className="flex items-center gap-1 text-yellow-500">
@@ -330,7 +330,7 @@ export default function DetalleProducto() {
 
           <button
             type="button"
-            onClick={() => navigate("/comentarios")}
+            onClick={() => navigate(`/comentarios/${productId}`)}
             className="text-[18px] font-semibold text-black border-b border-black pb-[2px]"
           >
             <h2>Comentarios</h2>
