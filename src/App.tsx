@@ -47,6 +47,7 @@ import DetalleProducto from './features/commerces/pages/DetalleProducto';
 import CreateProductPage from './features/commerces/pages/CreateProductPage';
 
 import { EditClientProfile } from './features/clients/pages/EditClientProfile';
+import AddressesPage from './features/clients/components/addresses/AddressesPage';
 
 import EditProductPage from './features/commerces/pages/EditProductPage';
 import Wishlist from "./features/clients/pages/Wishlist"
@@ -94,7 +95,11 @@ function App() {
 
         <Route path="/perfil" element={<MyAccountPage />} />
         <Route path="/mi-perfil" element={<EditClientProfile />} />
+
+        <Route path='/direcciones' element={<AddressesPage />} />
+
         <Route path="/comparar" element={<PriceComparisonPage />} />
+        
         <Route
           path="/producto-detalle/:id"
           element={

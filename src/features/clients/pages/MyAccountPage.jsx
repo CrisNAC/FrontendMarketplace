@@ -1,4 +1,5 @@
 import { Edit2 } from "lucide-react";
+import { Link } from "react-router-dom";
 import Navbar from "../../../components/navbar/Navbar";
 import { SidebarClientProfile } from "../../../components/SidebarClientProfile";
 
@@ -70,10 +71,13 @@ const MyAccountPage = () => {
                             <AccountSectionHeader
                                 title="Libreta de direcciones"
                                 rightContent={
-                                    <button className="flex items-center gap-1.5 text-[#1b7bd5] hover:underline">
+                                    <Link 
+                                        to="/direcciones"
+                                        className="flex items-center gap-1.5 text-[#1b7bd5] hover:underline"
+                                    >
                                         Gestionar direcciones
                                         <Edit2 size={14} />
-                                    </button>
+                                    </Link>
                                 }
                             />
                             <div className="grid md:grid-cols-2 gap-4 mt-4">
