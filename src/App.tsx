@@ -38,6 +38,7 @@ import { CommentsPage } from './features/clients/pages/CommentsPage'
 import { CreateCommercePage } from './features/clients/pages/CreateCommercePage'
 import { CommerceProfilePage } from './features/commerces/pages/CommerceProfilePage';
 import { CommerceProductsPage } from './features/commerces/pages/CommerceProductsPage'
+import { CommerceOrdersPage } from './features/commerces/pages/CommerceOrdersPage'
 import { EditCommercePage } from './features/commerces/pages/EditCommercePage'
 import AuthPage from './features/clients/pages/AuthPage';
 
@@ -147,7 +148,9 @@ function App() {
         <Route path="/comercio/editar" element={
           <MyCommerceLayout><EditCommercePage /></MyCommerceLayout>
         } />
-
+        <Route path="/comercio/pedidos" element={
+          <MyCommerceLayout><CommerceOrdersPage /></MyCommerceLayout>
+        } />
         <Route path="/comercio/productos" element={
           <MyCommerceLayout><CommerceProductsPage /></MyCommerceLayout>
         } />
