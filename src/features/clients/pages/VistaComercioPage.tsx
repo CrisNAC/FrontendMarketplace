@@ -11,8 +11,21 @@ type Store = {
     name: string;
     description?: string | null;
     logo?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    average_rating?: number | null;
+    total_reviews?: number | null;
+    open_time?: string | null;
+    close_time?: string | null;
     store_category?: { id_store_category: number; name: string };
     status?: boolean;
+    addresses?: Array<{
+        address?: string | null;
+        city?: string | null;
+        region?: string | null;
+        latitude?: number | string | null;
+        longitude?: number | string | null;
+    }>;
 };
 
 type StoreProduct = {
@@ -107,6 +120,20 @@ export const VistaComercioPage = () => {
 
     const headerName = store?.name || storeName || "Comercio";
     const headerCategory = store?.store_category?.name || "Comercio";
+    const mainAddress = store?.addresses?.[0];
+    const addressText = [mainAddress?.address, mainAddress?.city, mainAddress?.region]
+        .filter(Boolean)
+        .join(", ");
+    const latitude = mainAddress?.latitude;
+    const longitude = mainAddress?.longitude;
+
+    const hasValidCoords =
+        latitude !== null &&
+        latitude !== undefined &&
+        longitude !== null &&
+        longitude !== undefined &&
+        !Number.isNaN(Number(latitude)) &&
+        !Number.isNaN(Number(longitude));
 
     const totalPages =
         products.length > 0
@@ -137,11 +164,16 @@ export const VistaComercioPage = () => {
             <CommerceProfileHeader
                 name={headerName}
                 category={headerCategory}
-                isOpen={true}
-                rating={4.7}
-                reviews={542}
-                closesAt="20:00"
+                isOpen={Boolean(store?.status)}
+                rating={Number(store?.average_rating ?? 0)}
+                reviews={Number(store?.total_reviews ?? 0)}
+                closesAt={store?.close_time || "—"}
                 logoUrl={store?.logo || undefined}
+                phone={store?.phone || undefined}
+                email={store?.email || undefined}
+                address={addressText || undefined}
+                latitude={hasValidCoords ? Number(latitude) : undefined}
+                longitude={hasValidCoords ? Number(longitude) : undefined}
             />
 
             {/* Main content: sidebar + products */}
