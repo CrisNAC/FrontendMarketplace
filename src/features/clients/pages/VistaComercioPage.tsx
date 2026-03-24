@@ -1,6 +1,8 @@
 import { ArrowLeft } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
+import axios from "axios";
+import apiClient from "../../../lib/apiClient";
 import { CategoryFilterSidebar } from "../components/commerceProfile/CategoryFilterSidebar";
 import { CommerceProfileHeader } from "../components/commerceProfile/CommerceProfileHeader";
 import { FeaturedProducts } from "../components/commerceProfile/FeaturedProducts";
@@ -20,6 +22,7 @@ type Store = {
     store_category?: { id_store_category: number; name: string };
     status?: boolean;
     addresses?: Array<{
+        id_address?: number;
         address?: string | null;
         city?: string | null;
         region?: string | null;
@@ -27,6 +30,24 @@ type Store = {
         longitude?: number | string | null;
     }>;
 };
+
+function resolveApiAssetUrl(path: string | null | undefined, apiBase: string): string | undefined {
+    if (!path?.trim()) return undefined;
+    const p = path.trim();
+    if (/^https?:\/\//i.test(p)) return p;
+    const base = apiBase.replace(/\/$/, "");
+    return `${base}${p.startsWith("/") ? "" : "/"}${p}`;
+}
+
+function getRequestErrorMessage(err: unknown): string {
+    if (axios.isAxiosError(err)) {
+        const msg = err.response?.data?.message;
+        if (typeof msg === "string" && msg.trim()) return msg;
+        return err.message;
+    }
+    if (err instanceof Error) return err.message;
+    return "No se pudo cargar el comercio.";
+}
 
 type StoreProduct = {
     id_product: number;
@@ -64,49 +85,42 @@ export const VistaComercioPage = () => {
         if (!storeId) return;
 
         let isActive = true;
-        const controller = new AbortController();
 
         const load = async () => {
             try {
                 setStatus("loading");
                 setError("");
 
-                const base = apiBase || "http://localhost:3000";
-
-                const [storeRes, productsRes] = await Promise.all([
-                    fetch(`${base}/api/commerces/${storeId}`, {
-                        signal: controller.signal,
-                        headers: { Accept: "application/json" },
-                    }),
-                    fetch(`${base}/api/commerces/products/${storeId}`, {
-                        signal: controller.signal,
-                        headers: { Accept: "application/json" },
-                    }),
-                ]);
-
-                if (!storeRes.ok) {
-                    throw new Error(`Error tienda HTTP ${storeRes.status}`);
-                }
-                if (!productsRes.ok) {
-                    throw new Error(`Error productos HTTP ${productsRes.status}`);
-                }
-
-                const storeData = (await storeRes.json()) as Store;
-                const productsData = (await productsRes.json()) as StoreProduct[];
-                const list = Array.isArray(productsData) ? productsData : [];
+                const { data: storeData } = await apiClient.get<Store>(`/api/commerces/${storeId}`);
 
                 if (!isActive) return;
                 setStore(storeData);
-                setProducts(list);
                 setPage(1);
+
+                try {
+                    const { data: productsData } = await apiClient.get<StoreProduct[]>(
+                        `/api/commerces/products/${storeId}`
+                    );
+                    if (!isActive) return;
+                    setProducts(Array.isArray(productsData) ? productsData : []);
+                } catch (pe) {
+                    if (axios.isAxiosError(pe) && pe.response?.status === 404) {
+                        if (!isActive) return;
+                        setProducts([]);
+                    } else {
+                        throw pe;
+                    }
+                }
+
+                if (!isActive) return;
                 setStatus("success");
-            } catch (e: any) {
-                if (e?.name === "AbortError") return;
+            } catch (e: unknown) {
+                if (axios.isCancel(e)) return;
                 if (!isActive) return;
                 setStore(null);
                 setProducts([]);
                 setStatus("error");
-                setError(e instanceof Error ? e.message : "No se pudo cargar el comercio.");
+                setError(getRequestErrorMessage(e));
             }
         };
 
@@ -114,9 +128,8 @@ export const VistaComercioPage = () => {
 
         return () => {
             isActive = false;
-            controller.abort();
         };
-    }, [apiBase, storeId]);
+    }, [storeId]);
 
     const headerName = store?.name || storeName || "Comercio";
     const headerCategory = store?.store_category?.name || "Comercio";
@@ -126,6 +139,12 @@ export const VistaComercioPage = () => {
         .join(", ");
     const latitude = mainAddress?.latitude;
     const longitude = mainAddress?.longitude;
+
+    const resolvedLogo = resolveApiAssetUrl(store?.logo ?? null, apiBase || "http://localhost:3000");
+    const closesAt =
+        store?.close_time != null && String(store.close_time).trim() !== ""
+            ? String(store.close_time).trim()
+            : "";
 
     const hasValidCoords =
         latitude !== null &&
@@ -167,8 +186,8 @@ export const VistaComercioPage = () => {
                 isOpen={Boolean(store?.status)}
                 rating={Number(store?.average_rating ?? 0)}
                 reviews={Number(store?.total_reviews ?? 0)}
-                closesAt={store?.close_time || "—"}
-                logoUrl={store?.logo || undefined}
+                closesAt={closesAt}
+                logoUrl={resolvedLogo}
                 phone={store?.phone || undefined}
                 email={store?.email || undefined}
                 address={addressText || undefined}
@@ -181,11 +200,12 @@ export const VistaComercioPage = () => {
                 <CategoryFilterSidebar />
                 {status === "loading" && <div style={{ color: "#6b7280" }}>Cargando productos...</div>}
                 {status === "error" && (
-                    <div style={{ color: "#dc2626" }}>
-                        No se encontraron productos para esta tienda
-                    </div>
+                    <div style={{ color: "#dc2626" }}>{error}</div>
                 )}
-                {status === "success" && (
+                {status === "success" && products.length === 0 && (
+                    <div style={{ color: "#6b7280" }}>Este comercio aún no tiene productos publicados.</div>
+                )}
+                {status === "success" && products.length > 0 && (
                     <FeaturedProducts
                         products={pagedProducts.map((p) => ({
                             id: p.id_product,

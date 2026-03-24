@@ -126,7 +126,9 @@ export const CommerceProfileHeader = ({
                         <span>⭐</span>
                         <span style={{ fontWeight: "bold" }}>{rating}</span>
                         <span style={{ fontSize: "14px", color: "#6b7280" }}>{reviews} reseñas</span>
-                        <span style={{ fontSize: "14px", color: "#6b7280" }}>· Cierra a las {closesAt}</span>
+                        {closesAt.trim() ? (
+                            <span style={{ fontSize: "14px", color: "#6b7280" }}>· Cierra a las {closesAt}</span>
+                        ) : null}
                     </div>
 
                     {/* Action buttons */}
