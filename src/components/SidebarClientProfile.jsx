@@ -14,7 +14,10 @@ export const SidebarClientProfile = () => {
         <div className="w-full bg-[#c0cec2] p-2 rounded-md">
             <ul className="text-[17px] ps-1">
                 {links.map(({ to, label }) => {
-                    const isActive = pathname === to;
+                    const isActive =
+                        to === "/favoritos"
+                            ? pathname === "/favoritos" || pathname === "/wishlist"
+                            : pathname === to;
                     return (
                         <li key={to}>
                             <Link

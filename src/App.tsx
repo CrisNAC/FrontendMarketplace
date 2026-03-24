@@ -120,6 +120,7 @@ function App() {
         <Route path="/pedidos/:orderId" element={<ClientOrderDetailsPage />} />
         <Route path="/homepage" element={<HomePage />} />
         <Route path="/wishlist" element={<VistaComercioLayout><Wishlist/></VistaComercioLayout>}/>
+        <Route path="/favoritos" element={<VistaComercioLayout><Wishlist/></VistaComercioLayout>}/>
         <Route
           path="/busqueda"
           element={

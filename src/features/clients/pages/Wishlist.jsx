@@ -2,8 +2,10 @@ import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { mergeWishlistLinesIntoLocalCart } from "../../../lib/cartLocalStorage";
 
 const VERDE = "#8BB2A1";
+const AZUL_VER_MAS = "#2563eb";
 
 function SvgIcon({ children, className = "w-4 h-4" }) {
   return (
@@ -35,13 +37,16 @@ export default function Wishlist() {
   const [status, setStatus] = useState("idle");
   const [userId, setUserId] = useState(null);
   const [removingId, setRemovingId] = useState(null);
+  const [addingAllToCart, setAddingAllToCart] = useState(false);
+  const [refreshingList, setRefreshingList] = useState(false);
 
   // Timers de debounce por productId para no spamear el PUT
   const debounceTimers = useRef({});
 
   // ─── Sesión + wishlist ───────────────────────────────────────────────────────
 
-  const fetchWishlist = useCallback(async (uid) => {
+  const fetchWishlist = useCallback(async (uid, options = {}) => {
+    const { isRefresh } = options;
     try {
       const res = await axios.get(
         `${apiBase || "http://localhost:3000"}/api/users/${uid}/wishlist`,
@@ -59,6 +64,7 @@ export default function Wishlist() {
           updatingQty: false,
         }))
       );
+      return true;
     } catch (e) {
       const code = e?.response?.status;
       if (code === 401) {
@@ -66,8 +72,9 @@ export default function Wishlist() {
         navigate("/login");
       } else {
         toast.error("No se pudo cargar la lista de deseos");
-        setStatus("error");
+        if (!isRefresh) setStatus("error");
       }
+      return false;
     }
   }, [apiBase, navigate]);
 
@@ -202,6 +209,42 @@ export default function Wishlist() {
     toast.success("Cupón aplicado");
   };
 
+  const actualizarFavoritos = async () => {
+    if (!userId || refreshingList) return;
+    setRefreshingList(true);
+    try {
+      const ok = await fetchWishlist(userId, { isRefresh: true });
+      if (ok) toast.success("Lista actualizada");
+    } finally {
+      setRefreshingList(false);
+    }
+  };
+
+  const compartirFavoritos = async () => {
+    const url = window.location.href;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "Mis favoritos", url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast.success("Enlace copiado al portapapeles");
+      }
+    } catch (e) {
+      if (e?.name !== "AbortError") toast.error("No se pudo compartir");
+    }
+  };
+
+  const agregarTodoAlCarrito = () => {
+    if (!productos.length || addingAllToCart) return;
+    setAddingAllToCart(true);
+    try {
+      mergeWishlistLinesIntoLocalCart(productos);
+      toast.success("Productos agregados al carrito");
+    } finally {
+      setAddingAllToCart(false);
+    }
+  };
+
   // ─── Render ──────────────────────────────────────────────────────────────────
 
   if (status === "loading") {
@@ -291,6 +334,15 @@ export default function Wishlist() {
                             : "-"}
                         </span>
                       </div>
+
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/producto-detalle/${producto.productId}`)}
+                        className="mt-3 px-5 py-2 rounded-full text-white text-[13px] font-medium hover:opacity-90"
+                        style={{ backgroundColor: AZUL_VER_MAS }}
+                      >
+                        Ver más
+                      </button>
                     </div>
                   </div>
 
@@ -372,6 +424,35 @@ export default function Wishlist() {
                   </div>
                 )}
               </div>
+            </div>
+
+            <div className="mt-10 flex flex-wrap justify-center gap-4">
+              <button
+                type="button"
+                onClick={actualizarFavoritos}
+                disabled={refreshingList}
+                className="px-6 py-3 rounded-full text-white text-[14px] font-medium disabled:opacity-60 hover:opacity-90"
+                style={{ backgroundColor: VERDE }}
+              >
+                {refreshingList ? "Actualizando..." : "Actualizar Favoritos"}
+              </button>
+              <button
+                type="button"
+                onClick={compartirFavoritos}
+                className="px-6 py-3 rounded-full text-white text-[14px] font-medium hover:opacity-90"
+                style={{ backgroundColor: VERDE }}
+              >
+                Compartir Favoritos
+              </button>
+              <button
+                type="button"
+                onClick={agregarTodoAlCarrito}
+                disabled={addingAllToCart}
+                className="px-6 py-3 rounded-full text-white text-[14px] font-medium disabled:opacity-60 hover:opacity-90"
+                style={{ backgroundColor: VERDE }}
+              >
+                {addingAllToCart ? "Agregando..." : "Agregar todo al Carrito"}
+              </button>
             </div>
 
           </div>
