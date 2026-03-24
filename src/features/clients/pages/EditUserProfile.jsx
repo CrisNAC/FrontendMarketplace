@@ -6,7 +6,7 @@ import {
     updateUserProfile,
     updateUserAddress,
     getBackendErrorMessage,
-} from "../../commerces/services/editClientProfileApi"
+} from "../../commerces/services/editUserProfileApi"
 
 export const EditClientProfile = () => {
 

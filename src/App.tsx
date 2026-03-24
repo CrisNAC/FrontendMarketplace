@@ -47,7 +47,7 @@ import PriceComparisonPage from './features/clients/pages/PriceComparisonPage';
 import DetalleProducto from './features/clients/pages/DetalleProducto';
 import CreateProductPage from './features/commerces/pages/CreateProductPage';
 
-import { EditClientProfile } from './features/clients/pages/EditClientProfile';
+import { EditClientProfile } from './features/clients/pages/EditUserProfile';
 import AddressesPage from './features/clients/components/addresses/AddressesPage';
 
 import EditProductPage from './features/commerces/pages/EditProductPage';
