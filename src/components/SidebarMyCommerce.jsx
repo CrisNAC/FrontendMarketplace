@@ -7,6 +7,7 @@ import {
     Layers,
     Truck,
     Store,
+    ShoppingBag,
     LogOut,
     ChevronLeft,
     ChevronRight,
@@ -22,6 +23,7 @@ export const SidebarMyCommerce = ({ collapsed, onToggle }) => {
         { label: "Dashboard",     icon: LayoutDashboard, route: "/comercio" },
         { label: "Productos",     icon: Package,         route: "/comercio/productos" },
         { label: "Colecciones",   icon: Layers,          route: "/colecciones" },
+        { label: "Mis Pedidos",   icon: ShoppingBag,     route: "/comercio/pedidos" },
         { label: "Delivery",      icon: Truck,           route: "/delivery" },
         // ← ruta actualizada a /comercio/perfil
         { label: "Mi Comercio",   icon: Store,           route: "/comercio/perfil" },
