@@ -54,6 +54,8 @@ import ChangePassword from './features/clients/pages/ChangePassword';
 import EditProductPage from './features/commerces/pages/EditProductPage';
 import Wishlist from "./features/clients/pages/Wishlist"
 
+import Map from "./features/clients/components/Map";
+
 /**
  * Inyecta el navigate de React Router en el apiClient centralizado.
  * Permite que el interceptor de Axios redirija sin recargar la página.
@@ -123,6 +125,7 @@ function App() {
         <Route path="/pedidos/:orderId" element={<ClientOrderDetailsPage />} />
         <Route path="/homepage" element={<HomePage />} />
         <Route path="/wishlist" element={<VistaComercioLayout><Wishlist/></VistaComercioLayout>}/>
+        <Route path="/map" element={<Map />} />
         <Route
           path="/busqueda"
           element={
