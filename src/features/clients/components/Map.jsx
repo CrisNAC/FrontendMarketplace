@@ -39,6 +39,7 @@ export default function MapView() {
     try {
       const res = await fetch(`${API_BASE_URL}/api/distances`, {
           method: "POST",
+          credentials: "include",
           headers: {
             "Content-Type": "application/json"
           },
@@ -47,6 +48,10 @@ export default function MapView() {
           })
         }
       );
+
+      if (!res.ok) {
+        throw new Error(`Error en la API: ${res.statusText}`);
+      }
 
       const data = await res.json();
       setDistance(data.distance_km);
@@ -125,7 +130,7 @@ export default function MapView() {
           Limpiar puntos
         </button>
 
-        {distance && (
+        {distance !== null && (
           <p className="mt-2">
             Distancia: <strong>{distance} km</strong>
           </p>
