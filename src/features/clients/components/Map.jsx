@@ -30,9 +30,12 @@ export default function MapView() {
   const [points, setPoints] = useState([]);
   const [distance, setDistance] = useState(null);
   const [fullscreen, setFullscreen] = useState(false);
+  const [error, setError] = useState(null);
 
   const calculateDistance = async () => {
     if (points.length < 2) return;
+    
+    setError(null);
 
     const coords = points.map(p => [p.lng, p.lat]);
 
@@ -57,6 +60,7 @@ export default function MapView() {
       setDistance(data.distance_km);
     } catch (err) {
       console.error("Error calculando distancia:", err);
+      setError("No se pudo calcular la distancia. Intente nuevamente");
     }
   };
 
@@ -124,6 +128,7 @@ export default function MapView() {
           onClick={() => {
             setPoints([]);
             setDistance(null);
+            setError(null);
           }}
           className="bg-red-500 text-white px-3 py-2 rounded w-full mt-2"
         >
@@ -133,6 +138,12 @@ export default function MapView() {
         {distance !== null && (
           <p className="mt-2">
             Distancia: <strong>{distance} km</strong>
+          </p>
+        )}
+
+        {error && (
+          <p className="mt-2 text-red-600">
+            {error}
           </p>
         )}
       </div>
