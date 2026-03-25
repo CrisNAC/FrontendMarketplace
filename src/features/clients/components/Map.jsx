@@ -119,7 +119,10 @@ export default function MapView() {
       <div className="absolute top-4 left-4 bg-white p-4 rounded shadow z-[1000]">
         <button
           onClick={calculateDistance}
-          className="bg-blue-500 text-white px-3 py-2 rounded w-full"
+          disabled={points.length < 2}
+          className={`text-white px-3 py-2 rounded w-full ${
+            points.length < 2 ? "bg-gray-400 cursor-not-allowed" : "bg-blue-500"
+          }`}
         >
           Calcular distancia
         </button>
