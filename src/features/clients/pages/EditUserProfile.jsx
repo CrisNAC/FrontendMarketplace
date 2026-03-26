@@ -4,9 +4,8 @@ import {
     getSession,
     fetchUserProfile,
     updateUserProfile,
-    updateUserAddress,
     getBackendErrorMessage,
-} from "../../commerces/services/editClientProfileApi"
+} from "../../commerces/services/editUserProfileApi"
 
 export const EditClientProfile = () => {
 
@@ -16,14 +15,11 @@ export const EditClientProfile = () => {
     const [saving, setSaving] = useState(false)
     const [error, setError] = useState("")
     const [success, setSuccess] = useState("")
-    const [addressId, setAddressId] = useState(null)
     const [preview, setPreview] = useState(null)
     const [formData, setFormData] = useState({
         name: "",
         email: "",
         phone: "",
-        address: "",
-        city: "",
         photo: null
     })
 
@@ -43,7 +39,6 @@ export const EditClientProfile = () => {
 
         const loadUser = async () => {
             try {
-                // 1. Obtener sesión para saber quién está logueado
                 const sessionData = await getSession()
                 const loggedUserId = sessionData.user?.id_user
 
@@ -55,7 +50,6 @@ export const EditClientProfile = () => {
 
                 setUserId(loggedUserId)
 
-                // 2. Cargar perfil con el ID real
                 const response = await fetchUserProfile(loggedUserId)
                 const user = response.data
 
@@ -63,17 +57,10 @@ export const EditClientProfile = () => {
                     name: user.name || "",
                     email: user.email || "",
                     phone: user.phone || "",
-                    address: user.addresses?.[0]?.address || "",
-                    city: user.addresses?.[0]?.city || "",
                     photo: null
                 })
 
-                if (user.addresses?.length) {
-                    setAddressId(user.addresses[0].id_address)
-                }
-
             } catch (err) {
-                // Si falla con 401, el usuario no está logueado
                 const status = err.response?.status
                 if (status === 401) {
                     setError("Tu sesión expiró o no estás logueado. Por favor iniciá sesión.")
@@ -92,8 +79,6 @@ export const EditClientProfile = () => {
         if (!formData.name.trim()) return "Nombre obligatorio"
         if (!formData.email.trim()) return "Email obligatorio"
         if (!formData.phone.trim()) return "Teléfono obligatorio"
-        if (!formData.address.trim()) return "Dirección obligatoria"
-        if (!formData.city.trim()) return "Ciudad obligatoria"
         if (!formData.email.includes("@")) return "Email inválido"
         return null
     }
@@ -121,13 +106,6 @@ export const EditClientProfile = () => {
                 email: formData.email,
                 phone: formData.phone
             })
-
-            if (addressId) {
-                await updateUserAddress(userId, addressId, {
-                    address: formData.address,
-                    city: formData.city
-                })
-            }
 
             setSuccess("Perfil actualizado correctamente")
 
@@ -178,24 +156,6 @@ export const EditClientProfile = () => {
                             <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono *</label>
                             <input
                                 type="text" name="phone" value={formData.phone}
-                                onChange={handleChange} required
-                                className="w-full px-3 py-2 border border-green-100 rounded-md bg-green-50/30"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Dirección *</label>
-                            <input
-                                type="text" name="address" value={formData.address}
-                                onChange={handleChange} required
-                                className="w-full px-3 py-2 border border-green-100 rounded-md bg-green-50/30"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Ciudad *</label>
-                            <input
-                                type="text" name="city" value={formData.city}
                                 onChange={handleChange} required
                                 className="w-full px-3 py-2 border border-green-100 rounded-md bg-green-50/30"
                             />
