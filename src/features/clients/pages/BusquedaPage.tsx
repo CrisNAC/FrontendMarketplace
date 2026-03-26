@@ -29,7 +29,7 @@ type Props = {
     query?: string;
 };
 
-export const BusquedaPage = ({ query = "Celular" }: Props) => {
+export const BusquedaPage = ({ query = "Todos los Productos" }: Props) => {
     const navigate = useNavigate();
     const location = useLocation();
 
