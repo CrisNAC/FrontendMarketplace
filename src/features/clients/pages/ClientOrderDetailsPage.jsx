@@ -28,7 +28,7 @@ const formatDate = (isoString) => {
 
 // Cabecera de la tabla
 const TableHeader = () => (
-  <div className="grid grid-cols-[2fr_1fr_80px_1fr] bg-gray-50 border-b border-gray-200 text-sm font-semibold text-gray-900 px-3 py-2">
+  <div className="grid grid-cols-[1fr_200px_80px_160px] bg-gray-50 border-b border-gray-200 text-sm font-semibold text-gray-900 px-3 py-2">
     <span>Producto</span>
     <span className="text-right">Precio unit.</span>
     <span className="text-center">Cant.</span>
@@ -38,7 +38,7 @@ const TableHeader = () => (
 
 // Fila de item — todo en la misma grilla, alineado siempre
 const TableRow = ({ item }) => (
-  <div className="grid grid-cols-[2fr_1fr_80px_1fr] items-center px-3 py-3 border-b border-gray-100 text-sm">
+  <div className="grid grid-cols-[1fr_200px_80px_160px] items-center px-3 py-3 border-b border-gray-100 text-sm">
     {/* Producto */}
     <div>
       <p className="font-medium text-gray-800">{item.productName}</p>
