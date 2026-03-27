@@ -49,10 +49,13 @@ import CreateProductPage from './features/commerces/pages/CreateProductPage';
 
 import { EditClientProfile } from './features/clients/pages/EditUserProfile';
 import AddressesPage from './features/clients/components/addresses/AddressesPage';
+import ChangePassword from './features/clients/pages/ChangePassword';
 
 import EditProductPage from './features/commerces/pages/EditProductPage';
 import Wishlist from "./features/clients/pages/Wishlist"
 import FavoritesPage from "./features/clients/pages/FavoritesPage";
+
+import Map from "./features/clients/components/Map";
 
 /**
  * Inyecta el navigate de React Router en el apiClient centralizado.
@@ -82,6 +85,7 @@ const HomePageRoutes = () => (
     <p className="mt-4">Navega a <a href="/comentarios" className="text-blue-500 underline">Comentarios</a></p>
     <p className="mt-4">Navega a <a href="/crear-comercio" className="text-blue-500 underline">Crear Comercio</a></p>
     <p className="mt-4">Navega a <a href="/mi-perfil" className="text-blue-500 underline">Editar Perfil</a></p>
+    <p className="mt-4">Navega a <a href="/cambiar-contrasena" className="text-blue-500 underline">Cambiar Contraseña</a></p>
   </div>
 );
 
@@ -97,6 +101,7 @@ function App() {
 
         <Route path="/perfil" element={<MyAccountPage />} />
         <Route path="/mi-perfil" element={<EditClientProfile />} />
+        <Route path="/cambiar-contrasena" element={<ChangePassword />} />
 
         <Route path='/direcciones' element={<AddressesPage />} />
 
@@ -122,6 +127,7 @@ function App() {
         <Route path="/homepage" element={<HomePage />} />
         <Route path="/wishlist" element={<VistaComercioLayout><Wishlist/></VistaComercioLayout>}/>
         <Route path="/favoritos" element={<VistaComercioLayout><FavoritesPage /></VistaComercioLayout>}/>
+        <Route path="/map" element={<Map />} />
         <Route
           path="/busqueda"
           element={
@@ -132,7 +138,7 @@ function App() {
         />
 
         <Route
-          path="/comentarios/:id" //ruta de comentarios con id del producto
+          path="/comentarios/:id"
           element={
             <CommentsLayout>
               <CommentsPage />
