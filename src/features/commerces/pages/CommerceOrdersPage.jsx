@@ -439,7 +439,7 @@ function HistoryTab({ orders }) {
 // ─── Página principal ─────────────────────────────────────────────────────────
 export function CommerceOrdersPage() {
     const [orders, setOrders] = useState(MOCK_ORDERS_BASE);
-    const [activeTab, setActiveTab] = useState("pending"); // "pending" | "tracking"
+    const [activeTab, setActiveTab] = useState("pending"); // "pending" | "tracking" | "history"
     const [page, setPage] = useState(1);
     const [isActioning, setIsActioning] = useState(false);
 
@@ -462,10 +462,16 @@ export function CommerceOrdersPage() {
                 // TODO: await apiClient.put(`/api/orders/${orderId}/status`, { order_status: newStatus });
             }
             setOrders(prev => prev.map(o => o.id_order === orderId ? { ...o, order_status: newStatus } : o));
-            // Ajustar página si queda vacía
-            const remaining = activeOrders.length - 1;
-            const newTotalPages = Math.ceil(remaining / ITEMS_PER_PAGE);
-            if (page > newTotalPages && newTotalPages > 0) setPage(newTotalPages);
+            // Ajustar página solo si el pedido abandona la lista activa.
+            // En seguimiento, PROCESSING→SHIPPED permanece en trackingOrders, no se decrementa.
+            const leavesActiveList =
+                activeTab === "pending" ||
+                (activeTab === "tracking" && newStatus === "DELIVERED");
+            if (leavesActiveList) {
+                const remaining = activeOrders.length - 1;
+                const newTotalPages = Math.ceil(remaining / ITEMS_PER_PAGE);
+                if (page > newTotalPages && newTotalPages > 0) setPage(newTotalPages);
+            }
         } catch (err) {
             console.error("Error al actualizar pedido:", err);
         } finally {
