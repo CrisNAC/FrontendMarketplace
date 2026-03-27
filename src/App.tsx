@@ -53,6 +53,7 @@ import ChangePassword from './features/clients/pages/ChangePassword';
 
 import EditProductPage from './features/commerces/pages/EditProductPage';
 import Wishlist from "./features/clients/pages/Wishlist"
+import FavoritesPage from "./features/clients/pages/FavoritesPage";
 
 import Map from "./features/clients/components/Map";
 
@@ -125,6 +126,7 @@ function App() {
         <Route path="/pedidos/:orderId" element={<ClientOrderDetailsPage />} />
         <Route path="/homepage" element={<HomePage />} />
         <Route path="/wishlist" element={<VistaComercioLayout><Wishlist/></VistaComercioLayout>}/>
+        <Route path="/favoritos" element={<VistaComercioLayout><FavoritesPage /></VistaComercioLayout>}/>
         <Route path="/map" element={<Map />} />
         <Route
           path="/busqueda"
