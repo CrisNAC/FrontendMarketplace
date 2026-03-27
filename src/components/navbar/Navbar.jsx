@@ -126,7 +126,7 @@ const Navbar = () => {
 
         {/* Icons */}
         <div className="flex gap-[15px] items-center">
-          <Link to="/wishlist">
+          <Link to="/favoritos">
 
             <div className="relative cursor-pointer">
 
