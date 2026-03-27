@@ -8,7 +8,7 @@ import { getProductById } from '../../commerces/services/productDetailApi';
 
 const STATUS_CONFIG = {
   PENDING:    { label: 'Pendiente',  classes: 'border-yellow-500 text-yellow-600' },
-  PROCESSING: { label: 'En proceso', classes: 'border-blue-500 text-blue-600'    },
+  PROCESSING: { label: 'Procesando', classes: 'border-blue-500 text-blue-600'    },
   SHIPPED:    { label: 'Enviado',    classes: 'border-blue-500 text-blue-600'    },
   DELIVERED:  { label: 'Entregado',  classes: 'border-green-500 text-green-600'  },
   CANCELLED:  { label: 'Cancelado',  classes: 'border-red-500 text-red-600'      },
@@ -26,6 +26,43 @@ const formatDate = (isoString) => {
   });
 };
 
+// Cabecera de la tabla
+const TableHeader = () => (
+  <div className="grid grid-cols-[2fr_1fr_80px_1fr] bg-gray-50 border-b border-gray-200 text-sm font-semibold text-gray-900 px-3 py-2">
+    <span>Producto</span>
+    <span className="text-right">Precio unit.</span>
+    <span className="text-center">Cant.</span>
+    <span className="text-right">Subtotal</span>
+  </div>
+);
+
+// Fila de item — todo en la misma grilla, alineado siempre
+const TableRow = ({ item }) => (
+  <div className="grid grid-cols-[2fr_1fr_80px_1fr] items-center px-3 py-3 border-b border-gray-100 text-sm">
+    {/* Producto */}
+    <div>
+      <p className="font-medium text-gray-800">{item.productName}</p>
+      {item.isOfferApplied && (
+        <span className="text-xs text-green-600">Oferta aplicada</span>
+      )}
+    </div>
+
+    {/* Precio unit. */}
+    <div className="text-right">
+      <p className="text-gray-900">{formatCurrency(item.price)}</p>
+      {item.isOfferApplied && (
+        <p className="text-xs text-gray-400 line-through">{formatCurrency(item.originalPrice)}</p>
+      )}
+    </div>
+
+    {/* Cantidad */}
+    <p className="text-center text-gray-900">{item.quantity}</p>
+
+    {/* Subtotal */}
+    <p className="text-right font-medium text-gray-900">{formatCurrency(item.subtotal)}</p>
+  </div>
+);
+
 export const ClientOrderDetailsPage = () => {
   const { orderId } = useParams();
 
@@ -42,14 +79,9 @@ export const ClientOrderDetailsPage = () => {
         const userId = sessionData.user.id_user;
 
         const data = await getOrderById(userId, orderId);
-        if (!data) {
-          setError('Pedido no encontrado');
-          return;
-        }
+        if (!data) { setError('Pedido no encontrado'); return; }
         setOrder(data);
 
-        // Enriquecer cada item con el nombre del producto desde GET /products/:id
-        // item.productId si el backend lo expone, sino item.id como fallback
         const enriched = await Promise.all(
           data.items.map(async (item) => {
             try {
@@ -68,17 +100,11 @@ export const ClientOrderDetailsPage = () => {
         setLoading(false);
       }
     };
-
     fetchOrder();
   }, [orderId]);
 
-  if (loading) {
-    return <div><Navbar /><p className="p-6 text-gray-500">Cargando pedido...</p></div>;
-  }
-
-  if (error || !order) {
-    return <div><Navbar /><p className="p-6 text-red-500">{error || 'Pedido no encontrado'}</p></div>;
-  }
+  if (loading) return <div><Navbar /><p className="p-6 text-gray-500">Cargando pedido...</p></div>;
+  if (error || !order) return <div><Navbar /><p className="p-6 text-red-500">{error || 'Pedido no encontrado'}</p></div>;
 
   const statusConfig  = STATUS_CONFIG[order.status] ?? { label: order.status, classes: 'border-gray-400 text-gray-600' };
   const subtotalTotal = order.items.reduce((acc, item) => acc + Number(item.subtotal), 0);
@@ -94,13 +120,11 @@ export const ClientOrderDetailsPage = () => {
         </div>
 
         <div className="mb-5">
-          {/* Cabecera */}
+          {/* Cabecera del pedido */}
           <div className="flex justify-between items-center mb-2 bg-white p-3 rounded-lg me-2">
             <div>
               <p className="text-lg font-bold">Pedido N° {order.id}</p>
-              <p className="text-sm text-gray-600">
-                Fecha de pedido: {formatDate(order.createdAt)}
-              </p>
+              <p className="text-sm text-gray-600">Fecha de pedido: {formatDate(order.createdAt)}</p>
             </div>
             <span className={`border px-3 py-1 rounded-sm text-sm ${statusConfig.classes}`}>
               {statusConfig.label}
@@ -116,48 +140,10 @@ export const ClientOrderDetailsPage = () => {
             </div>
 
             <div className="border border-gray-200 rounded-sm overflow-hidden">
-              <table className="w-full text-sm table-fixed">
-                <colgroup>
-                  <col style={{ width: '45%' }} />
-                  <col style={{ width: '18%' }} />
-                  <col style={{ width: '12%' }} />
-                  <col style={{ width: '25%' }} />
-                </colgroup>
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="p-3 font-semibold text-gray-900 text-left">Producto</th>
-                    <th className="p-3 font-semibold text-gray-900 text-right">Precio unit.</th>
-                    <th className="p-3 font-semibold text-gray-900 text-right">Cant.</th>
-                    <th className="p-3 font-semibold text-gray-900 text-right">Subtotal</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((item) => (
-                    <tr key={item.id} className="border-b border-gray-100">
-                      <td className="p-3 text-left align-top">
-                        <p className="font-medium text-gray-800">{item.productName}</p>
-                        {item.isOfferApplied && (
-                          <span className="text-xs text-green-600">Oferta aplicada</span>
-                        )}
-                      </td>
-                      <td className="p-3 text-right align-top">
-                        <p className="text-gray-900">{formatCurrency(item.price)}</p>
-                        {item.isOfferApplied && (
-                          <p className="text-xs text-gray-400 line-through">
-                            {formatCurrency(item.originalPrice)}
-                          </p>
-                        )}
-                      </td>
-                      <td className="p-3 text-right text-gray-900 align-top">
-                        {item.quantity}
-                      </td>
-                      <td className="p-3 text-right font-medium text-gray-900 align-top">
-                        {formatCurrency(item.subtotal)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <TableHeader />
+              {items.map((item) => (
+                <TableRow key={item.id} item={item} />
+              ))}
 
               {/* Resumen */}
               <div className="flex justify-end bg-gray-50 p-4 border-t border-gray-200">
@@ -186,12 +172,10 @@ export const ClientOrderDetailsPage = () => {
                     <p>{order.address.region}</p>
                   </div>
                 </div>
-
                 <div>
                   <p className="font-semibold text-gray-900 mb-1 text-sm">Notas del pedido</p>
                   <p className="text-gray-600 text-xs">{order.notes ?? 'Sin notas'}</p>
                 </div>
-
                 <div>
                   <p className="font-semibold text-gray-900 mb-1 text-sm">Estado</p>
                   <span className={`inline-block border px-2 py-0.5 rounded text-xs ${statusConfig.classes}`}>

@@ -9,7 +9,7 @@ import { getOrdersByCustomer, getBackendErrorMessage } from '../../commerces/ser
 // Mapea el estado del backend al texto que muestra la UI
 const STATUS_LABEL = {
   PENDING:    'Pendiente',
-  PROCESSING: 'En proceso',
+  PROCESSING: 'Procesando', 
   SHIPPED:    'Enviado',
   DELIVERED:  'Entregado',
   CANCELLED:  'Cancelado',
