@@ -145,7 +145,7 @@ export const BusquedaPage = ({ query = "Todos los Productos" }: Props) => {
                 )}
                 {status === "error" && (
                     <div style={{ color: "#dc2626" }}>
-                        No se pudieron cargar productos{error ? `: ${error}` : "."}
+                        No se pudieron cargar productos con este filtro.
                     </div>
                 )}
                 {status === "success" && products.length === 0 && (
