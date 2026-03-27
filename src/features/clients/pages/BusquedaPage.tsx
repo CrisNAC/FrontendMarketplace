@@ -29,7 +29,7 @@ type Props = {
     query?: string;
 };
 
-export const BusquedaPage = ({ query = "Celular" }: Props) => {
+export const BusquedaPage = ({ query = "Todos los Productos" }: Props) => {
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -145,7 +145,7 @@ export const BusquedaPage = ({ query = "Celular" }: Props) => {
                 )}
                 {status === "error" && (
                     <div style={{ color: "#dc2626" }}>
-                        No se pudieron cargar productos{error ? `: ${error}` : "."}
+                        No se pudieron cargar productos con este filtro.
                     </div>
                 )}
                 {status === "success" && products.length === 0 && (
