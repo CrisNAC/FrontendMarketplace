@@ -52,6 +52,7 @@ import AddressesPage from './features/clients/components/addresses/AddressesPage
 
 import EditProductPage from './features/commerces/pages/EditProductPage';
 import Wishlist from "./features/clients/pages/Wishlist"
+import FavoritesPage from "./features/clients/pages/FavoritesPage";
 
 /**
  * Inyecta el navigate de React Router en el apiClient centralizado.
@@ -120,7 +121,7 @@ function App() {
         <Route path="/pedidos/:orderId" element={<ClientOrderDetailsPage />} />
         <Route path="/homepage" element={<HomePage />} />
         <Route path="/wishlist" element={<VistaComercioLayout><Wishlist/></VistaComercioLayout>}/>
-        <Route path="/favoritos" element={<VistaComercioLayout><Wishlist/></VistaComercioLayout>}/>
+        <Route path="/favoritos" element={<VistaComercioLayout><FavoritesPage /></VistaComercioLayout>}/>
         <Route
           path="/busqueda"
           element={

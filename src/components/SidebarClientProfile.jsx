@@ -4,6 +4,7 @@ const links = [
     { to: "/perfil", label: "Mi cuenta" },
     { to: "/pedidos", label: "Mis pedidos" },
     { to: "/favoritos", label: "Mi lista de favoritos" },
+    { to: "/wishlist", label: "Mi lista de deseos" },
     { to: "/direcciones", label: "Libreta de direcciones" },
 ];
 
@@ -14,10 +15,7 @@ export const SidebarClientProfile = () => {
         <div className="w-full bg-[#c0cec2] p-2 rounded-md">
             <ul className="text-[17px] ps-1">
                 {links.map(({ to, label }) => {
-                    const isActive =
-                        to === "/favoritos"
-                            ? pathname === "/favoritos" || pathname === "/wishlist"
-                            : pathname === to;
+                    const isActive = pathname === to;
                     return (
                         <li key={to}>
                             <Link
