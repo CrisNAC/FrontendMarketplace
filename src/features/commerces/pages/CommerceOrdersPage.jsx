@@ -22,7 +22,7 @@ const NEXT_STATUS = {
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-function timeAgo(dateStr) {
+export function timeAgo(dateStr) {
     const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
     if (diff < 60) return "hace unos segundos";
     if (diff < 3600) return `hace ${Math.floor(diff / 60)} min`;
@@ -30,7 +30,7 @@ function timeAgo(dateStr) {
     return `hace ${Math.floor(diff / 86400)} días`;
 }
 
-function formatGuarani(value) {
+export function formatGuarani(value) {
     return `Gs. ${Number(value).toLocaleString("es-PY")}`;
 }
 

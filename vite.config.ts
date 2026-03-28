@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react-swc'
 import tailwindcss from '@tailwindcss/vite'
 
@@ -37,5 +37,16 @@ export default defineConfig({
           secure: false,
         }
       },
+  },
+  // Vitest configuration para pruebas unitarias
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './src/test/setup.js',
+    exclude: [
+      '**/node_modules/**',
+      '**/tests/**',        // excluye la carpeta de Playwright
+      '**/*.e2e.spec.*',   // excluye cualquier archivo e2e
+    ],
   },
 })
