@@ -17,14 +17,20 @@ export const ordersApiClient = axios.create({
  */
 export const fetchStoreOrders = async (storeId, filters = {}) => {
     const params = {};
-    if (filters.order_status) params.order_status = filters.order_status;
-    if (filters.date_from)    params.date_from    = filters.date_from;
-    if (filters.date_to)      params.date_to      = filters.date_to;
-    if (filters.page)         params.page         = filters.page;
-    if (filters.limit)        params.limit        = filters.limit;
+
+    if (filters.order_status) {
+        params.order_status = Array.isArray(filters.order_status)
+            ? filters.order_status.join(",")
+            : filters.order_status;
+    }
+
+    if (filters.date_from) params.date_from = filters.date_from;
+    if (filters.date_to)   params.date_to   = filters.date_to;
+    if (filters.page)      params.page      = filters.page;
+    if (filters.limit)     params.limit     = filters.limit;
 
     const res = await ordersApiClient.get(`/api/orders/store/${storeId}`, { params });
-    return res.data; // { orders, total, page, limit, total_page }
+    return res.data;
 };
 
 /**

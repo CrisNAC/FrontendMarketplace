@@ -158,20 +158,25 @@ function HistoryTab({ storeId }) {
         setError("");
         try {
             const filters = { page, limit: ITEMS_PER_PAGE };
-            if (filterStatus !== "all") filters.order_status = filterStatus;
+            
+            // Siempre filtrar por estados completados
+            if (filterStatus === "all") {
+                filters.order_status = ["DELIVERED", "CANCELLED"];
+            } else {
+                filters.order_status = filterStatus;
+            }
+            
             if (filterFrom) filters.date_from = filterFrom;
             if (filterTo)   filters.date_to   = filterTo;
-
+            
             const data = await fetchStoreOrders(storeId, filters);
-
-            // Solo DELIVERED y CANCELLED para el historial
-            let filtered = data.orders.filter(o => o.status === "DELIVERED" || o.status === "CANCELLED");
-
-            // Monto mínimo — filtro client-side (backend no lo soporta)
+            
+            let filtered = data.orders;
+            
             if (filterMinAmount) {
                 filtered = filtered.filter(o => Number(o.total) >= Number(filterMinAmount));
             }
-
+            
             setOrders(filtered);
             setTotalPages(data.total_page ?? 1);
         } catch (err) {
