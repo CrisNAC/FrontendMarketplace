@@ -153,7 +153,12 @@ function HistoryTab({ storeId }) {
     const [totalPages, setTotalPages] = useState(1);
 
     const fetchHistory = useCallback(async () => {
-        if (!storeId) return;
+        if (!storeId) {
+            setOrders([]);
+            setTotalPages(1);
+            setLoading(false);
+            return;
+        }
         setLoading(true);
         setError("");
         try {
@@ -170,25 +175,22 @@ function HistoryTab({ storeId }) {
             if (filterTo)   filters.date_to   = filterTo;
             
             const data = await fetchStoreOrders(storeId, filters);
-            
-            let filtered = data.orders;
-            
-            if (filterMinAmount) {
-                filtered = filtered.filter(o => Number(o.total) >= Number(filterMinAmount));
-            }
-            
-            setOrders(filtered);
+            setOrders(data.orders);
             setTotalPages(data.total_page ?? 1);
         } catch (err) {
             setError(getOrderErrorMessage(err, "No se pudo cargar el historial."));
         } finally {
             setLoading(false);
         }
-    }, [storeId, filterStatus, filterFrom, filterTo, filterMinAmount, page]);
+    }, [storeId, filterStatus, filterFrom, filterTo, page]);
 
     useEffect(() => { fetchHistory(); }, [fetchHistory]);
 
     const inputStyle = { padding: "7px 10px", borderRadius: "8px", fontSize: "13px", border: "1px solid #e5e7eb", backgroundColor: "white", outline: "none" };
+
+    const visibleOrders = filterMinAmount
+    ? orders.filter(o => Number(o.total) >= Number(filterMinAmount))
+    : orders;
 
     return (
         <>
@@ -229,7 +231,7 @@ function HistoryTab({ storeId }) {
 
             {loading ? (
                 <p style={{ color: "#6b7280", padding: "16px" }}>Cargando historial...</p>
-            ) : orders.length === 0 ? (
+            ) : visibleOrders.length === 0 ? (
                 <div style={{ backgroundColor: "white", borderRadius: "16px", padding: "48px 20px", textAlign: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}>
                     <Filter size={36} color="#d1d5db" style={{ marginBottom: "12px" }} />
                     <p style={{ fontSize: "15px", fontWeight: "600", color: "#374151", margin: 0 }}>No hay pedidos con esos filtros.</p>
@@ -242,8 +244,8 @@ function HistoryTab({ storeId }) {
                                 <span key={h} style={{ fontSize: "11px", fontWeight: "700", color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</span>
                             ))}
                         </div>
-                        {orders.map((order, idx) => (
-                            <div key={order.id} style={{ display: "grid", gridTemplateColumns: "120px 100px 1fr 80px 150px 110px", padding: "12px 16px", alignItems: "center", borderBottom: idx < orders.length - 1 ? "1px solid #f9fafb" : "none" }}>
+                        {visibleOrders.map((order, idx) => (
+                            <div key={order.id} style={{ display: "grid", gridTemplateColumns: "120px 100px 1fr 80px 150px 110px", padding: "12px 16px", alignItems: "center", borderBottom: idx < visibleOrders.length - 1 ? "1px solid #f9fafb" : "none" }}>
                                 <span style={{ fontSize: "12px", color: "#6b7280" }}>
                                     {new Date(order.createdAt).toLocaleDateString("es-PY", { day: "numeric", month: "short", year: "numeric" })}
                                 </span>
@@ -256,7 +258,7 @@ function HistoryTab({ storeId }) {
                         ))}
                     </div>
                     <p style={{ fontSize: "12px", color: "#9ca3af", marginTop: "10px" }}>
-                        Mostrando {orders.length} pedido{orders.length !== 1 ? "s" : ""}
+                        Mostrando {visibleOrders.length} pedido{visibleOrders.length !== 1 ? "s" : ""}
                     </p>
                     {totalPages > 1 && <Pagination totalPages={totalPages} currentPage={page} onPageChange={setPage} />}
                 </>
@@ -278,12 +280,11 @@ export function CommerceOrdersPage() {
 
     const loadOrders = useCallback(async (sid) => {
         try {
-            // Traer pendientes y activos (sin filtro de estado para tener ambos tabs a la vez)
-            const data = await fetchStoreOrders(sid, { limit: 100 });
-            const active = data.orders.filter(o =>
-                o.status === "PENDING" || o.status === "PROCESSING" || o.status === "SHIPPED"
-            );
-            setOrders(active);
+            const data = await fetchStoreOrders(sid, {
+                order_status: ["PENDING", "PROCESSING", "SHIPPED"],
+                limit: 100
+        });
+        setOrders(data.orders);
         } catch (err) {
             setError(getOrderErrorMessage(err, "No se pudieron cargar los pedidos."));
         }
