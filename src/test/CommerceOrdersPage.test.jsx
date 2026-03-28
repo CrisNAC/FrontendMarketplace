@@ -20,6 +20,7 @@ vi.mock('../features/commerces/services/editCommerceApi', () => ({
 
 // Mock de las funciones de ordersApi
 vi.mock('../features/commerces/services/commerceOrdersApi', () => ({
+    ordersApiClient: { get: vi.fn(), patch: vi.fn() },
     fetchStoreOrders: vi.fn(),
     updateOrderStatus: vi.fn(),
     getOrderErrorMessage: (_err, fallback) => fallback,
