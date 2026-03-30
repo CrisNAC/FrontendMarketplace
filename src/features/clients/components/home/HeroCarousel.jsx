@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const slides = [
   {
@@ -19,6 +20,7 @@ const slides = [
 
 export const HeroCarousel = () => {
   const [current, setCurrent] = useState(0);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -45,20 +47,28 @@ export const HeroCarousel = () => {
             </p>
 
             <div className="flex gap-4">
-              <button className="bg-[#6A907F] hover:bg-[#5a7d6f] text-white px-6 py-2 rounded-xl text-sm"
+              <button
+                type="button"
+                className="bg-[#6A907F] hover:bg-[#5a7d6f] text-white px-6 py-2 rounded-xl text-sm"
                 style={{
                   fontSize: "14px",
                   borderRadius: "12px",
                   cursor: "pointer"
-                }}>
+                }}
+                onClick={() => navigate("/busqueda")}
+              >
                 Ver productos
               </button>
-              <button className="bg-white hover:bg-gray-100 text-black px-6 py-2 rounded-xl text-sm"
-              style={{
+              <button
+                type="button"
+                className="bg-white hover:bg-gray-100 text-black px-6 py-2 rounded-xl text-sm"
+                style={{
                   fontSize: "14px",
                   borderRadius: "12px",
                   cursor: "pointer"
-                }}>
+                }}
+                onClick={() => navigate("/ofertas")}
+              >
                 Ver ofertas
               </button>
             </div>
