@@ -3,6 +3,7 @@ import { MapPin, Plus, Pencil, Trash2, X, Loader2, AlertCircle, CheckCircle2 } f
 import Navbar from "../../../../components/navbar/Navbar";
 import { SidebarClientProfile } from "../../../../components/SidebarClientProfile";
 import { useAddresses } from "../../../../hooks/useAddresses";
+import MapView from "../Map";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
@@ -27,9 +28,8 @@ const useSession = () => {
 
 const EMPTY_FORM = {
     address: "",
-    city: "",
-    region: "",
-    postal_code: "",
+    latitude: null,
+    longitude: null,
 };
 
 const Toast = ({ message, type, onClose }) => {
@@ -101,9 +101,22 @@ const AddressFormModal = ({ open, onClose, onSubmit, initialData, loading }) => 
         setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
     }
 
+    const handleMapPointChange = (point) => {
+        setForm((prev) => ({
+            ...prev,
+            latitude: point?.lat ?? null,
+            longitude: point?.lng ?? null,
+        }));
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setFormError(null);
+
+        if (form.latitude === null || form.longitude === null) {
+            setFormError("Debes seleccionar un punto en el mapa.");
+            return;
+        }
 
         try {
             await onSubmit(form);
@@ -143,7 +156,7 @@ const AddressFormModal = ({ open, onClose, onSubmit, initialData, loading }) => 
 
                     <div>
                         <label className="block text-[13px] font-medium text-gray-700 mb-1">
-                            Direccion <span className="text-red-500">*</span>
+                            Dirección <span className="text-red-500">*</span>
                         </label>
 
                         <input
@@ -156,53 +169,43 @@ const AddressFormModal = ({ open, onClose, onSubmit, initialData, loading }) => 
                         />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-[13px] font-medium text-gray-700 mb-1">
-                                Ciudad <span className="text-red-500">*</span>
-                            </label>
-
-                            <input
-                                name="city"
-                                value={form.city}
-                                onChange={handleChange}
-                                placeholder="Ej: Ciudad del Este"
-                                required
-                                maxLength={100}
-                                className={inputClass}
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-[13px] font-medium text-gray-700 mb-1">
-                                Barrio / Región <span className="text-red-500">*</span>
-                            </label>
-
-                            <input
-                                name="region"
-                                value={form.region}
-                                onChange={handleChange}
-                                placeholder="Ej: Centro"
-                                required
-                                maxLength={100}
-                                className={inputClass}
-                            />
-                        </div>
-                    </div>
-
                     <div>
-                        <label className="block text-[13px] font-medium text-gray-700 mb-1">
-                            Código postal{" "} <span className="text-gray-400 text-[12px] font-normal">(opcional)</span>
+                        <label className="block text-[13px] font-medium text-gray-700 mb-2">
+                            Ubicación en mapa <span className="text-red-500">*</span>
                         </label>
 
-                        <input
-                            name="postal_code"
-                            value={form.postal_code ?? ""}
-                            onChange={handleChange}
-                            placeholder="Ej: 7000"
-                            maxLength={20}
-                            className={inputClass}
-                        />
+                        <div className="border border-gray-200 rounded-md overflow-hidden">
+                            <MapView
+                                mode="single-point"
+                                selectedPoint={
+                                    form.latitude !== null && form.longitude !== null
+                                        ? { lat: form.latitude, lng: form.longitude }
+                                        : null
+                                }
+                                onPointChange={handleMapPointChange}
+                                heightClass="h-[220px]"
+                                allowFullscreen={false}
+                                showDistancePanel={false}
+                            />
+                        </div>
+
+                        <div className="mt-2 flex items-center justify-between gap-2">
+                            <p className="text-[12px] text-gray-500">
+                                {form.latitude !== null && form.longitude !== null
+                                    ? `Punto seleccionado: ${Number(form.latitude).toFixed(5)}, ${Number(form.longitude).toFixed(5)}`
+                                    : "Haz click en el mapa para seleccionar la ubicación exacta."}
+                            </p>
+
+                            {form.latitude !== null && form.longitude !== null && (
+                                <button
+                                    type="button"
+                                    onClick={() => handleMapPointChange(null)}
+                                    className="text-[12px] text-red-600 hover:text-red-700 font-medium shrink-0"
+                                >
+                                    Limpiar punto
+                                </button>
+                            )}
+                        </div>
                     </div>
 
                     <div className="flex gap-3 justify-end pt-2">
@@ -321,9 +324,8 @@ export const AddressesPage = () => {
         setEditingAddress({
             id_address: address.id_address,
             address: address.address,
-            city: address.city,
-            region: address.region,
-            postal_code: address.postal_code ?? "",
+            latitude: address.latitude,
+            longitude: address.longitude,
         });
         setModalOpen(true);
     };
@@ -339,9 +341,8 @@ export const AddressesPage = () => {
         try {
             const payload = {
                 address: form.address,
-                city: form.city,
-                region: form.region,
-                postal_code: form.postal_code || null,
+                latitude: form.latitude,
+                longitude: form.longitude,
             };
 
             if (editingAddress) {
@@ -395,7 +396,7 @@ export const AddressesPage = () => {
                             <MapPin size={24} className="text-[#2d4030]" />
                         </div>
                         <h2 className="font-semibold text-[#2d4030] text-[18px] mb-2">
-                            Inicia sesion para continuar
+                            Inicia sesión para continuar
                         </h2>
                         <p className="text-gray-500 text-sm mb-6">
                             Necesitas estar autenticado para ver tu libreta de direcciones.
@@ -470,7 +471,7 @@ export const AddressesPage = () => {
                                     />
                                 ))}
 
-                                {/* Agregar una direccion */}
+                                {/* Agregar una dirección */}
                                 {addresses.length < MAX_ADDRESSES && (
                                     <button
                                         onClick={handleOpenCreate}
@@ -489,7 +490,7 @@ export const AddressesPage = () => {
                                         <MapPin size={36} className="mx-auto mb-3 opacity-40" />
                                         <p className="text-[15px]">No tienes direcciones guardadas.</p>
                                         <p className="text-[13px] mt-1">
-                                            Haz click en "Agregar direccion" para empezar.
+                                            Haz click en "Agregar dirección" para empezar.
                                         </p>
                                     </div>
                                 )}
