@@ -54,6 +54,8 @@ import ChangePassword from './features/clients/pages/ChangePassword';
 import EditProductPage from './features/commerces/pages/EditProductPage';
 import Wishlist from "./features/clients/pages/Wishlist"
 import FavoritesPage from "./features/clients/pages/FavoritesPage";
+import OrdenesComprasPage from "./features/clients/pages/OrdenesComprasPage";
+import ConfirmarPedido from "./features/clients/pages/ConfirmarPedido";
 
 import Map from "./features/clients/components/Map";
 
@@ -127,6 +129,22 @@ function App() {
         <Route path="/homepage" element={<HomePage />} />
         <Route path="/wishlist" element={<VistaComercioLayout><Wishlist/></VistaComercioLayout>}/>
         <Route path="/favoritos" element={<VistaComercioLayout><FavoritesPage /></VistaComercioLayout>}/>
+        <Route
+          path="/carrito"
+          element={
+            <VistaComercioLayout>
+              <OrdenesComprasPage />
+            </VistaComercioLayout>
+          }
+        />
+        <Route
+          path="/confirmar-pedido"
+          element={
+            <VistaComercioLayout>
+              <ConfirmarPedido />
+            </VistaComercioLayout>
+          }
+        />
         <Route path="/map" element={<Map />} />
         <Route
           path="/busqueda"

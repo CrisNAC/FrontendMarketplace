@@ -135,8 +135,7 @@ const Navbar = () => {
 
         {/* Icons */}
         <div className="flex gap-[15px] items-center">
-          <Link to="/favoritos">
-
+          <Link to="/carrito" className="!no-underline">
             <div className="relative cursor-pointer">
 
               <ShoppingCart size={25} />
