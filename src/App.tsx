@@ -136,6 +136,14 @@ function App() {
             </VistaComercioLayout>
           }
         />
+        <Route
+          path="/ofertas"
+          element={
+            <VistaComercioLayout>
+              <BusquedaPage query="Ofertas" />
+            </VistaComercioLayout>
+          }
+        />
 
         <Route
           path="/comentarios/:id"
