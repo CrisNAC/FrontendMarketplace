@@ -206,13 +206,7 @@ export default function OrdenesComprasPage() {
                   <div className="flex justify-center">
                     <button
                       type="button"
-                      onClick={() =>
-                        navigate(
-                          storeId != null
-                            ? `/confirmar-pedido?storeId=${storeId}&cartId=${cart.id}`
-                            : `/confirmar-pedido?cartId=${cart.id}`
-                        )
-                      }
+                      onClick={() => navigate(`/carrito/${cart.id}`)}
                       className="px-6 py-1.5 rounded-md text-white text-[11px] font-medium bg-[#6B9080] border border-[#658D7B] hover:opacity-95"
                     >
                       Ver detalles
