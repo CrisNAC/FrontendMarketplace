@@ -95,7 +95,7 @@ export const ClientOrderDetailsPage = () => {
         );
         setItems(enriched);
       } catch (err) {
-        setError(getBackendErrorMessage(err, 'Error al cargar el pedido'));
+        setError(getBackendErrorMessage(err, 'Error al cargar el pedido'));s
       } finally {
         setLoading(false);
       }
