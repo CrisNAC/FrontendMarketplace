@@ -1,10 +1,50 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import axios from 'axios';
 import { SidebarClientProfile } from '../../../components/SidebarClientProfile';
 import Navbar from '../../../components/navbar/Navbar';
-import { getSession } from '../../commerces/services/editUserProfileApi';
-import { getOrderById, getBackendErrorMessage } from '../../commerces/services/orderApi';
-import { getProductById } from '../../commerces/services/productDetailApi';
+
+// ─── API client ───────────────────────────────────────────────────────────────
+const apiClient = axios.create({
+  baseURL: (import.meta.env.VITE_API_URL || 'http://localhost:3000').trim(),
+  withCredentials: true,
+});
+
+// ─── getSession 
+const getSession = async () => {
+  const res = await apiClient.get('/api/session/user-session');
+  return res.data;
+};
+
+// ─── orderApi ─────────────────────────────────────────────────────────────────
+const getOrdersByCustomer = async (customerId) => {
+  const res = await apiClient.get(`/api/users/${customerId}/orders`);
+  return res.data;
+};
+
+const getOrderById = async (customerId, orderId) => {
+  const orders = await getOrdersByCustomer(customerId);
+  return orders.find((o) => String(o.id) === String(orderId)) ?? null;
+};
+
+const getBackendErrorMessage = (error, fallback) => {
+  if (axios.isAxiosError(error)) {
+    const data = error.response?.data;
+    if (typeof data === 'string') return data;
+    if (typeof data?.message === 'string') return data.message;
+    if (typeof data?.error === 'string') return data.error;
+    if (typeof data?.error?.message === 'string') return data.error.message;
+    return fallback;
+  }
+  if (error instanceof Error) return error.message;
+  return fallback;
+};
+
+// ─── Detalle Producto
+const getProductById = async (productId) => {
+  const res = await apiClient.get(`/products/${productId}`);
+  return res.data;
+};
 
 const STATUS_CONFIG = {
   PENDING:    { label: 'Pendiente',  classes: 'border-yellow-500 text-yellow-600' },
@@ -36,7 +76,7 @@ const TableHeader = () => (
   </div>
 );
 
-// Fila de item — todo en la misma grilla, alineado siempre
+// Fila de item 
 const TableRow = ({ item }) => (
   <div className="grid grid-cols-[1fr_180px_120px_160px] items-center px-3 py-3 border-b border-gray-100 text-sm">
     {/* Producto */}
@@ -95,7 +135,7 @@ export const ClientOrderDetailsPage = () => {
         );
         setItems(enriched);
       } catch (err) {
-        setError(getBackendErrorMessage(err, 'Error al cargar el pedido'));s
+        setError(getBackendErrorMessage(err, 'Error al cargar el pedido'));
       } finally {
         setLoading(false);
       }
