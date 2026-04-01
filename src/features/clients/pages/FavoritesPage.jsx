@@ -4,7 +4,8 @@ import axios from "axios";
 import toast from "react-hot-toast";
 
 import { SidebarClientProfile } from "../../../components/SidebarClientProfile";
-import { mergeWishlistLinesIntoLocalCart } from "../../../lib/cartLocalStorage";
+import { mergeCartResponseFromApi } from "../../../lib/cartLocalStorage";
+import { addToCartApi } from "../../../lib/cartApi";
 
 const VERDE = "#8BB2A1";
 const AZUL = "#6487B9";
@@ -110,12 +111,29 @@ export default function FavoritesPage() {
     }
   };
 
-  const agregarTodoAlCarrito = () => {
-    if (!productos.length || addingAllToCart) return;
+  const agregarTodoAlCarrito = async () => {
+    if (!productos.length || addingAllToCart || !userId) return;
     setAddingAllToCart(true);
     try {
-      mergeWishlistLinesIntoLocalCart(productos);
+      for (const p of productos) {
+        const cart = await addToCartApi(userId, {
+          productId: p.productId,
+          quantity: Math.max(1, Number(p.cantidad) || 1),
+        });
+        mergeCartResponseFromApi(cart);
+      }
       toast.success("Productos agregados al carrito");
+    } catch (e) {
+      const code = e?.response?.status;
+      const msg = e?.response?.data?.message;
+      if (code === 401) {
+        toast.error("Iniciá sesión para usar el carrito");
+        navigate("/login");
+      } else if (msg) {
+        toast.error(String(msg));
+      } else {
+        toast.error("No se pudieron agregar todos los productos al carrito");
+      }
     } finally {
       setAddingAllToCart(false);
     }

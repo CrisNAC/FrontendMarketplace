@@ -8,14 +8,15 @@ import {
     apiClient,
 } from "../services/editCommerceApi";
 
+const HTTP_URL_REGEX = /^https?:\/\//i;
+
 // ─── Validación del formulario ────────────────────────────────────────────────
 // Refleja exactamente las mismas reglas del backend (store.service.js):
 //   - name     → validateRequiredStringField(value, "name", 100)
 //   - email    → validateEmailField(value)
 //   - phone    → validateRequiredStringField(value, "phone", 20)
 //   - address  → validateRequiredStringField(value, "address")
-//   - city     → validateRequiredStringField(value, "city", 100)
-//   - region   → validateRequiredStringField(value, "region", 100)  ← OBLIGATORIO
+//   - latitude/longitude → coordenadas validas para geocodificacion
 //   - logo     → validateOptionalStringField (max 500, puede ser null)
 const validateForm = (formData) => {
     const errors = {};
@@ -42,21 +43,29 @@ const validateForm = (formData) => {
         errors.address = "La dirección es obligatoria.";
     }
 
-    if (!formData.city.trim()) {
-        errors.city = "La ciudad es obligatoria.";
-    } else if (formData.city.trim().length > 100) {
-        errors.city = "La ciudad no puede superar 100 caracteres.";
-    }
-
-    // region es OBLIGATORIO en el backend (validateRequiredStringField)
-    if (!formData.region.trim()) {
-        errors.region = "El barrio/región es obligatorio.";
-    } else if (formData.region.trim().length > 100) {
-        errors.region = "La región no puede superar 100 caracteres.";
+    if (formData.latitude === null || formData.longitude === null) {
+        errors.location = "Selecciona un punto en el mapa.";
     }
 
     if (formData.logoUrl.trim() && formData.logoUrl.trim().length > 500) {
         errors.logoUrl = "La URL del logo no puede superar 500 caracteres.";
+    }
+
+    const socialUrlFields = [
+        { key: "websiteUrl", label: "sitio web" },
+        { key: "instagramUrl", label: "Instagram" },
+        { key: "tiktokUrl", label: "TikTok" },
+    ];
+
+    for (const field of socialUrlFields) {
+        const value = formData[field.key]?.trim() || "";
+        if (value && !HTTP_URL_REGEX.test(value)) {
+            errors[field.key] = `La URL de ${field.label} debe iniciar con http:// o https://`;
+        }
+
+        if (value.length > 500) {
+            errors[field.key] = `La URL de ${field.label} no puede superar 500 caracteres.`;
+        }
     }
 
     return errors;
@@ -77,9 +86,8 @@ const validateForm = (formData) => {
  *   store.tiktok_url         → formData.tiktokUrl
  *   store.fk_store_category  → formData.categoryId (string para <select>)
  *   store.addresses[0].address     → formData.address
- *   store.addresses[0].city        → formData.city
- *   store.addresses[0].region      → formData.region
- *   store.addresses[0].postal_code → formData.postalCode
+ *   store.addresses[0].latitude    → formData.latitude
+ *   store.addresses[0].longitude   → formData.longitude
  *
  * @param {number|string} commerceId  id_store en Prisma
  */
@@ -95,9 +103,8 @@ export const useEditCommerce = () => {
         categoryId: "",
         logoUrl: "",
         address: "",
-        city: "",
-        region: "",
-        postalCode: "",
+        latitude: null,
+        longitude: null,
         websiteUrl: "",
         instagramUrl: "",
         tiktokUrl: "",
@@ -170,9 +177,16 @@ export const useEditCommerce = () => {
                     logoUrl: commerce.logo ?? "",
                     // Campos de Addresses (primer registro del comercio)
                     address: firstAddress.address ?? "",
-                    city: firstAddress.city ?? "",
-                    region: firstAddress.region ?? "",
-                    postalCode: firstAddress.postal_code ?? "",
+                    latitude:
+                        firstAddress.latitude !== undefined &&
+                        firstAddress.latitude !== null
+                            ? Number(firstAddress.latitude)
+                            : null,
+                    longitude:
+                        firstAddress.longitude !== undefined &&
+                        firstAddress.longitude !== null
+                            ? Number(firstAddress.longitude)
+                            : null,
                     // Redes sociales opcionales
                     websiteUrl: commerce.website_url ?? "",
                     instagramUrl: commerce.instagram_url ?? "",
@@ -218,6 +232,15 @@ export const useEditCommerce = () => {
     const closeErrorModal = () =>
         setErrorModal((prev) => ({ ...prev, isOpen: false }));
 
+    const onLocationChange = (point) => {
+        setFormData((prev) => ({
+            ...prev,
+            latitude: point?.lat ?? null,
+            longitude: point?.lng ?? null,
+        }));
+        setValidationErrors((prev) => ({ ...prev, location: "" }));
+    };
+
     // ── Submit ────────────────────────────────────────────────────────────────
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -249,9 +272,8 @@ export const useEditCommerce = () => {
             tiktok_url: formData.tiktokUrl.trim() || null,
             // Dirección principal del comercio (addresses[0])
             address: formData.address.trim(),
-            city: formData.city.trim(),
-            region: formData.region.trim(),       // OBLIGATORIO en el backend
-            postal_code: formData.postalCode.trim() || null,
+            latitude: formData.latitude,
+            longitude: formData.longitude,
         };
 
         setIsSubmitting(true);
@@ -292,6 +314,7 @@ export const useEditCommerce = () => {
         errorModal,
         closeErrorModal,
         onFieldChange,
+        onLocationChange,
         removeLogo,
         handleSubmit,
         errorRef,

@@ -1,7 +1,7 @@
 // src/features/commerces/pages/CommerceProfilePage.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Edit, Mail, Phone, MapPin, Calendar, Star, Zap, Image, Trash2, AlertTriangle } from "lucide-react";
+import { Edit, Mail, Phone, MapPin, Calendar, Star, Zap, Image, Trash2, AlertTriangle, Globe, Instagram, Music2 } from "lucide-react";
 import { apiClient, getBackendErrorMessage } from "../services/editCommerceApi";
 
 // ─── Estilos compartidos ──────────────────────────────────────────────────────
@@ -39,6 +39,28 @@ function InfoRow({ icon: Icon, value, iconColor = "#6b9080" }) {
         <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
             <Icon size={14} color={iconColor} style={{ flexShrink: 0 }} />
             <span style={{ fontSize: "14px", color: "#374151" }}>{value || "—"}</span>
+        </div>
+    );
+}
+
+function UrlRow({ icon: Icon, value, iconColor = "#6b9080" }) {
+    const url = value?.trim();
+
+    return (
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
+            <Icon size={14} color={iconColor} style={{ flexShrink: 0 }} />
+            {url ? (
+                <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ fontSize: "14px", color: "#2563eb", textDecoration: "underline", wordBreak: "break-all" }}
+                >
+                    {url}
+                </a>
+            ) : (
+                <span style={{ fontSize: "14px", color: "#9ca3af" }}>—</span>
+            )}
         </div>
     );
 }
@@ -279,6 +301,12 @@ export function CommerceProfilePage() {
                         <InfoRow icon={Phone} value={commerce?.phone} iconColor="#16a34a" />
                         <p style={labelStyle}>Dirección</p>
                         <InfoRow icon={MapPin} value={addressText || "Sin dirección registrada"} iconColor="#ef4444" />
+                        <p style={labelStyle}>Sitio web</p>
+                        <UrlRow icon={Globe} value={commerce?.website_url} iconColor="#0ea5e9" />
+                        <p style={labelStyle}>Instagram</p>
+                        <UrlRow icon={Instagram} value={commerce?.instagram_url} iconColor="#db2777" />
+                        <p style={labelStyle}>TikTok</p>
+                        <UrlRow icon={Music2} value={commerce?.tiktok_url} iconColor="#111827" />
                     </div>
                 </div>
 
