@@ -17,7 +17,7 @@ const shippingOptions = [
     id: "standard",
     label: "Envío Estándar",
     desc: "Entrega en 5-7 días hábiles",
-    price: 16000,
+    price: 10000,
     priceLabel: "₲ 10.000",
   },
 ];
