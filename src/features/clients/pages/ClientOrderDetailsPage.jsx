@@ -147,7 +147,7 @@ export const ClientOrderDetailsPage = () => {
   if (error || !order) return <div><Navbar /><p className="p-6 text-red-500">{error || 'Pedido no encontrado'}</p></div>;
 
   const statusConfig  = STATUS_CONFIG[order.status] ?? { label: order.status, classes: 'border-gray-400 text-gray-600' };
-  const subtotalTotal = order.items.reduce((acc, item) => acc + Number(item.subtotal), 0);
+  const subtotalTotal = order?.items?.reduce((acc, item) => acc + Number(item.subtotal), 0) ?? 0;
 
   return (
     <div>
@@ -207,9 +207,9 @@ export const ClientOrderDetailsPage = () => {
                 <div>
                   <p className="font-semibold text-gray-900 mb-1 text-sm">Dirección de envío</p>
                   <div className="text-gray-600 text-xs space-y-0.5">
-                    <p>{order.address.address}</p>
-                    <p>{order.address.city}</p>
-                    <p>{order.address.region}</p>
+                    <p>{order.address?.address}</p>
+                    <p>{order.address?.city}</p>
+                    <p>{order.address?.region}</p>
                   </div>
                 </div>
                 <div>
