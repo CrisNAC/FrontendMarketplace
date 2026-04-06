@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import axios from "axios";
@@ -67,6 +67,7 @@ export default function ConfirmarPedido() {
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
   const [status, setStatus] = useState<"loading" | "ready" | "error" | "unauthorized">("loading");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submitLockRef = useRef(false);
 
   const navigate = useNavigate();
   const { cartId } = useParams();
@@ -228,52 +229,56 @@ export default function ConfirmarPedido() {
   const total = subtotal - discount + shipping;
 
   const handleConfirmOrder = async () => {
-    try {
-      if (!cart) {
-        toast.error("No se encontró el carrito");
-        return;
-      }
+  if (submitLockRef.current) return;
 
-      if (requiresAddress && !selectedAddress) {
-        toast.error("Selecciona una dirección de entrega");
-        return;
-      }
-
-      setIsSubmitting(true);
-
-      const payload = {
-        cartId: cart.id,
-        addressId: requiresAddress ? selectedAddress : null,
-        total,
-        notes: notes.trim() || null,
-      };
-
-      const response = await axios.post(`${apiBase}/api/orders`, payload, {
-        withCredentials: true,
-      });
-
-      const createdOrder = response.data;
-
-      toast.success("Pedido confirmado correctamente");
-
-      navigate("/pedido-confirmado", {
-        state: {
-          order: createdOrder,
-          shippingMethod: selectedShipping,
-          shippingCost: shipping,
-          subtotal,
-          discount,
-          total,
-        },
-      });
-    } catch (error: any) {
-      toast.error(
-        error?.response?.data?.message || "No se pudo confirmar el pedido"
-      );
-    } finally {
-      setIsSubmitting(false);
+  try {
+    if (!cart) {
+      toast.error("No se encontró el carrito");
+      return;
     }
-  };
+
+    if (requiresAddress && !selectedAddress) {
+      toast.error("Selecciona una dirección de entrega");
+      return;
+    }
+
+    submitLockRef.current = true;
+    setIsSubmitting(true);
+
+    const payload = {
+      cartId: cart.id,
+      addressId: requiresAddress ? selectedAddress : null,
+      total,
+      notes: notes.trim() || null,
+    };
+
+    const response = await axios.post(`${apiBase}/api/orders`, payload, {
+      withCredentials: true,
+    });
+
+    const createdOrder = response.data;
+
+    toast.success("Pedido confirmado correctamente");
+
+    navigate("/pedido-confirmado", {
+      state: {
+        order: createdOrder,
+        shippingMethod: selectedShipping,
+        shippingCost: shipping,
+        subtotal,
+        discount,
+        total,
+      },
+    });
+  } catch (error: any) {
+    toast.error(
+      error?.response?.data?.message || "No se pudo confirmar el pedido"
+    );
+  } finally {
+    submitLockRef.current = false;
+    setIsSubmitting(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-[#f0f7f2] font-sans">
