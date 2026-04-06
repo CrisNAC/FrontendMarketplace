@@ -135,3 +135,9 @@ export const updateStoreStatus = async (commerceId, store_status) => {
     );
     return response.data; // { success, message, data }
 };
+
+// Obtiene el comercio para el SELLER autenticado (ignora store_status)
+export const fetchMyCommerce = async (commerceId) => {
+    const response = await apiClient.get(`/api/commerces/my/${commerceId}`);
+    return response.data;
+};

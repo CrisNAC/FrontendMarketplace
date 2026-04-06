@@ -26,7 +26,7 @@ export const MyCommercePage = () => {
                     return;
                 }
 
-                const res = await apiClient.get(`/api/commerces/${idStore}`);
+                const res = await apiClient.get(`/api/commerces/my/${idStore}`);
                 setStore(res.data);
             } catch (err) {
                 const status = err.response?.status;
