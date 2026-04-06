@@ -8,6 +8,8 @@ import iphoneImg from "../../../assets/iphone.png";
 import negroImg from "../../../assets/iphonenegrito.png";
 import naranjaImg from "../../../assets/iphonenaranja.png";
 import whiteImg from "../../../assets/iphonewhite.png";
+import { addToCartApi } from "../../../lib/cartApi";
+import { mergeCartResponseFromApi } from "../../../lib/cartLocalStorage";
 
 function SvgIcon({ children, className = "w-4 h-4" }) {
   return (
@@ -18,13 +20,41 @@ function SvgIcon({ children, className = "w-4 h-4" }) {
 }
 
 const I = {
-  star: <path d="M12 3l2.9 6 6.6.6-5 4.4 1.5 6.4L12 17l-6 3.4 1.5-6.4-5-4.4 6.6-.6L12 3z" fill="currentColor" />,
-  minus: <path d="M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />,
+  star: (
+    <path
+      d="M12 3l2.9 6 6.6.6-5 4.4 1.5 6.4L12 17l-6 3.4 1.5-6.4-5-4.4 6.6-.6L12 3z"
+      fill="currentColor"
+    />
+  ),
+  minus: (
+    <path
+      d="M5 12h14"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+  ),
   plus: (
     <>
-      <path d="M12 5v14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      <path d="M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path
+        d="M12 5v14"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M5 12h14"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
     </>
+  ),
+  heart: (
+    <path
+      d="M12 21s-7-4.6-9.5-8.4C-0.2 8.5 2.1 3 7 5.5 9 6.5 12 10 12 10s3-3.5 5-4.5c4.9-2.5 7.2 3 4.5 7.1C19 16.4 12 21 12 21z"
+      fill="currentColor"
+    />
   ),
 };
 
@@ -44,6 +74,7 @@ export default function DetalleProducto() {
   const [product, setProduct] = useState(null);
   const [cantidad, setCantidad] = useState(1);
   const [addingToWishlist, setAddingToWishlist] = useState(false);
+  const [addingToCart, setAddingToCart] = useState(false);
 
   const colores = [
     { id: "deep-blue", nombre: "Deep Blue", img: negroImg },
@@ -85,6 +116,45 @@ export default function DetalleProducto() {
       }
     } finally {
       setAddingToWishlist(false);
+    }
+  };
+
+  const agregarAlCarrito = async () => {
+    if (addingToCart || !productId) return;
+    if (product?.quantity != null && Number(product.quantity) <= 0) {
+      toast.error("Este producto no tiene stock disponible");
+      return;
+    }
+
+    try {
+      setAddingToCart(true);
+
+      const sessionRes = await axios.get(
+        `${apiBase || "http://localhost:3000"}/api/session/user-session`,
+        { withCredentials: true }
+      );
+      const userId = sessionRes.data?.user?.id_user;
+
+      if (!userId) {
+        toast.error("Iniciá sesión para agregar al carrito");
+        return;
+      }
+
+      const cart = await addToCartApi(userId, { productId, quantity: cantidad });
+      mergeCartResponseFromApi(cart);
+      toast.success("Producto agregado al carrito");
+    } catch (e) {
+      const code = e?.response?.status;
+      const msg = e?.response?.data?.message;
+      if (code === 401) {
+        toast.error("Iniciá sesión para agregar al carrito");
+      } else if (msg) {
+        toast.error(String(msg));
+      } else {
+        toast.error("No se pudo agregar al carrito");
+      }
+    } finally {
+      setAddingToCart(false);
     }
   };
 
@@ -210,24 +280,35 @@ export default function DetalleProducto() {
           </div>
         </div>
 
-        <div className="flex items-center justify-between pt-6 border-t border-gray-300">
+        <div className="flex items-center justify-between pt-6">
           <button
             type="button"
             onClick={() => navigate(`/comentarios/${productId}`)}
-            className="text-[18px] font-semibold text-black border-b border-black pb-[2px]"
+            className="text-[16px] font-semibold text-[#374151] hover:text-[#111827] transition-colors"
           >
-            <h2>Comentarios</h2>
+            <h1>Comentarios</h1>
           </button>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-wrap">
+            <button
+              type="button"
+              onClick={agregarAlCarrito}
+              disabled={addingToCart || status !== "success"}
+              className="px-8 py-2 rounded-md text-white text-[12px] font-medium disabled:opacity-60"
+              style={{ backgroundColor: "#6B9080" }}
+            >
+              {addingToCart ? "Agregando..." : "Agregar al carrito"}
+            </button>
             <button
               type="button"
               onClick={agregarAListaDeseados}
               disabled={addingToWishlist}
-              className="px-8 py-2 rounded-md text-white text-[12px] font-medium disabled:opacity-60"
-              style={{ backgroundColor: VERDE }}
+              className="w-9 h-9 rounded-full flex items-center justify-center border border-[#D1D5DB] bg-white text-[#EF4444] disabled:opacity-60"
+              aria-label="Agregar a favoritos"
             >
-              {addingToWishlist ? "Agregando..." : "Agregar a lista de deseados"}
+              <SvgIcon className="w-4 h-4">
+                {I.heart}
+              </SvgIcon>
             </button>
           </div>
         </div>

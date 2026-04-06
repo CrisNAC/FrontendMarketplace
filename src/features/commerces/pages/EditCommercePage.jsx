@@ -5,6 +5,7 @@ import { Save, X } from "lucide-react";
 import { Spinner } from "../../../components/Spinner";
 import { CreationResultModal } from "../components/createProduct/CreationResultModal";
 import { useEditCommerce } from "../hooks/useEditCommerce";
+import MapView from "../../clients/components/Map";
 
 // ─── Estilos compartidos ──────────────────────────────────────────────────────
 const card = {
@@ -96,7 +97,7 @@ export function EditCommercePage() {
         formData, logoPreview, validationErrors, categories,
         isLoadingInitialData, isSubmitting, isFormDisabled,
         loadError, successToast, errorModal, closeErrorModal,
-        onFieldChange, removeLogo, handleSubmit, errorRef,
+        onFieldChange, onLocationChange, removeLogo, handleSubmit, errorRef,
     } = useEditCommerce();
 
     // Redirigir a perfil 1.5s después de guardar exitosamente
@@ -258,6 +259,45 @@ export function EditCommercePage() {
                             />
                         </Field>
 
+                        <Field label="Sitio web" error={validationErrors.websiteUrl}>
+                            <input
+                                type="url"
+                                name="websiteUrl"
+                                value={formData.websiteUrl}
+                                onChange={onFieldChange}
+                                disabled={isFormDisabled}
+                                maxLength={500}
+                                placeholder="https://mi-comercio.com"
+                                style={inputStyle}
+                            />
+                        </Field>
+
+                        <Field label="Instagram" error={validationErrors.instagramUrl}>
+                            <input
+                                type="url"
+                                name="instagramUrl"
+                                value={formData.instagramUrl}
+                                onChange={onFieldChange}
+                                disabled={isFormDisabled}
+                                maxLength={500}
+                                placeholder="https://instagram.com/mi_comercio"
+                                style={inputStyle}
+                            />
+                        </Field>
+
+                        <Field label="TikTok" error={validationErrors.tiktokUrl}>
+                            <input
+                                type="url"
+                                name="tiktokUrl"
+                                value={formData.tiktokUrl}
+                                onChange={onFieldChange}
+                                disabled={isFormDisabled}
+                                maxLength={500}
+                                placeholder="https://tiktok.com/@mi_comercio"
+                                style={inputStyle}
+                            />
+                        </Field>
+
                         <Field label="Dirección" required error={validationErrors.address}>
                             <input
                                 name="address" value={formData.address} onChange={onFieldChange}
@@ -266,28 +306,54 @@ export function EditCommercePage() {
                             />
                         </Field>
 
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                            <Field label="Ciudad" required error={validationErrors.city}>
-                                <input
-                                    name="city" value={formData.city} onChange={onFieldChange}
-                                    disabled={isFormDisabled}
-                                    style={validationErrors.city ? inputErrorStyle : inputStyle}
+                        <Field label="Ubicación en mapa" required error={validationErrors.location}>
+                            <div style={{ border: "1px solid #e5e7eb", borderRadius: "8px", overflow: "hidden" }}>
+                                <MapView
+                                    mode="single-point"
+                                    selectedPoint={
+                                        formData.latitude !== null && formData.longitude !== null
+                                            ? { lat: Number(formData.latitude), lng: Number(formData.longitude) }
+                                            : null
+                                    }
+                                    onPointChange={onLocationChange}
+                                    heightClass="h-[240px]"
+                                    allowFullscreen={false}
+                                    showDistancePanel={false}
                                 />
-                            </Field>
-                            <Field label="Región" required error={validationErrors.region}>
-                                <input
-                                    name="region" value={formData.region} onChange={onFieldChange}
-                                    disabled={isFormDisabled}
-                                    style={validationErrors.region ? inputErrorStyle : inputStyle}
-                                />
-                            </Field>
-                        </div>
+                            </div>
 
-                        <Field label="Código Postal">
-                            <input
-                                name="postalCode" value={formData.postalCode} onChange={onFieldChange}
-                                disabled={isFormDisabled} maxLength={20} style={inputStyle}
-                            />
+                            <div style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                marginTop: "8px",
+                                gap: "8px"
+                            }}>
+                                <span style={{ fontSize: "12px", color: "#6b7280" }}>
+                                    {formData.latitude !== null && formData.longitude !== null
+                                        ? `Punto seleccionado: ${Number(formData.latitude).toFixed(5)}, ${Number(formData.longitude).toFixed(5)}`
+                                        : "Haz click en el mapa para seleccionar la ubicación exacta."}
+                                </span>
+
+                                {formData.latitude !== null && formData.longitude !== null && (
+                                    <button
+                                        type="button"
+                                        onClick={() => onLocationChange(null)}
+                                        disabled={isFormDisabled}
+                                        style={{
+                                            border: "none",
+                                            background: "none",
+                                            color: "#dc2626",
+                                            fontSize: "12px",
+                                            fontWeight: "600",
+                                            cursor: isFormDisabled ? "not-allowed" : "pointer",
+                                            opacity: isFormDisabled ? 0.6 : 1
+                                        }}
+                                    >
+                                        Limpiar punto
+                                    </button>
+                                )}
+                            </div>
                         </Field>
                     </div>
                 </div>

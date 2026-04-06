@@ -5,13 +5,16 @@ import { SearchFilterSidebar } from "../components/search/SearchFilterSidebar";
 import { SearchProductCard } from "../components/search/SearchProductCard";
 import { Pagination } from "../components/commerceProfile/Pagination";
 
-
-
 type BackendProduct = {
     id_product: number;
     name: string;
     description?: string | null;
     price: string | number;
+    is_offer?: boolean;
+    offer_price?: string | number | null;
+    original_price?: string | number | null;
+    image_url?: string | null;
+    imageUrl?: string | null;
     store?: { id_store: number; name: string };
 };
 
@@ -28,6 +31,16 @@ type BackendProductsResponse = {
 type Props = {
     query?: string;
 };
+
+function resolveApiAssetUrl(path: string | null | undefined, apiBase: string) {
+    if (!path?.trim()) return undefined;
+
+    const value = path.trim();
+    if (/^https?:\/\//i.test(value)) return value;
+
+    const base = apiBase.replace(/\/$/, "");
+    return `${base}${value.startsWith("/") ? "" : "/"}${value}`;
+}
 
 export const BusquedaPage = ({ query = "Todos los Productos" }: Props) => {
     const navigate = useNavigate();
@@ -47,25 +60,42 @@ export const BusquedaPage = ({ query = "Todos los Productos" }: Props) => {
     const categoryId = searchParams.get("categoryId") || "";
     const categoryName = searchParams.get("categoryName") || "";
     const search = searchParams.get("search") || "";
+    const isOffersPage =
+        location.pathname === "/ofertas" ||
+        searchParams.get("isOffer") === "true" ||
+        searchParams.get("isOffer") === "1";
 
-    const title = categoryName
-        ? `Resultado de Búsqueda para: ${categoryName}`
-        : search
-            ? `Resultado de Búsqueda para: ${search}`
-            : `Resultado de Búsqueda para: ${query}`;
+    const title = isOffersPage
+        ? categoryName
+            ? `Ofertas en ${categoryName}`
+            : search
+                ? `Ofertas para: ${search}`
+                : "Ofertas"
+        : categoryName
+            ? `Resultado de Busqueda para: ${categoryName}`
+            : search
+                ? `Resultado de Busqueda para: ${search}`
+                : `Resultado de Busqueda para: ${query}`;
+
+    useEffect(() => {
+        setPage(1);
+    }, [categoryId, isOffersPage, search]);
 
     useEffect(() => {
         let isActive = true;
         const controller = new AbortController();
+        const resolvedApiBase = apiBase || "http://localhost:3000";
 
         const load = async () => {
             try {
                 setStatus("loading");
                 setError("");
+                setProducts([]);
 
-                const url = new URL(`${apiBase || "http://localhost:3000"}/products`);
+                const url = new URL(`${resolvedApiBase}/products`);
                 if (search) url.searchParams.set("search", search);
                 if (categoryId) url.searchParams.set("categoryId", categoryId);
+                if (isOffersPage) url.searchParams.set("isOffer", "true");
                 url.searchParams.set("page", String(page));
                 url.searchParams.set("limit", "20");
 
@@ -102,7 +132,7 @@ export const BusquedaPage = ({ query = "Todos los Productos" }: Props) => {
             isActive = false;
             controller.abort();
         };
-    }, [apiBase, categoryId, page, search]);
+    }, [apiBase, categoryId, isOffersPage, page, search]);
 
     const columns = useMemo(() => {
         const cols: BackendProduct[][] = [[], [], [], []];
@@ -111,63 +141,102 @@ export const BusquedaPage = ({ query = "Todos los Productos" }: Props) => {
     }, [products]);
 
     const handleBack = () => {
-        navigate(-1); // Volver a la página anterior
+        navigate(-1);
     };
 
     return (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", width: "100%", backgroundColor: "#F3F3F3", paddingBottom: "44px" }}>
-
-            {/* Breadcrumb */}
-            <div style={{ display: "flex", flexDirection: "row", alignItems: "center", marginBottom: "20px", marginLeft: "25px", marginTop: "16px", gap: "4px" }}>
+        <div
+            style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "flex-start",
+                width: "100%",
+                backgroundColor: "#F3F3F3",
+                paddingBottom: "44px",
+            }}
+        >
+            <div
+                style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    marginBottom: "20px",
+                    marginLeft: "25px",
+                    marginTop: "16px",
+                    gap: "4px",
+                }}
+            >
                 <ArrowLeft
                     size={24}
                     style={{ cursor: "pointer", color: "#6b7280" }}
-                    onClick={handleBack} 
+                    onClick={handleBack}
                 />
                 <span style={{ color: "#000000", fontSize: "25px", fontWeight: "bold" }}>
                     {title}
                 </span>
             </div>
 
-            {/* Main content */}
-            <div style={{ display: "flex", flexDirection: "row", alignItems: "flex-start", width: "100%", paddingLeft: "26px", paddingRight: "26px", gap: "28px", marginBottom: "40px", boxSizing: "border-box" }}>
-
-                {/* Sidebar */}
+            <div
+                style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    alignItems: "flex-start",
+                    width: "100%",
+                    paddingLeft: "26px",
+                    paddingRight: "26px",
+                    gap: "28px",
+                    marginBottom: "40px",
+                    boxSizing: "border-box",
+                }}
+            >
                 <div style={{ flexShrink: 0, width: "220px" }}>
                     <SearchFilterSidebar
                         onPriceApply={(min, max) => console.log("Precio:", min, max)}
                     />
                 </div>
 
-                {/* 4 columnas */}
                 {status === "loading" && (
                     <div style={{ color: "#6b7280" }}>Cargando productos...</div>
                 )}
                 {status === "error" && (
                     <div style={{ color: "#dc2626" }}>
-                        No se pudieron cargar productos con este filtro.
+                        No se pudieron cargar productos con este filtro{error ? `: ${error}` : "."}
                     </div>
                 )}
                 {status === "success" && products.length === 0 && (
                     <div style={{ color: "#6b7280" }}>No hay productos para ese filtro.</div>
                 )}
                 {columns.map((col, colIdx) => (
-                    <div key={colIdx} style={{ display: "flex", flexDirection: "column", flex: 1, gap: "29px" }}>
+                    <div
+                        key={colIdx}
+                        style={{ display: "flex", flexDirection: "column", flex: 1, gap: "29px" }}
+                    >
                         {col.map((product) => (
                             <SearchProductCard
                                 key={product.id_product}
                                 productId={product.id_product}
                                 name={product.name}
-                                price={String(product.price)}
-                                imageUrl={"https://placehold.co/600x600?text=Producto"}
+                                price={product.price}
+                                isOffer={product.is_offer}
+                                offerPrice={product.offer_price}
+                                originalPrice={product.original_price}
+                                imageUrl={
+                                    resolveApiAssetUrl(
+                                        product.image_url ?? product.imageUrl ?? null,
+                                        apiBase || "http://localhost:3000"
+                                    ) || "https://placehold.co/600x600?text=Producto"
+                                }
                             />
                         ))}
                     </div>
                 ))}
             </div>
 
-            {/* Pagination */}
-            <Pagination totalPages={totalPages} />
+            <Pagination
+                totalPages={totalPages}
+                currentPage={page}
+                onPageChange={setPage}
+            />
         </div>
     );
 };

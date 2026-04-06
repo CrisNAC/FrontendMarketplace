@@ -8,19 +8,21 @@ const Navbar = () => {
   const location = useLocation();
 
   const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
-  const urlSearch = location.pathname === "/busqueda" ? (searchParams.get("search") || "") : "";
+  const isOfferView = location.pathname === "/ofertas";
+  const isSearchView = location.pathname === "/busqueda" || isOfferView;
+  const urlSearch = isSearchView ? (searchParams.get("search") || "") : "";
 
   const [search, setSearch] = useState("");
     const [cartCount, setCartCount] = useState(0);
 
 
   useEffect(() => {
-    if (location.pathname === "/busqueda") {
+    if (isSearchView) {
       setSearch(urlSearch);
     } else {
       setSearch("");
     }
-  }, [location.pathname, urlSearch]);
+  }, [isSearchView, urlSearch]);
    useEffect(() => {
 
     const actualizar = () => {
@@ -38,12 +40,13 @@ const Navbar = () => {
 
   const submitSearch = () => {
     const term = search.trim();
+    const basePath = isOfferView ? "/ofertas" : "/busqueda";
     if (!term) {
-      navigate("/busqueda");
+      navigate(basePath);
       return;
     }
     const params = new URLSearchParams({ search: term });
-    navigate(`/busqueda?${params.toString()}`);
+    navigate(`${basePath}?${params.toString()}`);
   };
 
   return (
@@ -82,6 +85,12 @@ const Navbar = () => {
           >
             Comercio
           </Link>
+          <Link 
+            to="/ofertas" 
+            className="!no-underline !text-[#7f1d1d] font-semibold hover:!text-[#b91c1c] transition-colors"
+          >
+            Ofertas
+          </Link>
         </nav>
 
         {/* Search */}
@@ -102,8 +111,8 @@ const Navbar = () => {
               size={16}
               onClick={() => {
                 setSearch("");
-                if (location.pathname === "/busqueda") {
-                  navigate("/busqueda");
+                if (isSearchView) {
+                  navigate(isOfferView ? "/ofertas" : "/busqueda");
                 }
               }}
             />
@@ -126,8 +135,7 @@ const Navbar = () => {
 
         {/* Icons */}
         <div className="flex gap-[15px] items-center">
-          <Link to="/favoritos">
-
+          <Link to="/carrito" className="!no-underline">
             <div className="relative cursor-pointer">
 
               <ShoppingCart size={25} />
@@ -203,7 +211,7 @@ const Navbar = () => {
           to="/ofertas" 
           className="!no-underline !text-[#952626] font-semibold hover:!text-[#b33a3a] transition-colors"
         >
-          Ofertas!!
+          Ofertas
         </Link>
       </div>
 
