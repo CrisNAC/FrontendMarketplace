@@ -10,6 +10,7 @@ import naranjaImg from "../../../assets/iphonenaranja.png";
 import whiteImg from "../../../assets/iphonewhite.png";
 import { addToCartApi } from "../../../lib/cartApi";
 import { mergeCartResponseFromApi } from "../../../lib/cartLocalStorage";
+import { formatGuarani } from "../../../lib/formatGuarani.js";
 
 function SvgIcon({ children, className = "w-4 h-4" }) {
   return (
@@ -204,7 +205,6 @@ export default function DetalleProducto() {
     : product?.category?.name ?? "Detalle del producto";
 
   const productName = product?.name || "Producto";
-  const productPrice = product?.price != null ? String(product.price) : "-";
   const productDescription = product?.description || "";
   const inStock = product?.quantity == null ? null : Number(product.quantity) > 0;
 
@@ -238,7 +238,7 @@ export default function DetalleProducto() {
               </span>
             </button>
 
-            <div className="mt-3 text-[30px] font-semibold text-black">Gs. {productPrice}</div>
+            <div className="mt-3 text-[30px] font-semibold text-black">{formatGuarani(product?.price)}</div>
 
             {inStock !== null && (
               <span

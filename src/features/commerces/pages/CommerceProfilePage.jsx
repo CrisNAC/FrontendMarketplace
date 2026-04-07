@@ -1,8 +1,8 @@
 // src/features/commerces/pages/CommerceProfilePage.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Edit, Mail, Phone, MapPin, Calendar, Star, Zap, Image, Trash2, AlertTriangle, Globe, Instagram, Music2 } from "lucide-react";
-import { apiClient, getBackendErrorMessage } from "../services/editCommerceApi";
+import { Edit, Mail, Phone, MapPin, Calendar, Star, Zap, Image, Trash2, AlertTriangle, Globe, Instagram, Music2, ToggleLeft, ToggleRight } from "lucide-react";
+import { apiClient, getBackendErrorMessage, updateStoreStatus } from "../services/editCommerceApi";
 
 // ─── Estilos compartidos ──────────────────────────────────────────────────────
 const card = {
@@ -45,17 +45,12 @@ function InfoRow({ icon: Icon, value, iconColor = "#6b9080" }) {
 
 function UrlRow({ icon: Icon, value, iconColor = "#6b9080" }) {
     const url = value?.trim();
-
     return (
         <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
             <Icon size={14} color={iconColor} style={{ flexShrink: 0 }} />
             {url ? (
-                <a
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ fontSize: "14px", color: "#2563eb", textDecoration: "underline", wordBreak: "break-all" }}
-                >
+                <a href={url} target="_blank" rel="noopener noreferrer"
+                    style={{ fontSize: "14px", color: "#2563eb", textDecoration: "underline", wordBreak: "break-all" }}>
                     {url}
                 </a>
             ) : (
@@ -89,19 +84,14 @@ function StatRow({ label, children }) {
 
 function OutlineBtn({ onClick, color = "#6b9080", icon: Icon, children, disabled = false, title }) {
     return (
-        <button
-            type="button"
-            onClick={disabled ? undefined : onClick}
-            title={title}
-            style={{
-                width: "100%", display: "flex", alignItems: "center", justifyContent: "center",
-                gap: "6px", padding: "8px 12px", marginBottom: "8px",
-                backgroundColor: "white", border: `1px solid ${color}`, borderRadius: "8px",
-                color, fontSize: "13px", fontWeight: "500",
-                cursor: disabled ? "not-allowed" : "pointer",
-                opacity: disabled ? 0.45 : 1,
-            }}
-        >
+        <button type="button" onClick={disabled ? undefined : onClick} title={title} style={{
+            width: "100%", display: "flex", alignItems: "center", justifyContent: "center",
+            gap: "6px", padding: "8px 12px", marginBottom: "8px",
+            backgroundColor: "white", border: `1px solid ${color}`, borderRadius: "8px",
+            color, fontSize: "13px", fontWeight: "500",
+            cursor: disabled ? "not-allowed" : "pointer",
+            opacity: disabled ? 0.45 : 1,
+        }}>
             {Icon && <Icon size={13} />}
             {children}
         </button>
@@ -111,67 +101,63 @@ function OutlineBtn({ onClick, color = "#6b9080", icon: Icon, children, disabled
 // ─── Modal de confirmación de eliminación ─────────────────────────────────────
 function DeleteCommerceModal({ commerceName, isDeleting, onConfirm, onCancel }) {
     return (
-        <div
-            style={{
-                position: "fixed", inset: 0, zIndex: 50,
-                backgroundColor: "rgba(0,0,0,0.45)",
-                display: "flex", alignItems: "center", justifyContent: "center", padding: "16px",
-            }}
-            onClick={onCancel}
-        >
-            <div
-                style={{
-                    backgroundColor: "white", borderRadius: "16px", padding: "24px",
-                    maxWidth: "440px", width: "100%", boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
-                }}
-                onClick={e => e.stopPropagation()}
-            >
-                <div style={{
-                    width: "48px", height: "48px", borderRadius: "50%",
-                    backgroundColor: "#fff1f2", border: "1px solid #fecdd3",
-                    display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "16px",
-                }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 50, backgroundColor: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
+            onClick={onCancel}>
+            <div style={{ backgroundColor: "white", borderRadius: "16px", padding: "24px", maxWidth: "440px", width: "100%", boxShadow: "0 20px 40px rgba(0,0,0,0.15)" }}
+                onClick={e => e.stopPropagation()}>
+                <div style={{ width: "48px", height: "48px", borderRadius: "50%", backgroundColor: "#fff1f2", border: "1px solid #fecdd3", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "16px" }}>
                     <AlertTriangle size={24} color="#dc2626" />
                 </div>
-
-                <h3 style={{ fontSize: "18px", fontWeight: "700", color: "#111827", margin: "0 0 8px 0" }}>
-                    ¿Eliminar comercio?
-                </h3>
+                <h3 style={{ fontSize: "18px", fontWeight: "700", color: "#111827", margin: "0 0 8px 0" }}>¿Eliminar comercio?</h3>
                 <p style={{ fontSize: "14px", color: "#374151", margin: "0 0 6px 0", lineHeight: "1.5" }}>
                     Estás por eliminar <strong>"{commerceName}"</strong> de forma permanente.
                 </p>
                 <p style={{ fontSize: "13px", color: "#6b7280", margin: "0 0 24px 0", lineHeight: "1.5" }}>
                     También se eliminarán todos los productos asociados. Esta acción no puede deshacerse.
                 </p>
-
                 <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
-                    <button
-                        type="button"
-                        onClick={onCancel}
-                        disabled={isDeleting}
-                        style={{
-                            padding: "8px 20px", borderRadius: "8px",
-                            border: "1px solid #d1d5db", backgroundColor: "white",
-                            fontSize: "14px", fontWeight: "500", color: "#374151",
-                            cursor: isDeleting ? "not-allowed" : "pointer",
-                            opacity: isDeleting ? 0.6 : 1,
-                        }}
-                    >
+                    <button type="button" onClick={onCancel} disabled={isDeleting} style={{ padding: "8px 20px", borderRadius: "8px", border: "1px solid #d1d5db", backgroundColor: "white", fontSize: "14px", fontWeight: "500", color: "#374151", cursor: isDeleting ? "not-allowed" : "pointer", opacity: isDeleting ? 0.6 : 1 }}>
                         Cancelar
                     </button>
-                    <button
-                        type="button"
-                        onClick={onConfirm}
-                        disabled={isDeleting}
-                        style={{
-                            padding: "8px 20px", borderRadius: "8px", border: "none",
-                            backgroundColor: "#dc2626", fontSize: "14px", fontWeight: "600", color: "white",
-                            cursor: isDeleting ? "not-allowed" : "pointer",
-                            opacity: isDeleting ? 0.7 : 1,
-                            display: "flex", alignItems: "center", gap: "6px",
-                        }}
-                    >
+                    <button type="button" onClick={onConfirm} disabled={isDeleting} style={{ padding: "8px 20px", borderRadius: "8px", border: "none", backgroundColor: "#dc2626", fontSize: "14px", fontWeight: "600", color: "white", cursor: isDeleting ? "not-allowed" : "pointer", opacity: isDeleting ? 0.7 : 1, display: "flex", alignItems: "center", gap: "6px" }}>
                         {isDeleting ? "Eliminando..." : "Eliminar Comercio"}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ─── Modal de confirmación de estado ─────────────────────────────────────────
+function ToggleStatusModal({ commerceName, isActive, isLoading, onConfirm, onCancel }) {
+    const action = isActive ? "deshabilitar" : "habilitar";
+    const warning = isActive
+        ? "Tus productos dejarán de ser visibles para los compradores."
+        : "Tus productos volverán a ser visibles para los compradores.";
+
+    return (
+        <div style={{ position: "fixed", inset: 0, zIndex: 50, backgroundColor: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
+            onClick={onCancel}>
+            <div style={{ backgroundColor: "white", borderRadius: "16px", padding: "24px", maxWidth: "440px", width: "100%", boxShadow: "0 20px 40px rgba(0,0,0,0.15)" }}
+                onClick={e => e.stopPropagation()}>
+                <div style={{ width: "48px", height: "48px", borderRadius: "50%", backgroundColor: isActive ? "#fef3c7" : "#dcfce7", border: `1px solid ${isActive ? "#fde68a" : "#bbf7d0"}`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "16px" }}>
+                    {isActive ? <ToggleLeft size={24} color="#d97706" /> : <ToggleRight size={24} color="#16a34a" />}
+                </div>
+                <h3 style={{ fontSize: "18px", fontWeight: "700", color: "#111827", margin: "0 0 8px 0" }}>
+                    ¿{action.charAt(0).toUpperCase() + action.slice(1)} comercio?
+                </h3>
+                <p style={{ fontSize: "14px", color: "#374151", margin: "0 0 6px 0", lineHeight: "1.5" }}>
+                    Estás por {action} <strong>"{commerceName}"</strong>.
+                </p>
+                <p style={{ fontSize: "13px", color: "#6b7280", margin: "0 0 24px 0", lineHeight: "1.5" }}>
+                    {warning}
+                </p>
+                <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+                    <button type="button" onClick={onCancel} disabled={isLoading} style={{ padding: "8px 20px", borderRadius: "8px", border: "1px solid #d1d5db", backgroundColor: "white", fontSize: "14px", fontWeight: "500", color: "#374151", cursor: isLoading ? "not-allowed" : "pointer", opacity: isLoading ? 0.6 : 1 }}>
+                        Cancelar
+                    </button>
+                    <button type="button" onClick={onConfirm} disabled={isLoading} style={{ padding: "8px 20px", borderRadius: "8px", border: "none", backgroundColor: isActive ? "#d97706" : "#16a34a", fontSize: "14px", fontWeight: "600", color: "white", cursor: isLoading ? "not-allowed" : "pointer", opacity: isLoading ? 0.7 : 1, display: "flex", alignItems: "center", gap: "6px" }}>
+                        {isLoading ? "Procesando..." : isActive ? "Deshabilitar" : "Habilitar"}
                     </button>
                 </div>
             </div>
@@ -186,10 +172,15 @@ export function CommerceProfilePage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
-    // Estado del modal de eliminación
+    // Eliminar comercio
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState("");
+
+    // Habilitar/deshabilitar comercio
+    const [showToggleModal, setShowToggleModal] = useState(false);
+    const [isTogglingStatus, setIsTogglingStatus] = useState(false);
+    const [toggleError, setToggleError] = useState("");
 
     useEffect(() => {
         let active = true;
@@ -224,6 +215,23 @@ export function CommerceProfilePage() {
         }
     };
 
+    const handleToggleStatusConfirm = async () => {
+        if (!commerce?.id_store) return;
+        setIsTogglingStatus(true);
+        setToggleError("");
+        const newStatus = commerce.store_status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+        try {
+            await updateStoreStatus(commerce.id_store, newStatus);
+            // Actualizar estado local
+            setCommerce(prev => ({ ...prev, store_status: newStatus }));
+            setShowToggleModal(false);
+        } catch (err) {
+            setToggleError(getBackendErrorMessage(err, "No se pudo cambiar el estado del comercio."));
+        } finally {
+            setIsTogglingStatus(false);
+        }
+    };
+
     if (loading) return <p style={{ color: "#6b7280", padding: "16px" }}>Cargando...</p>;
 
     if (error) return (
@@ -232,6 +240,7 @@ export function CommerceProfilePage() {
         </div>
     );
 
+    const isActive = commerce?.store_status === "ACTIVE";
     const address = commerce?.addresses?.[0];
     const addressText = [address?.address, address?.city, address?.region].filter(Boolean).join(", ");
     const createdAt = commerce?.created_at
@@ -242,33 +251,39 @@ export function CommerceProfilePage() {
         <>
             {/* ── Header ─────────────────────────────────────────────────────── */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "24px" }}>
-                <div>
-                    <h4 style={{ fontWeight: "600", margin: "0 0 4px 0" }}>Perfil del Comercio</h4>
-                    <p style={{ color: "#6b7280", margin: 0, fontSize: "14px" }}>Información general de tu comercio</p>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <div>
+                        <h4 style={{ fontWeight: "600", margin: "0 0 4px 0" }}>Perfil del Comercio</h4>
+                        <p style={{ color: "#6b7280", margin: 0, fontSize: "14px" }}>Información general de tu comercio</p>
+                    </div>
+                    {/* Badge de estado del comercio */}
+                    <span style={{
+                        padding: "3px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: "700",
+                        backgroundColor: isActive ? "#dcfce7" : "#fef3c7",
+                        color: isActive ? "#15803d" : "#92400e",
+                    }}>
+                        {isActive ? "Activo" : "Inactivo"}
+                    </span>
                 </div>
-                <button
-                    type="button"
-                    onClick={() => navigate("/comercio/editar")}
-                    style={{
-                        display: "flex", alignItems: "center", gap: "6px",
-                        backgroundColor: "var(--primary-dark)", color: "white",
-                        border: "none", borderRadius: "8px", padding: "8px 16px",
-                        fontSize: "14px", fontWeight: "500", cursor: "pointer",
-                    }}
-                >
-                    <Edit size={14} />
-                    Editar Perfil
+                <button type="button" onClick={() => navigate("/comercio/editar")} style={{
+                    display: "flex", alignItems: "center", gap: "6px",
+                    backgroundColor: "var(--primary-dark)", color: "white",
+                    border: "none", borderRadius: "8px", padding: "8px 16px",
+                    fontSize: "14px", fontWeight: "500", cursor: "pointer",
+                }}>
+                    <Edit size={14} /> Editar Perfil
                 </button>
             </div>
 
-            {/* ── Error de eliminación ───────────────────────────────────────── */}
+            {/* ── Errores ────────────────────────────────────────────────────── */}
             {deleteError && (
-                <div style={{
-                    backgroundColor: "#fff1f2", border: "1px solid #fecdd3",
-                    borderRadius: "10px", padding: "12px 16px", color: "#be123c",
-                    fontSize: "14px", marginBottom: "16px",
-                }}>
+                <div style={{ backgroundColor: "#fff1f2", border: "1px solid #fecdd3", borderRadius: "10px", padding: "12px 16px", color: "#be123c", fontSize: "14px", marginBottom: "16px" }}>
                     {deleteError}
+                </div>
+            )}
+            {toggleError && (
+                <div style={{ backgroundColor: "#fffbeb", border: "1px solid #fde68a", borderRadius: "10px", padding: "12px 16px", color: "#92400e", fontSize: "14px", marginBottom: "16px" }}>
+                    {toggleError}
                 </div>
             )}
 
@@ -277,8 +292,6 @@ export function CommerceProfilePage() {
 
                 {/* Columna izquierda */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-
-                    {/* Información Básica */}
                     <div style={card}>
                         <h6 style={sectionTitle}>Información Básica</h6>
                         <p style={labelStyle}>Nombre del Comercio</p>
@@ -292,7 +305,6 @@ export function CommerceProfilePage() {
                         }
                     </div>
 
-                    {/* Información de Contacto */}
                     <div style={card}>
                         <h6 style={sectionTitle}>Información de Contacto</h6>
                         <p style={labelStyle}>Email</p>
@@ -312,38 +324,22 @@ export function CommerceProfilePage() {
 
                 {/* Columna derecha */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-
-                    {/* Imágenes */}
                     <div style={card}>
                         <h6 style={sectionTitle}>Imágenes del Comercio</h6>
                         <p style={labelStyle}>Logo</p>
                         {commerce?.logo ? (
-                            <img
-                                src={commerce.logo}
-                                alt="Logo"
-                                style={{ width: "100%", maxHeight: "90px", objectFit: "contain", borderRadius: "8px", border: "1px solid #f3f4f6", marginBottom: "12px" }}
-                                onError={e => { e.currentTarget.style.display = "none"; }}
-                            />
+                            <img src={commerce.logo} alt="Logo" style={{ width: "100%", maxHeight: "90px", objectFit: "contain", borderRadius: "8px", border: "1px solid #f3f4f6", marginBottom: "12px" }} onError={e => { e.currentTarget.style.display = "none"; }} />
                         ) : (
-                            <div style={{
-                                width: "100%", height: "80px", backgroundColor: "#f9fafb",
-                                borderRadius: "8px", border: "1px dashed #d1d5db",
-                                display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "12px",
-                            }}>
+                            <div style={{ width: "100%", height: "80px", backgroundColor: "#f9fafb", borderRadius: "8px", border: "1px dashed #d1d5db", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "12px" }}>
                                 <Image size={24} color="#9ca3af" />
                             </div>
                         )}
                         <p style={labelStyle}>Banner</p>
-                        <div style={{
-                            width: "100%", height: "80px", backgroundColor: "#f9fafb",
-                            borderRadius: "8px", border: "1px dashed #d1d5db",
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                        }}>
+                        <div style={{ width: "100%", height: "80px", backgroundColor: "#f9fafb", borderRadius: "8px", border: "1px dashed #d1d5db", display: "flex", alignItems: "center", justifyContent: "center" }}>
                             <Image size={24} color="#9ca3af" />
                         </div>
                     </div>
 
-                    {/* Estadísticas */}
                     <div style={card}>
                         <h6 style={sectionTitle}>Estadísticas</h6>
                         <StatRow label="Calificación:">
@@ -361,43 +357,48 @@ export function CommerceProfilePage() {
                                 {createdAt}
                             </span>
                         </StatRow>
-                        <StatRow label="ID del comercio:">
-                            {commerce?.id_store ?? "—"}
-                        </StatRow>
+                        <StatRow label="ID del comercio:">{commerce?.id_store ?? "—"}</StatRow>
                     </div>
 
-                    {/* Acciones Rápidas */}
                     <div style={card}>
                         <h6 style={sectionTitle}>Acciones Rápidas</h6>
                         <OutlineBtn onClick={() => navigate("/comercio/editar")} icon={Image}>
                             Cambiar Logo
                         </OutlineBtn>
-                        <OutlineBtn
-                            color="#9ca3af"
-                            icon={Zap}
-                            disabled
-                            title="Estadísticas disponibles próximamente"
-                        >
+                        <OutlineBtn color="#9ca3af" icon={Zap} disabled title="Estadísticas disponibles próximamente">
                             Ver Estadísticas
                         </OutlineBtn>
+                        {/* Habilitar / Deshabilitar */}
                         <OutlineBtn
-                            color="#dc2626"
-                            icon={Trash2}
-                            onClick={() => setShowDeleteModal(true)}
+                            color={isActive ? "#d97706" : "#16a34a"}
+                            icon={isActive ? ToggleLeft : ToggleRight}
+                            onClick={() => setShowToggleModal(true)}
                         >
+                            {isActive ? "Deshabilitar Comercio" : "Habilitar Comercio"}
+                        </OutlineBtn>
+                        <OutlineBtn color="#dc2626" icon={Trash2} onClick={() => setShowDeleteModal(true)}>
                             Eliminar Comercio
                         </OutlineBtn>
                     </div>
                 </div>
             </div>
 
-            {/* ── Modal de confirmación ──────────────────────────────────────── */}
+            {/* Modales */}
             {showDeleteModal && (
                 <DeleteCommerceModal
                     commerceName={commerce?.name ?? "este comercio"}
                     isDeleting={isDeleting}
                     onConfirm={handleDeleteConfirm}
                     onCancel={() => !isDeleting && setShowDeleteModal(false)}
+                />
+            )}
+            {showToggleModal && (
+                <ToggleStatusModal
+                    commerceName={commerce?.name ?? "este comercio"}
+                    isActive={isActive}
+                    isLoading={isTogglingStatus}
+                    onConfirm={handleToggleStatusConfirm}
+                    onCancel={() => !isTogglingStatus && setShowToggleModal(false)}
                 />
             )}
         </>

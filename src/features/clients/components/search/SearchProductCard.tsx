@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { formatGuarani } from "../../../../lib/formatGuarani.js";
 
 type PriceValue = string | number | null | undefined;
 
@@ -17,14 +18,6 @@ type Props = {
 const parsePrice = (value: PriceValue) => {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : null;
-};
-
-const formatPrice = (value: PriceValue) => {
-    const parsed = parsePrice(value);
-    if (parsed === null) {
-        return value == null ? "-" : String(value);
-    }
-    return parsed.toLocaleString("es-PY");
 };
 
 export const SearchProductCard = ({
@@ -130,7 +123,7 @@ export const SearchProductCard = ({
                                 textDecoration: "line-through",
                             }}
                         >
-                            Gs. {formatPrice(originalPrice)}
+                            {formatGuarani(originalPrice)}
                         </span>
                         <span
                             style={{
@@ -139,12 +132,12 @@ export const SearchProductCard = ({
                                 color: "#B91C1C",
                             }}
                         >
-                            Gs. {formatPrice(offerPrice ?? price)}
+                            {formatGuarani(offerPrice ?? price)}
                         </span>
                     </div>
                 ) : (
                     <p style={{ fontSize: "12px", color: "#6b7280", margin: "0 0 8px 0" }}>
-                        Desde Gs. {formatPrice(price)}
+                        Desde {formatGuarani(price)}
                     </p>
                 )}
                 <button

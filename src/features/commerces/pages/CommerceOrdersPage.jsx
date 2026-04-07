@@ -30,9 +30,8 @@ export function timeAgo(dateStr) {
     return `hace ${Math.floor(diff / 86400)} días`;
 }
 
-export function formatGuarani(value) {
-    return `Gs. ${Number(value).toLocaleString("es-PY")}`;
-}
+import { formatGuarani } from "../../../lib/formatGuarani.js";
+export { formatGuarani };
 
 function StatusBadge({ status }) {
     const cfg = {

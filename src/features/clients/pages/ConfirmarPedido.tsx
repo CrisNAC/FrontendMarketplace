@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { getApiBase } from "../../../lib/cartApi";
+import { formatGuarani } from "../../../lib/formatGuarani.js";
 
 const shippingOptions = [
   {
@@ -17,8 +18,8 @@ const shippingOptions = [
     id: "standard",
     label: "Envío Estándar",
     desc: "Entrega en 5-7 días hábiles",
-    price: 16000,
-    priceLabel: "₲ 16.000",
+    price: 10000,
+    priceLabel: "Gs. 10.000",
   },
 ];
 
@@ -66,6 +67,8 @@ export default function ConfirmarPedido() {
   const [cart, setCart] = useState<BackendCart | null>(null);
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
   const [status, setStatus] = useState<"loading" | "ready" | "error" | "unauthorized">("loading");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const submitLockRef = useRef(false);
 
   const navigate = useNavigate();
   const { cartId } = useParams();
@@ -180,14 +183,6 @@ export default function ConfirmarPedido() {
     }
   }, [selectedShipping, selectedAddress, addresses]);
 
-  const formatPrice = (value: number) =>
-    new Intl.NumberFormat("es-PY", {
-      style: "currency",
-      currency: "PYG",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-
   const subtotal = useMemo(() => {
     if (!cart) return 0;
 
@@ -225,6 +220,58 @@ export default function ConfirmarPedido() {
     shippingOptions.find((o) => o.id === selectedShipping)?.price ?? 0;
 
   const total = subtotal - discount + shipping;
+
+  const handleConfirmOrder = async () => {
+  if (submitLockRef.current) return;
+
+  try {
+    if (!cart) {
+      toast.error("No se encontró el carrito");
+      return;
+    }
+
+    if (requiresAddress && !selectedAddress) {
+      toast.error("Selecciona una dirección de entrega");
+      return;
+    }
+
+    submitLockRef.current = true;
+    setIsSubmitting(true);
+
+    const payload = {
+      cartId: cart.id,
+      addressId: requiresAddress ? selectedAddress : null,
+      total,
+      notes: notes.trim() || null,
+    };
+
+    const response = await axios.post(`${apiBase}/api/orders`, payload, {
+      withCredentials: true,
+    });
+
+    const createdOrder = response.data;
+
+    toast.success("Pedido confirmado correctamente");
+
+    navigate("/pedido-confirmado", {
+      state: {
+        order: createdOrder,
+        shippingMethod: selectedShipping,
+        shippingCost: shipping,
+        subtotal,
+        discount,
+        total,
+      },
+    });
+  } catch (error: any) {
+    toast.error(
+      error?.response?.data?.message || "No se pudo confirmar el pedido"
+    );
+  } finally {
+    submitLockRef.current = false;
+    setIsSubmitting(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-[#f0f7f2] font-sans">
@@ -450,7 +497,7 @@ export default function ConfirmarPedido() {
                     <div className="flex justify-between text-gray-500">
                       <span>Subtotal:</span>
                       <span className="font-medium text-gray-700">
-                        {formatPrice(subtotal)}
+                        {formatGuarani(subtotal)}
                       </span>
                     </div>
 
@@ -458,7 +505,7 @@ export default function ConfirmarPedido() {
                       <div className="flex justify-between text-gray-500">
                         <span>Descuento:</span>
                         <span className="font-medium text-red-500">
-                          - {formatPrice(discount)}
+                          - {formatGuarani(discount)}
                         </span>
                       </div>
                     )}
@@ -466,7 +513,7 @@ export default function ConfirmarPedido() {
                     <div className="flex justify-between text-gray-500">
                       <span>Entrega:</span>
                       <span className="font-medium text-gray-700">
-                        {shipping === 0 ? "Gratis" : formatPrice(shipping)}
+                        {shipping === 0 ? "Gratis" : formatGuarani(shipping)}
                       </span>
                     </div>
                   </div>
@@ -474,16 +521,17 @@ export default function ConfirmarPedido() {
                   <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-4">
                     <span className="text-base font-bold text-gray-800">Total:</span>
                     <span className="text-xl font-bold text-gray-900">
-                      {formatPrice(total)}
+                      {formatGuarani(total)}
                     </span>
                   </div>
 
                   <button
                     type="button"
-                    onClick={() => navigate("/pedido-confirmado")}
-                    className="mt-4 w-full rounded-lg bg-[#5B7B6D] py-2 text-sm font-medium text-white shadow-sm transition-all duration-150 hover:bg-[#4e6a5e] active:scale-[0.98]"
+                    onClick={handleConfirmOrder}
+                    disabled={isSubmitting}
+                    className="mt-4 w-full rounded-lg bg-[#5B7B6D] py-2 text-sm font-medium text-white shadow-sm transition-all duration-150 hover:bg-[#4e6a5e] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    Confirmar Pedido
+                    {isSubmitting ? "Confirmando..." : "Confirmar Pedido"}
                   </button>
 
                   <button
