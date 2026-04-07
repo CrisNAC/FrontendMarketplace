@@ -32,6 +32,11 @@ type Props = {
     query?: string;
 };
 
+type PriceRange = {
+    min: number | null;
+    max: number | null;
+};
+
 function resolveApiAssetUrl(path: string | null | undefined, apiBase: string) {
     if (!path?.trim()) return undefined;
 
@@ -51,6 +56,10 @@ export const BusquedaPage = ({ query = "Todos los Productos" }: Props) => {
     const [error, setError] = useState("");
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [priceRange, setPriceRange] = useState<PriceRange>({
+        min: null,
+        max: null,
+    });
 
     const apiBase = useMemo(() => {
         return (import.meta.env.VITE_API_URL || "").trim().replace(/\/$/, "");
@@ -79,7 +88,7 @@ export const BusquedaPage = ({ query = "Todos los Productos" }: Props) => {
 
     useEffect(() => {
         setPage(1);
-    }, [categoryId, isOffersPage, search]);
+    }, [categoryId, isOffersPage, priceRange.max, priceRange.min, search]);
 
     useEffect(() => {
         let isActive = true;
@@ -96,6 +105,12 @@ export const BusquedaPage = ({ query = "Todos los Productos" }: Props) => {
                 if (search) url.searchParams.set("search", search);
                 if (categoryId) url.searchParams.set("categoryId", categoryId);
                 if (isOffersPage) url.searchParams.set("isOffer", "true");
+                if (priceRange.min !== null) {
+                    url.searchParams.set("minPrice", String(priceRange.min));
+                }
+                if (priceRange.max !== null) {
+                    url.searchParams.set("maxPrice", String(priceRange.max));
+                }
                 url.searchParams.set("page", String(page));
                 url.searchParams.set("limit", "20");
 
@@ -132,7 +147,7 @@ export const BusquedaPage = ({ query = "Todos los Productos" }: Props) => {
             isActive = false;
             controller.abort();
         };
-    }, [apiBase, categoryId, isOffersPage, page, search]);
+    }, [apiBase, categoryId, isOffersPage, page, priceRange.max, priceRange.min, search]);
 
     const columns = useMemo(() => {
         const cols: BackendProduct[][] = [[], [], [], []];
@@ -191,7 +206,15 @@ export const BusquedaPage = ({ query = "Todos los Productos" }: Props) => {
             >
                 <div style={{ flexShrink: 0, width: "220px" }}>
                     <SearchFilterSidebar
-                        onPriceApply={(min, max) => console.log("Precio:", min, max)}
+                        onPriceApply={(min, max) => {
+                            const nextPriceRange = {
+                                min: Number.isFinite(min) && min > 0 ? min : null,
+                                max: Number.isFinite(max) && max > 0 ? max : null,
+                            };
+
+                            setPriceRange(nextPriceRange);
+                            setPage(1);
+                        }}
                     />
                 </div>
 
