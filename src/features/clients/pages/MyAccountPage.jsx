@@ -6,6 +6,8 @@ import { SidebarClientProfile } from "../../../components/SidebarClientProfile";
 import {
     getSession,
     fetchUserProfile,
+    getUserImage,
+    uploadUserImage,
     getBackendErrorMessage,
 } from "../../commerces/services/editUserProfileApi";
 
@@ -58,6 +60,10 @@ const MyAccountPage = () => {
 
                 const response = await fetchUserProfile(userId);
                 setUser(response.data);
+
+                const { avatar_url } = await getUserImage(userId);
+                if (avatar_url) setPhotoPreview(avatar_url);
+
             } catch (err) {
                 setError(getBackendErrorMessage(err, "Error cargando perfil"));
             } finally {
@@ -68,12 +74,21 @@ const MyAccountPage = () => {
         loadProfile();
     }, []);
 
-    const handlePhotoChange = (e) => {
+    const handlePhotoChange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        // Preview local - la subida real depende del endpoint de tu backend
+
+        setUploadingPhoto(true);
         setPhotoPreview(URL.createObjectURL(file));
-        // Aquí iría la lógica de upload cuando tengas el endpoint
+        try {
+            const { avatar_url } = await uploadUserImage(user.id_user, file);
+            setPhotoPreview(avatar_url);
+        } catch (err) {
+            setError(getBackendErrorMessage(err, "Error al subir la foto"));
+            setPhotoPreview(null);
+        } finally {
+            setUploadingPhoto(false);
+        }
     };
 
     if (loading) {
