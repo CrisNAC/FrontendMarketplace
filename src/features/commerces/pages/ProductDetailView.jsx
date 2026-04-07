@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getProductById } from "../../commerces/services/productDetailApi";
 import { getProductReviews } from "../../commerces/services/productReviewApi";
+import { formatGuarani } from "../../../lib/formatGuarani.js";
 
 //iconos svg
 function SvgIcon({ children, className = "w-4 h-4" }) {
@@ -262,7 +263,7 @@ export default function ProductDetailView() {
                                         <div className="flex items-center justify-between">
                                             <span className={SUBTLE}>Precio:</span>
                                             <span className="font-semibold text-emerald-700">
-                                                Gs. {Number(product.price).toLocaleString("es-PY")}
+                                                {formatGuarani(product.price)}
                                             </span>
                                         </div>
 

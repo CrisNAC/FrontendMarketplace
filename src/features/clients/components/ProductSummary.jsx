@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatGuarani } from '../../../lib/formatGuarani.js';
 
 export const ProductSummary = ({ minPrice, maxPrice, mainImage }) => {
     return (
@@ -16,7 +17,7 @@ export const ProductSummary = ({ minPrice, maxPrice, mainImage }) => {
             <div className="text-center w-full">
                 <h3 className="text-gray-500 font-semibold text-lg">Rango de precios:</h3>
                 <p className="text-3xl font-bold text-gray-400 mt-1">
-                    {minPrice} Gs. / {maxPrice} Gs.
+                    {formatGuarani(minPrice)} / {formatGuarani(maxPrice)}
                 </p>
             </div>
         </div>

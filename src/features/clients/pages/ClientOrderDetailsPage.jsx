@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { SidebarClientProfile } from '../../../components/SidebarClientProfile';
 import Navbar from '../../../components/navbar/Navbar';
+import { formatGuarani } from '../../../lib/formatGuarani.js';
 
 // ─── API client ───────────────────────────────────────────────────────────────
 const apiClient = axios.create({
@@ -54,8 +55,7 @@ const STATUS_CONFIG = {
   CANCELLED:  { label: 'Cancelado',  classes: 'border-red-500 text-red-600'      },
 };
 
-const formatCurrency = (val) =>
-  `Gs. ${Number(val).toLocaleString('es-PY')}`;
+const formatCurrency = (val) => formatGuarani(val);
 
 const formatDate = (isoString) => {
   if (!isoString) return '';

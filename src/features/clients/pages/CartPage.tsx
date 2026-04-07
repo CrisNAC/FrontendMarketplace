@@ -5,6 +5,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { getApiBase } from "../../../lib/cartApi";
+import { formatGuarani } from "../../../lib/formatGuarani.js";
 
 type CartItem = {
   id: number;
@@ -170,14 +171,6 @@ export const CartPage = () => {
     );
   }, [cartItems]);
 
-  const formatPrice = (value: number) =>
-    new Intl.NumberFormat("es-PY", {
-      style: "currency",
-      currency: "PYG",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-
   return (
     <div className="min-h-screen bg-[#edf6f0]">
       <Navbar />
@@ -262,10 +255,10 @@ export const CartPage = () => {
                               {item.isOffer && item.offerPrice != null ? (
                                 <div className="flex flex-wrap items-center gap-2">
                                   <p className="text-xl font-extrabold text-[#1f2f2a]">
-                                    {formatPrice(item.offerPrice)}
+                                    {formatGuarani(item.offerPrice)}
                                   </p>
                                   <p className="text-sm text-gray-400 line-through">
-                                    {formatPrice(item.price)}
+                                    {formatGuarani(item.price)}
                                   </p>
                                   <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold text-red-600">
                                     Oferta
@@ -273,7 +266,7 @@ export const CartPage = () => {
                                 </div>
                               ) : (
                                 <p className="text-xl font-extrabold text-[#1f2f2a]">
-                                  {formatPrice(item.price)}
+                                  {formatGuarani(item.price)}
                                 </p>
                               )}
 
@@ -302,7 +295,7 @@ export const CartPage = () => {
 
                         <div className="flex flex-row items-center justify-between md:flex-col md:items-end md:gap-4">
                           <p className="text-xs font-semibold text-[#91a79d]">
-                            Subtotal: {formatPrice(itemSubtotal)}
+                            Subtotal: {formatGuarani(itemSubtotal)}
                           </p>
                         </div>
                       </div>
@@ -321,14 +314,14 @@ export const CartPage = () => {
                 <div className="space-y-4 text-[15px] text-[#546760]">
                   <div className="flex items-center justify-between">
                     <span>Subtotal:</span>
-                    <span className="font-semibold">{formatPrice(subtotal)}</span>
+                    <span className="font-semibold">{formatGuarani(subtotal)}</span>
                   </div>
 
                   {discount > 0 && (
                     <div className="flex items-center justify-between">
                       <span>Descuentos:</span>
                       <span className="font-semibold text-green-600">
-                        - {formatPrice(discount)}
+                        - {formatGuarani(discount)}
                       </span>
                     </div>
                   )}
@@ -339,7 +332,7 @@ export const CartPage = () => {
                         Total:
                       </span>
                       <span className="text-2xl font-extrabold text-[#1f2f2a]">
-                        {formatPrice(total)}
+                        {formatGuarani(total)}
                       </span>
                     </div>
                   </div>

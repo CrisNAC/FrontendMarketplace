@@ -1,4 +1,5 @@
 import Navbar from "../../../components/navbar/Navbar";
+import { formatGuarani } from "../../../lib/formatGuarani.js";
 import { CheckCircle2 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -50,14 +51,6 @@ export default function PedidoConfirmadoPage() {
   const subtotal = Number(state.subtotal ?? order?.total ?? 0);
   const discount = Number(state.discount ?? 0);
   const total = Number(state.total ?? order?.total ?? 0);
-
-  const formatPrice = (value: number) =>
-    new Intl.NumberFormat("es-PY", {
-      style: "currency",
-      currency: "PYG",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return "—";
@@ -160,7 +153,7 @@ export default function PedidoConfirmadoPage() {
               <div className="flex items-center justify-between text-[#7f8f88]">
                 <span>Subtotal:</span>
                 <span className="font-medium text-[#394842]">
-                  {formatPrice(subtotal)}
+                  {formatGuarani(subtotal)}
                 </span>
               </div>
 
@@ -168,7 +161,7 @@ export default function PedidoConfirmadoPage() {
                 <div className="flex items-center justify-between text-[#7f8f88]">
                   <span>Descuento:</span>
                   <span className="font-medium text-[#2fb266]">
-                    -{formatPrice(discount)}
+                    -{formatGuarani(discount)}
                   </span>
                 </div>
               )}
@@ -176,7 +169,7 @@ export default function PedidoConfirmadoPage() {
               <div className="flex items-center justify-between text-[#7f8f88]">
                 <span>{shippingLabel}:</span>
                 <span className="font-medium text-[#394842]">
-                  {shippingCost === 0 ? "Gratis" : formatPrice(shippingCost)}
+                  {shippingCost === 0 ? "Gratis" : formatGuarani(shippingCost)}
                 </span>
               </div>
 
@@ -186,7 +179,7 @@ export default function PedidoConfirmadoPage() {
                     Total:
                   </span>
                   <span className="text-2xl font-extrabold text-[#24312c]">
-                    {formatPrice(total)}
+                    {formatGuarani(total)}
                   </span>
                 </div>
               </div>
@@ -254,7 +247,7 @@ export default function PedidoConfirmadoPage() {
                   </div>
 
                   <p className="shrink-0 text-sm font-bold text-[#4f625a]">
-                    {formatPrice(item.subtotal)}
+                    {formatGuarani(item.subtotal)}
                   </p>
                 </div>
               ))}

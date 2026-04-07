@@ -1,3 +1,5 @@
+import { formatGuarani } from "../../../../lib/formatGuarani.js";
+
 export const ProductCard = ({ name, price, imageUrl, buttonLabel = "Ver más" }) => {
     return (
         <div
@@ -60,7 +62,7 @@ export const ProductCard = ({ name, price, imageUrl, buttonLabel = "Ver más" })
                         margin: "0 0 8px 0",
                     }}
                 >
-                    Gs. {price}
+                    {formatGuarani(price)}
                 </p>
 
                 <button

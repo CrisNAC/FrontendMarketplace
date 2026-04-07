@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { getApiBase } from "../../../lib/cartApi";
+import { formatGuarani } from "../../../lib/formatGuarani.js";
 
 const shippingOptions = [
   {
@@ -18,7 +19,7 @@ const shippingOptions = [
     label: "Envío Estándar",
     desc: "Entrega en 5-7 días hábiles",
     price: 10000,
-    priceLabel: "₲ 10.000",
+    priceLabel: "Gs. 10.000",
   },
 ];
 
@@ -181,14 +182,6 @@ export default function ConfirmarPedido() {
       setSelectedAddress(addresses[0].id_address);
     }
   }, [selectedShipping, selectedAddress, addresses]);
-
-  const formatPrice = (value: number) =>
-    new Intl.NumberFormat("es-PY", {
-      style: "currency",
-      currency: "PYG",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
 
   const subtotal = useMemo(() => {
     if (!cart) return 0;
@@ -504,7 +497,7 @@ export default function ConfirmarPedido() {
                     <div className="flex justify-between text-gray-500">
                       <span>Subtotal:</span>
                       <span className="font-medium text-gray-700">
-                        {formatPrice(subtotal)}
+                        {formatGuarani(subtotal)}
                       </span>
                     </div>
 
@@ -512,7 +505,7 @@ export default function ConfirmarPedido() {
                       <div className="flex justify-between text-gray-500">
                         <span>Descuento:</span>
                         <span className="font-medium text-red-500">
-                          - {formatPrice(discount)}
+                          - {formatGuarani(discount)}
                         </span>
                       </div>
                     )}
@@ -520,7 +513,7 @@ export default function ConfirmarPedido() {
                     <div className="flex justify-between text-gray-500">
                       <span>Entrega:</span>
                       <span className="font-medium text-gray-700">
-                        {shipping === 0 ? "Gratis" : formatPrice(shipping)}
+                        {shipping === 0 ? "Gratis" : formatGuarani(shipping)}
                       </span>
                     </div>
                   </div>
@@ -528,7 +521,7 @@ export default function ConfirmarPedido() {
                   <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-4">
                     <span className="text-base font-bold text-gray-800">Total:</span>
                     <span className="text-xl font-bold text-gray-900">
-                      {formatPrice(total)}
+                      {formatGuarani(total)}
                     </span>
                   </div>
 
