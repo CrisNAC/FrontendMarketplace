@@ -46,6 +46,17 @@ const validateForm = (formData, selectedTags) => {
         }
     }
 
+    if (formData.isOffer) {
+        if (formData.offerPrice === "" || formData.offerPrice === null) {
+            errors.offerPrice = "El precio de oferta es obligatorio.";
+        } else {
+            const numericOfferPrice = Number(formData.offerPrice);
+            if (!Number.isFinite(numericOfferPrice) || numericOfferPrice <= 0) {
+                errors.offerPrice = "El precio de oferta debe ser mayor a 0.";
+            }
+        }
+    }
+
     return errors;
 };
 
@@ -70,6 +81,8 @@ export const useEditProduct = (productId) => {
         categoryId: "",
         imageUrl: "",
         isVisible: true,
+        isOffer: false,
+        offerPrice: "",
     });
     const [selectedTags, setSelectedTags] = useState([]);
     const [validationErrors, setValidationErrors] = useState({});
@@ -111,6 +124,8 @@ export const useEditProduct = (productId) => {
                     categoryId: product.categoryId ? String(product.categoryId) : "",
                     imageUrl: product.imageUrl ?? "",
                     isVisible: product.visible ?? true,
+                    isOffer: Boolean(product.isOffer),
+                    offerPrice: product.offerPrice ?? "",
                 });
 
                 setSelectedTags(product.tags ?? []);
@@ -156,7 +171,11 @@ export const useEditProduct = (productId) => {
             [name]: type === "checkbox" ? checked : value,
         }));
         // Limpiar error del campo al modificarlo
-        setValidationErrors((prev) => ({ ...prev, [name]: "" }));
+        setValidationErrors((prev) => ({
+            ...prev,
+            [name]: "",
+            ...(name === "isOffer" ? { offerPrice: "" } : {}),
+        }));
     };
 
     const toggleTag = (tag) => {
@@ -194,6 +213,8 @@ export const useEditProduct = (productId) => {
             price: Number(formData.price),
             categoryId: Number(formData.categoryId),
             visible: formData.isVisible,
+            isOffer: formData.isOffer,
+            offerPrice: formData.isOffer ? Number(formData.offerPrice) : null,
             imageUrl: formData.imageUrl.trim() || null,
             tags: selectedTags.map((tag) => tag.id),
         };

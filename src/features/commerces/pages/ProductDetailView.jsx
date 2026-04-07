@@ -2,6 +2,11 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getProductById } from "../../commerces/services/productDetailApi";
 import { getProductReviews } from "../../commerces/services/productReviewApi";
+import {
+    getBackendErrorMessage,
+    updateProduct,
+} from "../../commerces/services/editProductApi";
+import Toggle from "../components/createProduct/Toggle";
 
 //iconos svg
 function SvgIcon({ children, className = "w-4 h-4" }) {
@@ -131,6 +136,15 @@ export default function ProductDetailView() {
     const [loading, setLoading] = useState(true);
     const [reviewLoading, setReviewLoading] = useState(true);
     const [error, setError] = useState("");
+    const [offerForm, setOfferForm] = useState({
+        isOffer: false,
+        offerPrice: "",
+    });
+    const [offerSaving, setOfferSaving] = useState(false);
+    const [offerFeedback, setOfferFeedback] = useState({
+        type: "",
+        message: "",
+    });
 
     // producto
     useEffect(() => {
@@ -169,6 +183,20 @@ export default function ProductDetailView() {
         return () => { active = false; };
     }, [STATIC_PRODUCT_ID]);
 
+    useEffect(() => {
+        if (!product) {
+            return;
+        }
+
+        setOfferForm({
+            isOffer: Boolean(product.isOffer),
+            offerPrice:
+                product.offerPrice === null || product.offerPrice === undefined
+                    ? ""
+                    : String(product.offerPrice),
+        });
+    }, [product]);
+
     //estados de carga/error
     if (loading) return (
         <div className="min-h-screen bg-[#ECF7F0] flex items-center justify-center">
@@ -191,6 +219,80 @@ export default function ProductDetailView() {
         ? new Date(product.updatedAt).toLocaleDateString("es-PY", { day: "numeric", month: "long", year: "numeric" })
         : "—";
     const isVisible = product.status === "active";
+    const isOffer = Boolean(product.isOffer);
+    const currentPrice = Number(product.price ?? 0);
+    const originalPrice = Number(product.originalPrice ?? currentPrice);
+    const offerPrice = product.offerPrice == null ? null : Number(product.offerPrice);
+    const hasOfferChanges =
+        offerForm.isOffer !== isOffer ||
+        String(offerForm.offerPrice ?? "").trim() !==
+            String(product.offerPrice ?? "").trim();
+
+    const handleOfferToggle = (nextValue) => {
+        setOfferForm((prev) => ({
+            ...prev,
+            isOffer: nextValue,
+        }));
+        setOfferFeedback({ type: "", message: "" });
+    };
+
+    const handleOfferPriceChange = (event) => {
+        setOfferForm((prev) => ({
+            ...prev,
+            offerPrice: event.target.value,
+        }));
+        setOfferFeedback({ type: "", message: "" });
+    };
+
+    const handleSaveOffer = async () => {
+        if (offerSaving) {
+            return;
+        }
+
+        const normalizedOfferPrice = String(offerForm.offerPrice ?? "").trim();
+
+        if (offerForm.isOffer) {
+            const parsedOfferPrice = Number(normalizedOfferPrice);
+            if (!normalizedOfferPrice || !Number.isFinite(parsedOfferPrice) || parsedOfferPrice <= 0) {
+                setOfferFeedback({
+                    type: "error",
+                    message: "Ingresá un precio de oferta válido mayor a 0.",
+                });
+                return;
+            }
+        }
+
+        setOfferSaving(true);
+        setOfferFeedback({ type: "", message: "" });
+
+        try {
+            const updatedProduct = await updateProduct({
+                productId: STATIC_PRODUCT_ID,
+                payload: {
+                    isOffer: offerForm.isOffer,
+                    offerPrice: offerForm.isOffer
+                        ? Number(normalizedOfferPrice)
+                        : null,
+                },
+            });
+
+            setProduct(updatedProduct);
+            setOfferFeedback({
+                type: "success",
+                message: "La oferta del producto se actualizó correctamente.",
+            });
+        } catch (saveError) {
+            setOfferFeedback({
+                type: "error",
+                message: getBackendErrorMessage(
+                    saveError,
+                    "No se pudo actualizar la oferta del producto."
+                ),
+            });
+        } finally {
+            setOfferSaving(false);
+        }
+    };
 
     return (
         <div className="min-h-screen bg-[#ECF7F0]">
@@ -260,10 +362,24 @@ export default function ProductDetailView() {
 
                                     <div className="mt-3 space-y-1.5 text-[11px]">
                                         <div className="flex items-center justify-between">
-                                            <span className={SUBTLE}>Precio:</span>
-                                            <span className="font-semibold text-emerald-700">
-                                                Gs. {Number(product.price).toLocaleString("es-PY")}
-                                            </span>
+                                            <span className={SUBTLE}>Precio actual:</span>
+                                            <div className="text-right">
+                                                <span className="font-semibold text-emerald-700">
+                                                    Gs. {currentPrice.toLocaleString("es-PY")}
+                                                </span>
+                                                {isOffer && offerPrice !== null && (
+                                                    <div className="mt-0.5 text-[10px] text-slate-400 line-through">
+                                                        Gs. {originalPrice.toLocaleString("es-PY")}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center justify-between">
+                                            <span className={SUBTLE}>Oferta:</span>
+                                            <Pill variant={isOffer ? "green" : "gray"}>
+                                                {isOffer ? "Activa" : "No"}
+                                            </Pill>
                                         </div>
 
                                         <div className="flex items-center justify-between">
@@ -277,6 +393,15 @@ export default function ProductDetailView() {
                                                 {isVisible ? "Activo" : "Oculto"}
                                             </Pill>
                                         </div>
+
+                                        {isOffer && offerPrice !== null && (
+                                            <div className="flex items-center justify-between">
+                                                <span className={SUBTLE}>Precio de oferta:</span>
+                                                <span className="font-semibold text-amber-700">
+                                                    Gs. {offerPrice.toLocaleString("es-PY")}
+                                                </span>
+                                            </div>
+                                        )}
 
                                         <div className="flex items-center justify-between">
                                             <span className={SUBTLE}>Calificación:</span>
@@ -400,6 +525,82 @@ export default function ProductDetailView() {
                                     <div className={`text-[11px] font-semibold ${TITLE}`}>ID del producto</div>
                                     <div className="mt-0.5 text-[11px] text-slate-600">{product.id ?? STATIC_PRODUCT_ID}</div>
                                 </div>
+                            </div>
+                        </SideCard>
+
+                        <SideCard title="Oferta">
+                            <div className="space-y-3 text-left">
+                                <div className="flex items-center justify-between gap-3">
+                                    <div>
+                                        <div className={`text-[11px] font-semibold ${TITLE}`}>
+                                            Estado de oferta
+                                        </div>
+                                        <div
+                                            className={`mt-0.5 text-[11px] font-semibold ${
+                                                offerForm.isOffer ? "text-amber-700" : "text-slate-600"
+                                            }`}
+                                        >
+                                            {offerForm.isOffer ? "Activa" : "Desactivada"}
+                                        </div>
+                                    </div>
+
+                                    <Toggle
+                                        isOn={offerForm.isOffer}
+                                        onToggle={handleOfferToggle}
+                                        disabled={offerSaving}
+                                        label="Activar oferta"
+                                    />
+                                </div>
+
+                                {offerForm.isOffer ? (
+                                    <div>
+                                        <label
+                                            htmlFor="product-offer-price"
+                                            className={`mb-1 block text-[11px] font-semibold ${TITLE}`}
+                                        >
+                                            Precio de oferta
+                                        </label>
+                                        <input
+                                            id="product-offer-price"
+                                            type="number"
+                                            min="0.01"
+                                            step="0.01"
+                                            value={offerForm.offerPrice}
+                                            onChange={handleOfferPriceChange}
+                                            disabled={offerSaving}
+                                            className="w-full rounded-xl border border-[#d2d8d4] bg-[#f8faf9] px-3 py-2 text-[12px] text-slate-800 outline-none transition focus:border-[#8fb6a3] focus:ring-4 focus:ring-[rgba(107,144,128,0.16)] disabled:cursor-not-allowed disabled:opacity-60"
+                                            placeholder="Ej: 74990"
+                                        />
+                                        <p className="mt-1.5 text-[10px] text-slate-500">
+                                            Precio regular: Gs. {originalPrice.toLocaleString("es-PY")}
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="rounded-xl bg-slate-50 px-3 py-2 text-[11px] text-slate-600 ring-1 ring-slate-100">
+                                        El producto se mantiene con su precio regular.
+                                    </div>
+                                )}
+
+                                {offerFeedback.message && (
+                                    <div
+                                        className={`rounded-xl px-3 py-2 text-[11px] font-medium ${
+                                            offerFeedback.type === "success"
+                                                ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100"
+                                                : "bg-red-50 text-red-700 ring-1 ring-red-100"
+                                        }`}
+                                    >
+                                        {offerFeedback.message}
+                                    </div>
+                                )}
+
+                                <button
+                                    type="button"
+                                    onClick={handleSaveOffer}
+                                    disabled={offerSaving || !hasOfferChanges}
+                                    className="flex w-full items-center justify-center rounded-xl bg-[#6B9080] px-3 py-2 text-[11px] font-semibold text-white transition hover:bg-[#5b7b6d] disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                    {offerSaving ? "Guardando oferta..." : "Guardar oferta"}
+                                </button>
                             </div>
                         </SideCard>
 
