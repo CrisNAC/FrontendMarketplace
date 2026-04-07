@@ -1,3 +1,4 @@
+import { formatGuarani } from '../lib/formatGuarani.js';
 import { OrderStepper } from '../features/clients/components/OrderStepper'
 import { Truck, CheckCircle, AlertCircle, Clock, Package } from 'lucide-react';
 
@@ -59,7 +60,7 @@ export const OrderCard = ({ order, onClick }) => {
       {/* Cantidad del producto y el total */}
       <div className="text-right me-2 shrink-0">
         <p className="text-sm mb-1 text-gray-600">{order.cantidad} producto(s)</p>
-        <p className="text-lg font-bold">Gs. {order.total}</p>
+        <p className="text-lg font-bold">{formatGuarani(order.total)}</p>
       </div>
     </div>
   );

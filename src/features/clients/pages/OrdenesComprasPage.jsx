@@ -4,15 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { fetchCartsApi, getApiBase } from "../../../lib/cartApi";
-
-function formatMoney(value) {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return "—";
-  return n.toLocaleString("es-PY", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-}
+import { formatGuarani } from "../../../lib/formatGuarani.js";
 
 function itemSubtotal(unitPrice, qty) {
   const u = Number(unitPrice);
@@ -166,7 +158,7 @@ export default function OrdenesComprasPage() {
                         Cantidad de productos: {productCount}
                       </p>
                       <p className="text-sm font-semibold text-[#2f3e39] mt-0.5">
-                        Total: Gs. {formatMoney(total)}
+                        Total: {formatGuarani(total)}
                       </p>
                     </div>
                   </div>
@@ -189,13 +181,13 @@ export default function OrdenesComprasPage() {
                               Cantidad: {row.quantity}
                             </p>
                             <p className="text-[11px] font-semibold text-[#111827] mt-1">
-                              Gs. {formatMoney(unit)}
+                              {formatGuarani(unit)}
                             </p>
                           </div>
                           <div className="text-right shrink-0">
                             <p className="text-[10px] text-gray-500">Subtotal</p>
                             <p className="text-xs font-bold text-[#111827]">
-                              Gs. {formatMoney(sub)}
+                              {formatGuarani(sub)}
                             </p>
                           </div>
                         </div>
