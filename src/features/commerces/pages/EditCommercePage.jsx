@@ -298,6 +298,34 @@ export function EditCommercePage() {
                             />
                         </Field>
 
+                        <Field label="Precio Base de Envío por km (Gs.)" required error={validationErrors.basePrice}>
+                            <input
+                                type="number"
+                                name="basePrice"
+                                min="0"
+                                step="0.01"
+                                value={formData.basePrice}
+                                onChange={onFieldChange}
+                                disabled={isFormDisabled}
+                                placeholder="Ej: 2500"
+                                style={validationErrors.basePrice ? inputErrorStyle : inputStyle}
+                            />
+                        </Field>
+
+                        <Field label="Precio por km para Distancia > 2 km (Gs.)" required error={validationErrors.distancePrice}>
+                            <input
+                                type="number"
+                                name="distancePrice"
+                                min="0"
+                                step="0.01"
+                                value={formData.distancePrice}
+                                onChange={onFieldChange}
+                                disabled={isFormDisabled}
+                                placeholder="Ej: 4000"
+                                style={validationErrors.distancePrice ? inputErrorStyle : inputStyle}
+                            />
+                        </Field>
+
                         <Field label="Dirección" required error={validationErrors.address}>
                             <input
                                 name="address" value={formData.address} onChange={onFieldChange}

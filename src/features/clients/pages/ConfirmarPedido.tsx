@@ -11,17 +11,21 @@ const shippingOptions = [
     id: "pickup",
     label: "Retirar en Local",
     desc: "Retira tu pedido en nuestro local",
-    price: 0,
-    priceLabel: "Gratis",
   },
   {
     id: "standard",
     label: "Envío Estándar",
     desc: "Entrega en 5-7 días hábiles",
-    price: 10000,
-    priceLabel: "Gs. 10.000",
   },
 ];
+
+type ShippingQuote = {
+  distance_km: number;
+  shipping_cost: number;
+  threshold_km: number;
+  rate_type: "base_price" | "distance_price";
+  rate_per_km: number;
+};
 
 type BackendCart = {
   id: number;
@@ -68,6 +72,8 @@ export default function ConfirmarPedido() {
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
   const [status, setStatus] = useState<"loading" | "ready" | "error" | "unauthorized">("loading");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [shippingQuote, setShippingQuote] = useState<ShippingQuote | null>(null);
+  const [shippingQuoteStatus, setShippingQuoteStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const submitLockRef = useRef(false);
 
   const navigate = useNavigate();
@@ -178,10 +184,55 @@ export default function ConfirmarPedido() {
   useEffect(() => {
     if (selectedShipping === "pickup") {
       setSelectedAddress(0);
+      setShippingQuote(null);
+      setShippingQuoteStatus("idle");
     } else if (selectedAddress === 0 && addresses.length > 0) {
       setSelectedAddress(addresses[0].id_address);
     }
   }, [selectedShipping, selectedAddress, addresses]);
+
+  const calculateShippingQuote = useCallback(async () => {
+    if (!cart || !selectedAddress || selectedShipping !== "standard") {
+      return;
+    }
+
+    setShippingQuoteStatus("loading");
+    try {
+      const response = await axios.post(
+        `${apiBase}/api/orders/shipping-quote`,
+        {
+          cartId: cart.id,
+          addressId: selectedAddress,
+        },
+        {
+          withCredentials: true,
+        }
+      );
+
+      setShippingQuote(response.data);
+      setShippingQuoteStatus("ready");
+    } catch (error: any) {
+      setShippingQuote(null);
+      setShippingQuoteStatus("error");
+      toast.error(
+        error?.response?.data?.message || "No se pudo calcular el costo de envío"
+      );
+    }
+  }, [apiBase, cart, selectedAddress, selectedShipping]);
+
+  useEffect(() => {
+    if (selectedShipping !== "standard") {
+      return;
+    }
+
+    if (!selectedAddress) {
+      setShippingQuote(null);
+      setShippingQuoteStatus("idle");
+      return;
+    }
+
+    calculateShippingQuote();
+  }, [selectedShipping, selectedAddress, calculateShippingQuote]);
 
   const subtotal = useMemo(() => {
     if (!cart) return 0;
@@ -216,8 +267,9 @@ export default function ConfirmarPedido() {
     }, 0);
   }, [cart]);
 
-  const shipping =
-    shippingOptions.find((o) => o.id === selectedShipping)?.price ?? 0;
+  const shipping = selectedShipping === "pickup"
+    ? 0
+    : Number(shippingQuote?.shipping_cost ?? 0);
 
   const total = subtotal - discount + shipping;
 
@@ -235,13 +287,20 @@ export default function ConfirmarPedido() {
       return;
     }
 
+    if (requiresAddress && shippingQuoteStatus !== "ready") {
+      toast.error("Debes calcular el envío antes de confirmar");
+      return;
+    }
+
     submitLockRef.current = true;
     setIsSubmitting(true);
 
     const payload = {
       cartId: cart.id,
       addressId: requiresAddress ? selectedAddress : null,
-      total,
+      shippingMethod: requiresAddress ? "standard" : "pickup",
+      shippingCost: requiresAddress ? shipping : 0,
+      shippingDistanceKm: requiresAddress ? shippingQuote?.distance_km ?? null : null,
       notes: notes.trim() || null,
     };
 
@@ -258,6 +317,7 @@ export default function ConfirmarPedido() {
         order: createdOrder,
         shippingMethod: selectedShipping,
         shippingCost: shipping,
+        shippingDistanceKm: shippingQuote?.distance_km ?? null,
         subtotal,
         discount,
         total,
@@ -370,10 +430,16 @@ export default function ConfirmarPedido() {
                         <div className="text-right">
                           <p
                             className={`text-sm font-bold ${
-                              opt.price === 0 ? "text-[#5B7B6D]" : "text-gray-800"
+                              opt.id === "pickup" ? "text-[#5B7B6D]" : "text-gray-800"
                             }`}
                           >
-                            {opt.priceLabel}
+                            {opt.id === "pickup"
+                              ? "Gratis"
+                              : shippingQuoteStatus === "loading"
+                                ? "Calculando..."
+                                : shippingQuoteStatus === "ready"
+                                  ? formatGuarani(Number(shippingQuote?.shipping_cost ?? 0))
+                                  : "Según distancia"}
                           </p>
                         </div>
                       </label>
@@ -401,58 +467,61 @@ export default function ConfirmarPedido() {
                           No tienes direcciones registradas.
                         </div>
                       ) : (
-                        addresses.map((addr, index) => (
-                          <label
-                            key={addr.id_address}
-                            className={`flex items-start gap-3 rounded-xl border p-4 cursor-pointer transition-all duration-150 ${
-                              selectedAddress === addr.id_address
-                                ? "border-[#5B7B6D] bg-[#eef4f1]"
-                                : "border-gray-200 bg-gray-50/40 hover:border-[#5B7B6D]/40"
-                            }`}
-                          >
-                            <span className="mt-1">
-                              <span
-                                className={`inline-flex h-4 w-4 items-center justify-center rounded-full border transition-colors ${
-                                  selectedAddress === addr.id_address
-                                    ? "border-[#5B7B6D] bg-[#5B7B6D]"
-                                    : "border-gray-300 bg-white"
-                                }`}
-                              >
-                                {selectedAddress === addr.id_address && (
-                                  <span className="block h-1.5 w-1.5 rounded-full bg-white" />
-                                )}
-                              </span>
-                            </span>
-
-                            <input
-                              type="radio"
-                              className="hidden"
-                              checked={selectedAddress === addr.id_address}
-                              onChange={() => setSelectedAddress(addr.id_address)}
-                            />
-
-                            <div className="flex-1">
-                              <div className="mb-1 flex items-center gap-2">
-                                <span className="text-sm font-semibold text-gray-800">
-                                  Dirección {index + 1}
-                                </span>
-
-                                {index === 0 && (
-                                  <span className="rounded-full bg-[#eef4f1] px-2 py-0.5 text-[11px] font-medium text-[#5B7B6D]">
-                                    Predeterminada
-                                  </span>
-                                )}
-                              </div>
-
-                              <p className="text-xs leading-relaxed text-gray-500">
-                                {addr.address}
-                                <br />
-                                {addr.city}, {addr.region}
-                                {addr.postal_code ? ` ${addr.postal_code}` : ""}
-                              </p>
-                            </div>
+                        <>
+                          <label className="text-sm font-medium text-gray-700" htmlFor="addressSelect">
+                            Selecciona dirección de entrega
                           </label>
-                        ))
+                          <select
+                            id="addressSelect"
+                            value={selectedAddress}
+                            onChange={(e) => setSelectedAddress(Number(e.target.value))}
+                            className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700"
+                          >
+                            {addresses.map((addr) => (
+                              <option key={addr.id_address} value={addr.id_address}>
+                                {addr.address} - {addr.city}, {addr.region}
+                              </option>
+                            ))}
+                          </select>
+
+                          {selectedAddress !== 0 && (
+                            <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs text-gray-600">
+                              {(() => {
+                                const currentAddress = addresses.find(
+                                  (addr) => addr.id_address === selectedAddress
+                                );
+                                if (!currentAddress) return null;
+
+                                return (
+                                  <>
+                                    <p className="font-semibold text-gray-700">Dirección seleccionada</p>
+                                    <p>
+                                      {currentAddress.address}, {currentAddress.city}, {currentAddress.region}
+                                      {currentAddress.postal_code ? ` ${currentAddress.postal_code}` : ""}
+                                    </p>
+                                  </>
+                                );
+                              })()}
+                            </div>
+                          )}
+
+                          <div className="rounded-xl border border-green-100 bg-green-50/40 p-3 text-xs text-gray-700">
+                            <p>
+                              Distancia estimada: {shippingQuoteStatus === "ready"
+                                ? `${Number(shippingQuote?.distance_km ?? 0).toFixed(2)} km`
+                                : shippingQuoteStatus === "loading"
+                                  ? "Calculando..."
+                                  : "Selecciona una dirección"}
+                            </p>
+                            <p className="mt-1">
+                              Costo de envío: {shippingQuoteStatus === "ready"
+                                ? formatGuarani(Number(shippingQuote?.shipping_cost ?? 0))
+                                : shippingQuoteStatus === "loading"
+                                  ? "Calculando..."
+                                  : "Pendiente"}
+                            </p>
+                          </div>
+                        </>
                       )}
                     </div>
 
@@ -516,6 +585,15 @@ export default function ConfirmarPedido() {
                         {shipping === 0 ? "Gratis" : formatGuarani(shipping)}
                       </span>
                     </div>
+
+                    {selectedShipping === "standard" && shippingQuoteStatus === "ready" && (
+                      <div className="flex justify-between text-gray-500">
+                        <span>Distancia:</span>
+                        <span className="font-medium text-gray-700">
+                          {Number(shippingQuote?.distance_km ?? 0).toFixed(2)} km
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-4">
@@ -528,7 +606,10 @@ export default function ConfirmarPedido() {
                   <button
                     type="button"
                     onClick={handleConfirmOrder}
-                    disabled={isSubmitting}
+                    disabled={
+                      isSubmitting ||
+                      (requiresAddress && (addresses.length === 0 || shippingQuoteStatus !== "ready"))
+                    }
                     className="mt-4 w-full rounded-lg bg-[#5B7B6D] py-2 text-sm font-medium text-white shadow-sm transition-all duration-150 hover:bg-[#4e6a5e] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {isSubmitting ? "Confirmando..." : "Confirmar Pedido"}
