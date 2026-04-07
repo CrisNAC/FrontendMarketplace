@@ -229,8 +229,7 @@ export default function EditProductPage() {
                                 </div>
 
                                 <div className="rounded-[10px] bg-amber-50 px-3 py-3 text-[13px] font-medium text-amber-800">
-                                    Cuando esta opcion esta activa, el formulario enviara `isOffer: true`
-                                    junto con `offerPrice` en el `PUT` del producto.
+                                    Tus clientes verán este producto con precio de oferta.
                                 </div>
                             </div>
                         ) : (
