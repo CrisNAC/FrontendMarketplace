@@ -120,3 +120,24 @@ export const getBackendErrorMessage = (error, fallbackMessage) => {
     if (error instanceof Error && error.message) return error.message;
     return fallbackMessage;
 };
+
+// ─── updateStoreStatus ────────────────────────────────────────────────────────
+/**
+ * PATCH /api/commerces/:id_store/status  (requiere cookie userToken)
+ *
+ * Habilita o deshabilita el comercio. Al deshabilitar, los productos se ocultan.
+ * Body: { store_status: "ACTIVE" | "INACTIVE" }
+ */
+export const updateStoreStatus = async (commerceId, store_status) => {
+    const response = await apiClient.patch(
+        `/api/commerces/${commerceId}/status`,
+        { store_status }
+    );
+    return response.data; // { success, message, data }
+};
+
+// Obtiene el comercio para el SELLER autenticado (ignora store_status)
+export const fetchMyCommerce = async (commerceId) => {
+    const response = await apiClient.get(`/api/commerces/my/${commerceId}`);
+    return response.data;
+};

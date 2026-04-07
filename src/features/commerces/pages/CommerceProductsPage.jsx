@@ -233,7 +233,7 @@ export function CommerceProductsPage() {
                 const sessionRes = await commerceApiClient.get("/api/session/user-session");
                 const idStore = sessionRes.data?.user?.id_store;
                 if (!idStore) throw new Error("No tenés un comercio registrado.");
-                const res = await commerceApiClient.get(`/api/commerces/${idStore}`);
+                const res = await commerceApiClient.get(`/api/commerces/my/${idStore}`);
                 if (active) setProducts(res.data?.products ?? []);
             } catch (err) {
                 if (active) setError(err.response?.data?.message || err.message || "No se pudieron cargar los productos.");
