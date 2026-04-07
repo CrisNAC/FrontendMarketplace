@@ -24,7 +24,6 @@ export default function EditProductPage() {
         validationErrors,
         categories,
         displayedTagOptions,
-        selectedTagNames,
         showAllTagSuggestions,
         setShowAllTagSuggestions,
         isLoadingInitialData,
@@ -38,7 +37,6 @@ export default function EditProductPage() {
         removeTag,
         handleSubmit,
         MAX_TAGS,
-        MAX_VISIBLE_TAG_SUGGESTIONS,
         availableTags,
     } = useEditProduct(id);
 
@@ -175,6 +173,72 @@ export default function EditProductPage() {
                     </div>
 
                     {/* ── Etiquetas actuales (chips removibles) ── */}
+                    <div className="mt-1 rounded-[12px] border border-[#d2d8d4] bg-white px-4 py-3">
+                        <div className="flex items-center justify-between gap-3">
+                            <div>
+                                <p className={`${labelClassName} mb-0.5`}>Producto en oferta</p>
+                                <p
+                                    className={`mb-0 text-[13px] font-semibold ${
+                                        formData.isOffer ? "text-amber-700" : "text-slate-600"
+                                    }`}
+                                >
+                                    {formData.isOffer ? "Oferta activa" : "Precio regular"}
+                                </p>
+                            </div>
+
+                            <Toggle
+                                isOn={formData.isOffer}
+                                disabled={isFormDisabled}
+                                label="Producto en oferta"
+                                onToggle={(nextValue) =>
+                                    onFieldChange({
+                                        target: {
+                                            name: "isOffer",
+                                            value: nextValue,
+                                            type: "checkbox",
+                                            checked: nextValue,
+                                        },
+                                    })
+                                }
+                            />
+                        </div>
+
+                        {formData.isOffer ? (
+                            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,220px)_1fr]">
+                                <div>
+                                    <label className={labelClassName} htmlFor="offerPrice">
+                                        Precio de oferta *
+                                    </label>
+                                    <input
+                                        id="offerPrice"
+                                        name="offerPrice"
+                                        type="number"
+                                        min="0.01"
+                                        step="0.01"
+                                        value={formData.offerPrice}
+                                        onChange={onFieldChange}
+                                        className={`${inputClassName} mb-0`}
+                                        placeholder="74990"
+                                        disabled={isFormDisabled}
+                                    />
+                                    {validationErrors.offerPrice && (
+                                        <p className="mb-0 mt-2 text-[12px] text-[#b32737]">
+                                            {validationErrors.offerPrice}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="rounded-[10px] bg-amber-50 px-3 py-3 text-[13px] font-medium text-amber-800">
+                                    Tus clientes verán este producto con precio de oferta.
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="mt-3 rounded-[10px] bg-slate-100 px-3 py-2.5 text-[13px] font-semibold text-slate-700">
+                                El producto se mostrara con su precio normal y se enviara sin precio de oferta.
+                            </div>
+                        )}
+                    </div>
+
                     <label className={labelClassName}>
                         Etiquetas actuales
                     </label>
