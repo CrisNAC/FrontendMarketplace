@@ -4,6 +4,7 @@ import {
     getSession,
     fetchUserProfile,
     updateUserProfile,
+    uploadUserImage,
     getBackendErrorMessage,
 } from "../../commerces/services/editUserProfileApi"
 
@@ -29,7 +30,8 @@ export const EditClientProfile = () => {
 
     const handleFileChange = (e) => {
         const file = e.target.files[0]
-        if (!file) return setFormData({ ...formData, photo: null })
+        if (!file) return
+        setFormData({ ...formData, photo: file })
         setPreview(URL.createObjectURL(file))
     }
 
@@ -59,6 +61,10 @@ export const EditClientProfile = () => {
                     phone: user.phone || "",
                     photo: null
                 })
+
+                if (user.avatar_url) {
+                    setPreview(user.avatar_url)
+                }
 
             } catch (err) {
                 const status = err.response?.status
@@ -106,6 +112,12 @@ export const EditClientProfile = () => {
                 email: formData.email,
                 phone: formData.phone
             })
+
+            if (formData.photo instanceof File) {
+                const { avatar_url } = await uploadUserImage(userId, formData.photo)
+                setPreview(avatar_url)
+                setFormData(prev => ({ ...prev, photo: null }))
+            }
 
             setSuccess("Perfil actualizado correctamente")
 
@@ -162,16 +174,16 @@ export const EditClientProfile = () => {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Foto</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Foto de perfil</label>
                             <div className="flex flex-col items-start gap-2">
                                 <label className="cursor-pointer bg-[#5B7B6D] text-white px-4 py-2 rounded hover:bg-green-800 transition text-sm font-medium">
                                     Seleccionar foto
-                                    <input type="file" onChange={handleFileChange} className="hidden" />
+                                    <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
                                 </label>
                                 <span className="text-xs text-gray-500">JPG o PNG recomendado</span>
                             </div>
                             {preview && (
-                                <img src={preview} className="w-24 h-24 rounded-full mt-3 object-cover border" />
+                                <img src={preview} alt="Vista previa" className="w-24 h-24 rounded-full mt-3 object-cover border" />
                             )}
                         </div>
 

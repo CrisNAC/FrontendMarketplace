@@ -1,3 +1,5 @@
+import { formatGuarani } from "../../../../lib/formatGuarani.js";
+
 export default function WishlistItemCard({
   item,
   isInStoreCart,
@@ -21,7 +23,7 @@ export default function WishlistItemCard({
           <h3 className="text-[17px] font-semibold text-[#2f3e39] mt-1">{item.name}</h3>
           <p className="text-[13px] text-gray-500 mt-1">{item.description}</p>
           <p className="text-[18px] font-bold text-[#2f3e39] mt-2">
-            {item.currency} {Number(item.price).toLocaleString()}
+            {formatGuarani(item.price)}
           </p>
         </div>
       </div>

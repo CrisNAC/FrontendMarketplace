@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import Navbar from '../../../components/navbar/Navbar';
+import { formatGuarani } from '../../../lib/formatGuarani.js';
 
 // --- Pantalla Principal ---
 export default function PriceComparisonPage() {
@@ -93,7 +94,7 @@ export default function PriceComparisonPage() {
                                     const max = Math.max(...prices);
                                     return (
                                         <p className="text-3xl font-extrabold text-gray-600">
-                                            {min.toLocaleString("es-PY")} Gs. / {max.toLocaleString("es-PY")} Gs.
+                                            {formatGuarani(min)} / {formatGuarani(max)}
                                         </p>
                                     );
                                 })()
@@ -134,7 +135,7 @@ export default function PriceComparisonPage() {
                                         </p>
                                         <div className="pt-4 flex items-center gap-4">
                                             <span className="text-lg font-bold text-red-600">
-                                                {Number(offer.price).toLocaleString("es-PY")} Gs.
+                                                {formatGuarani(offer.price)}
                                             </span>
                                             {(() => {
                                                 const id = Number(offer.productId);

@@ -7,6 +7,7 @@ import {
     updateProduct,
 } from "../../commerces/services/editProductApi";
 import Toggle from "../components/createProduct/Toggle";
+import { formatGuarani } from "../../../lib/formatGuarani.js";
 
 //iconos svg
 function SvgIcon({ children, className = "w-4 h-4" }) {
@@ -362,24 +363,10 @@ export default function ProductDetailView() {
 
                                     <div className="mt-3 space-y-1.5 text-[11px]">
                                         <div className="flex items-center justify-between">
-                                            <span className={SUBTLE}>Precio actual:</span>
-                                            <div className="text-right">
-                                                <span className="font-semibold text-emerald-700">
-                                                    Gs. {currentPrice.toLocaleString("es-PY")}
-                                                </span>
-                                                {isOffer && offerPrice !== null && (
-                                                    <div className="mt-0.5 text-[10px] text-slate-400 line-through">
-                                                        Gs. {originalPrice.toLocaleString("es-PY")}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center justify-between">
-                                            <span className={SUBTLE}>Oferta:</span>
-                                            <Pill variant={isOffer ? "green" : "gray"}>
-                                                {isOffer ? "Activa" : "No"}
-                                            </Pill>
+                                            <span className={SUBTLE}>Precio:</span>
+                                            <span className="font-semibold text-emerald-700">
+                                                {formatGuarani(product.price)}
+                                            </span>
                                         </div>
 
                                         <div className="flex items-center justify-between">

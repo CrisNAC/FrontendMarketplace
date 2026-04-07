@@ -1,3 +1,5 @@
+import { formatGuarani } from "../../../../lib/formatGuarani.js";
+
 export const MostSoldSection = ({ products = [] }) => {
     return (
         <div style={{ backgroundColor: "white", borderRadius: "16px", padding: "16px", boxShadow: "0 1px 4px rgba(0,0,0,0.08)", height: "100%" }}>
@@ -40,7 +42,7 @@ export const MostSoldSection = ({ products = [] }) => {
                         <div>
                             <strong style={{ fontSize: "14px" }}>{product.name}</strong>
                             <div style={{ fontSize: "12px", color: "#6b7280" }}>
-                                $ {Number(product.price).toLocaleString("es-CL")}
+                                {formatGuarani(product.price)}
                             </div>
                         </div>
                     </div>

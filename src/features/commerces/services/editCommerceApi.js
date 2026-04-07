@@ -136,8 +136,8 @@ export const updateStoreStatus = async (commerceId, store_status) => {
     return response.data; // { success, message, data }
 };
 
-// Obtiene el comercio para el SELLER autenticado (ignora store_status)
+// Misma respuesta que GET público; el backend solo expone GET /api/commerces/:id (no existe /my/:id).
 export const fetchMyCommerce = async (commerceId) => {
-    const response = await apiClient.get(`/api/commerces/my/${commerceId}`);
+    const response = await apiClient.get(`/api/commerces/${commerceId}`);
     return response.data;
 };

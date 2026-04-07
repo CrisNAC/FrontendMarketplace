@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { SidebarClientProfile } from "../../../components/SidebarClientProfile";
 import { mergeCartResponseFromApi } from "../../../lib/cartLocalStorage";
 import { addToCartApi } from "../../../lib/cartApi";
+import { formatGuarani } from "../../../lib/formatGuarani.js";
 
 const VERDE = "#8BB2A1";
 const AZUL = "#6487B9";
@@ -185,7 +186,7 @@ export default function FavoritesPage() {
                         {producto.nombre}
                       </h2>
                       <p className="text-[12px] text-gray-500 mt-1">
-                        Gs. {typeof producto.precio === "number" ? producto.precio.toLocaleString() : "-"}
+                        {formatGuarani(producto.precio)}
                       </p>
                       <button
                         type="button"
