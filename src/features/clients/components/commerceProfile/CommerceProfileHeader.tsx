@@ -14,6 +14,9 @@ type Props = {
     address?: string;
     latitude?: number;
     longitude?: number;
+    searchValue?: string;
+    onSearchChange?: (value: string) => void;
+    onSearchSubmit?: () => void;
 };
 
 export const CommerceProfileHeader = ({
@@ -29,8 +32,10 @@ export const CommerceProfileHeader = ({
     address,
     latitude,
     longitude,
+    searchValue = "",
+    onSearchChange,
+    onSearchSubmit,
 }: Props) => {
-    const [search, setSearch] = useState("");
     const [isMapOpen, setIsMapOpen] = useState(false);
 
     const encodedAddress = address ? encodeURIComponent(address) : "";
@@ -185,8 +190,13 @@ export const CommerceProfileHeader = ({
                 <input
                     type="text"
                     placeholder={`Buscar en ${name}`}
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    value={searchValue}
+                    onChange={(e) => onSearchChange?.(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                            onSearchSubmit?.();
+                        }
+                    }}
                     style={{
                         border: "none",
                         outline: "none",
@@ -197,11 +207,11 @@ export const CommerceProfileHeader = ({
                         minWidth: 0,
                     }}
                 />
-                {search && (
+                {searchValue && (
                     <X
                         size={16}
                         style={{ color: "#9ca3af", cursor: "pointer", marginRight: "8px", flexShrink: 0 }}
-                        onClick={() => setSearch("")}
+                        onClick={() => onSearchChange?.("")}
                     />
                 )}
                 <div style={{
@@ -213,7 +223,8 @@ export const CommerceProfileHeader = ({
                     alignItems: "center",
                     justifyContent: "center",
                     cursor: "pointer",
-                }}>
+                }}
+                onClick={() => onSearchSubmit?.()}>
                     <Search size={18} color="white" />
                 </div>
             </div>

@@ -18,14 +18,24 @@ type BackendProduct = {
     store?: { id_store: number; name: string };
 };
 
+type ProductCategory = {
+    id: number;
+    name: string;
+};
+
 type BackendProductsResponse = {
-    products: BackendProduct[];
-    pagination: {
-        totalProducts: number;
-        page: number;
-        limit: number;
-        totalPages: number;
+    products?: BackendProduct[];
+    content?: BackendProduct[];
+    pagination?: {
+        totalProducts?: number;
+        page?: number;
+        limit?: number;
+        totalPages?: number;
     };
+    total_pages?: number;
+    page?: number;
+    size?: number;
+    total_elements?: number;
 };
 
 type Props = {
@@ -53,9 +63,12 @@ export const BusquedaPage = ({ query = "Todos los Productos" }: Props) => {
 
     const [products, setProducts] = useState<BackendProduct[]>([]);
     const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+    const [categoryStatus, setCategoryStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
     const [error, setError] = useState("");
+    const [categoriesError, setCategoriesError] = useState("");
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [categories, setCategories] = useState<ProductCategory[]>([]);
     const [priceRange, setPriceRange] = useState<PriceRange>({
         min: null,
         max: null,
@@ -66,29 +79,87 @@ export const BusquedaPage = ({ query = "Todos los Productos" }: Props) => {
     }, []);
 
     const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
-    const categoryId = searchParams.get("categoryId") || "";
+    const categoryIdFromUrl = searchParams.get("categoryId") || "";
     const categoryName = searchParams.get("categoryName") || "";
     const search = searchParams.get("search") || "";
+    const parsedUrlCategoryId = Number(categoryIdFromUrl);
+    const selectedCategoryId =
+        Number.isInteger(parsedUrlCategoryId) && parsedUrlCategoryId > 0
+            ? parsedUrlCategoryId
+            : null;
     const isOffersPage =
         location.pathname === "/ofertas" ||
         searchParams.get("isOffer") === "true" ||
         searchParams.get("isOffer") === "1";
 
+    const selectedCategoryName = useMemo(
+        () => categories.find((cat) => cat.id === selectedCategoryId)?.name || "",
+        [categories, selectedCategoryId]
+    );
+
     const title = isOffersPage
-        ? categoryName
-            ? `Ofertas en ${categoryName}`
+        ? selectedCategoryName || categoryName
+            ? `Ofertas en ${selectedCategoryName || categoryName}`
             : search
                 ? `Ofertas para: ${search}`
                 : "Ofertas"
-        : categoryName
-            ? `Resultado de Busqueda para: ${categoryName}`
+        : selectedCategoryName || categoryName
+            ? `Resultado de Busqueda para: ${selectedCategoryName || categoryName}`
             : search
                 ? `Resultado de Busqueda para: ${search}`
                 : `Resultado de Busqueda para: ${query}`;
 
     useEffect(() => {
         setPage(1);
-    }, [categoryId, isOffersPage, priceRange.max, priceRange.min, search]);
+    }, [selectedCategoryId, isOffersPage, priceRange.max, priceRange.min, search]);
+
+    useEffect(() => {
+        let isActive = true;
+        const controller = new AbortController();
+        const resolvedApiBase = apiBase || "http://localhost:3000";
+
+        const loadCategories = async () => {
+            try {
+                setCategoryStatus("loading");
+                setCategoriesError("");
+
+                const response = await fetch(`${resolvedApiBase}/api/categories/products`, {
+                    signal: controller.signal,
+                    headers: { Accept: "application/json" },
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                const list = Array.isArray(data)
+                    ? data
+                          .map((item) => ({
+                              id: Number(item?.id),
+                              name: String(item?.name || "").trim(),
+                          }))
+                          .filter((item) => Number.isInteger(item.id) && item.id > 0 && item.name)
+                    : [];
+
+                if (!isActive) return;
+                setCategories(list);
+                setCategoryStatus("success");
+            } catch (e: any) {
+                if (e?.name === "AbortError") return;
+                if (!isActive) return;
+                setCategories([]);
+                setCategoryStatus("error");
+                setCategoriesError(e instanceof Error ? e.message : "No se pudieron cargar categorías.");
+            }
+        };
+
+        loadCategories();
+        return () => {
+            isActive = false;
+            controller.abort();
+        };
+    }, [apiBase]);
 
     useEffect(() => {
         let isActive = true;
@@ -103,7 +174,9 @@ export const BusquedaPage = ({ query = "Todos los Productos" }: Props) => {
 
                 const url = new URL(`${resolvedApiBase}/products`);
                 if (search) url.searchParams.set("search", search);
-                if (categoryId) url.searchParams.set("categoryId", categoryId);
+                if (selectedCategoryId !== null) {
+                    url.searchParams.set("categoryId", String(selectedCategoryId));
+                }
                 if (isOffersPage) url.searchParams.set("isOffer", "true");
                 if (priceRange.min !== null) {
                     url.searchParams.set("minPrice", String(priceRange.min));
@@ -124,8 +197,15 @@ export const BusquedaPage = ({ query = "Todos los Productos" }: Props) => {
                 }
 
                 const data = (await res.json()) as BackendProductsResponse;
-                const list = Array.isArray(data?.products) ? data.products : [];
-                const tp = Number(data?.pagination?.totalPages) || 1;
+                const list = Array.isArray(data?.products)
+                    ? data.products
+                    : Array.isArray(data?.content)
+                        ? data.content
+                        : [];
+                const tp =
+                    Number(data?.pagination?.totalPages) ||
+                    Number(data?.total_pages) ||
+                    1;
 
                 if (!isActive) return;
                 setProducts(list);
@@ -147,7 +227,7 @@ export const BusquedaPage = ({ query = "Todos los Productos" }: Props) => {
             isActive = false;
             controller.abort();
         };
-    }, [apiBase, categoryId, isOffersPage, page, priceRange.max, priceRange.min, search]);
+    }, [apiBase, selectedCategoryId, isOffersPage, page, priceRange.max, priceRange.min, search]);
 
     const columns = useMemo(() => {
         const cols: BackendProduct[][] = [[], [], [], []];
@@ -206,16 +286,40 @@ export const BusquedaPage = ({ query = "Todos los Productos" }: Props) => {
             >
                 <div style={{ flexShrink: 0, width: "220px" }}>
                     <SearchFilterSidebar
-                        onPriceApply={(min, max) => {
-                            const nextPriceRange = {
-                                min: Number.isFinite(min) && min > 0 ? min : null,
-                                max: Number.isFinite(max) && max > 0 ? max : null,
-                            };
-
-                            setPriceRange(nextPriceRange);
+                        categories={categories}
+                        selectedCategoryId={selectedCategoryId}
+                        onFiltersApply={({ min, max, categoryId }) => {
+                            setPriceRange({ min, max });
+                            const currentCategoryId = selectedCategoryId;
+                            if (currentCategoryId !== categoryId) {
+                                const nextParams = new URLSearchParams(location.search);
+                                if (categoryId === null) {
+                                    nextParams.delete("categoryId");
+                                    nextParams.delete("categoryName");
+                                } else {
+                                    nextParams.set("categoryId", String(categoryId));
+                                    const nextCategoryName =
+                                        categories.find((cat) => cat.id === categoryId)?.name ||
+                                        nextParams.get("categoryName") ||
+                                        "";
+                                    if (nextCategoryName) {
+                                        nextParams.set("categoryName", nextCategoryName);
+                                    }
+                                }
+                                const nextQuery = nextParams.toString();
+                                navigate(
+                                    nextQuery ? `${location.pathname}?${nextQuery}` : location.pathname,
+                                    { replace: true }
+                                );
+                            }
                             setPage(1);
                         }}
                     />
+                    {categoryStatus === "error" && (
+                        <div style={{ color: "#dc2626", fontSize: "12px", marginTop: "8px" }}>
+                            Error categorías: {categoriesError}
+                        </div>
+                    )}
                 </div>
 
                 {status === "loading" && (
