@@ -51,6 +51,16 @@ const validateForm = (formData) => {
         errors.logoUrl = "La URL del logo no puede superar 500 caracteres.";
     }
 
+    const basePrice = Number(formData.basePrice);
+    if (!Number.isFinite(basePrice) || basePrice < 0) {
+        errors.basePrice = "Ingresá un precio base válido mayor o igual a 0.";
+    }
+
+    const distancePrice = Number(formData.distancePrice);
+    if (!Number.isFinite(distancePrice) || distancePrice < 0) {
+        errors.distancePrice = "Ingresá un precio para larga distancia válido mayor o igual a 0.";
+    }
+
     const socialUrlFields = [
         { key: "websiteUrl", label: "sitio web" },
         { key: "instagramUrl", label: "Instagram" },
@@ -108,6 +118,8 @@ export const useEditCommerce = () => {
         websiteUrl: "",
         instagramUrl: "",
         tiktokUrl: "",
+        basePrice: "",
+        distancePrice: "",
     });
 
     // logoPreview: URL para mostrar la imagen en pantalla
@@ -164,6 +176,7 @@ export const useEditCommerce = () => {
 
                 // addresses viene ordenado por created_at ASC → [0] es la dirección principal
                 const firstAddress = commerce.addresses?.[0] ?? {};
+                const firstShippingZone = commerce.shipping_zones?.[0] ?? {};
 
                 setFormData({
                     name: commerce.name ?? "",
@@ -191,6 +204,16 @@ export const useEditCommerce = () => {
                     websiteUrl: commerce.website_url ?? "",
                     instagramUrl: commerce.instagram_url ?? "",
                     tiktokUrl: commerce.tiktok_url ?? "",
+                    basePrice:
+                        firstShippingZone.base_price !== undefined &&
+                        firstShippingZone.base_price !== null
+                            ? String(Number(firstShippingZone.base_price))
+                            : "",
+                    distancePrice:
+                        firstShippingZone.distance_price !== undefined &&
+                        firstShippingZone.distance_price !== null
+                            ? String(Number(firstShippingZone.distance_price))
+                            : "",
                 });
 
                 // Preview inicial del logo si el comercio ya tiene uno
@@ -270,6 +293,8 @@ export const useEditCommerce = () => {
             website_url: formData.websiteUrl.trim() || null,
             instagram_url: formData.instagramUrl.trim() || null,
             tiktok_url: formData.tiktokUrl.trim() || null,
+            base_price: Number(formData.basePrice),
+            distance_price: Number(formData.distancePrice),
             // Dirección principal del comercio (addresses[0])
             address: formData.address.trim(),
             latitude: formData.latitude,
