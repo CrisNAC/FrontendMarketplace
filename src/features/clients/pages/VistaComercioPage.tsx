@@ -58,15 +58,30 @@ type StoreProduct = {
     product_category?: { id_product_category: number; name: string };
 };
 
+type ProductCategory = {
+    id: number;
+    name: string;
+};
+
 export const VistaComercioPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
     const [store, setStore] = useState<Store | null>(null);
     const [products, setProducts] = useState<StoreProduct[]>([]);
+    const [categories, setCategories] = useState<ProductCategory[]>([]);
     const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+    const [categoriesStatus, setCategoriesStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
     const [error, setError] = useState("");
+    const [categoriesError, setCategoriesError] = useState("");
     const [page, setPage] = useState(1);
+    const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+    const [priceRange, setPriceRange] = useState<{ min: number | null; max: number | null }>({
+        min: null,
+        max: null,
+    });
+    const [searchInput, setSearchInput] = useState("");
+    const [appliedSearch, setAppliedSearch] = useState("");
     const PRODUCTS_PER_PAGE = 12;
 
     const apiBase = useMemo(() => {
@@ -86,50 +101,99 @@ export const VistaComercioPage = () => {
 
         let isActive = true;
 
-        const load = async () => {
+        const loadStore = async () => {
             try {
-                setStatus("loading");
-                setError("");
-
                 const { data: storeData } = await apiClient.get<Store>(`/api/commerces/${storeId}`);
-
                 if (!isActive) return;
                 setStore(storeData);
-                setPage(1);
-
-                try {
-                    const { data: productsData } = await apiClient.get<StoreProduct[]>(
-                        `/api/commerces/products/${storeId}`
-                    );
-                    if (!isActive) return;
-                    setProducts(Array.isArray(productsData) ? productsData : []);
-                } catch (pe) {
-                    if (axios.isAxiosError(pe) && pe.response?.status === 404) {
-                        if (!isActive) return;
-                        setProducts([]);
-                    } else {
-                        throw pe;
-                    }
-                }
-
-                if (!isActive) return;
-                setStatus("success");
             } catch (e: unknown) {
-                if (axios.isCancel(e)) return;
                 if (!isActive) return;
                 setStore(null);
-                setProducts([]);
                 setStatus("error");
                 setError(getRequestErrorMessage(e));
             }
         };
 
-        load();
+        loadStore();
 
         return () => {
             isActive = false;
         };
     }, [storeId]);
+
+    useEffect(() => {
+        let isActive = true;
+        const loadCategories = async () => {
+            try {
+                setCategoriesStatus("loading");
+                setCategoriesError("");
+                const { data } = await apiClient.get<Array<{ id: number; name: string }>>("/api/categories/products");
+                if (!isActive) return;
+                const list = Array.isArray(data)
+                    ? data
+                        .map((cat) => ({
+                            id: Number(cat?.id),
+                            name: String(cat?.name || "").trim(),
+                        }))
+                        .filter((cat) => Number.isInteger(cat.id) && cat.id > 0 && cat.name)
+                    : [];
+                setCategories(list);
+                setCategoriesStatus("success");
+            } catch (e: unknown) {
+                if (!isActive) return;
+                setCategories([]);
+                setCategoriesStatus("error");
+                setCategoriesError(getRequestErrorMessage(e));
+            }
+        };
+        loadCategories();
+        return () => {
+            isActive = false;
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!storeId) return;
+
+        let isActive = true;
+
+        const loadProducts = async () => {
+            try {
+                setStatus("loading");
+                setError("");
+                const params = new URLSearchParams();
+                if (appliedSearch.trim()) params.set("name", appliedSearch.trim());
+                if (selectedCategoryId !== null) params.set("category", String(selectedCategoryId));
+                if (priceRange.min !== null) params.set("price_min", String(priceRange.min));
+                if (priceRange.max !== null) params.set("price_max", String(priceRange.max));
+                const query = params.toString();
+                const endpoint = query
+                    ? `/api/commerces/products/filter/${storeId}?${query}`
+                    : `/api/commerces/products/filter/${storeId}`;
+
+                const { data: productsData } = await apiClient.get<StoreProduct[]>(endpoint);
+                if (!isActive) return;
+                setProducts(Array.isArray(productsData) ? productsData : []);
+                setStatus("success");
+            } catch (pe) {
+                if (!isActive) return;
+                if (axios.isAxiosError(pe) && pe.response?.status === 404) {
+                    setProducts([]);
+                    setStatus("success");
+                    return;
+                }
+                setProducts([]);
+                setStatus("error");
+                setError(getRequestErrorMessage(pe));
+            }
+        };
+
+        loadProducts();
+
+        return () => {
+            isActive = false;
+        };
+    }, [storeId, selectedCategoryId, priceRange.max, priceRange.min, appliedSearch]);
 
     const headerName = store?.name || storeName || "Comercio";
     const headerCategory = store?.store_category?.name || "Comercio";
@@ -193,14 +257,34 @@ export const VistaComercioPage = () => {
                 address={addressText || undefined}
                 latitude={hasValidCoords ? Number(latitude) : undefined}
                 longitude={hasValidCoords ? Number(longitude) : undefined}
+                searchValue={searchInput}
+                onSearchChange={setSearchInput}
+                onSearchSubmit={() => {
+                    setAppliedSearch(searchInput);
+                    setPage(1);
+                }}
             />
 
             {/* Main content: sidebar + products */}
             <div style={{ display: "flex", flexDirection: "row", gap: "24px", padding: "40px 24px 24px 24px" }}>
-                <CategoryFilterSidebar />
+                <CategoryFilterSidebar
+                    key={`${selectedCategoryId ?? "all"}-${priceRange.min ?? ""}-${priceRange.max ?? ""}`}
+                    categories={categories}
+                    selectedCategoryId={selectedCategoryId}
+                    initialMinPrice={priceRange.min}
+                    initialMaxPrice={priceRange.max}
+                    onApply={({ categoryId, minPrice, maxPrice }) => {
+                        setSelectedCategoryId(categoryId);
+                        setPriceRange({ min: minPrice, max: maxPrice });
+                        setPage(1);
+                    }}
+                />
                 {status === "loading" && <div style={{ color: "#6b7280" }}>Cargando productos...</div>}
                 {status === "error" && (
                     <div style={{ color: "#dc2626" }}>{error}</div>
+                )}
+                {categoriesStatus === "error" && (
+                    <div style={{ color: "#dc2626" }}>No se pudieron cargar las categorías: {categoriesError}</div>
                 )}
                 {status === "success" && products.length === 0 && (
                     <div style={{ color: "#6b7280" }}>Este comercio aún no tiene productos publicados.</div>
