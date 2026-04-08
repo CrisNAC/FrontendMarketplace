@@ -5,8 +5,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { BusquedaPage } from "../features/clients/pages/BusquedaPage";
 
 vi.mock("../features/clients/components/search/SearchFilterSidebar", () => ({
-  SearchFilterSidebar: ({ onPriceApply }) => (
-    <button type="button" onClick={() => onPriceApply?.(100, 500)}>
+  SearchFilterSidebar: ({ onFiltersApply }) => (
+    <button
+      type="button"
+      onClick={() => onFiltersApply?.({ min: 100, max: 500, categoryId: null })}
+    >
       Aplicar precio
     </button>
   ),
@@ -56,8 +59,11 @@ describe("BusquedaPage", () => {
       expect(fetchMock).toHaveBeenCalled();
     });
 
-    const calledUrl = String(fetchMock.mock.calls[0][0]);
-    expect(calledUrl).toContain("/products");
+    const calledUrl =
+      fetchMock.mock.calls
+        .map((call) => String(call[0]))
+        .find((url) => url.includes("/products/filter")) || "";
+    expect(calledUrl).toContain("/products/filter");
     expect(calledUrl).toContain("search=mate");
     expect(calledUrl).toContain("isOffer=true");
   });
@@ -88,24 +94,40 @@ describe("BusquedaPage", () => {
     );
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(1);
+      const productFilterCalls = fetchMock.mock.calls.filter((call) =>
+        String(call[0]).includes("/products/filter")
+      );
+      expect(productFilterCalls).toHaveLength(1);
     });
 
     await user.click(screen.getByRole("button", { name: /ir a página 2/i }));
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(2);
+      const productFilterCalls = fetchMock.mock.calls.filter((call) =>
+        String(call[0]).includes("/products/filter")
+      );
+      expect(productFilterCalls).toHaveLength(2);
     });
 
-    expect(String(fetchMock.mock.calls[1][0])).toContain("page=2");
+    const paginatedUrl =
+      fetchMock.mock.calls
+        .map((call) => String(call[0]))
+        .filter((url) => url.includes("/products/filter"))[1] || "";
+    expect(paginatedUrl).toContain("page=2");
 
     await user.click(screen.getByRole("button", { name: /aplicar precio/i }));
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(3);
+      const productFilterCalls = fetchMock.mock.calls.filter((call) =>
+        String(call[0]).includes("/products/filter")
+      );
+      expect(productFilterCalls).toHaveLength(3);
     });
 
-    const filteredUrl = String(fetchMock.mock.calls[2][0]);
+    const filteredUrl =
+      fetchMock.mock.calls
+        .map((call) => String(call[0]))
+        .filter((url) => url.includes("/products/filter"))[2] || "";
     expect(filteredUrl).toContain("minPrice=100");
     expect(filteredUrl).toContain("maxPrice=500");
     expect(filteredUrl).toContain("page=1");
