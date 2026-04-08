@@ -159,6 +159,11 @@ export const SearchFilterSidebar = ({
                         const min = minPrice.trim() === "" ? null : Number(minPrice);
                         const max = maxPrice.trim() === "" ? null : Number(maxPrice);
 
+                        if (Number.isNaN(min) || Number.isNaN(max)) {
+                            alert("Precios inválidos");
+                            return;
+                        }
+
                         if ((min !== null && min <= 0) || (max !== null && max <= 0)) {
                             alert("Los precios deben ser mayores a 0");
                             return;

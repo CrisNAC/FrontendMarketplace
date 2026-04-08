@@ -83,19 +83,14 @@ export const BusquedaPage = ({ query = "Todos los Productos" }: Props) => {
     const categoryName = searchParams.get("categoryName") || "";
     const search = searchParams.get("search") || "";
     const parsedUrlCategoryId = Number(categoryIdFromUrl);
-    const initialCategoryId =
+    const selectedCategoryId =
         Number.isInteger(parsedUrlCategoryId) && parsedUrlCategoryId > 0
             ? parsedUrlCategoryId
             : null;
-    const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(initialCategoryId);
     const isOffersPage =
         location.pathname === "/ofertas" ||
         searchParams.get("isOffer") === "true" ||
         searchParams.get("isOffer") === "1";
-
-    useEffect(() => {
-        setSelectedCategoryId(initialCategoryId);
-    }, [initialCategoryId]);
 
     const selectedCategoryName = useMemo(
         () => categories.find((cat) => cat.id === selectedCategoryId)?.name || "",
@@ -177,7 +172,7 @@ export const BusquedaPage = ({ query = "Todos los Productos" }: Props) => {
                 setError("");
                 setProducts([]);
 
-                const url = new URL(`${resolvedApiBase}/products/filter`);
+                const url = new URL(`${resolvedApiBase}/products`);
                 if (search) url.searchParams.set("search", search);
                 if (selectedCategoryId !== null) {
                     url.searchParams.set("categoryId", String(selectedCategoryId));
@@ -295,7 +290,28 @@ export const BusquedaPage = ({ query = "Todos los Productos" }: Props) => {
                         selectedCategoryId={selectedCategoryId}
                         onFiltersApply={({ min, max, categoryId }) => {
                             setPriceRange({ min, max });
-                            setSelectedCategoryId(categoryId);
+                            const currentCategoryId = selectedCategoryId;
+                            if (currentCategoryId !== categoryId) {
+                                const nextParams = new URLSearchParams(location.search);
+                                if (categoryId === null) {
+                                    nextParams.delete("categoryId");
+                                    nextParams.delete("categoryName");
+                                } else {
+                                    nextParams.set("categoryId", String(categoryId));
+                                    const nextCategoryName =
+                                        categories.find((cat) => cat.id === categoryId)?.name ||
+                                        nextParams.get("categoryName") ||
+                                        "";
+                                    if (nextCategoryName) {
+                                        nextParams.set("categoryName", nextCategoryName);
+                                    }
+                                }
+                                const nextQuery = nextParams.toString();
+                                navigate(
+                                    nextQuery ? `${location.pathname}?${nextQuery}` : location.pathname,
+                                    { replace: true }
+                                );
+                            }
                             setPage(1);
                         }}
                     />

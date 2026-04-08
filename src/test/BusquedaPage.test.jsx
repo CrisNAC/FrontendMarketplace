@@ -62,8 +62,8 @@ describe("BusquedaPage", () => {
     const calledUrl =
       fetchMock.mock.calls
         .map((call) => String(call[0]))
-        .find((url) => url.includes("/products/filter")) || "";
-    expect(calledUrl).toContain("/products/filter");
+        .find((url) => url.includes("/products?")) || "";
+    expect(calledUrl).toContain("/products?");
     expect(calledUrl).toContain("search=mate");
     expect(calledUrl).toContain("isOffer=true");
   });
@@ -95,7 +95,7 @@ describe("BusquedaPage", () => {
 
     await waitFor(() => {
       const productFilterCalls = fetchMock.mock.calls.filter((call) =>
-        String(call[0]).includes("/products/filter")
+        String(call[0]).includes("/products?")
       );
       expect(productFilterCalls).toHaveLength(1);
     });
@@ -104,7 +104,7 @@ describe("BusquedaPage", () => {
 
     await waitFor(() => {
       const productFilterCalls = fetchMock.mock.calls.filter((call) =>
-        String(call[0]).includes("/products/filter")
+        String(call[0]).includes("/products?")
       );
       expect(productFilterCalls).toHaveLength(2);
     });
@@ -112,14 +112,14 @@ describe("BusquedaPage", () => {
     const paginatedUrl =
       fetchMock.mock.calls
         .map((call) => String(call[0]))
-        .filter((url) => url.includes("/products/filter"))[1] || "";
+        .filter((url) => url.includes("/products?"))[1] || "";
     expect(paginatedUrl).toContain("page=2");
 
     await user.click(screen.getByRole("button", { name: /aplicar precio/i }));
 
     await waitFor(() => {
       const productFilterCalls = fetchMock.mock.calls.filter((call) =>
-        String(call[0]).includes("/products/filter")
+        String(call[0]).includes("/products?")
       );
       expect(productFilterCalls).toHaveLength(3);
     });
@@ -127,7 +127,7 @@ describe("BusquedaPage", () => {
     const filteredUrl =
       fetchMock.mock.calls
         .map((call) => String(call[0]))
-        .filter((url) => url.includes("/products/filter"))[2] || "";
+        .filter((url) => url.includes("/products?"))[2] || "";
     expect(filteredUrl).toContain("minPrice=100");
     expect(filteredUrl).toContain("maxPrice=500");
     expect(filteredUrl).toContain("page=1");
