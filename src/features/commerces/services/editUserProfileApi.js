@@ -37,11 +37,27 @@ export const updateUserAddress = async (userId, addressId, payload) => {
 // Manejo de errores backend
 export const getBackendErrorMessage = (error, fallback) => {
     if (axios.isAxiosError(error)) {
-        return (
-            error.response?.data?.message ||
-            error.response?.data?.error ||
-            fallback
-        );
+        const data = error.response?.data
+        if (typeof data === "string") return data
+        if (typeof data?.message === "string") return data.message
+        if (typeof data?.error === "string") return data.error
+        return fallback
     }
-    return fallback;
-};
+    return fallback
+}
+export const getUserImage = async (userId) => {
+    const response = await apiClient.get(`/users/${userId}/image`)
+    return response.data
+}
+export const uploadUserImage = async (userId, file) => {
+    const formData = new FormData()
+    formData.append("image", file)
+    const response = await apiClient.post(`/users/${userId}/image`, formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+    })
+    return response.data
+}
+export const deleteUserImage = async (userId) => {
+    const response = await apiClient.delete(`/users/${userId}/image`)
+    return response.data
+}

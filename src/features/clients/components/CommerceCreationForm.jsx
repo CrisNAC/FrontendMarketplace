@@ -31,6 +31,8 @@ export const CommerceCreationForm = () => {
         websiteUrl: "",
         instagramUrl: "",
         tiktokUrl: "",
+        basePrice: "",
+        distancePrice: "",
     })
 
     // ── Cargar userId y categorías al montar ──────────────────────────────────
@@ -80,8 +82,33 @@ export const CommerceCreationForm = () => {
         setError("")
 
         // Validación de campos obligatorios
-        if (!formData.name || !formData.email || !formData.phone || !formData.address || !formData.description) {
+        if (
+            !formData.name ||
+            !formData.email ||
+            !formData.phone ||
+            !formData.address ||
+            !formData.description ||
+            formData.basePrice === "" ||
+            formData.distancePrice === ""
+        ) {
             setError("Por favor completá todos los campos obligatorios.")
+            setLoading(false)
+            errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+            return
+        }
+
+        const parsedBasePrice = Number(formData.basePrice)
+        const parsedDistancePrice = Number(formData.distancePrice)
+
+        if (!Number.isFinite(parsedBasePrice) || parsedBasePrice < 0) {
+            setError("El precio base por km debe ser un número válido mayor o igual a 0.")
+            setLoading(false)
+            errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+            return
+        }
+
+        if (!Number.isFinite(parsedDistancePrice) || parsedDistancePrice < 0) {
+            setError("El precio por km para larga distancia debe ser un número válido mayor o igual a 0.")
             setLoading(false)
             errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
             return
@@ -138,6 +165,8 @@ export const CommerceCreationForm = () => {
                 website_url: formData.websiteUrl.trim() || null,
                 instagram_url: formData.instagramUrl.trim() || null,
                 tiktok_url: formData.tiktokUrl.trim() || null,
+                base_price: parsedBasePrice,
+                distance_price: parsedDistancePrice,
             }
 
             const response = await fetch(`${API_BASE_URL}/api/commerces`, {
@@ -295,6 +324,38 @@ export const CommerceCreationForm = () => {
                     className={inputCls}
                 />
                 <p className="text-xs text-gray-500 mt-1">Máximo 500 caracteres</p>
+            </div>
+
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Precio Base de Envío por km (Gs.) *</label>
+                <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    name="basePrice"
+                    value={formData.basePrice}
+                    onChange={handleChange}
+                    placeholder="Ej: 2500"
+                    disabled={loading}
+                    className={inputCls}
+                />
+                <p className="text-xs text-gray-500 mt-1">Se aplica hasta 2 km de distancia.</p>
+            </div>
+
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Precio de Envío por km (+2 km) (Gs.) *</label>
+                <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    name="distancePrice"
+                    value={formData.distancePrice}
+                    onChange={handleChange}
+                    placeholder="Ej: 4000"
+                    disabled={loading}
+                    className={inputCls}
+                />
+                <p className="text-xs text-gray-500 mt-1">Se aplica cuando la distancia supera los 2 km.</p>
             </div>
 
             {/* Redes sociales y web */}

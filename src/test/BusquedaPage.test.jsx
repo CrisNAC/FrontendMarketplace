@@ -1,14 +1,26 @@
-import { render, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { BusquedaPage } from "../features/clients/pages/BusquedaPage";
 
 vi.mock("../features/clients/components/search/SearchFilterSidebar", () => ({
-  SearchFilterSidebar: () => null,
+  SearchFilterSidebar: ({ onPriceApply }) => (
+    <button type="button" onClick={() => onPriceApply?.(100, 500)}>
+      Aplicar precio
+    </button>
+  ),
 }));
 
 vi.mock("../features/clients/components/commerceProfile/Pagination", () => ({
-  Pagination: () => null,
+  Pagination: ({ currentPage, onPageChange }) => (
+    <div>
+      <span>Página actual: {currentPage}</span>
+      <button type="button" onClick={() => onPageChange?.(2)}>
+        Ir a página 2
+      </button>
+    </div>
+  ),
 }));
 
 describe("BusquedaPage", () => {
@@ -48,5 +60,54 @@ describe("BusquedaPage", () => {
     expect(calledUrl).toContain("/products");
     expect(calledUrl).toContain("search=mate");
     expect(calledUrl).toContain("isOffer=true");
+  });
+
+  it("aplica el rango de precios en la query y reinicia la paginacion", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        products: [],
+        pagination: {
+          totalProducts: 0,
+          page: 1,
+          limit: 20,
+          totalPages: 3,
+        },
+      }),
+    });
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <MemoryRouter initialEntries={["/ofertas?search=mate"]}>
+        <Routes>
+          <Route path="/ofertas" element={<BusquedaPage query="Ofertas" />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    await user.click(screen.getByRole("button", { name: /ir a página 2/i }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    expect(String(fetchMock.mock.calls[1][0])).toContain("page=2");
+
+    await user.click(screen.getByRole("button", { name: /aplicar precio/i }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+    });
+
+    const filteredUrl = String(fetchMock.mock.calls[2][0]);
+    expect(filteredUrl).toContain("minPrice=100");
+    expect(filteredUrl).toContain("maxPrice=500");
+    expect(filteredUrl).toContain("page=1");
   });
 });
