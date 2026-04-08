@@ -58,6 +58,17 @@ type StoreProduct = {
     product_category?: { id_product_category: number; name: string };
 };
 
+type StoreProductsResponse =
+    | StoreProduct[]
+    | {
+        content?: StoreProduct[];
+        products?: StoreProduct[];
+        total_pages?: number;
+        size?: number;
+        page?: number;
+        total_elements?: number;
+    };
+
 type ProductCategory = {
     id: number;
     name: string;
@@ -171,9 +182,16 @@ export const VistaComercioPage = () => {
                     ? `/api/commerces/products/filter/${storeId}?${query}`
                     : `/api/commerces/products/filter/${storeId}`;
 
-                const { data: productsData } = await apiClient.get<StoreProduct[]>(endpoint);
+                const { data: productsData } = await apiClient.get<StoreProductsResponse>(endpoint);
                 if (!isActive) return;
-                setProducts(Array.isArray(productsData) ? productsData : []);
+                const list = Array.isArray(productsData)
+                    ? productsData
+                    : Array.isArray(productsData?.content)
+                        ? productsData.content
+                        : Array.isArray(productsData?.products)
+                            ? productsData.products
+                            : [];
+                setProducts(list);
                 setStatus("success");
             } catch (pe) {
                 if (!isActive) return;
