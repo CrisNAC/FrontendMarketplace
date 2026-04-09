@@ -49,4 +49,9 @@ export default defineConfig({
       '**/*.e2e.spec.*',   // excluye cualquier archivo e2e
     ],
   },
+
+  preview: {
+    port: 5173,
+    strictPort: true,
+  }
 })
