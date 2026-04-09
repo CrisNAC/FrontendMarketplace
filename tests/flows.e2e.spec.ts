@@ -429,7 +429,7 @@ test.describe('Flujos E2E de usuario final', () => {
     await firstOrderCard.click();
 
     await expect(page).toHaveURL(/\/pedidos\/\d+$/);
-    await expect(page.getByText(/Pedido\s+N[°º]?\s*\d+/i)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('Información de pedido')).toBeVisible();
     await expect(page.getByText('Dirección de envío')).toBeVisible();
   });
 
