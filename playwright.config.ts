@@ -1,5 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const e2eApiUrl = process.env.VITE_API_URL ?? 'http://localhost:3000';
+
 /**
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
@@ -37,6 +39,10 @@ export default defineConfig({
     port: 5173,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000, //agg
+    env: {
+      ...process.env,
+      VITE_API_URL: e2eApiUrl,
+    },
   },
 
   /* Configure projects for major browsers */

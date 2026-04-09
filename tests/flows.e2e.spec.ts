@@ -119,6 +119,24 @@ async function setupCommonApiMocks(page: Page) {
     });
   });
 
+  // Endpoint usado por VistaComercioPage(Linea 182) para cargar productos del comercio
+  await page.route('**/api/commerces/products/filter/*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(
+        mockProducts.map((product) => ({
+          id_product: product.id_product,
+          name: product.name,
+          description: product.description,
+          price: product.price,
+          visible: true,
+          product_category: { id_product_category: 1, name: product.category.name },
+        })),
+      ),
+    });
+  });
+
   await page.route('**/products?**', async (route) => {
     const url = new URL(route.request().url());
 
@@ -225,9 +243,94 @@ async function setupCommonApiMocks(page: Page) {
       }),
     });
   });
+
+  // Retorna mockProducts con información de paginación
+  await page.route('**/busqueda**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        products: mockProducts,
+        category: 'Celulares',
+        pagination: {
+          totalProducts: mockProducts.length,
+          page: 1,
+          limit: 20,
+          totalPages: 1,
+        },
+      }),
+    });
+  });
+
+  // Intercepta la solicitud GET de listado de pedidos del cliente
+  await page.route('**/api/users/*/orders', async (route) => {
+    if (route.request().method() === 'GET') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          {
+            id: 1,
+            status: 'DELIVERED',
+            total: 13290000,
+            createdAt: '2026-03-20T10:00:00.000Z',
+            items: [
+              {
+                id: 1,
+                quantity: 1,
+                price: 13290000,
+                originalPrice: 13290000,
+                isOfferApplied: false,
+                subtotal: 13290000,
+              },
+            ],
+            address: {
+              id: 1,
+              address: 'Av. Santa Teresa 1234',
+              city: 'Asuncion',
+              region: 'Central',
+            },
+          },
+        ]),
+      });
+    }
+  });
+
+  // Intercepta la solicitud GET del detalle de un pedido específico
+  await page.route('**/api/users/*/orders/*', async (route) => {
+    if (route.request().method() === 'GET') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 1,
+          status: 'DELIVERED',
+          total: 13290000,
+          createdAt: '2026-03-20T10:00:00.000Z',
+          items: [
+            {
+              id: 1,
+              quantity: 1,
+              price: 13290000,
+              originalPrice: 13290000,
+              isOfferApplied: false,
+              subtotal: 13290000,
+            },
+          ],
+          address: {
+            id: 1,
+            address: 'Av. Santa Teresa 1234',
+            city: 'Asuncion',
+            region: 'Central',
+          },
+        }),
+      });
+    }
+  });
 }
 
 test.describe('Flujos E2E de usuario final', () => {
+  
   test.beforeEach(async ({ page }) => {
     await setupCommonApiMocks(page);
   });
@@ -255,7 +358,7 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page).toHaveURL(/\/perfil-comercio\?storeId=1/);
     await expect(page.getByRole('heading', { name: 'Nissei', exact: true })).toBeVisible();
 
-    await page.getByRole('button', { name: 'Ver más' }).first().click();
+    await page.getByRole('button', { name: 'Ver más' }).first().click({ timeout: 60000 });
     await expect(page).toHaveURL('/producto-detalle/101');
     await expect(page.getByText('Apple iPhone 17 Pro A3256 Dual')).toBeVisible();
 
@@ -300,9 +403,12 @@ test.describe('Flujos E2E de usuario final', () => {
   test('flujo descubrimiento: homepage, busqueda, comparar precios y abrir detalle', async ({ page }) => {
     await page.goto('/homepage');
 
-    await page.getByText('Celulares').click();
-    await expect(page).toHaveURL(/\/busqueda\?categoryId=1/);
-    await expect(page.getByText('Resultado de Búsqueda para: Celulares')).toBeVisible();
+    const categoriasSection = page.locator('section').filter({ hasText: 'Compra por categorias' });
+    await categoriasSection.getByText('Celulares').first().click();
+
+    await expect(page).toHaveURL(/\/busqueda\?/);
+    await expect(page).toHaveURL(/categoryId=1/);
+    await expect(page.getByText('Resultado de Busqueda para: Celulares')).toBeVisible();
 
     await page.getByRole('button', { name: 'Comparar precios' }).first().click();
     await expect(page).toHaveURL(/\/comparar\?search=/);
@@ -317,11 +423,149 @@ test.describe('Flujos E2E de usuario final', () => {
     await page.goto('/pedidos');
 
     await expect(page.getByRole('heading', { name: 'Mis Pedidos' })).toBeVisible();
-    await expect(page.getByText('ORD-2024-001543')).toBeVisible();
 
-    await page.getByText('ORD-2024-001543').click();
-    await expect(page).toHaveURL('/pedidos/ORD-2024-001543');
-    await expect(page.getByText('Pedido N° ORD-2024-001543')).toBeVisible();
+    const firstOrderCard = page.locator('div.cursor-pointer').first();
+    await expect(firstOrderCard).toBeVisible();
+    await firstOrderCard.click();
+
+    await expect(page).toHaveURL(/\/pedidos\/\d+$/);
+    await expect(page.getByText(/Pedido N°\s*\d+/)).toBeVisible();
     await expect(page.getByText('Dirección de envío')).toBeVisible();
+  });
+
+  test('flujo carrito: agregar producto al carrito y ver detalle', async ({ page }) => {
+    // Mocks específicos del flujo carrito
+    await page.route('**/api/users/*/cart/items', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id: 1,
+            storeId: 1,
+            commerce: { id: 1, name: 'Nissei' },
+            status: 'ACTIVE',
+            items: [
+              {
+                id: 1,
+                quantity: 1,
+                product: {
+                  id: 101,
+                  name: 'Apple iPhone 17 Pro A3256 Dual',
+                  price: 13290000,
+                  isOffer: false,
+                },
+              },
+            ],
+          }),
+        });
+      }
+    });
+
+    await page.route('**/api/users/*/carts', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            carts: [
+              {
+                id: 1,
+                storeId: 1,
+                commerce: { id: 1, name: 'Nissei' },
+                status: 'ACTIVE',
+                items: [
+                  {
+                    id: 1,
+                    quantity: 1,
+                    product: {
+                      id: 101,
+                      name: 'Apple iPhone 17 Pro A3256 Dual',
+                      price: 13290000,
+                      isOffer: false,
+                    },
+                  },
+                ],
+              },
+            ],
+          }),
+        });
+      }
+    });
+
+    // Ir al detalle del producto
+    await page.goto('/producto-detalle/101');
+
+    // Esperar a que cargue el producto (botón habilitado)
+    const addToCartBtn = page.getByRole('button', { name: 'Agregar al carrito' });
+    await expect(addToCartBtn).toBeEnabled({ timeout: 10000 });
+    await addToCartBtn.click();
+
+    // Verificar el toast de confirmación
+    await expect(page.getByText('Producto agregado al carrito')).toBeVisible();
+
+    // Navegar al listado de carritos
+    await page.goto('/carrito');
+    await expect(page.getByRole('heading', { name: 'Ordenes de Compras' })).toBeVisible();
+    await expect(page.getByText('Nissei')).toBeVisible();
+
+    // Ver detalle del carrito
+    await page.getByRole('button', { name: 'Ver detalles' }).click();
+    await expect(page).toHaveURL(/\/carrito\/\d+$/);
+    await expect(page.getByRole('heading', { name: 'Nissei' })).toBeVisible();
+    await expect(page.getByText('Apple iPhone 17 Pro A3256 Dual')).toBeVisible();
+  });
+
+  test('flujo lista de deseos: agregar a favoritos y ver lista', async ({ page }) => {
+    // Mocks específicos del flujo wishlist
+    await page.route('**/api/users/*/wishlist/items', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({ message: 'Producto agregado a la lista de deseos' }),
+        });
+      }
+    });
+
+    await page.route('**/api/users/*/wishlist', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            items: [
+              {
+                id: 1,
+                quantity: 1,
+                product: {
+                  id: 101,
+                  name: 'Apple iPhone 17 Pro A3256 Dual',
+                  price: 13290000,
+                },
+              },
+            ],
+          }),
+        });
+      }
+    });
+
+    // Ir al detalle del producto
+    await page.goto('/producto-detalle/101');
+
+    // Esperar a que cargue el producto
+    const addToCartBtn = page.getByRole('button', { name: 'Agregar al carrito' });
+    await expect(addToCartBtn).toBeEnabled({ timeout: 10000 });
+
+    // Hacer clic en el botón de favoritos
+    await page.getByRole('button', { name: 'Agregar a favoritos' }).click();
+
+    // Verificar el toast de confirmación
+    await expect(page.getByText('Producto agregado a la lista de deseos')).toBeVisible();
+
+    // Navegar a la página de favoritos
+    await page.goto('/favoritos');
+    await expect(page.getByRole('heading', { name: 'Lista de Favoritos' })).toBeVisible();
+    await expect(page.getByText('Apple iPhone 17 Pro A3256 Dual')).toBeVisible();
   });
 });

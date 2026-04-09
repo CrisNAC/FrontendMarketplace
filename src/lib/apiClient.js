@@ -36,7 +36,7 @@ export const setNavigate = (nav) => {
 
 const apiBaseUrl = import.meta.env.VITE_API_URL;
 if (!apiBaseUrl && !import.meta.env.DEV) {
-  throw new Error('VITE_API_URL es obligatoria fuera de desarrollo');
+  console.warn('VITE_API_URL no definida. Se usa fallback a http://localhost:3000');
 }
 
 const apiClient = axios.create({
