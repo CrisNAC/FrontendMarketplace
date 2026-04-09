@@ -429,7 +429,7 @@ test.describe('Flujos E2E de usuario final', () => {
     await firstOrderCard.click();
 
     await expect(page).toHaveURL(/\/pedidos\/\d+$/);
-    await expect(page.getByText(/Pedido N°\s*\d+/)).toBeVisible();
+    await expect(page.getByText(/Pedido\s+N[°º]?\s*\d+/i)).toBeVisible({ timeout: 10000 });
     await expect(page.getByText('Dirección de envío')).toBeVisible();
   });
 
@@ -567,5 +567,194 @@ test.describe('Flujos E2E de usuario final', () => {
     await page.goto('/favoritos');
     await expect(page.getByRole('heading', { name: 'Lista de Favoritos' })).toBeVisible();
     await expect(page.getByText('Apple iPhone 17 Pro A3256 Dual')).toBeVisible();
+  });
+
+  test('flujo checkout: confirmar pedido desde carrito', async ({ page }) => {
+    await page.route('**/api/users/*/carts', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            carts: [
+              {
+                id: 1,
+                storeId: 1,
+                commerce: { id: 1, name: 'Nissei' },
+                status: 'ACTIVE',
+                items: [
+                  {
+                    id: 1,
+                    quantity: 1,
+                    product: {
+                      id: 101,
+                      name: 'Apple iPhone 17 Pro A3256 Dual',
+                      price: 13290000,
+                      originalPrice: 13290000,
+                      isOffer: false,
+                    },
+                  },
+                ],
+              },
+            ],
+          }),
+        });
+      }
+    });
+
+    await page.route('**/api/users/*/addresses', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ data: [] }),
+        });
+      }
+    });
+
+    await page.route('**/api/orders', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id: 555,
+            status: 'PENDING',
+            total: 13290000,
+            notes: null,
+            address: null,
+            items: [
+              {
+                id: 1,
+                name: 'Apple iPhone 17 Pro A3256 Dual',
+                quantity: 1,
+                price: 13290000,
+                originalPrice: 13290000,
+                isOfferApplied: false,
+                subtotal: 13290000,
+              },
+            ],
+            createdAt: '2026-03-20T10:00:00.000Z',
+            updatedAt: '2026-03-20T10:00:00.000Z',
+          }),
+        });
+      }
+    });
+
+    await page.goto('/confirmar-pedido/1');
+
+    await expect(page.getByRole('heading', { name: 'Confirmar Pedido' })).toBeVisible();
+    await page.getByRole('button', { name: 'Confirmar Pedido' }).click();
+
+    await expect(page).toHaveURL('/pedido-confirmado');
+    await expect(page.getByRole('heading', { name: /Pedido Confirmado/i })).toBeVisible();
+    await expect(page.getByText('#555')).toBeVisible();
+  });
+
+  test('flujo direcciones: agregar nueva dirección del usuario', async ({ page }) => {
+    // Esta pantalla exige `success: true` en user-session.
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, user: { id_user: 7, id_store: 1, name: 'Cliente Demo' } }),
+      });
+    });
+
+    let addresses = [
+      {
+        id_address: 1,
+        fk_user: 7,
+        fk_store: null,
+        address: 'Av. Santa Teresa 1234',
+        city: 'Asuncion',
+        region: 'Central',
+        postal_code: null,
+        latitude: -25.28646,
+        longitude: -57.60918,
+        status: true,
+        created_at: '2026-03-20T10:00:00.000Z',
+        updated_at: '2026-03-20T10:00:00.000Z',
+      },
+    ];
+
+    await page.route('**/api/users/*/addresses**', async (route) => {
+      const method = route.request().method();
+
+      if (method === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ data: addresses }),
+        });
+        return;
+      }
+
+      if (method === 'POST') {
+        const body = route.request().postDataJSON() as {
+          address?: string;
+          latitude?: number;
+          longitude?: number;
+        };
+
+        const created = {
+          id_address: 2,
+          fk_user: 7,
+          fk_store: null,
+          address: body.address ?? 'Nueva dirección',
+          city: 'Asuncion',
+          region: 'Central',
+          postal_code: null,
+          latitude: Number(body.latitude ?? -25.3),
+          longitude: Number(body.longitude ?? -57.6),
+          status: true,
+          created_at: '2026-03-21T10:00:00.000Z',
+          updated_at: '2026-03-21T10:00:00.000Z',
+        };
+
+        addresses = [created, ...addresses];
+
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({ data: created }),
+        });
+        return;
+      }
+
+      await route.fallback();
+    });
+
+    await page.goto('/direcciones');
+
+    await expect(page.getByRole('heading', { name: 'Mi Cuenta' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Libreta de direcciones' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Agregar dirección' }).first().click();
+    await page.getByPlaceholder('Ej: Av. República del Paraguay 1234').fill('Calle Palma 450');
+
+    const map = page.locator('.leaflet-container').first();
+    await expect(map).toBeVisible();
+    const selectedPointText = page.getByText(/Punto seleccionado:/);
+    const clickPositions = [
+      { x: 40, y: 40 },
+      { x: 80, y: 80 },
+      { x: 120, y: 70 },
+      { x: 60, y: 120 },
+      { x: 140, y: 110 },
+    ];
+
+    for (const position of clickPositions) {
+      if (await selectedPointText.isVisible()) break;
+      await map.click({ position, force: true });
+      await page.waitForTimeout(150);
+    }
+
+    await expect(selectedPointText).toBeVisible({ timeout: 10000 });
+    await page.locator('form').getByRole('button', { name: 'Agregar dirección' }).click();
+
+    await expect(page.getByText('Dirección agregada correctamente')).toBeVisible();
+    await expect(page.getByText('Calle Palma 450')).toBeVisible();
   });
 });
