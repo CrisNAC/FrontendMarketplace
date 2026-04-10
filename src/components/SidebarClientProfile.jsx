@@ -4,6 +4,7 @@ const links = [
     { to: "/perfil", label: "Mi cuenta" },
     { to: "/pedidos", label: "Mis pedidos" },
     { to: "/favoritos", label: "Mi lista de favoritos" },
+    { to: "/wishlist", label: "Mi lista de deseos" },
     { to: "/direcciones", label: "Libreta de direcciones" },
 ];
 

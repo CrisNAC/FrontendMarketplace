@@ -1,8 +1,11 @@
 import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import { Spinner } from "../../../components/Spinner"
+import MapView from "./Map"
 
 const inputCls = "w-full px-3 py-2 border border-green-100 rounded-md bg-green-50/30 focus:outline-none focus:ring-1 focus:ring-[#5B7B6D] focus:border-[#5B7B6D] disabled:cursor-not-allowed disabled:opacity-60"
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:3000").trim()
+const HTTP_URL_REGEX = /^https?:\/\//i
 
 export const CommerceCreationForm = () => {
     const navigate = useNavigate()
@@ -21,17 +24,21 @@ export const CommerceCreationForm = () => {
         email: "",
         phone: "",
         address: "",
-        city: "",
-        region: "",       // ← estaba ausente del estado inicial, el backend lo requiere
-        postalCode: "",
+        latitude: null,
+        longitude: null,
         categoryId: "",   // ← antes era "category" y nunca se enviaba
         description: "",
+        websiteUrl: "",
+        instagramUrl: "",
+        tiktokUrl: "",
+        basePrice: "",
+        distancePrice: "",
     })
 
     // ── Cargar userId y categorías al montar ──────────────────────────────────
     useEffect(() => {
         // 1. Obtener usuario autenticado desde la cookie JWT
-        fetch("http://localhost:3000/api/session/user-session", {
+        fetch(`${API_BASE_URL}/api/session/user-session`, {
             credentials: "include"  // necesario para enviar la cookie userToken
         })
             .then(r => r.json())
@@ -45,7 +52,7 @@ export const CommerceCreationForm = () => {
             .catch(() => setError("No se pudo conectar con el servidor."))
 
         // 2. Cargar categorías de comercio
-        fetch("http://localhost:3000/api/commerces/categories", {
+        fetch(`${API_BASE_URL}/api/commerces/categories`, {
             credentials: "include"
         })
             .then(r => r.json())
@@ -60,14 +67,55 @@ export const CommerceCreationForm = () => {
         setError("")
     }
 
+    const handleMapPointChange = (point) => {
+        setFormData((prev) => ({
+            ...prev,
+            latitude: point?.lat ?? null,
+            longitude: point?.lng ?? null,
+        }))
+        setError("")
+    }
+
     const handleSubmit = async (e) => {
         e.preventDefault()
         setLoading(true)
         setError("")
 
         // Validación de campos obligatorios
-        if (!formData.name || !formData.email || !formData.phone || !formData.address || !formData.city || !formData.region || !formData.description) {
+        if (
+            !formData.name ||
+            !formData.email ||
+            !formData.phone ||
+            !formData.address ||
+            !formData.description ||
+            formData.basePrice === "" ||
+            formData.distancePrice === ""
+        ) {
             setError("Por favor completá todos los campos obligatorios.")
+            setLoading(false)
+            errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+            return
+        }
+
+        const parsedBasePrice = Number(formData.basePrice)
+        const parsedDistancePrice = Number(formData.distancePrice)
+
+        if (!Number.isFinite(parsedBasePrice) || parsedBasePrice < 0) {
+            setError("El precio base por km debe ser un número válido mayor o igual a 0.")
+            setLoading(false)
+            errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+            return
+        }
+
+        if (!Number.isFinite(parsedDistancePrice) || parsedDistancePrice < 0) {
+            setError("El precio por km para larga distancia debe ser un número válido mayor o igual a 0.")
+            setLoading(false)
+            errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+            return
+        }
+
+        if (formData.latitude === null || formData.longitude === null) {
+            setError("Seleccioná un punto en el mapa para la ubicación del comercio.")
             setLoading(false)
             errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
             return
@@ -87,6 +135,22 @@ export const CommerceCreationForm = () => {
             return
         }
 
+        const socialUrlFields = [
+            { label: "Sitio web", value: formData.websiteUrl },
+            { label: "Instagram", value: formData.instagramUrl },
+            { label: "TikTok", value: formData.tiktokUrl },
+        ]
+
+        for (const field of socialUrlFields) {
+            const trimmedValue = field.value.trim()
+            if (trimmedValue && !HTTP_URL_REGEX.test(trimmedValue)) {
+                setError(`${field.label} debe iniciar con http:// o https://`)
+                setLoading(false)
+                errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+                return
+            }
+        }
+
         try {
             const payload = {
                 fk_user: userId,                              // ← antes era 6 hardcodeado
@@ -96,12 +160,16 @@ export const CommerceCreationForm = () => {
                 phone: formData.phone,
                 description: formData.description,
                 address: formData.address,
-                city: formData.city,
-                region: formData.region,
-                postal_code: formData.postalCode || undefined,
+                latitude: formData.latitude,
+                longitude: formData.longitude,
+                website_url: formData.websiteUrl.trim() || null,
+                instagram_url: formData.instagramUrl.trim() || null,
+                tiktok_url: formData.tiktokUrl.trim() || null,
+                base_price: parsedBasePrice,
+                distance_price: parsedDistancePrice,
             }
 
-            const response = await fetch("http://localhost:3000/api/commerces", {
+            const response = await fetch(`${API_BASE_URL}/api/commerces`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",  // enviar cookie
@@ -187,46 +255,41 @@ export const CommerceCreationForm = () => {
                 />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-                {/* Ciudad */}
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Ciudad *</label>
-                    <input
-                        type="text" name="city"
-                        value={formData.city}
-                        onChange={handleChange}
-                        placeholder="Encarnación"
-                        disabled={loading}
-                        className={inputCls}
-                    />
-                </div>
-
-                {/* Región */}
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Región *</label>
-                    <input
-                        type="text" name="region"
-                        value={formData.region}
-                        onChange={handleChange}
-                        placeholder="Itapúa"
-                        disabled={loading}
-                        className={inputCls}
-                    />
-                </div>
-            </div>
-
-            {/* Código Postal */}
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Código Postal</label>
-                <input
-                    type="text" name="postalCode"
-                    value={formData.postalCode}
-                    onChange={handleChange}
-                    placeholder="16000"
-                    maxLength={20}
-                    disabled={loading}
-                    className={inputCls}
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-2">Ubicación en mapa *</label>
+                <div className="border border-gray-200 rounded-md overflow-hidden">
+                    <MapView
+                        mode="single-point"
+                        selectedPoint={
+                            formData.latitude !== null && formData.longitude !== null
+                                ? { lat: formData.latitude, lng: formData.longitude }
+                                : null
+                        }
+                        onPointChange={handleMapPointChange}
+                        heightClass="h-[240px]"
+                        allowFullscreen={false}
+                        showDistancePanel={false}
+                    />
+                </div>
+
+                <div className="mt-2 flex items-center justify-between gap-2">
+                    <p className="text-xs text-gray-500">
+                        {formData.latitude !== null && formData.longitude !== null
+                            ? `Punto seleccionado: ${Number(formData.latitude).toFixed(5)}, ${Number(formData.longitude).toFixed(5)}`
+                            : "Haz click en el mapa para seleccionar la ubicación exacta."}
+                    </p>
+
+                    {formData.latitude !== null && formData.longitude !== null && (
+                        <button
+                            type="button"
+                            onClick={() => handleMapPointChange(null)}
+                            className="text-xs text-red-600 hover:text-red-700 font-medium shrink-0"
+                            disabled={loading}
+                        >
+                            Limpiar punto
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Categoría Principal */}
@@ -261,6 +324,78 @@ export const CommerceCreationForm = () => {
                     className={inputCls}
                 />
                 <p className="text-xs text-gray-500 mt-1">Máximo 500 caracteres</p>
+            </div>
+
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Precio Base de Envío por km (Gs.) *</label>
+                <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    name="basePrice"
+                    value={formData.basePrice}
+                    onChange={handleChange}
+                    placeholder="Ej: 2500"
+                    disabled={loading}
+                    className={inputCls}
+                />
+                <p className="text-xs text-gray-500 mt-1">Se aplica hasta 2 km de distancia.</p>
+            </div>
+
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Precio de Envío por km (+2 km) (Gs.) *</label>
+                <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    name="distancePrice"
+                    value={formData.distancePrice}
+                    onChange={handleChange}
+                    placeholder="Ej: 4000"
+                    disabled={loading}
+                    className={inputCls}
+                />
+                <p className="text-xs text-gray-500 mt-1">Se aplica cuando la distancia supera los 2 km.</p>
+            </div>
+
+            {/* Redes sociales y web */}
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Sitio web</label>
+                <input
+                    type="url" name="websiteUrl"
+                    value={formData.websiteUrl}
+                    onChange={handleChange}
+                    placeholder="https://mi-comercio.com"
+                    maxLength={500}
+                    disabled={loading}
+                    className={inputCls}
+                />
+            </div>
+
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Instagram</label>
+                <input
+                    type="url" name="instagramUrl"
+                    value={formData.instagramUrl}
+                    onChange={handleChange}
+                    placeholder="https://instagram.com/mi_comercio"
+                    maxLength={500}
+                    disabled={loading}
+                    className={inputCls}
+                />
+            </div>
+
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">TikTok</label>
+                <input
+                    type="url" name="tiktokUrl"
+                    value={formData.tiktokUrl}
+                    onChange={handleChange}
+                    placeholder="https://tiktok.com/@mi_comercio"
+                    maxLength={500}
+                    disabled={loading}
+                    className={inputCls}
+                />
             </div>
 
             {/* Logo */}

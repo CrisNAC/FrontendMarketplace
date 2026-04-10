@@ -9,6 +9,14 @@ type Props = {
     reviews: number;
     closesAt: string;
     logoUrl?: string;
+    phone?: string;
+    email?: string;
+    address?: string;
+    latitude?: number;
+    longitude?: number;
+    searchValue?: string;
+    onSearchChange?: (value: string) => void;
+    onSearchSubmit?: () => void;
 };
 
 export const CommerceProfileHeader = ({
@@ -19,18 +27,50 @@ export const CommerceProfileHeader = ({
     reviews,
     closesAt,
     logoUrl,
+    phone,
+    email,
+    address,
+    latitude,
+    longitude,
+    searchValue = "",
+    onSearchChange,
+    onSearchSubmit,
 }: Props) => {
-    const [search, setSearch] = useState("");
+    const [isMapOpen, setIsMapOpen] = useState(false);
+
+    const encodedAddress = address ? encodeURIComponent(address) : "";
+    const hasCoords = Number.isFinite(latitude) && Number.isFinite(longitude);
+    const canOpenMap = hasCoords || Boolean(encodedAddress);
+    const mapSrc = hasCoords
+        ? `https://www.google.com/maps?q=${latitude},${longitude}&z=16&output=embed`
+        : `https://www.google.com/maps?q=${encodedAddress}&z=16&output=embed`;
+
+    const handleCall = () => {
+        if (!phone) return;
+        window.open(`tel:${phone}`, "_self");
+    };
+
+    const handleEmail = () => {
+        if (!email) return;
+        window.open(`mailto:${email}`, "_self");
+    };
+
+    const handleOpenMap = () => {
+        if (!canOpenMap) return;
+        setIsMapOpen(true);
+    };
+
     return (
-        <div style={{
-            backgroundColor: "rgba(159, 7, 18, 0.12)",
-            borderRadius: "24px",
-            padding: "24px",
-            marginBottom: "16px",
-            marginLeft: "16px",
-            marginRight: "16px",
-            position: "relative",
-        }}>
+        <>
+            <div style={{
+                backgroundColor: "rgba(159, 7, 18, 0.12)",
+                borderRadius: "24px",
+                padding: "24px",
+                marginBottom: "16px",
+                marginLeft: "16px",
+                marginRight: "16px",
+                position: "relative",
+            }}>
             <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "24px" }}>
 
                 {/* Logo */}
@@ -91,7 +131,9 @@ export const CommerceProfileHeader = ({
                         <span>⭐</span>
                         <span style={{ fontWeight: "bold" }}>{rating}</span>
                         <span style={{ fontSize: "14px", color: "#6b7280" }}>{reviews} reseñas</span>
-                        <span style={{ fontSize: "14px", color: "#6b7280" }}>· Cierra a las {closesAt}</span>
+                        {closesAt.trim() ? (
+                            <span style={{ fontSize: "14px", color: "#6b7280" }}>· Cierra a las {closesAt}</span>
+                        ) : null}
                     </div>
 
                     {/* Action buttons */}
@@ -100,7 +142,8 @@ export const CommerceProfileHeader = ({
                             display: "flex", flexDirection: "row", alignItems: "center", gap: "6px",
                             backgroundColor: "#944343", color: "white", border: "none",
                             borderRadius: "8px", padding: "6px 12px", fontSize: "14px", cursor: "pointer",
-                        }}>
+                            opacity: phone ? 1 : 0.6,
+                        }} onClick={handleCall} disabled={!phone}>
                             <Phone size={16} />
                             Llamar
                         </button>
@@ -108,7 +151,8 @@ export const CommerceProfileHeader = ({
                             display: "flex", flexDirection: "row", alignItems: "center", gap: "6px",
                             backgroundColor: "#944343", color: "white", border: "none",
                             borderRadius: "8px", padding: "6px 16px", fontSize: "14px", cursor: "pointer",
-                        }}>
+                            opacity: email ? 1 : 0.6,
+                        }} onClick={handleEmail} disabled={!email}>
                             <Mail size={16} />
                             Email
                         </button>
@@ -116,7 +160,8 @@ export const CommerceProfileHeader = ({
                             display: "flex", flexDirection: "row", alignItems: "center", gap: "6px",
                             backgroundColor: "rgba(148,67,67,0.8)", color: "white", border: "none",
                             borderRadius: "8px", padding: "6px 12px", fontSize: "14px", cursor: "pointer",
-                        }}>
+                            opacity: canOpenMap ? 1 : 0.6,
+                        }} onClick={handleOpenMap} disabled={!canOpenMap}>
                             <MapPin size={16} />
                             Cómo llegar
                         </button>
@@ -145,8 +190,13 @@ export const CommerceProfileHeader = ({
                 <input
                     type="text"
                     placeholder={`Buscar en ${name}`}
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    value={searchValue}
+                    onChange={(e) => onSearchChange?.(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                            onSearchSubmit?.();
+                        }
+                    }}
                     style={{
                         border: "none",
                         outline: "none",
@@ -157,11 +207,11 @@ export const CommerceProfileHeader = ({
                         minWidth: 0,
                     }}
                 />
-                {search && (
+                {searchValue && (
                     <X
                         size={16}
                         style={{ color: "#9ca3af", cursor: "pointer", marginRight: "8px", flexShrink: 0 }}
-                        onClick={() => setSearch("")}
+                        onClick={() => onSearchChange?.("")}
                     />
                 )}
                 <div style={{
@@ -173,10 +223,75 @@ export const CommerceProfileHeader = ({
                     alignItems: "center",
                     justifyContent: "center",
                     cursor: "pointer",
-                }}>
+                }}
+                onClick={() => onSearchSubmit?.()}>
                     <Search size={18} color="white" />
                 </div>
             </div>
-        </div>
+            </div>
+
+            {isMapOpen && (
+                <div
+                    role="dialog"
+                    aria-modal="true"
+                    onClick={() => setIsMapOpen(false)}
+                    style={{
+                        position: "fixed",
+                        inset: 0,
+                        zIndex: 1200,
+                        backgroundColor: "rgba(0, 0, 0, 0.55)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: "16px",
+                    }}
+                >
+                    <div
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                            width: "100%",
+                            maxWidth: "900px",
+                            backgroundColor: "white",
+                            borderRadius: "14px",
+                            boxShadow: "0 20px 60px rgba(0, 0, 0, 0.25)",
+                            overflow: "hidden",
+                        }}
+                    >
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                padding: "12px 16px",
+                                borderBottom: "1px solid #e5e7eb",
+                            }}
+                        >
+                            <strong style={{ fontSize: "15px", color: "#111827" }}>Ubicación de {name}</strong>
+                            <button
+                                type="button"
+                                onClick={() => setIsMapOpen(false)}
+                                style={{
+                                    border: "none",
+                                    background: "transparent",
+                                    cursor: "pointer",
+                                    color: "#6b7280",
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                }}
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+                        <iframe
+                            title={`Mapa de ${name}`}
+                            src={mapSrc}
+                            style={{ width: "100%", height: "460px", border: "0" }}
+                            loading="lazy"
+                            referrerPolicy="no-referrer-when-downgrade"
+                        />
+                    </div>
+                </div>
+            )}
+        </>
     );
 };

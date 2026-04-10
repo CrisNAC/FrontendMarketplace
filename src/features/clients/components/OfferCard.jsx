@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatGuarani } from '../../../lib/formatGuarani.js';
 
 export const OfferCard = ({ storeName, description, price, imageUrl }) => {
     return (
@@ -13,7 +14,7 @@ export const OfferCard = ({ storeName, description, price, imageUrl }) => {
             {/* Precio y Botón */}
             <div className="flex flex-col items-end gap-2 shrink-0">
                 <span className="text-xl font-bold text-[#c94b4b]">
-                    {price} Gs.
+                    {formatGuarani(price)}
                 </span>
                 <button className="bg-[#a5cbf0] text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-blue-300 transition-colors">
                     + Ver más

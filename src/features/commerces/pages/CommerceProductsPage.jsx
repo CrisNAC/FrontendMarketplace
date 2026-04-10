@@ -5,6 +5,7 @@ import { Plus, Search, Eye, Pencil, Trash2, Star, AlertTriangle } from "lucide-r
 import { apiClient as commerceApiClient } from "../services/editCommerceApi";
 import { apiClient as productApiClient } from "../services/editProductApi";
 import { EDIT_PRODUCT_ENDPOINT_PATHS } from "../services/editProductEndpoints";
+import { formatGuarani } from "../../../lib/formatGuarani.js";
 
 // ─── Sub-componentes ──────────────────────────────────────────────────────────
 // Normaliza visibilidad para productos que vienen de /api/commerces/:id (campo visible: boolean)
@@ -102,7 +103,7 @@ function ProductCard({ product, onView, onEdit, onDelete }) {
                     {product.description || "Sin descripción."}
                 </p>
                 <p style={{ fontSize: "14px", fontWeight: "700", color: "#15803d", margin: 0 }}>
-                    $ {(Number(product.price) || 0).toLocaleString("es-PY")}
+                    {formatGuarani(Number(product.price) || 0)}
                 </p>
                 <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                     <Stars rating={product.average_rating} />

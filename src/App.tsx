@@ -1,5 +1,5 @@
 import './App.css'
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route,  useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 
 import { Toaster } from "react-hot-toast";
@@ -38,19 +38,28 @@ import { CommentsPage } from './features/clients/pages/CommentsPage'
 import { CreateCommercePage } from './features/clients/pages/CreateCommercePage'
 import { CommerceProfilePage } from './features/commerces/pages/CommerceProfilePage';
 import { CommerceProductsPage } from './features/commerces/pages/CommerceProductsPage'
+import { CommerceOrdersPage } from './features/commerces/pages/CommerceOrdersPage'
 import { EditCommercePage } from './features/commerces/pages/EditCommercePage'
 import AuthPage from './features/clients/pages/AuthPage';
 
 import ProductDetailView from './features/commerces/pages/ProductDetailView';
 import PriceComparisonPage from './features/clients/pages/PriceComparisonPage';
-import DetalleProducto from './features/commerces/pages/DetalleProducto';
+import DetalleProducto from './features/clients/pages/DetalleProducto';
 import CreateProductPage from './features/commerces/pages/CreateProductPage';
 
-import { EditClientProfile } from './features/clients/pages/EditClientProfile';
+import { EditClientProfile } from './features/clients/pages/EditUserProfile';
 import AddressesPage from './features/clients/components/addresses/AddressesPage';
+import ChangePassword from './features/clients/pages/ChangePassword';
 
 import EditProductPage from './features/commerces/pages/EditProductPage';
 import Wishlist from "./features/clients/pages/Wishlist"
+import FavoritesPage from "./features/clients/pages/FavoritesPage";
+
+import { CartPage } from "./features/clients/pages/CartPage";
+import OrdenesComprasPage from "./features/clients/pages/OrdenesComprasPage";
+import ConfirmarPedido from './features/clients/pages/ConfirmarPedido';
+import PedidoConfirmadoPage from './features/clients/pages/PedidoConfirmadoPage';
+//import Map from "./features/clients/components/Map";
 
 /**
  * Inyecta el navigate de React Router en el apiClient centralizado.
@@ -80,6 +89,10 @@ const HomePageRoutes = () => (
     <p className="mt-4">Navega a <a href="/comentarios" className="text-blue-500 underline">Comentarios</a></p>
     <p className="mt-4">Navega a <a href="/crear-comercio" className="text-blue-500 underline">Crear Comercio</a></p>
     <p className="mt-4">Navega a <a href="/mi-perfil" className="text-blue-500 underline">Editar Perfil</a></p>
+    <p className="mt-4">Navega a <a href="/cambiar-contrasena" className="text-blue-500 underline">Cambiar Contraseña</a></p>
+    <p className="mt-4">Navega a <a href="/carrito" className="text-blue-500 underline">Carrito de Compras</a></p>
+    <p className="mt-4">Navega a <a href="/cart" className="text-blue-500 underline">Carrito de Compras</a></p>
+
   </div>
 );
 
@@ -95,11 +108,15 @@ function App() {
 
         <Route path="/perfil" element={<MyAccountPage />} />
         <Route path="/mi-perfil" element={<EditClientProfile />} />
+        <Route path="/cambiar-contrasena" element={<ChangePassword />} />
 
         <Route path='/direcciones' element={<AddressesPage />} />
 
         <Route path="/comparar" element={<PriceComparisonPage />} />
-        
+
+        <Route path="/carrito/:cartId" element={<CartPage />} />   
+        <Route path="/pedido-confirmado" element={<PedidoConfirmadoPage />} />     
+
         <Route
           path="/producto-detalle/:id"
           element={
@@ -119,6 +136,21 @@ function App() {
         <Route path="/pedidos/:orderId" element={<ClientOrderDetailsPage />} />
         <Route path="/homepage" element={<HomePage />} />
         <Route path="/wishlist" element={<VistaComercioLayout><Wishlist/></VistaComercioLayout>}/>
+        <Route path="/favoritos" element={<VistaComercioLayout><FavoritesPage /></VistaComercioLayout>}/>
+        <Route path="/carrito" element={
+            <VistaComercioLayout>
+              <OrdenesComprasPage />
+            </VistaComercioLayout>
+          }
+        />
+        <Route
+          path="/confirmar-pedido/:cartId"
+          element={
+            <VistaComercioLayout>
+              <ConfirmarPedido />
+            </VistaComercioLayout>
+          }
+        />
         <Route
           path="/busqueda"
           element={
@@ -127,9 +159,17 @@ function App() {
             </VistaComercioLayout>
           }
         />
+        <Route
+          path="/ofertas"
+          element={
+            <VistaComercioLayout>
+              <BusquedaPage query="Ofertas" />
+            </VistaComercioLayout>
+          }
+        />
 
         <Route
-          path="/comentarios/:id" //ruta de comentarios con id del producto
+          path="/comentarios/:id"
           element={
             <CommentsLayout>
               <CommentsPage />
@@ -147,7 +187,9 @@ function App() {
         <Route path="/comercio/editar" element={
           <MyCommerceLayout><EditCommercePage /></MyCommerceLayout>
         } />
-
+        <Route path="/comercio/pedidos" element={
+          <MyCommerceLayout><CommerceOrdersPage /></MyCommerceLayout>
+        } />
         <Route path="/comercio/productos" element={
           <MyCommerceLayout><CommerceProductsPage /></MyCommerceLayout>
         } />

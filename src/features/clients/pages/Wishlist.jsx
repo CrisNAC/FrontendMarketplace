@@ -1,253 +1,136 @@
-import { useState } from "react";
-import laptopImg from "../../../assets/laptopPro15.jpg";
-import mouseImg from "../../../assets/mouse.jpg";
+import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
-const VERDE = "#8BB2A1";
+import { SidebarClientProfile } from "../../../components/SidebarClientProfile";
+import WishlistStoreSection from "../components/wishlist/WishlistStoreSection";
+import WishlistSummaryCard from "../components/wishlist/WishlistSummaryCard";
+import { wishlistMockData } from "../mocks/wishlistMockData";
 
 export default function Wishlist() {
+  const navigate = useNavigate();
+  const [wishlistItems, setWishlistItems] = useState(wishlistMockData);
+  const [cartByStore, setCartByStore] = useState({});
 
-  const [cupon, setCupon] = useState("");
+  const groupedByStore = useMemo(() => {
+    return wishlistItems.reduce((acc, item) => {
+      if (!acc[item.storeId]) {
+        acc[item.storeId] = {
+          storeId: item.storeId,
+          storeName: item.storeName,
+          items: [],
+        };
+      }
+      acc[item.storeId].items.push(item);
+      return acc;
+    }, {});
+  }, [wishlistItems]);
 
-  const [productos, setProductos] = useState([
-    {
-      id: 1,
-      nombre: "Laptop Pro 15",
-      empresa: "TechOffice Solutions",
-      precio: 1299.99,
-      img: laptopImg,
-      checked: false
-    },
-    {
-      id: 2,
-      nombre: "Mouse Inalámbrico",
-      empresa: "TechOffice Solutions",
-      precio: 29.99,
-      img: mouseImg,
-      checked: false
-    },
-    {
-      id: 3,
-      nombre: "Teclado Mecánico RGB",
-      empresa: "GamerGear",
-      precio: 149.99,
-      img: null,
-      checked: false
-    }
-  ]);
+  const stores = Object.values(groupedByStore);
 
-  const toggleCheck = (id) => {
+  const handleViewMore = (item) => {
+    navigate(`/producto-detalle/${item.productId}`);
+  };
 
-    setProductos(
-      productos.map(p =>
-        p.id === id
-          ? { ...p, checked: !p.checked }
-          : p
-      )
+  const handleRemove = (item) => {
+    setWishlistItems((prev) => prev.filter((x) => x.id !== item.id));
+    setCartByStore((prev) => {
+      const next = { ...prev };
+      if (next[item.storeId]) {
+        const setIds = new Set(next[item.storeId]);
+        setIds.delete(item.id);
+        next[item.storeId] = setIds;
+      }
+      return next;
+    });
+    toast.success("Producto eliminado de la wishlist");
+  };
+
+  const handleAddToCart = (item) => {
+    setCartByStore((prev) => {
+      const current = prev[item.storeId] ?? new Set();
+      if (current.has(item.id)) return prev;
+      const nextSet = new Set(current);
+      nextSet.add(item.id);
+      return { ...prev, [item.storeId]: nextSet };
+    });
+    toast.success(`Agregado al carrito de ${item.storeName}`);
+  };
+
+  const handleAddAllStoreToCart = (storeId) => {
+    const store = groupedByStore[storeId];
+    if (!store) return;
+
+    setCartByStore((prev) => {
+      const current = prev[storeId] ?? new Set();
+      const nextSet = new Set(current);
+      store.items.forEach((item) => nextSet.add(item.id));
+      return { ...prev, [storeId]: nextSet };
+    });
+    toast.success(`Todos los productos de ${store.storeName} fueron agregados`);
+  };
+
+  if (wishlistItems.length === 0) {
+    return (
+      <div className="min-h-screen bg-[#E5EAE9] py-10">
+        <div className="max-w-7xl mx-auto px-6">
+          <h1 className="text-4xl font-bold text-[#2f3e39] mb-8">Lista de deseos</h1>
+          <div className="bg-[#F3F5F4] border border-[#C7D6CF] rounded-xl p-10 text-center">
+            <p className="text-[18px] text-[#4f615b] font-medium">Tu wishlist esta vacia</p>
+            <p className="text-[14px] text-gray-500 mt-2">
+              Guarda productos de tecnologia, moda, hogar, arte, salud y mucho mas.
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate("/busqueda")}
+              className="mt-5 px-6 py-3 rounded-full text-white text-[14px] font-medium bg-[#8BB2A1] hover:opacity-90"
+            >
+              Explorar productos
+            </button>
+          </div>
+        </div>
+      </div>
     );
-
-  };
-
-  const seleccionados = productos.filter(p => p.checked);
-
-  const total = seleccionados.reduce(
-    (acc, p) => acc + p.precio,
-    0
-  );
-
-  const aplicarCupon = () => {
-
-    if (!cupon) {
-      alert("Ingresa un cupón");
-      return;
-    }
-
-    alert("Cupón aplicado");
-
-  };
+  }
 
   return (
-
     <div className="min-h-screen bg-[#E5EAE9] py-10">
-
       <div className="max-w-7xl mx-auto px-6">
-
-        <h1 className="text-3xl font-bold text-[#2f3e39] mb-8">
-          Lista de deseos
-        </h1>
-
-        <div className="grid grid-cols-3 gap-8">
-
-          {/* productos */}
-
-          <div className="col-span-2 flex flex-col gap-6">
-
-            {productos.map(producto => (
-
-              <div
-                key={producto.id}
-                className="bg-[#F3F5F4] border border-[#C7D6CF] rounded-lg p-5 flex items-center justify-between"
-              >
-
-                <div className="flex gap-5 items-center">
-
-                  <input
-                    type="checkbox"
-                    checked={producto.checked}
-                    onChange={() => toggleCheck(producto.id)}
-                    className="w-5 h-5 cursor-pointer"
-                  />
-
-                  {producto.img ? (
-
-                    <img
-                      src={producto.img}
-                      className="w-[110px] h-[80px] rounded-md object-cover"
-                    />
-
-                  ) : (
-
-                    <div className="w-[110px] h-[80px] rounded-md bg-[#E8DCCB]" />
-
-                  )}
-
-                  <div>
-
-                    <h2 className="font-semibold text-[17px]">
-                      {producto.nombre}
-                    </h2>
-
-                    <p className="text-gray-500 text-[13px]">
-                      {producto.empresa}
-                    </p>
-
-                    <div className="mt-2 font-semibold text-[18px]">
-                      $ {producto.precio}
-                    </div>
-
-                  </div>
-
-                </div>
-
-                {producto.checked ? (
-
-                  <div className="text-gray-500 text-[13px]">
-                    Seleccionado
-                  </div>
-
-                ) : (
-
-                  <div className="text-gray-400 text-[13px]">
-                    No seleccionado
-                  </div>
-
-                )}
-
-              </div>
-
-            ))}
-
-          </div>
-
-          {/* resumen */}
-
-          <div className="flex flex-col gap-6">
-
-            <div className="bg-[#F3F5F4] border border-[#C7D6CF] rounded-lg p-5">
-
-              <h3 className="font-semibold mb-4">
-                Resumen de selección
-              </h3>
-
-              {seleccionados.length === 0 ? (
-
-                <p className="text-gray-500 text-[13px]">
-                  No hay productos seleccionados
-                </p>
-
-              ) : (
-
-                <div className="flex flex-col gap-3">
-
-                  {seleccionados.map(p => (
-
-                    <div
-                      key={p.id}
-                      className="flex justify-between text-[14px]"
-                    >
-
-                      <span>
-                        {p.nombre}
-                      </span>
-
-                      <span>
-                        $ {p.precio}
-                      </span>
-
-                    </div>
-
-                  ))}
-
-                  <div className="border-t pt-3 mt-3 flex justify-between font-semibold">
-
-                    <span>Total</span>
-
-                    <span>
-                      $ {total.toFixed(2)}
-                    </span>
-
-                  </div>
-
-                  {/* cupon solo si hay productos seleccionados*/}
-
-                  <div className="mt-4">
-
-                    <p className="text-[14px] font-semibold mb-2">
-                      Cupón de descuento
-                    </p>
-
-                    <div className="flex gap-2 w-full">
-
-                      <input
-                        type="text"
-                        placeholder="Ingresa tu cupón"
-                        value={cupon}
-                        onChange={(e) => setCupon(e.target.value)}
-                        className="w-full px-3 py-2 border rounded-md text-[13px]"
-                      />
-
-                      <button
-                        onClick={aplicarCupon}
-                        className="px-4 py-2 rounded-md text-white text-[13px] whitespace-nowrap"
-                        style={{ backgroundColor: VERDE }}
-                      >
-                        Aplicar
-                      </button>
-
-                    </div>
-
-                  </div>
-
-                  <button
-                    className="mt-4 w-full py-3 rounded-md text-white text-[14px] font-medium"
-                    style={{ backgroundColor: VERDE }}
-                  >
-                    Comprar selección
-                  </button>
-
-                </div>
-
-              )}
-
-            </div>
-
-          </div>
-
+        <div className="flex items-center justify-between gap-3 mb-8">
+          <h1 className="text-4xl font-bold text-[#2f3e39]">Lista de deseos</h1>
+          <span className="px-4 py-1 rounded-full bg-[#8BB2A1] text-white text-[13px] font-semibold">
+            {wishlistItems.length} productos guardados
+          </span>
         </div>
 
+        <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr_280px] gap-6 items-start">
+          <aside className="w-full">
+            <SidebarClientProfile />
+          </aside>
+
+          <main className="w-full">
+            {stores.map((store) => (
+              <WishlistStoreSection
+                key={store.storeId}
+                storeName={store.storeName}
+                storeId={store.storeId}
+                items={store.items}
+                cartByStore={cartByStore}
+                onViewMore={handleViewMore}
+                onAddToCart={handleAddToCart}
+                onAddAllStoreToCart={handleAddAllStoreToCart}
+                onRemove={handleRemove}
+              />
+            ))}
+          </main>
+
+          <WishlistSummaryCard
+            totalItems={wishlistItems.length}
+            storeCount={stores.length}
+            cartByStore={cartByStore}
+          />
+        </div>
       </div>
-
     </div>
-
   );
-
 }
