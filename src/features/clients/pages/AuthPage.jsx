@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Mail, Lock, User } from "lucide-react";
-import axios from "axios";
+import apiClient from "../../../lib/apiClient";
 import logo from "/src/assets/feather.png";
 
 export default function AuthPage() {
@@ -34,7 +34,7 @@ export default function AuthPage() {
 
     try {
       if (isLogin) {
-        const res = await axios.post("/api/session", {
+        const res = await apiClient.post("/api/session", {
           email: form.email,
           password: form.password,
         });
@@ -42,7 +42,7 @@ export default function AuthPage() {
         console.log(res.data);
         window.location = "/homepage";
       } else {
-        const res = await axios.post("/api/users/register", {
+        const res = await apiClient.post("/api/users/register", {
           name: form.name,
           email: form.email,
           password: form.password,
