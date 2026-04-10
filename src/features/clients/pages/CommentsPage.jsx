@@ -4,7 +4,7 @@ import { RatingsDistribution } from '../components/comments/RatingsDistribution'
 import { CommentsList } from '../components/comments/CommentsList';
 import { AddReviewModal } from '../components/comments/AddReviewModal';
 import { ArrowLeft } from "lucide-react";
-import axios from "axios";
+import apiClient from "../../../lib/apiClient";
 import toast from 'react-hot-toast';
 
 
@@ -23,7 +23,7 @@ export const CommentsPage = () => {
     try {
       setLoading(true);
       setError(null);
-      const { data } = await axios.get(`/products/reviews/${id}`);
+      const { data } = await apiClient.get(`/products/reviews/${id}`);
 
       const mapped = data.reviews.map((r) => ({
         id: r.id,
@@ -63,7 +63,7 @@ export const CommentsPage = () => {
 
   const handleAddReview = async (reviewData) => {
     try {
-      const { data } = await axios.post(`/products/${id}/reviews`, {
+      const { data } = await apiClient.post(`/products/${id}/reviews`, {
         rating: reviewData.rating,
         comment: reviewData.comment,
       });
