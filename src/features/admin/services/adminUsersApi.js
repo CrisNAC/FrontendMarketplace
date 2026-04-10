@@ -14,7 +14,7 @@ export const fetchAdminUsers = async ({ search, role, status, page = 1, limit = 
   const params = { page, limit };
   if (search?.trim())  params.search = search.trim();
   if (role)            params.role   = role;
-  if (status !== '')   params.status = status;
+  if (status != null && status !== '') params.status = status;
 
   const { data } = await apiClient.get('/api/admin/users', { params });
   return data;

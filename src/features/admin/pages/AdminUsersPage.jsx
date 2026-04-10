@@ -38,11 +38,11 @@ export const AdminUsersPage = () => {
   const [status, setStatus] = useState("");
   const [page,   setPage]   = useState(1);
 
-  const loadUsers = useCallback(async () => {
+  const loadUsers = useCallback(async (currentPage) => {
     setLoading(true);
     setError(null);
     try {
-      const result = await fetchAdminUsers({ search, role, status, page, limit: 20 });
+      const result = await fetchAdminUsers({ search, role, status, page: currentPage, limit: 20 });
       setUsers(result.data);
       setPagination(result.pagination);
     } catch (err) {
@@ -52,15 +52,18 @@ export const AdminUsersPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [search, role, status, page]);
+  }, [search, role, status]);
 
+  // Un único efecto evita la doble llamada que ocurría cuando un filtro cambiaba
+  // y el reset de page disparaba loadUsers dos veces.
   useEffect(() => {
     setPage(1);
+    loadUsers(1);
   }, [search, role, status]);
 
   useEffect(() => {
-    loadUsers();
-  }, [loadUsers]);
+    loadUsers(page);
+  }, [page]);
 
   // ── Estilos reutilizables ────────────────────────────────────────────────
 
@@ -225,8 +228,9 @@ export const AdminUsersPage = () => {
 
                   {/* Acciones */}
                   <button
-                    title="Ver detalle"
-                    style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280", padding: "4px", borderRadius: "6px", display: "flex" }}
+                    title="Ver detalle (próximamente)"
+                    disabled
+                    style={{ background: "none", border: "none", cursor: "not-allowed", color: "#6b7280", padding: "4px", borderRadius: "6px", display: "flex", opacity: 0.4 }}
                   >
                     <Eye size={18} />
                   </button>

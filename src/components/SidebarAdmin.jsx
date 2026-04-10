@@ -13,11 +13,11 @@ import {
 } from "lucide-react";
 
 const NAV_ITEMS = [
-    { label: "Dashboard",              icon: LayoutDashboard, route: "/admin" },
-    { label: "Gestión de Usuarios",    icon: Users,           route: "/admin/usuarios" },
-    { label: "Moderación de Productos",icon: Package,         route: "/admin/productos" },
-    { label: "Moderación de Reseñas",  icon: MessageSquare,   route: "/admin/resenas" },
-    { label: "Gestión de Categorías",  icon: Tag,             route: "/admin/categorias" },
+    { label: "Dashboard",               icon: LayoutDashboard, route: "/admin",            disabled: true },
+    { label: "Gestión de Usuarios",     icon: Users,           route: "/admin/usuarios" },
+    { label: "Moderación de Productos", icon: Package,         route: "/admin/productos",  disabled: true },
+    { label: "Moderación de Reseñas",   icon: MessageSquare,   route: "/admin/resenas",    disabled: true },
+    { label: "Gestión de Categorías",   icon: Tag,             route: "/admin/categorias", disabled: true },
 ];
 
 export const SidebarAdmin = ({ collapsed, onToggle }) => {
@@ -67,29 +67,34 @@ export const SidebarAdmin = ({ collapsed, onToggle }) => {
 
             {/* Nav items */}
             <nav style={{ display: "flex", flexDirection: "column", gap: "4px", flex: 1 }}>
-                {NAV_ITEMS.map(({ label, icon: Icon, route }) => {
+                {NAV_ITEMS.map(({ label, icon: Icon, route, disabled }) => {
                     const isActive = active === label;
                     return (
                         <div
                             key={label}
-                            onClick={() => navigate(route)}
-                            title={collapsed ? label : undefined}
+                            onClick={() => !disabled && navigate(route)}
+                            title={collapsed ? label : disabled ? `${label} (próximamente)` : undefined}
                             style={{
                                 display: "flex",
                                 alignItems: "center",
                                 gap: "10px",
                                 padding: "8px 10px",
                                 borderRadius: "8px",
-                                cursor: "pointer",
+                                cursor: disabled ? "not-allowed" : "pointer",
                                 backgroundColor: isActive ? "var(--primary)" : "transparent",
                                 color: "white",
-                                opacity: isActive ? 1 : 0.8,
+                                opacity: disabled ? 0.4 : isActive ? 1 : 0.8,
                                 justifyContent: collapsed ? "center" : "flex-start",
                                 whiteSpace: "nowrap",
                             }}
                         >
                             <Icon size={18} style={{ flexShrink: 0 }} />
-                            {!collapsed && <span style={{ fontSize: "14px" }}>{label}</span>}
+                            {!collapsed && (
+                                <span style={{ fontSize: "14px" }}>
+                                    {label}
+                                    {disabled && <span style={{ fontSize: "10px", marginLeft: "6px", opacity: 0.7 }}>próximamente</span>}
+                                </span>
+                            )}
                         </div>
                     );
                 })}
