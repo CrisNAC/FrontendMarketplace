@@ -20,6 +20,7 @@ const isDev = import.meta.env.DEV;
 /**
  * Layouts
  */
+import { AdminLayout } from './layouts/AdminLayout';
 import { MyCommerceLayout } from './layouts/MyCommerceLayout';
 import { VistaComercioLayout } from './layouts/VistaComercioLayout';
 import { CommentsLayout } from './layouts/CommentsLayout';
@@ -52,6 +53,8 @@ import AddressesPage from './features/clients/components/addresses/AddressesPage
 import ChangePassword from './features/clients/pages/ChangePassword';
 
 import EditProductPage from './features/commerces/pages/EditProductPage';
+import { AdminUsersPage } from './features/admin/pages/AdminUsersPage';
+
 import Wishlist from "./features/clients/pages/Wishlist"
 import FavoritesPage from "./features/clients/pages/FavoritesPage";
 
@@ -80,6 +83,7 @@ const HomePageRoutes = () => (
     <p className="mt-4">Navega a <a href="/perfil" className="text-blue-500 underline">Mi Perfil</a></p>
     <p className="mt-4">Navega a <a href="/producto-detalle/:id" className="text-blue-500 underline">Detalle de Producto</a></p>
     <p className="mt-4">Navega a <a href="/comercio" className="text-blue-500 underline">Mi Comercio (Dashboard)</a></p>
+    <p className="mt-4">Navega a <a href="/admin/usuarios" className="text-blue-500 underline">Mi Panel de Admin</a></p>
     <p className="mt-4">Navega a <a href="/perfil-comercio" className="text-blue-500 underline">Perfil comercio</a></p>
     <p className="mt-4">Navega a <a href="/comercio/productos/1" className="text-blue-500 underline">Ver Producto Comercio (ID 1)</a></p>
     <p className="mt-4">Navega a <a href="/comercio/productos/nuevo" className="text-blue-500 underline">Crear Producto Comercio</a></p>
@@ -201,6 +205,11 @@ function App() {
         } />
         <Route path="/comercio/productos/:id/editar" element={
           <MyCommerceLayout><EditProductPage /></MyCommerceLayout>
+        } />
+
+        {/* ── Área de administración (con sidebar) ──────────────────────── */}
+        <Route path="/admin/usuarios" element={
+          <AdminLayout><AdminUsersPage /></AdminLayout>
         } />
 
         {/* ── Páginas de error ───────────────────────────────────────────── */}
