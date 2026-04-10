@@ -189,7 +189,7 @@ export function CommerceProfilePage() {
                 const sessionRes = await apiClient.get("/api/session/user-session");
                 const idStore = sessionRes.data?.user?.id_store;
                 if (!idStore) throw new Error("No tenés un comercio registrado. Creá tu comercio primero.");
-                const res = await apiClient.get(`/api/commerces/${idStore}`);
+                const res = await apiClient.get(`/api/commerces/my/${idStore}`);
                 if (active) setCommerce(res.data);
             } catch (err) {
                 if (active) setError(getBackendErrorMessage(err, "No se pudo cargar el perfil."));
