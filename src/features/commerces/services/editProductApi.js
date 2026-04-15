@@ -102,3 +102,24 @@ export const getBackendErrorMessage = (error, fallbackMessage) => {
     if (error instanceof Error && error.message) return error.message;
     return fallbackMessage;
 };
+// GET imagen del producto
+export const getProductImage = async (productId) => {
+    const response = await apiClient.get(`/products/${productId}/image`);
+    return response.data; // { image_url: "https://..." | null }
+};
+
+// POST imagen del producto (upsert)
+export const uploadProductImage = async (productId, file) => {
+    const formData = new FormData();
+    formData.append("image", file);
+    const response = await apiClient.post(`/products/${productId}/image`, formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+    });
+    return response.data; // { image_url: "https://..." }
+};
+
+// DELETE imagen del producto
+export const deleteProductImage = async (productId) => {
+    const response = await apiClient.delete(`/products/${productId}/image`);
+    return response.data;
+};

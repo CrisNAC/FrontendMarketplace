@@ -5,6 +5,7 @@ import { getProductReviews } from "../../commerces/services/productReviewApi";
 import {
     getBackendErrorMessage,
     updateProduct,
+    getProductImage,
 } from "../../commerces/services/editProductApi";
 import Toggle from "../components/createProduct/Toggle";
 import { formatGuarani } from "../../../lib/formatGuarani.js";
@@ -56,7 +57,6 @@ const I = {
         <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     ),
 };
-
 
 const TITLE = "text-[#6B9080]";
 const BODY = "text-slate-900";
@@ -147,6 +147,9 @@ export default function ProductDetailView() {
         message: "",
     });
 
+    // imagen del producto cargada por separado
+    const [productImageUrl, setProductImageUrl] = useState(null);
+
     // producto
     useEffect(() => {
         let active = true;
@@ -161,6 +164,22 @@ export default function ProductDetailView() {
             }
         };
         load();
+        return () => { active = false; };
+    }, [STATIC_PRODUCT_ID]);
+
+    // imagen del producto — endpoint separado porque el GET /products/:id no devuelve image_url
+    useEffect(() => {
+        if (!STATIC_PRODUCT_ID) return;
+        let active = true;
+        const loadImage = async () => {
+            try {
+                const { image_url } = await getProductImage(STATIC_PRODUCT_ID);
+                if (active && image_url) setProductImageUrl(image_url);
+            } catch {
+                // si falla no bloqueamos nada, simplemente no se muestra imagen
+            }
+        };
+        loadImage();
         return () => { active = false; };
     }, [STATIC_PRODUCT_ID]);
 
@@ -336,12 +355,12 @@ export default function ProductDetailView() {
                         <section className="rounded-2xl bg-white p-3 shadow-sm ring-1 ring-slate-100">
                             <div className="grid grid-cols-12 gap-3">
 
-                                {/* Imagen */}
+                                {/* Imagen — cargada desde endpoint separado */}
                                 <div className="col-span-5">
                                     <div className="overflow-hidden rounded-2xl shadow-sm ring-1 ring-slate-100">
-                                        {product.image_url || product.imageUrl ? (
+                                        {productImageUrl ? (
                                             <img
-                                                src={product.image_url || product.imageUrl}
+                                                src={productImageUrl}
                                                 alt={product.name}
                                                 className="h-[145px] w-full object-cover"
                                                 onError={e => { e.currentTarget.style.display = "none"; }}

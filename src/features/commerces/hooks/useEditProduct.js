@@ -4,6 +4,7 @@ import {
     fetchProductCategories,
     fetchProductTags,
     updateProduct,
+    uploadProductImage,
     getBackendErrorMessage,
 } from "../services/editProductApi";
 
@@ -36,14 +37,6 @@ const validateForm = (formData, selectedTags) => {
 
     if (selectedTags.length > MAX_TAGS) {
         errors.tags = `No podés seleccionar más de ${MAX_TAGS} etiquetas.`;
-    }
-
-    if (formData.imageUrl.trim()) {
-        try {
-            new URL(formData.imageUrl.trim());
-        } catch {
-            errors.imageUrl = "Ingresá una URL válida para la imagen.";
-        }
     }
 
     if (formData.isOffer) {
@@ -88,6 +81,9 @@ export const useEditProduct = (productId) => {
     const [validationErrors, setValidationErrors] = useState({});
     const [showAllTagSuggestions, setShowAllTagSuggestions] = useState(false);
 
+    // archivo de imagen seleccionado localmente (antes de subir)
+    const [imageFile, setImageFile] = useState(null);
+
     // ── Estado de envío ────────────────────────────────────────────────────────
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [resultModal, setResultModal] = useState({
@@ -122,7 +118,8 @@ export const useEditProduct = (productId) => {
                     description: product.description ?? "",
                     price: product.price ?? "",
                     categoryId: product.categoryId ? String(product.categoryId) : "",
-                    imageUrl: product.imageUrl ?? "",
+                    // el back puede devolver image_url o imageUrl según el endpoint
+                    imageUrl: product.imageUrl ?? product.image_url ?? "",
                     isVisible: product.visible ?? true,
                     isOffer: Boolean(product.isOffer),
                     offerPrice: product.offerPrice ?? "",
@@ -178,6 +175,11 @@ export const useEditProduct = (productId) => {
         }));
     };
 
+    // acepta un File para preview local, o null para limpiar
+    const onImageFileChange = (file) => {
+        setImageFile(file);
+    };
+
     const toggleTag = (tag) => {
         const isSelected = selectedTags.some((t) => t.id === tag.id);
         if (isSelected) {
@@ -222,6 +224,14 @@ export const useEditProduct = (productId) => {
         setIsSubmitting(true);
         try {
             await updateProduct({ productId, payload });
+
+            // si el usuario seleccionó una imagen nueva, la subimos a Supabase
+            if (imageFile instanceof File) {
+                const { image_url } = await uploadProductImage(productId, imageFile);
+                setFormData(prev => ({ ...prev, imageUrl: image_url }));
+                setImageFile(null);
+            }
+
             setResultModal({
                 isOpen: true,
                 variant: "success",
@@ -265,6 +275,8 @@ export const useEditProduct = (productId) => {
         closeModal,
         // Handlers
         onFieldChange,
+        onImageFileChange,
+        imageFile,
         toggleTag,
         removeTag,
         handleSubmit,

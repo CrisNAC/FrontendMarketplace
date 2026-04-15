@@ -33,13 +33,14 @@ export default function EditProductPage() {
         resultModal,
         closeModal,
         onFieldChange,
+        onImageFileChange,
+        imageFile,
         toggleTag,
         removeTag,
         handleSubmit,
         MAX_TAGS,
         availableTags,
     } = useEditProduct(id);
-
 
     return (
         <div className="ml-0 mr-auto w-full max-w-[1160px] text-[#22312a]">
@@ -172,7 +173,7 @@ export default function EditProductPage() {
                         </div>
                     </div>
 
-                    {/* ── Etiquetas actuales (chips removibles) ── */}
+                    {/* ── Oferta ── */}
                     <div className="mt-1 rounded-[12px] border border-[#d2d8d4] bg-white px-4 py-3">
                         <div className="flex items-center justify-between gap-3">
                             <div>
@@ -239,6 +240,7 @@ export default function EditProductPage() {
                         )}
                     </div>
 
+                    {/* ── Etiquetas actuales (chips removibles) ── */}
                     <label className={labelClassName}>
                         Etiquetas actuales
                     </label>
@@ -330,60 +332,53 @@ export default function EditProductPage() {
                     <section className={cardClassName}>
                         <h2 className={cardTitleClassName}>Imagen del Producto</h2>
 
-                        <label className={labelClassName} htmlFor="imageUrl">
-                            URL de la Imagen *
-                        </label>
-                        <input
-                            id="imageUrl"
-                            name="imageUrl"
-                            type="url"
-                            value={formData.imageUrl}
-                            onChange={onFieldChange}
-                            className={inputClassName}
-                            placeholder="https://..."
-                            disabled={isFormDisabled}
-                        />
-                        {validationErrors.imageUrl && (
-                            <p className={errorClassName}>{validationErrors.imageUrl}</p>
-                        )}
-
-                        {/* Vista previa de la imagen */}
-                        {formData.imageUrl.trim() && (
-                            <div className="mt-2">
-                                <p className="mb-1.5 text-[13px] font-semibold text-[#44564d]">
-                                    Vista previa:
-                                </p>
-                                <div className="relative overflow-hidden rounded-[10px] border border-[#d2d8d4] bg-[#f0f2f1]">
-                                    <img
-                                        src={formData.imageUrl}
-                                        alt="Vista previa del producto"
-                                        className="h-[160px] w-full object-cover"
-                                        onError={(e) => {
-                                            e.currentTarget.style.display = "none";
-                                        }}
-                                    />
-                                    {/* Botón eliminar imagen */}
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            onFieldChange({
-                                                target: { name: "imageUrl", value: "", type: "text" },
-                                            })
-                                        }
-                                        disabled={isFormDisabled}
-                                        className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 shadow-sm transition hover:bg-red-50 disabled:cursor-not-allowed"
-                                        aria-label="Eliminar imagen"
-                                    >
-                                        <X size={14} className="text-red-500" />
-                                    </button>
-                                </div>
+                        {/* Preview: muestra la imagen nueva si se seleccionó, o la actual del producto */}
+                        {(formData.imageUrl || imageFile) ? (
+                            <div className="relative overflow-hidden rounded-[10px] border border-[#d2d8d4] bg-[#f0f2f1] mb-3">
+                                <img
+                                    src={imageFile ? URL.createObjectURL(imageFile) : formData.imageUrl}
+                                    alt="Vista previa del producto"
+                                    className="h-[160px] w-full object-cover"
+                                    onError={(e) => { e.currentTarget.style.display = "none"; }}
+                                />
+                                {/* Botón para quitar la imagen seleccionada o limpiar la actual */}
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        onImageFileChange(null);
+                                        onFieldChange({ target: { name: "imageUrl", value: "", type: "text" } });
+                                    }}
+                                    disabled={isFormDisabled}
+                                    className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 shadow-sm transition hover:bg-red-50 disabled:cursor-not-allowed"
+                                    aria-label="Eliminar imagen"
+                                >
+                                    <X size={14} className="text-red-500" />
+                                </button>
                             </div>
-                        )}
-
-                        {!formData.imageUrl.trim() && (
-                            <div className="mt-2 flex h-[100px] items-center justify-center rounded-[10px] border border-dashed border-[#d2d8d4] bg-[#f0f2f1] text-[13px] text-[#9ca3af]">
+                        ) : (
+                            <div className="mb-3 flex h-[100px] items-center justify-center rounded-[10px] border border-dashed border-[#d2d8d4] bg-[#f0f2f1] text-[13px] text-[#9ca3af]">
                                 Sin imagen
                             </div>
+                        )}
+
+                        {/* Selector de archivo — reemplaza el campo de URL */}
+                        <label className={`cursor-pointer inline-flex items-center gap-2 bg-[#6b9080] text-white px-4 py-2 rounded-[10px] text-[13px] font-semibold hover:bg-[#5a7d6d] transition ${isFormDisabled ? "opacity-60 cursor-not-allowed pointer-events-none" : ""}`}>
+                            Seleccionar imagen
+                            <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                disabled={isFormDisabled}
+                                onChange={(e) => {
+                                    const file = e.target.files[0];
+                                    if (file) onImageFileChange(file);
+                                }}
+                            />
+                        </label>
+                        <p className="mt-2 text-[11px] text-[#9ca3af]">JPG o PNG recomendado</p>
+
+                        {validationErrors.imageUrl && (
+                            <p className={errorClassName}>{validationErrors.imageUrl}</p>
                         )}
                     </section>
 

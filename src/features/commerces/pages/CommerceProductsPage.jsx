@@ -58,11 +58,10 @@ function Stars({ rating }) {
     );
 }
 
-function ProductCard({ product, onView, onEdit, onDelete }) {
+function ProductCard({ product, imageUrl, onView, onEdit, onDelete }) {
     const [imgError, setImgError] = useState(false);
     const isVisible = isProductVisible(product);
     const categoryName = product.product_category?.name ?? product.category?.name ?? null;
-    const imageUrl = product.image_url ?? product.imageUrl ?? null;
 
     return (
         <div style={{
@@ -227,6 +226,9 @@ export function CommerceProductsPage() {
     const [isDeleting, setIsDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState("");
 
+    // mapa de id_product → image_url, se llena en paralelo después de cargar los productos
+    const [productImages, setProductImages] = useState({});
+
     useEffect(() => {
         let active = true;
         const load = async () => {
@@ -235,7 +237,28 @@ export function CommerceProductsPage() {
                 const idStore = sessionRes.data?.user?.id_store;
                 if (!idStore) throw new Error("No tenés un comercio registrado.");
                 const res = await commerceApiClient.get(`/api/commerces/${idStore}`);
-                if (active) setProducts(res.data?.products ?? []);
+                const loadedProducts = res.data?.products ?? [];
+                if (active) setProducts(loadedProducts);
+
+                // cargar imágenes de todos los productos en paralelo
+                const imageResults = await Promise.allSettled(
+                    loadedProducts.map(async (p) => {
+                        const { image_url } = await productApiClient.get(`/products/${p.id_product}/image`).then(r => r.data);
+                        return { id: p.id_product, image_url };
+                    })
+                );
+
+                if (!active) return;
+
+                // armar el mapa solo con los que tuvieron éxito y tienen imagen
+                const imagesMap = {};
+                imageResults.forEach((result) => {
+                    if (result.status === "fulfilled" && result.value.image_url) {
+                        imagesMap[result.value.id] = result.value.image_url;
+                    }
+                });
+                setProductImages(imagesMap);
+
             } catch (err) {
                 if (active) setError(err.response?.data?.message || err.message || "No se pudieron cargar los productos.");
             } finally {
@@ -396,6 +419,7 @@ export function CommerceProductsPage() {
                         <ProductCard
                             key={product.id_product}
                             product={product}
+                            imageUrl={productImages[product.id_product] ?? null}
                             onView={() => navigate(`/comercio/productos/${product.id_product}`)}
                             onEdit={() => navigate(`/comercio/productos/${product.id_product}/editar`)}
                             onDelete={() => { setDeleteError(""); setProductToDelete(product); }}
