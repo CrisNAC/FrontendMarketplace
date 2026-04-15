@@ -218,7 +218,17 @@ export default function DetalleProducto() {
 
         <div className="grid grid-cols-2 gap-16 items-start">
           <div className="flex justify-center">
-            <img src={iphoneImg} alt="iPhone" className="w-[400px] object-contain" draggable={false} />
+            {product?.imageUrl ? (
+              <img
+                src={product.imageUrl}
+                alt={productName}
+                className="w-[400px] object-contain rounded-2xl"
+                draggable={false}
+                onError={(e) => { e.currentTarget.src = iphoneImg; }}
+              />
+            ) : (
+              <img src={iphoneImg} alt="iPhone" className="w-[400px] object-contain" draggable={false} />
+            )}
           </div>
 
           <div className="flex flex-col items-start">

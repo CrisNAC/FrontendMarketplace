@@ -61,14 +61,11 @@ export default function OrdenesComprasPage() {
     return () => window.removeEventListener("cartUpdated", onCartUpdated);
   }, [loadCarts]);
 
-  const empty =
-    status === "ready" && (!carts || carts.length === 0);
+  const empty = status === "ready" && (!carts || carts.length === 0);
 
   return (
     <div className="min-h-screen bg-[#F3F3F3] pb-8">
-      {/* Contenedor ancho para layout similar a otras pantallas */}
       <div className="max-w-6xl mx-auto px-6 pt-6 pb-6">
-        {/* Título alineado a la izquierda, como en otras vistas */}
         <div className="flex items-center gap-2 mb-6">
           <button
             type="button"
@@ -127,17 +124,14 @@ export default function OrdenesComprasPage() {
         )}
 
         {status === "ready" && carts.length > 0 && (
-          // Grid de 3 cards por fila en desktop
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {carts.map((cart) => {
               const storeName = cart.commerce?.name || "Comercio";
-              const storeId = cart.storeId ?? cart.commerce?.id;
               const initial = (storeName || "?").slice(0, 1).toUpperCase();
               const items = cart.items || [];
               const productCount = items.length;
               const total = items.reduce(
-                (acc, row) =>
-                  acc + itemSubtotal(row.product?.price, row.quantity),
+                (acc, row) => acc + itemSubtotal(row.product?.price, row.quantity),
                 0
               );
 
@@ -168,21 +162,39 @@ export default function OrdenesComprasPage() {
                       const sub = itemSubtotal(row.product?.price, row.quantity);
                       const name = row.product?.name || "Producto";
                       const unit = row.product?.price;
+                      // imagen del producto
+                      const imageUrl = row.product?.imageUrl ?? row.product?.image_url ?? null;
+
                       return (
                         <div
                           key={row.id ?? `${cart.id}-${row.product?.id}`}
                           className="bg-white rounded-lg border border-[#e5e7eb] px-2.5 py-2 flex justify-between gap-2 items-start"
                         >
-                          <div className="min-w-0">
-                            <p className="text-xs font-bold text-[#111827] leading-snug">
-                              {name}
-                            </p>
-                            <p className="text-[11px] text-gray-500 leading-tight mt-0.5">
-                              Cantidad: {row.quantity}
-                            </p>
-                            <p className="text-[11px] font-semibold text-[#111827] mt-1">
-                              {formatGuarani(unit)}
-                            </p>
+                          <div className="flex items-start gap-2 min-w-0">
+                            {/* imagen del producto */}
+                            <div className="w-10 h-10 rounded-md overflow-hidden bg-gray-100 shrink-0">
+                              {imageUrl ? (
+                                <img
+                                  src={imageUrl}
+                                  alt={name}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => { e.currentTarget.style.display = "none"; }}
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-gray-200" />
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-xs font-bold text-[#111827] leading-snug">
+                                {name}
+                              </p>
+                              <p className="text-[11px] text-gray-500 leading-tight mt-0.5">
+                                Cantidad: {row.quantity}
+                              </p>
+                              <p className="text-[11px] font-semibold text-[#111827] mt-1">
+                                {formatGuarani(unit)}
+                              </p>
+                            </div>
                           </div>
                           <div className="text-right shrink-0">
                             <p className="text-[10px] text-gray-500">Subtotal</p>

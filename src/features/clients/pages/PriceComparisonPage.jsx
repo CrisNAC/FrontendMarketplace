@@ -79,11 +79,20 @@ export default function PriceComparisonPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
                     {/* Columna Izquierda */}
                     <div className="lg:col-span-5 flex flex-col items-center">
-                        <div className="bg-white rounded-[40px] p-12 shadow-sm w-full aspect-square flex items-center justify-center mb-6">
-                            {/* Por ahora, sin imagen específica desde el backend */}
-                            <span className="text-gray-400 text-sm text-center">
-                                Imagen de referencia del producto
-                            </span>
+                        <div className="bg-white rounded-[40px] p-6 shadow-sm w-full aspect-square flex items-center justify-center mb-6 overflow-hidden">
+                            {/* mostramos la imagen del primer producto si existe */}
+                            {offers[0]?.image_url ? (
+                                <img
+                                    src={offers[0].image_url}
+                                    alt={productName}
+                                    className="w-full h-full object-contain rounded-[30px]"
+                                    onError={(e) => { e.currentTarget.style.display = "none"; }}
+                                />
+                            ) : (
+                                <span className="text-gray-400 text-sm text-center">
+                                    Imagen de referencia del producto
+                                </span>
+                            )}
                         </div>
                         <div className="text-center">
                             <p className="text-gray-500 font-bold text-lg">Rango de precios:</p>
