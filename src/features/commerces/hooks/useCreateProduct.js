@@ -239,8 +239,8 @@ export const useCreateProduct = () => {
       const created = await createProduct({ payload });
 
       // si el usuario seleccionó una imagen, la subimos usando el id del producto recién creado
-      if (imageFile instanceof File && created?.id_product) {
-        await uploadProductImage(created.id_product, imageFile).catch((err) => {
+      if (imageFile instanceof File && (created?.id_product ?? created?.id)) {
+        await uploadProductImage(created.id_product ?? created.id, imageFile).catch((err) => {
           // no bloqueamos el éxito del producto por un fallo de imagen
           console.warn("[WARN] No se pudo subir la imagen del producto:", err);
         });

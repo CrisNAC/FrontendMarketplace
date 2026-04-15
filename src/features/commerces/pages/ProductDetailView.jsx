@@ -5,7 +5,6 @@ import { getProductReviews } from "../../commerces/services/productReviewApi";
 import {
     getBackendErrorMessage,
     updateProduct,
-    getProductImage,
 } from "../../commerces/services/editProductApi";
 import Toggle from "../components/createProduct/Toggle";
 import { formatGuarani } from "../../../lib/formatGuarani.js";
@@ -147,9 +146,6 @@ export default function ProductDetailView() {
         message: "",
     });
 
-    // imagen del producto cargada por separado
-    const [productImageUrl, setProductImageUrl] = useState(null);
-
     // producto
     useEffect(() => {
         let active = true;
@@ -164,22 +160,6 @@ export default function ProductDetailView() {
             }
         };
         load();
-        return () => { active = false; };
-    }, [STATIC_PRODUCT_ID]);
-
-    // imagen del producto — endpoint separado porque el GET /products/:id no devuelve image_url
-    useEffect(() => {
-        if (!STATIC_PRODUCT_ID) return;
-        let active = true;
-        const loadImage = async () => {
-            try {
-                const { image_url } = await getProductImage(STATIC_PRODUCT_ID);
-                if (active && image_url) setProductImageUrl(image_url);
-            } catch {
-                // si falla no bloqueamos nada, simplemente no se muestra imagen
-            }
-        };
-        loadImage();
         return () => { active = false; };
     }, [STATIC_PRODUCT_ID]);
 
@@ -355,12 +335,12 @@ export default function ProductDetailView() {
                         <section className="rounded-2xl bg-white p-3 shadow-sm ring-1 ring-slate-100">
                             <div className="grid grid-cols-12 gap-3">
 
-                                {/* Imagen — cargada desde endpoint separado */}
+                                {/* Imagen — viene directamente del GET /products/:id */}
                                 <div className="col-span-5">
                                     <div className="overflow-hidden rounded-2xl shadow-sm ring-1 ring-slate-100">
-                                        {productImageUrl ? (
+                                        {product.imageUrl ? (
                                             <img
-                                                src={productImageUrl}
+                                                src={product.imageUrl}
                                                 alt={product.name}
                                                 className="h-[145px] w-full object-cover"
                                                 onError={e => { e.currentTarget.style.display = "none"; }}
