@@ -1,4 +1,4 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { CreationResultModal } from "../components/createProduct/CreationResultModal";
 import Toggle from "../components/createProduct/Toggle";
@@ -33,10 +33,12 @@ export default function CreateProductPage() {
     isLoadingInitialData,
     isSubmitting,
     isFormDisabled,
+    imageFile,
     setFormData,
     setShowAllTagSuggestions,
     closeModal,
     onFieldChange,
+    onImageFileChange,
     toggleTag,
     handleSubmit,
   } = useCreateProduct();
@@ -261,21 +263,53 @@ export default function CreateProductPage() {
         </section>
 
         <aside className="flex flex-col gap-5">
+
+          {/* ── Imagen del Producto ── */}
           <section className={cardClassName}>
             <h2 className={cardTitleClassName}>Imagen del Producto</h2>
-            <label className={labelClassName} htmlFor="imageUrl">
-              URL de la Imagen (opcional)
+
+            {/* Preview: muestra la imagen seleccionada antes de crear el producto */}
+            {imageFile ? (
+              <div className="relative overflow-hidden rounded-[10px] border border-[#d2d8d4] bg-[#f0f2f1] mb-3">
+                <img
+                  src={URL.createObjectURL(imageFile)}
+                  alt="Vista previa del producto"
+                  className="h-[160px] w-full object-cover"
+                  onError={(e) => { e.currentTarget.style.display = "none"; }}
+                />
+                {/* Botón para quitar la imagen seleccionada */}
+                <button
+                  type="button"
+                  onClick={() => onImageFileChange(null)}
+                  disabled={isFormDisabled}
+                  className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 shadow-sm transition hover:bg-red-50 disabled:cursor-not-allowed"
+                  aria-label="Quitar imagen"
+                >
+                  <X size={14} className="text-red-500" />
+                </button>
+              </div>
+            ) : (
+              <div className="mb-3 flex h-[100px] items-center justify-center rounded-[10px] border border-dashed border-[#d2d8d4] bg-[#f0f2f1] text-[13px] text-[#9ca3af]">
+                Sin imagen
+              </div>
+            )}
+
+            {/* Selector de archivo — reemplaza el campo de URL */}
+            <label className={`cursor-pointer inline-flex items-center gap-2 bg-[#6b9080] text-white px-4 py-2 rounded-[10px] text-[13px] font-semibold hover:bg-[#5a7d6d] transition ${isFormDisabled ? "opacity-60 cursor-not-allowed pointer-events-none" : ""}`}>
+              Seleccionar imagen
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                disabled={isFormDisabled}
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) onImageFileChange(file);
+                }}
+              />
             </label>
-            <input
-              id="imageUrl"
-              name="imageUrl"
-              type="url"
-              value={formData.imageUrl}
-              onChange={onFieldChange}
-              className={inputClassName}
-              placeholder="https://..."
-              disabled={isFormDisabled}
-            />
+            <p className="mt-2 text-[11px] text-[#9ca3af]">JPG o PNG recomendado</p>
+
             {validationErrors.imageUrl && (
               <p className={errorClassName}>{validationErrors.imageUrl}</p>
             )}

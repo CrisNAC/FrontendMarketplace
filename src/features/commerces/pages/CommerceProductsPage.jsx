@@ -62,6 +62,7 @@ function ProductCard({ product, onView, onEdit, onDelete }) {
     const [imgError, setImgError] = useState(false);
     const isVisible = isProductVisible(product);
     const categoryName = product.product_category?.name ?? product.category?.name ?? null;
+    // el back ahora devuelve image_url directamente en el producto
     const imageUrl = product.image_url ?? product.imageUrl ?? null;
 
     return (
@@ -235,7 +236,9 @@ export function CommerceProductsPage() {
                 const idStore = sessionRes.data?.user?.id_store;
                 if (!idStore) throw new Error("No tenés un comercio registrado.");
                 const res = await commerceApiClient.get(`/api/commerces/${idStore}`);
-                if (active) setProducts(res.data?.products ?? []);
+                const loadedProducts = res.data?.products ?? [];
+                console.log("Primer producto del comercio:", JSON.stringify(loadedProducts[0], null, 2));
+                if (active) setProducts(loadedProducts);
             } catch (err) {
                 if (active) setError(err.response?.data?.message || err.message || "No se pudieron cargar los productos.");
             } finally {
@@ -293,7 +296,7 @@ export function CommerceProductsPage() {
         border: "1px solid #e5e7eb", backgroundColor: "white", color: "#374151",
         cursor: "pointer", outline: "none",
     };
-
+    
     return (
         <>
             {/* Header */}

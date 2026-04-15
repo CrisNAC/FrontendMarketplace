@@ -149,38 +149,32 @@ export const createProduct = async ({ payload, sessionUser }) => {
 
 export const getBackendErrorMessage = (error, fallbackMessage) => {
   if (axios.isAxiosError(error)) {
-    const backendMessage =
-      error.response?.data?.message ||
-      error.response?.data?.error ||
-      error.response?.data?.detail;
+    const data = error.response?.data;
+    if (typeof data === "string") return data;
+    if (typeof data?.message === "string") return data.message;
+    if (typeof data?.error === "string") return data.error;
+    if (typeof data?.detail === "string") return data.detail;
 
+    const backendMessage = data?.message || data?.error || data?.detail;
     if (backendMessage) {
-      return getFriendlyBackendMessage(
-        backendMessage,
-        error.response?.status
-      );
+      return getFriendlyBackendMessage(backendMessage, error.response?.status);
     }
 
     if (error.response?.status === 400) {
       return "Datos invalidos. Revisa los campos requeridos del producto.";
     }
-
     if (error.response?.status === 401) {
       return "Necesitas iniciar sesion para publicar un producto.";
     }
-
     if (error.response?.status === 403) {
       return "No tienes permisos para crear productos con esta cuenta.";
     }
-
     if (error.response?.status === 404) {
       return "No se encontro el comercio o alguna referencia del producto.";
     }
-
     if (error.response?.status === 409) {
       return "Ya existe un producto con los datos enviados.";
     }
-
     if (error.response?.status === 500) {
       return "Error interno del servidor.";
     }
@@ -191,4 +185,20 @@ export const getBackendErrorMessage = (error, fallbackMessage) => {
   }
 
   return fallbackMessage;
+};
+
+// ─── Imagen del producto ──────────────────────────────────────────────────────
+
+/**
+ * Sube la imagen de un producto recién creado.
+ * Se llama después del POST /products con el id que devuelve el backend.
+ * POST /products/:id/image
+ */
+export const uploadProductImage = async (productId, file) => {
+  const formData = new FormData();
+  formData.append("image", file);
+  const response = await apiClient.post(`/products/${productId}/image`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return response.data; // { image_url: "https://..." }
 };

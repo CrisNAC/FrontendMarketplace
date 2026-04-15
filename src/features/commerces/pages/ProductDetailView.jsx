@@ -57,7 +57,6 @@ const I = {
     ),
 };
 
-
 const TITLE = "text-[#6B9080]";
 const BODY = "text-slate-900";
 const SUBTLE = "text-slate-600";
@@ -336,12 +335,12 @@ export default function ProductDetailView() {
                         <section className="rounded-2xl bg-white p-3 shadow-sm ring-1 ring-slate-100">
                             <div className="grid grid-cols-12 gap-3">
 
-                                {/* Imagen */}
+                                {/* Imagen — viene directamente del GET /products/:id */}
                                 <div className="col-span-5">
                                     <div className="overflow-hidden rounded-2xl shadow-sm ring-1 ring-slate-100">
-                                        {product.image_url || product.imageUrl ? (
+                                        {product.imageUrl ? (
                                             <img
-                                                src={product.image_url || product.imageUrl}
+                                                src={product.imageUrl}
                                                 alt={product.name}
                                                 className="h-[145px] w-full object-cover"
                                                 onError={e => { e.currentTarget.style.display = "none"; }}

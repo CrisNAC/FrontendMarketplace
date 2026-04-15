@@ -209,6 +209,7 @@ export const BusquedaPage = ({ query = "Todos los Productos" }: Props) => {
 
                 if (!isActive) return;
                 setProducts(list);
+                console.log("Primer producto:", JSON.stringify(list[0], null, 2));
                 setTotalPages(tp);
                 setStatus("success");
             } catch (e: any) {
@@ -238,7 +239,7 @@ export const BusquedaPage = ({ query = "Todos los Productos" }: Props) => {
     const handleBack = () => {
         navigate(-1);
     };
-
+    
     return (
         <div
             style={{
