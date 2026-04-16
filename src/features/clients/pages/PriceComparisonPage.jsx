@@ -4,9 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import Navbar from '../../../components/navbar/Navbar';
 import { formatGuarani } from '../../../lib/formatGuarani.js';
 
-// --- Pantalla Principal ---
 export default function PriceComparisonPage() {
-    const alternativeText = "Imagen del producto";
     const location = useLocation();
     const navigate = useNavigate();
 
@@ -17,7 +15,7 @@ export default function PriceComparisonPage() {
         return (import.meta.env.VITE_API_URL || "").trim().replace(/\/$/, "");
     }, []);
 
-    const [status, setStatus] = useState("idle"); // idle | loading | success | error
+    const [status, setStatus] = useState("idle");
     const [error, setError] = useState("");
     const [data, setData] = useState(null);
 
@@ -38,13 +36,11 @@ export default function PriceComparisonPage() {
                     headers: { Accept: "application/json" },
                 });
 
-                if (!res.ok) {
-                    throw new Error(`Error HTTP ${res.status}`);
-                }
+                if (!res.ok) throw new Error(`Error HTTP ${res.status}`);
 
                 const json = await res.json();
                 if (!active) return;
-                setData(json);
+                setData(json ?? { product: null, offers: [], pagination: null });
                 setStatus("success");
             } catch (e) {
                 if (e?.name === "AbortError") return;
@@ -56,11 +52,7 @@ export default function PriceComparisonPage() {
         };
 
         load();
-
-        return () => {
-            active = false;
-            controller.abort();
-        };
+        return () => { active = false; controller.abort(); };
     }, [apiBase, search]);
 
     const offers = Array.isArray(data?.offers) ? data.offers : [];
@@ -70,17 +62,17 @@ export default function PriceComparisonPage() {
         <div className="min-h-screen flex flex-col">
             <Navbar />
             <main className="max-w-7xl mx-auto w-full px-6 py-6">
-                {/* Titulo */}
+                {/* Título */}
                 <div className="flex items-center gap-4 mb-8">
-                    <ArrowLeft className="w-6 h-6 cursor-pointer" onClick={() => navigate(-1)}/>
+                    <ArrowLeft className="w-6 h-6 cursor-pointer" onClick={() => navigate(-1)} />
                     <h1 className="text-2xl font-bold">Ofertas: {productName}</h1>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-                    {/* Columna Izquierda */}
+
+                    {/* Columna Izquierda — imagen de referencia */}
                     <div className="lg:col-span-5 flex flex-col items-center">
                         <div className="bg-white rounded-[40px] p-6 shadow-sm w-full aspect-square flex items-center justify-center mb-6 overflow-hidden">
-                            {/* mostramos la imagen del primer producto si existe */}
                             {offers[0]?.image_url ? (
                                 <img
                                     src={offers[0].image_url}
@@ -113,7 +105,7 @@ export default function PriceComparisonPage() {
                         </div>
                     </div>
 
-                    {/* Columna Derecha */}
+                    {/* Columna Derecha — lista de ofertas */}
                     <div className="lg:col-span-7">
                         <h2 className="text-xl font-bold mb-2 text-gray-700">
                             {offers.length > 0
@@ -135,43 +127,78 @@ export default function PriceComparisonPage() {
                                     key={offer.productId ?? idx}
                                     className="bg-white rounded-[30px] p-6 flex justify-between items-center shadow-sm border border-gray-50"
                                 >
-                                    <div className="space-y-1">
-                                        <h3 className="text-xl font-black">
-                                            {offer.store?.name || "Comercio"}
-                                        </h3>
-                                        <p className="text-gray-500 text-sm">
-                                            {offer.name || productName}
-                                        </p>
-                                        <div className="pt-4 flex items-center gap-4">
-                                            <span className="text-lg font-bold text-red-600">
-                                                {formatGuarani(offer.price)}
-                                            </span>
-                                            {(() => {
-                                                const id = Number(offer.productId);
-                                                if (!Number.isFinite(id) || id <= 0) {
+                                    <div className="flex items-center gap-4 w-full">
+                                        {/* Logo de la tienda */}
+                                        <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100 shrink-0 flex items-center justify-center border border-gray-200">
+                                            {offer.store?.logo ? (
+                                                <img
+                                                    src={offer.store.logo}
+                                                    alt={offer.store?.name}
+                                                    className="w-full h-full object-cover"
+                                                    onError={(e) => {
+                                                        e.currentTarget.style.display = "none";
+                                                        if (e.currentTarget.parentElement) {
+                                                            e.currentTarget.parentElement.textContent =
+                                                                (offer.store?.name || "?").slice(0, 1).toUpperCase();
+                                                        }
+                                                    }}
+                                                />
+                                            ) : (
+                                                <span className="text-gray-500 font-bold text-lg">
+                                                    {(offer.store?.name || "?").slice(0, 1).toUpperCase()}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        <div className="flex-1 space-y-1">
+                                            <h3 className="text-xl font-black">
+                                                {offer.store?.name || "Comercio"}
+                                            </h3>
+                                            <p className="text-gray-500 text-sm">
+                                                {offer.name || productName}
+                                            </p>
+
+                                            <div className="pt-2 flex items-center gap-4">
+                                                <span className="text-lg font-bold text-red-600">
+                                                    {formatGuarani(offer.price)}
+                                                </span>
+                                                {(() => {
+                                                    const id = Number(offer.productId);
+                                                    if (!Number.isFinite(id) || id <= 0) {
+                                                        return (
+                                                            <button
+                                                                type="button"
+                                                                className="bg-gray-300 text-white px-4 py-1 rounded-full text-xs font-bold cursor-not-allowed"
+                                                                disabled
+                                                            >
+                                                                + Ver más
+                                                            </button>
+                                                        );
+                                                    }
                                                     return (
-                                                        <button
-                                                            type="button"
-                                                            className="bg-gray-300 text-white px-4 py-1 rounded-full text-xs font-bold cursor-not-allowed"
-                                                            disabled
+                                                        <Link
+                                                            to={`/producto-detalle/${id}`}
+                                                            className="no-underline bg-[#a5cbf0] text-white px-4 py-1 rounded-full text-xs font-bold"
                                                         >
                                                             + Ver más
-                                                        </button>
+                                                        </Link>
                                                     );
-                                                }
-
-                                                return (
-                                                    <Link
-                                                        to={`/producto-detalle/${id}`}
-                                                        className="no-underline bg-[#a5cbf0] text-white px-4 py-1 rounded-full text-xs font-bold"
-                                                        >
-                                                        + Ver más
-                                                    </Link>
-                                                );
-                                            })()}
+                                                })()}
+                                            </div>
                                         </div>
+
+                                        {/* Imagen del producto */}
+                                        {offer.image_url && (
+                                            <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-gray-100">
+                                                <img
+                                                    src={offer.image_url}
+                                                    alt={offer.name}
+                                                    className="w-full h-full object-cover"
+                                                    onError={(e) => { e.currentTarget.style.display = "none"; }}
+                                                />
+                                            </div>
+                                        )}
                                     </div>
-                                    {/* Sin imagen específica por oferta por ahora */}
                                 </div>
                             ))}
                         </div>

@@ -54,6 +54,7 @@ type StoreProduct = {
     name: string;
     description?: string | null;
     price: string | number;
+    image_url?: string | null;
     visible?: boolean;
     product_category?: { id_product_category: number; name: string };
 };
@@ -109,7 +110,6 @@ export const VistaComercioPage = () => {
 
     useEffect(() => {
         if (!storeId) return;
-
         let isActive = true;
 
         const loadStore = async () => {
@@ -126,10 +126,7 @@ export const VistaComercioPage = () => {
         };
 
         loadStore();
-
-        return () => {
-            isActive = false;
-        };
+        return () => { isActive = false; };
     }, [storeId]);
 
     useEffect(() => {
@@ -158,14 +155,11 @@ export const VistaComercioPage = () => {
             }
         };
         loadCategories();
-        return () => {
-            isActive = false;
-        };
+        return () => { isActive = false; };
     }, []);
 
     useEffect(() => {
         if (!storeId) return;
-
         let isActive = true;
 
         const loadProducts = async () => {
@@ -184,6 +178,7 @@ export const VistaComercioPage = () => {
 
                 const { data: productsData } = await apiClient.get<StoreProductsResponse>(endpoint);
                 if (!isActive) return;
+
                 const list = Array.isArray(productsData)
                     ? productsData
                     : Array.isArray(productsData?.content)
@@ -191,6 +186,7 @@ export const VistaComercioPage = () => {
                         : Array.isArray(productsData?.products)
                             ? productsData.products
                             : [];
+
                 setProducts(list);
                 setStatus("success");
             } catch (pe) {
@@ -207,10 +203,7 @@ export const VistaComercioPage = () => {
         };
 
         loadProducts();
-
-        return () => {
-            isActive = false;
-        };
+        return () => { isActive = false; };
     }, [storeId, selectedCategoryId, priceRange.max, priceRange.min, appliedSearch]);
 
     const headerName = store?.name || storeName || "Comercio";
@@ -254,7 +247,7 @@ export const VistaComercioPage = () => {
                 <ArrowLeft
                     size={24}
                     style={{ cursor: "pointer", color: "#6b7280" }}
-                    onClick={handleBack}  // ← AGREGAR
+                    onClick={handleBack}
                 />
                 <h5 style={{ fontWeight: "bold", fontSize: "20px", margin: 0 }}>
                     Comercios / {headerName}
@@ -313,7 +306,9 @@ export const VistaComercioPage = () => {
                             id: p.id_product,
                             name: p.name,
                             price: String(p.price),
-                            imageUrl: "https://placehold.co/600x600?text=Producto",
+                            imageUrl: p.image_url
+                                ? resolveApiAssetUrl(p.image_url, apiBase || "http://localhost:3000")
+                                : "https://placehold.co/600x600?text=Producto",
                         }))}
                     />
                 )}

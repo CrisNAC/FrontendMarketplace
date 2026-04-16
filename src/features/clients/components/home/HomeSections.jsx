@@ -340,17 +340,35 @@ export const HomeSections = () => {
                     storesPage * STORES_PER_PAGE,
                     storesPage * STORES_PER_PAGE + STORES_PER_PAGE
                   )
-                  .map((store) => (
-                    <div key={store.id_store} className="flex flex-col items-center gap-[10px]">
-                      <div
-                        className="w-[150px] h-[150px] rounded-full flex items-center justify-center font-semibold text-[18px] cursor-pointer transition duration-300 hover:scale-105 bg-[#6A907F] text-black"
-                        onClick={() => handleCommerceClick(store)}
-                      >
-                        {(store.name || "").slice(0, 1).toUpperCase()}
+                  .map((store) => {
+                    const logoUrl = store.logo
+                      ? resolveApiAssetUrl(store.logo, apiBase || window.location.origin)
+                      : null;
+
+                    return (
+                      <div key={store.id_store} className="flex flex-col items-center gap-[10px]">
+                        <div
+                          className="w-[150px] h-[150px] rounded-full overflow-hidden flex items-center justify-center font-semibold text-[18px] cursor-pointer transition duration-300 hover:scale-105 bg-[#6A907F] text-black"
+                          onClick={() => handleCommerceClick(store)}
+                        >
+                          {logoUrl ? (
+                            <img
+                              src={logoUrl}
+                              alt={store.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none";
+                                e.currentTarget.parentElement.innerText = (store.name || "").slice(0, 1).toUpperCase();
+                              }}
+                            />
+                          ) : (
+                            (store.name || "").slice(0, 1).toUpperCase()
+                          )}
+                        </div>
+                        <span className="text-center">{store.name}</span>
                       </div>
-                      <span className="text-center">{store.name}</span>
-                    </div>
-                  ))}
+                    );
+                  })}
               </div>
 
               <button

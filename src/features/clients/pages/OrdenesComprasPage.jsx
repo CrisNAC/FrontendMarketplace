@@ -141,8 +141,20 @@ export default function OrdenesComprasPage() {
                   className="bg-[#E8EBEA] rounded-2xl border border-[#cfd8d4] p-4 shadow-sm flex flex-col justify-between"
                 >
                   <div className="flex items-start gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-full bg-white border border-[#c5d0cc] flex items-center justify-center text-[#485B53] font-bold text-sm shrink-0">
-                      {initial}
+                    <div className="w-10 h-10 rounded-full bg-white border border-[#c5d0cc] flex items-center justify-center text-[#485B53] font-bold text-sm shrink-0 overflow-hidden">
+                      {cart.commerce?.logo ? (
+                        <img
+                          src={cart.commerce.logo}
+                          alt={storeName}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                            e.currentTarget.parentElement.textContent = initial;
+                          }}
+                        />
+                      ) : (
+                        initial
+                      )}
                     </div>
                     <div className="min-w-0 flex-1">
                       <h2 className="text-base font-bold text-[#1a1a1a] leading-tight">

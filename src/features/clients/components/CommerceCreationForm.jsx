@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
+import { X } from "lucide-react"
 import { Spinner } from "../../../components/Spinner"
 import MapView from "./Map"
 
@@ -19,6 +20,10 @@ export const CommerceCreationForm = () => {
     // ── Categorías de comercio cargadas desde el backend ─────────────────────
     const [categories, setCategories] = useState([])
 
+    // archivo de logo seleccionado localmente (se sube después de crear el comercio)
+    const [logoFile, setLogoFile] = useState(null)
+    const [logoPreview, setLogoPreview] = useState(null)
+
     const [formData, setFormData] = useState({
         name: "",
         email: "",
@@ -26,7 +31,7 @@ export const CommerceCreationForm = () => {
         address: "",
         latitude: null,
         longitude: null,
-        categoryId: "",   // ← antes era "category" y nunca se enviaba
+        categoryId: "",
         description: "",
         websiteUrl: "",
         instagramUrl: "",
@@ -74,6 +79,19 @@ export const CommerceCreationForm = () => {
             longitude: point?.lng ?? null,
         }))
         setError("")
+    }
+
+    // manejo del archivo de logo — preview local y guardado del File
+    const handleLogoChange = (e) => {
+        const file = e.target.files[0]
+        if (!file) return
+        setLogoFile(file)
+        setLogoPreview(URL.createObjectURL(file))
+    }
+
+    const removeLogo = () => {
+        setLogoFile(null)
+        setLogoPreview(null)
     }
 
     const handleSubmit = async (e) => {
@@ -153,7 +171,7 @@ export const CommerceCreationForm = () => {
 
         try {
             const payload = {
-                fk_user: userId,                              // ← antes era 6 hardcodeado
+                fk_user: userId,
                 fk_store_category: Number(formData.categoryId) || 1,
                 name: formData.name,
                 email: formData.email,
@@ -172,7 +190,7 @@ export const CommerceCreationForm = () => {
             const response = await fetch(`${API_BASE_URL}/api/commerces`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                credentials: "include",  // enviar cookie
+                credentials: "include",
                 body: JSON.stringify(payload),
             })
 
@@ -181,10 +199,27 @@ export const CommerceCreationForm = () => {
             if (!response.ok) {
                 setError(data.message || "Error al crear el comercio")
                 console.error("Error al crear el comercio:", data)
-            } else {
-                console.log("Comercio creado exitosamente:", data)
-                navigate("/comercio")
+                return
             }
+
+            // si el usuario seleccionó un logo, lo subimos usando el id del comercio recién creado
+            const newStoreId = data?.id_store
+            if (logoFile instanceof File && newStoreId) {
+                const logoFormData = new FormData()
+                logoFormData.append("image", logoFile)
+                await fetch(`${API_BASE_URL}/stores/${newStoreId}/image`, {
+                    method: "POST",
+                    credentials: "include",
+                    body: logoFormData,
+                }).catch((err) => {
+                    // no bloqueamos el éxito del comercio por un fallo de logo
+                    console.warn("[WARN] No se pudo subir el logo del comercio:", err)
+                })
+            }
+
+            console.log("Comercio creado exitosamente:", data)
+            navigate("/comercio")
+
         } catch (err) {
             setError(err.message)
         } finally {
@@ -255,6 +290,7 @@ export const CommerceCreationForm = () => {
                 />
             </div>
 
+            {/* Mapa */}
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Ubicación en mapa *</label>
                 <div className="border border-gray-200 rounded-md overflow-hidden">
@@ -326,6 +362,7 @@ export const CommerceCreationForm = () => {
                 <p className="text-xs text-gray-500 mt-1">Máximo 500 caracteres</p>
             </div>
 
+            {/* Precios de envío */}
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Precio Base de Envío por km (Gs.) *</label>
                 <input
@@ -399,17 +436,43 @@ export const CommerceCreationForm = () => {
             </div>
 
             {/* Logo */}
-            <p className="text-gray-800 mb-0">Logo del comercio</p>
-            <div className="border border-gray-200 rounded flex items-center overflow-hidden">
-                <span className="px-3 py-2 bg-gray-50 border-r border-gray-200 text-gray-600 text-sm">
-                    Archivo:
-                </span>
-                <input
-                    type="file"
-                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer"
-                />
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Logo del comercio</label>
+
+                {/* preview si se seleccionó un archivo */}
+                {logoPreview && (
+                    <div className="relative inline-block mb-2">
+                        <img
+                            src={logoPreview}
+                            alt="Preview logo"
+                            className="w-24 h-24 object-cover rounded-md border border-gray-200"
+                        />
+                        <button
+                            type="button"
+                            onClick={removeLogo}
+                            disabled={loading}
+                            className="absolute top-1 right-1 bg-black/50 text-white rounded-full w-5 h-5 flex items-center justify-center hover:bg-black/70 disabled:cursor-not-allowed"
+                            aria-label="Quitar logo"
+                        >
+                            <X size={10} />
+                        </button>
+                    </div>
+                )}
+
+                <div className="border border-gray-200 rounded flex items-center overflow-hidden">
+                    <span className="px-3 py-2 bg-gray-50 border-r border-gray-200 text-gray-600 text-sm">
+                        Archivo:
+                    </span>
+                    <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoChange}
+                        disabled={loading}
+                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+                    />
+                </div>
+                <p className="text-xs text-gray-400 mt-1">Formato: 500px x 500px 72ppi. JPG o PNG recomendado.</p>
             </div>
-            <p className="text-xs text-gray-400 mt-1">Formato: 500px x 500px 72ppi</p>
 
             {/* Botones */}
             <div className="grid grid-cols-2 gap-4">
