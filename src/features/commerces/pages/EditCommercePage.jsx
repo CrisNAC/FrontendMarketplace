@@ -94,10 +94,11 @@ export function EditCommercePage() {
     const navigate = useNavigate();
 
     const {
-        formData, logoPreview, validationErrors, categories,
+        formData, logoPreview, logoFile, validationErrors, categories,
         isLoadingInitialData, isSubmitting, isFormDisabled,
         loadError, successToast, errorModal, closeErrorModal,
-        onFieldChange, onLocationChange, removeLogo, handleSubmit, errorRef,
+        onFieldChange, onLocationChange, onLogoFileChange, removeLogo,
+        handleSubmit, errorRef,
     } = useEditCommerce();
 
     // Redirigir a perfil 1.5s después de guardar exitosamente
@@ -261,67 +262,45 @@ export function EditCommercePage() {
 
                         <Field label="Sitio web" error={validationErrors.websiteUrl}>
                             <input
-                                type="url"
-                                name="websiteUrl"
-                                value={formData.websiteUrl}
-                                onChange={onFieldChange}
-                                disabled={isFormDisabled}
-                                maxLength={500}
-                                placeholder="https://mi-comercio.com"
+                                type="url" name="websiteUrl" value={formData.websiteUrl}
+                                onChange={onFieldChange} disabled={isFormDisabled}
+                                maxLength={500} placeholder="https://mi-comercio.com"
                                 style={inputStyle}
                             />
                         </Field>
 
                         <Field label="Instagram" error={validationErrors.instagramUrl}>
                             <input
-                                type="url"
-                                name="instagramUrl"
-                                value={formData.instagramUrl}
-                                onChange={onFieldChange}
-                                disabled={isFormDisabled}
-                                maxLength={500}
-                                placeholder="https://instagram.com/mi_comercio"
+                                type="url" name="instagramUrl" value={formData.instagramUrl}
+                                onChange={onFieldChange} disabled={isFormDisabled}
+                                maxLength={500} placeholder="https://instagram.com/mi_comercio"
                                 style={inputStyle}
                             />
                         </Field>
 
                         <Field label="TikTok" error={validationErrors.tiktokUrl}>
                             <input
-                                type="url"
-                                name="tiktokUrl"
-                                value={formData.tiktokUrl}
-                                onChange={onFieldChange}
-                                disabled={isFormDisabled}
-                                maxLength={500}
-                                placeholder="https://tiktok.com/@mi_comercio"
+                                type="url" name="tiktokUrl" value={formData.tiktokUrl}
+                                onChange={onFieldChange} disabled={isFormDisabled}
+                                maxLength={500} placeholder="https://tiktok.com/@mi_comercio"
                                 style={inputStyle}
                             />
                         </Field>
 
                         <Field label="Precio Base de Envío por km (Gs.)" required error={validationErrors.basePrice}>
                             <input
-                                type="number"
-                                name="basePrice"
-                                min="0"
-                                step="0.01"
-                                value={formData.basePrice}
-                                onChange={onFieldChange}
-                                disabled={isFormDisabled}
-                                placeholder="Ej: 2500"
+                                type="number" name="basePrice" min="0" step="0.01"
+                                value={formData.basePrice} onChange={onFieldChange}
+                                disabled={isFormDisabled} placeholder="Ej: 2500"
                                 style={validationErrors.basePrice ? inputErrorStyle : inputStyle}
                             />
                         </Field>
 
                         <Field label="Precio por km para Distancia > 2 km (Gs.)" required error={validationErrors.distancePrice}>
                             <input
-                                type="number"
-                                name="distancePrice"
-                                min="0"
-                                step="0.01"
-                                value={formData.distancePrice}
-                                onChange={onFieldChange}
-                                disabled={isFormDisabled}
-                                placeholder="Ej: 4000"
+                                type="number" name="distancePrice" min="0" step="0.01"
+                                value={formData.distancePrice} onChange={onFieldChange}
+                                disabled={isFormDisabled} placeholder="Ej: 4000"
                                 style={validationErrors.distancePrice ? inputErrorStyle : inputStyle}
                             />
                         </Field>
@@ -349,34 +328,18 @@ export function EditCommercePage() {
                                     showDistancePanel={false}
                                 />
                             </div>
-
-                            <div style={{
-                                display: "flex",
-                                justifyContent: "space-between",
-                                alignItems: "center",
-                                marginTop: "8px",
-                                gap: "8px"
-                            }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "8px", gap: "8px" }}>
                                 <span style={{ fontSize: "12px", color: "#6b7280" }}>
                                     {formData.latitude !== null && formData.longitude !== null
                                         ? `Punto seleccionado: ${Number(formData.latitude).toFixed(5)}, ${Number(formData.longitude).toFixed(5)}`
                                         : "Haz click en el mapa para seleccionar la ubicación exacta."}
                                 </span>
-
                                 {formData.latitude !== null && formData.longitude !== null && (
                                     <button
                                         type="button"
                                         onClick={() => onLocationChange(null)}
                                         disabled={isFormDisabled}
-                                        style={{
-                                            border: "none",
-                                            background: "none",
-                                            color: "#dc2626",
-                                            fontSize: "12px",
-                                            fontWeight: "600",
-                                            cursor: isFormDisabled ? "not-allowed" : "pointer",
-                                            opacity: isFormDisabled ? 0.6 : 1
-                                        }}
+                                        style={{ border: "none", background: "none", color: "#dc2626", fontSize: "12px", fontWeight: "600", cursor: isFormDisabled ? "not-allowed" : "pointer", opacity: isFormDisabled ? 0.6 : 1 }}
                                     >
                                         Limpiar punto
                                     </button>
@@ -394,7 +357,9 @@ export function EditCommercePage() {
                         <h6 style={sectionTitle}>Imágenes del Comercio</h6>
 
                         <label style={labelStyle}>Logo</label>
-                        {logoPreview && (
+
+                        {/* preview del logo actual o del archivo seleccionado */}
+                        {logoPreview ? (
                             <div style={{ position: "relative", marginBottom: "8px" }}>
                                 <img
                                     src={logoPreview} alt="Logo"
@@ -410,16 +375,40 @@ export function EditCommercePage() {
                                     <X size={10} />
                                 </button>
                             </div>
+                        ) : (
+                            <div style={{ width: "100%", height: "80px", backgroundColor: "#f9fafb", borderRadius: "8px", border: "1px dashed #d1d5db", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "8px" }}>
+                                <span style={{ fontSize: "12px", color: "#9ca3af" }}>Sin logo</span>
+                            </div>
                         )}
-                        <input
-                            name="logoUrl" value={formData.logoUrl} onChange={onFieldChange}
-                            disabled={isFormDisabled}
-                            placeholder="https://images.unsplash.com/..."
-                            style={{ ...inputStyle, fontSize: "12px", marginBottom: validationErrors.logoUrl ? "4px" : "12px" }}
-                        />
+
+                        {/* selector de archivo — reemplaza el campo de URL */}
+                        <label style={{
+                            display: "inline-flex", alignItems: "center", gap: "6px",
+                            backgroundColor: "#6b9080", color: "white",
+                            padding: "6px 14px", borderRadius: "8px",
+                            fontSize: "13px", fontWeight: "600",
+                            cursor: isFormDisabled ? "not-allowed" : "pointer",
+                            opacity: isFormDisabled ? 0.6 : 1,
+                            pointerEvents: isFormDisabled ? "none" : "auto",
+                            marginBottom: "6px",
+                        }}>
+                            Seleccionar imagen
+                            <input
+                                type="file"
+                                accept="image/*"
+                                style={{ display: "none" }}
+                                disabled={isFormDisabled}
+                                onChange={(e) => {
+                                    const file = e.target.files[0];
+                                    if (file) onLogoFileChange(file);
+                                }}
+                            />
+                        </label>
+                        <p style={{ fontSize: "11px", color: "#9ca3af", margin: 0 }}>JPG o PNG recomendado</p>
+
                         {validationErrors.logoUrl && <p style={errorMsg}>{validationErrors.logoUrl}</p>}
 
-                        <label style={{ ...labelStyle, marginTop: "4px" }}>Banner</label>
+                        <label style={{ ...labelStyle, marginTop: "16px" }}>Banner</label>
                         {/* Banner: campo reservado para sprint futuro, aún no persiste en el backend */}
                         <input
                             name="bannerUrl"

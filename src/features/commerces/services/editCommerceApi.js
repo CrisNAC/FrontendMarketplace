@@ -99,12 +99,11 @@ export const updateCommerce = async ({ commerceId, payload }) => {
  */
 export const getBackendErrorMessage = (error, fallbackMessage) => {
     if (axios.isAxiosError(error)) {
-        const backendMessage =
-            error.response?.data?.message ||
-            error.response?.data?.error ||
-            error.response?.data?.detail;
-
-        if (backendMessage) return backendMessage;
+        const data = error.response?.data;
+        if (typeof data === "string") return data;
+        if (typeof data?.message === "string") return data.message;
+        if (typeof data?.error === "string") return data.error;
+        if (typeof data?.detail === "string") return data.detail;
 
         switch (error.response?.status) {
             case 400: return "Datos inválidos. Revisá los campos requeridos.";
@@ -139,5 +138,39 @@ export const updateStoreStatus = async (commerceId, store_status) => {
 // Misma respuesta que GET público; el backend solo expone GET /api/commerces/:id (no existe /my/:id).
 export const fetchMyCommerce = async (commerceId) => {
     const response = await apiClient.get(`/api/commerces/${commerceId}`);
+    return response.data;
+};
+
+// ─── Imagen del comercio (logo) ───────────────────────────────────────────────
+
+/**
+ * GET logo actual del comercio.
+ * GET /stores/:id/image
+ * Devuelve: { logo: "https://..." | null }
+ */
+export const getStoreImage = async (storeId) => {
+    const response = await apiClient.get(`/stores/${storeId}/image`);
+    return response.data; // { logo: "https://..." | null }
+};
+
+/**
+ * Sube o reemplaza el logo del comercio (upsert).
+ * POST /stores/:id/image
+ */
+export const uploadStoreImage = async (storeId, file) => {
+    const formData = new FormData();
+    formData.append("image", file);
+    const response = await apiClient.post(`/stores/${storeId}/image`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data; // { logo: "https://..." }
+};
+
+/**
+ * Elimina el logo del comercio.
+ * DELETE /stores/:id/image
+ */
+export const deleteStoreImage = async (storeId) => {
+    const response = await apiClient.delete(`/stores/${storeId}/image`);
     return response.data;
 };

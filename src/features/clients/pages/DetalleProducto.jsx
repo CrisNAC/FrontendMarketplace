@@ -3,11 +3,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { ArrowLeft } from "lucide-react";
 import axios from "axios";
-
-import iphoneImg from "../../../assets/iphone.png";
-import negroImg from "../../../assets/iphonenegrito.png";
-import naranjaImg from "../../../assets/iphonenaranja.png";
-import whiteImg from "../../../assets/iphonewhite.png";
 import { addToCartApi } from "../../../lib/cartApi";
 import { mergeCartResponseFromApi } from "../../../lib/cartLocalStorage";
 import { formatGuarani } from "../../../lib/formatGuarani.js";
@@ -77,19 +72,11 @@ export default function DetalleProducto() {
   const [addingToWishlist, setAddingToWishlist] = useState(false);
   const [addingToCart, setAddingToCart] = useState(false);
 
-  const colores = [
-    { id: "deep-blue", nombre: "Deep Blue", img: negroImg },
-    { id: "orange", nombre: "Orange", img: naranjaImg },
-    { id: "white", nombre: "White", img: whiteImg },
-  ];
-  const [colorSel, setColorSel] = useState(colores[0]);
-
   const agregarAListaDeseados = async () => {
     if (addingToWishlist || !productId) return;
 
     try {
       setAddingToWishlist(true);
-
       const sessionRes = await axios.get(
         `${apiBase || "http://localhost:3000"}/api/session/user-session`,
         { withCredentials: true }
@@ -129,7 +116,6 @@ export default function DetalleProducto() {
 
     try {
       setAddingToCart(true);
-
       const sessionRes = await axios.get(
         `${apiBase || "http://localhost:3000"}/api/session/user-session`,
         { withCredentials: true }
@@ -217,6 +203,8 @@ export default function DetalleProducto() {
         </div>
 
         <div className="grid grid-cols-2 gap-16 items-start">
+
+          {/* Imagen del producto */}
           <div className="flex justify-center">
             {product?.imageUrl ? (
               <img
@@ -224,10 +212,12 @@ export default function DetalleProducto() {
                 alt={productName}
                 className="w-[400px] object-contain rounded-2xl"
                 draggable={false}
-                onError={(e) => { e.currentTarget.src = iphoneImg; }}
+                onError={(e) => { e.currentTarget.style.display = "none"; }}
               />
             ) : (
-              <img src={iphoneImg} alt="iPhone" className="w-[400px] object-contain" draggable={false} />
+              <div className="w-[400px] h-[400px] flex items-center justify-center rounded-2xl bg-gray-100 text-gray-400 text-sm">
+                Sin imagen
+              </div>
             )}
           </div>
 
