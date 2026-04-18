@@ -107,9 +107,14 @@ export const AdminCategoryDetailPage = () => {
     const [error, setError]             = useState(null);
     const [productPage, setProductPage] = useState(1);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [productError, setProductError] = useState(null);
 
     // Cargar datos de la categoría
     useEffect(() => {
+        setLoadingCat(true);
+        setError(null);
+        setCategory(null);
+        setProducts([]);
         fetchAdminCategoryById(Number(id))
             .then(setCategory)
             .catch(() => setError("No se pudo cargar la categoría."))
@@ -120,6 +125,7 @@ export const AdminCategoryDetailPage = () => {
     const loadProducts = useCallback(async (page) => {
         if (!category) return;
         setLoadingProd(true);
+        setProductError(null);
         try {
             const result = await fetchCategoriesWithProducts({
                 searchCategory: category.name,
@@ -138,7 +144,7 @@ export const AdminCategoryDetailPage = () => {
                 });
             }
         } catch {
-            setError("No se pudieron cargar los productos.");
+            setProductError("No se pudieron cargar los productos.");
         } finally {
             setLoadingProd(false);
         }
@@ -147,8 +153,8 @@ export const AdminCategoryDetailPage = () => {
     useEffect(() => { loadProducts(productPage); }, [category, productPage]);
 
     const handleSaveEdit = async (catId, payload) => {
-        await updateAdminCategory(catId, payload);
-        setCategory(prev => ({ ...prev, ...payload }));
+        const updated = await updateAdminCategory(catId, payload);
+        setCategory(prev => ({ ...prev, ...updated }));
         setShowEditModal(false);
     };
 

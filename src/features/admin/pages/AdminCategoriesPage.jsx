@@ -173,10 +173,9 @@ function CategoryRow({ cat, onEdit, onDelete }) {
                         style={{ background: "none", border: "1px solid #d1fae5", borderRadius: "6px", padding: "5px 8px", cursor: "pointer", color: "#15803d", display: "flex", alignItems: "center" }}>
                         <Pencil size={15} />
                     </button>
-                    {/* Eliminar — deshabilitado para id=1 */}
+                    {/* Eliminar */}
                     <button type="button" onClick={() => onDelete(cat)} title="Eliminar categoría"
-                        disabled={cat.id === 1}
-                        style={{ background: "none", border: "1px solid #fecdd3", borderRadius: "6px", padding: "5px 8px", cursor: cat.id === 1 ? "not-allowed" : "pointer", color: "#dc2626", display: "flex", alignItems: "center", opacity: cat.id === 1 ? 0.4 : 1 }}>
+                        style={{ background: "none", border: "1px solid #fecdd3", borderRadius: "6px", padding: "5px 8px", cursor: "pointer", color: "#dc2626", display: "flex", alignItems: "center" }}>
                         <Trash2 size={15} />
                     </button>
                 </div>
@@ -224,12 +223,12 @@ export const AdminCategoriesPage = () => {
         }
     }, [search, filterVisible]);
 
-    useEffect(() => { setPage(1); load(1); }, [search, filterVisible]);
-    useEffect(() => { load(page); }, [page]);
+    useEffect(() => { setPage(1); }, [search, filterVisible]);
+    useEffect(() => { load(page); }, [load, page]);
 
     const handleSaveEdit = async (id, payload) => {
-        await updateAdminCategory(id, payload);
-        setCategories(prev => prev.map(c => c.id === id ? { ...c, ...payload } : c));
+        const updated = await updateAdminCategory(id, payload);
+        setCategories(prev => prev.map(c => c.id === id ? { ...c, ...updated } : c));
         setCategoryToEdit(null);
     };
 
