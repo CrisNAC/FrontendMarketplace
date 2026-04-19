@@ -115,6 +115,10 @@ export const AdminCategoryDetailPage = () => {
         setError(null);
         setCategory(null);
         setProducts([]);
+        setProductPage(1);
+        setProductError(null);
+        setProductPagination({ total: 0, page: 1, limit: 10, totalPages: 1 });
+        setLoadingProd(true);
         fetchAdminCategoryById(Number(id))
             .then(setCategory)
             .catch(() => setError("No se pudo cargar la categoría."))

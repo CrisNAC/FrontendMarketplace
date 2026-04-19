@@ -243,9 +243,14 @@ export const AdminCategoriesPage = () => {
         setDeleteError("");
         try {
             await deleteAdminCategory(categoryToDelete.id);
+            const nextPage = categories.length === 1 && page > 1 ? page - 1 : page;
             setCategoryToDelete(null);
             setDeleteError("");
-            load(page);
+            if (nextPage !== page) {
+                setPage(nextPage);
+            } else {
+                load(page);
+            }
         } catch (err) {
             setDeleteError(err?.response?.data?.message || "No se pudo eliminar la categoría.");
         } finally {
@@ -271,8 +276,8 @@ export const AdminCategoriesPage = () => {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "20px" }}>
                 {[
                     { label: "Total de Categorías",        value: pagination.categoryTotal },
-                    { label: "Visibles (esta página)",     value: categories.filter(c => c.visible).length },
-                    { label: "Ocultas (esta página)",      value: categories.filter(c => !c.visible).length },
+                    { label: "Categorías Visibles",     value: categories.filter(c => c.visible).length },
+                    { label: "Categorías Ocultas",      value: categories.filter(c => !c.visible).length },
                 ].map(({ label, value }) => (
                     <div key={label} style={{ ...cardStyle, textAlign: "center" }}>
                         <p style={{ margin: "0 0 4px", fontSize: "13px", color: "#6b7280" }}>{label}</p>
