@@ -95,7 +95,7 @@ function EditModal({ category, onSave, onCancel }) {
 }
 
 // ─── Modal: Confirmar borrado ─────────────────────────────────────────────────
-function DeleteModal({ category, isDeleting, onConfirm, onCancel }) {
+function DeleteModal({ category, isDeleting, onConfirm, onCancel, deleteError }) {
     if (!category) return null;
     return (
         <div style={{ position: "fixed", inset: 0, zIndex: 50, backgroundColor: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
@@ -112,6 +112,14 @@ function DeleteModal({ category, isDeleting, onConfirm, onCancel }) {
                 <p style={{ fontSize: "13px", color: "#6b7280", margin: "0 0 24px 0" }}>
                     Los productos asociados serán reasignados a la categoría por defecto. Esta acción no se puede deshacer.
                 </p>
+
+                {/* Error del backend — aparece dentro del modal */}
+                {deleteError && (
+                    <div style={{ backgroundColor: "#fff1f2", border: "1px solid #fecdd3", borderRadius: "8px", padding: "10px 12px", color: "#be123c", fontSize: "13px", marginBottom: "16px" }}>
+                        {deleteError}
+                    </div>
+                )}
+
                 <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
                     <button type="button" onClick={onCancel} disabled={isDeleting}
                         style={{ padding: "8px 20px", borderRadius: "8px", border: "1px solid #d1d5db", backgroundColor: "white", fontSize: "14px", fontWeight: "500", color: "#374151", cursor: isDeleting ? "not-allowed" : "pointer", opacity: isDeleting ? 0.6 : 1 }}>
@@ -127,59 +135,56 @@ function DeleteModal({ category, isDeleting, onConfirm, onCancel }) {
     );
 }
 
-// ─── Fila expandible ──────────────────────────────────────────────────────────
+// ─── Fila de categoría ────────────────────────────────────────────────────────
 function CategoryRow({ cat, onEdit, onDelete }) {
     const navigate = useNavigate();
 
     return (
-            <div style={{ display: "flex", alignItems: "center", gap: "14px", padding: "14px 8px", borderBottom: "1px solid #f3f4f6", flexWrap: "wrap" }}>
-                <div style={{ width: "36px", height: "36px", borderRadius: "8px", backgroundColor: "var(--background-soft)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <Tag size={18} color="var(--primary-dark)" />
-                </div>
-
-                <div style={{ flex: 1, minWidth: "150px" }}>
-                    <p style={{ margin: 0, fontWeight: "600", fontSize: "14px" }}>{cat.name}</p>
-                    <p style={{ margin: 0, fontSize: "12px", color: "#6b7280", display: "flex", alignItems: "center", gap: "4px" }}>
-                        <Package size={11} /> {cat.productCount} producto{cat.productCount !== 1 ? "s" : ""}
-                    </p>
-                </div>
-
-                <span style={{
-                    padding: "3px 10px", borderRadius: "999px", fontSize: "12px", fontWeight: "500",
-                    backgroundColor: cat.visible ? "#dcfce7" : "#f1f5f9",
-                    color: cat.visible ? "#15803d" : "#475569",
-                    minWidth: "70px", textAlign: "center",
-                }}>
-                    {cat.visible ? "Visible" : "Oculta"}
-                </span>
-
-                <span style={{
-                    padding: "3px 10px", borderRadius: "999px", fontSize: "12px", fontWeight: "500",
-                    backgroundColor: cat.status ? "#dbeafe" : "#fef3c7",
-                    color: cat.status ? "#1d4ed8" : "#92400e",
-                    minWidth: "70px", textAlign: "center",
-                }}>
-                    {cat.status ? "Activa" : "Inactiva"}
-                </span>
-
-                <div style={{ display: "flex", gap: "6px" }}>
-                    {/* Ver detalle completo */}
-                    <button type="button" onClick={() => navigate(`/admin/categorias/${cat.id}`)} title="Ver detalle"
-                        style={{ background: "none", border: "1px solid #bfdbfe", borderRadius: "6px", padding: "5px 8px", cursor: "pointer", color: "#2563eb", display: "flex", alignItems: "center" }}>
-                        <Eye size={15} />
-                    </button>
-                    {/* Editar */}
-                    <button type="button" onClick={() => onEdit(cat)} title="Editar categoría"
-                        style={{ background: "none", border: "1px solid #d1fae5", borderRadius: "6px", padding: "5px 8px", cursor: "pointer", color: "#15803d", display: "flex", alignItems: "center" }}>
-                        <Pencil size={15} />
-                    </button>
-                    {/* Eliminar */}
-                    <button type="button" onClick={() => onDelete(cat)} title="Eliminar categoría"
-                        style={{ background: "none", border: "1px solid #fecdd3", borderRadius: "6px", padding: "5px 8px", cursor: "pointer", color: "#dc2626", display: "flex", alignItems: "center" }}>
-                        <Trash2 size={15} />
-                    </button>
-                </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "14px", padding: "14px 8px", borderBottom: "1px solid #f3f4f6", flexWrap: "wrap" }}>
+            <div style={{ width: "36px", height: "36px", borderRadius: "8px", backgroundColor: "var(--background-soft)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Tag size={18} color="var(--primary-dark)" />
             </div>
+
+            <div style={{ flex: 1, minWidth: "150px" }}>
+                <p style={{ margin: 0, fontWeight: "600", fontSize: "14px" }}>{cat.name}</p>
+                <p style={{ margin: 0, fontSize: "12px", color: "#6b7280", display: "flex", alignItems: "center", gap: "4px" }}>
+                    <Package size={11} /> {cat.productCount} producto{cat.productCount !== 1 ? "s" : ""}
+                </p>
+            </div>
+
+            <span style={{
+                padding: "3px 10px", borderRadius: "999px", fontSize: "12px", fontWeight: "500",
+                backgroundColor: cat.visible ? "#dcfce7" : "#f1f5f9",
+                color: cat.visible ? "#15803d" : "#475569",
+                minWidth: "70px", textAlign: "center",
+            }}>
+                {cat.visible ? "Visible" : "Oculta"}
+            </span>
+
+            <span style={{
+                padding: "3px 10px", borderRadius: "999px", fontSize: "12px", fontWeight: "500",
+                backgroundColor: cat.status ? "#dbeafe" : "#fef3c7",
+                color: cat.status ? "#1d4ed8" : "#92400e",
+                minWidth: "70px", textAlign: "center",
+            }}>
+                {cat.status ? "Activa" : "Inactiva"}
+            </span>
+
+            <div style={{ display: "flex", gap: "6px" }}>
+                <button type="button" onClick={() => navigate(`/admin/categorias/${cat.id}`)} title="Ver detalle"
+                    style={{ background: "none", border: "1px solid #bfdbfe", borderRadius: "6px", padding: "5px 8px", cursor: "pointer", color: "#2563eb", display: "flex", alignItems: "center" }}>
+                    <Eye size={15} />
+                </button>
+                <button type="button" onClick={() => onEdit(cat)} title="Editar categoría"
+                    style={{ background: "none", border: "1px solid #d1fae5", borderRadius: "6px", padding: "5px 8px", cursor: "pointer", color: "#15803d", display: "flex", alignItems: "center" }}>
+                    <Pencil size={15} />
+                </button>
+                <button type="button" onClick={() => onDelete(cat)} title="Eliminar categoría"
+                    style={{ background: "none", border: "1px solid #fecdd3", borderRadius: "6px", padding: "5px 8px", cursor: "pointer", color: "#dc2626", display: "flex", alignItems: "center" }}>
+                    <Trash2 size={15} />
+                </button>
+            </div>
+        </div>
     );
 }
 
@@ -196,7 +201,7 @@ export const AdminCategoriesPage = () => {
     const [categoryToEdit, setCategoryToEdit]     = useState(null);
     const [categoryToDelete, setCategoryToDelete] = useState(null);
     const [isDeleting, setIsDeleting]             = useState(false);
-    const [actionError, setActionError]           = useState("");
+    const [deleteError, setDeleteError]           = useState("");
 
     const load = useCallback(async (currentPage) => {
         setLoading(true);
@@ -235,13 +240,14 @@ export const AdminCategoriesPage = () => {
     const handleDeleteConfirm = async () => {
         if (!categoryToDelete) return;
         setIsDeleting(true);
-        setActionError("");
+        setDeleteError("");
         try {
             await deleteAdminCategory(categoryToDelete.id);
             setCategoryToDelete(null);
+            setDeleteError("");
             load(page);
         } catch (err) {
-            setActionError(err?.response?.data?.message || "No se pudo eliminar la categoría.");
+            setDeleteError(err?.response?.data?.message || "No se pudo eliminar la categoría.");
         } finally {
             setIsDeleting(false);
         }
@@ -264,9 +270,9 @@ export const AdminCategoriesPage = () => {
             {/* Stat cards */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "20px" }}>
                 {[
-                    { label: "Total de Categorías", value: pagination.categoryTotal },
-                    { label: "Categorías Visibles", value: categories.filter(c => c.visible).length },
-                    { label: "Categorías Ocultas",  value: categories.filter(c => !c.visible).length },
+                    { label: "Total de Categorías",        value: pagination.categoryTotal },
+                    { label: "Visibles (esta página)",     value: categories.filter(c => c.visible).length },
+                    { label: "Ocultas (esta página)",      value: categories.filter(c => !c.visible).length },
                 ].map(({ label, value }) => (
                     <div key={label} style={{ ...cardStyle, textAlign: "center" }}>
                         <p style={{ margin: "0 0 4px", fontSize: "13px", color: "#6b7280" }}>{label}</p>
@@ -293,12 +299,6 @@ export const AdminCategoriesPage = () => {
                 </div>
             </div>
 
-            {actionError && (
-                <div style={{ backgroundColor: "#fff1f2", border: "1px solid #fecdd3", borderRadius: "10px", padding: "12px 16px", color: "#be123c", fontSize: "14px", marginBottom: "16px" }}>
-                    {actionError}
-                </div>
-            )}
-
             {/* Tabla */}
             <div style={cardStyle}>
                 <p style={{ margin: "0 0 4px", fontWeight: "600", fontSize: "15px" }}>
@@ -324,8 +324,8 @@ export const AdminCategoriesPage = () => {
                             <CategoryRow
                                 key={cat.id}
                                 cat={cat}
-                                onEdit={cat => { setActionError(""); setCategoryToEdit(cat); }}
-                                onDelete={cat => { setActionError(""); setCategoryToDelete(cat); }}
+                                onEdit={cat => { setDeleteError(""); setCategoryToEdit(cat); }}
+                                onDelete={cat => { setDeleteError(""); setCategoryToDelete(cat); }}
                             />
                         ))}
                     </div>
@@ -364,7 +364,13 @@ export const AdminCategoriesPage = () => {
                     category={categoryToDelete}
                     isDeleting={isDeleting}
                     onConfirm={handleDeleteConfirm}
-                    onCancel={() => { if (!isDeleting) setCategoryToDelete(null); }}
+                    onCancel={() => {
+                        if (!isDeleting) {
+                            setCategoryToDelete(null);
+                            setDeleteError("");
+                        }
+                    }}
+                    deleteError={deleteError}
                 />
             )}
         </div>
