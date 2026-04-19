@@ -1,11 +1,25 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Mail, Lock, User } from "lucide-react";
 import apiClient from "../../../lib/apiClient";
 import logo from "/src/assets/feather.png";
-import loginBackground from "/src/assets/login background.png";
+
+/** Ruta tras login según rol del backend (ADMIN | CUSTOMER | SELLER | DELIVERY). */
+function getPostLoginPath(role) {
+  switch (role) {
+    case "ADMIN":
+      return "/admin/usuarios";
+    case "SELLER":
+      return "/comercio";
+    case "CUSTOMER":
+    case "DELIVERY":
+    default:
+      return "/homepage";
+  }
+}
 
 export default function AuthPage() {
-  const AUTH_BG_IMAGE = loginBackground;
+  const navigate = useNavigate();
 
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -27,7 +41,6 @@ export default function AuthPage() {
     e.preventDefault();
     setError(null);
 
-    // Validación de pass en registro
     if (!isLogin && form.password !== form.confirmPassword) {
       setError("Las contraseñas no coinciden");
       return;
@@ -42,16 +55,16 @@ export default function AuthPage() {
           password: form.password,
         });
 
-        console.log(res.data);
-        window.location = "/homepage";
+        const role = res.data?.user?.role;
+        const path = getPostLoginPath(role);
+        navigate(path, { replace: true });
       } else {
-        const res = await apiClient.post("/api/users/register", {
+        await apiClient.post("/api/users/register", {
           name: form.name,
           email: form.email,
           password: form.password,
         });
 
-        console.log("Registro exitoso:", res.data);
         setIsLogin(true);
       }
     } catch (err) {
@@ -59,48 +72,53 @@ export default function AuthPage() {
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
-    <div
-      className="min-h-screen w-full bg-cover bg-center bg-no-repeat px-4 py-8 md:px-8"
-      style={{
-        backgroundImage: `linear-gradient(rgba(12, 25, 31, 0.5), rgba(12, 25, 31, 0.5)), url('${AUTH_BG_IMAGE}')`
-      }}
-    >
-      <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-6xl items-center justify-center">
-        <div className="w-full max-w-md rounded-3xl border border-white/30 bg-white/16 p-6 shadow-2xl backdrop-blur-md sm:p-8">
-          <div className="mb-6 flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#6B9080] text-white shadow-md">
-              <img
-                src={logo}
-                alt="OpenMarket logo"
-                className="h-6 w-6 object-contain"
-              />
+    <div className="relative min-h-[100dvh] w-full overflow-x-hidden">
+      {/* Fondo fijo: gradiente marca + orbes (estilo “dots”) + burbujas */}
+      <div className="pointer-events-none fixed inset-0 z-0" aria-hidden>
+        <div className="auth-bg-gradient" />
+        <div className="auth-bg-orbs">
+          <span className="auth-bg-orbs__item auth-bg-orbs__item--a" />
+          <span className="auth-bg-orbs__item auth-bg-orbs__item--b" />
+        </div>
+        <div className="auth-bg-dots">
+          <span className="auth-bg-dots__cloud auth-bg-dots__cloud--1" />
+          <span className="auth-bg-dots__cloud auth-bg-dots__cloud--2" />
+          <span className="auth-bg-dots__cloud auth-bg-dots__cloud--3" />
+          <span className="auth-bg-dots__cloud auth-bg-dots__cloud--4" />
+        </div>
+        <ul className="auth-bg-bubbles">
+          {Array.from({ length: 10 }, (_, i) => (
+            <li key={i} />
+          ))}
+        </ul>
+      </div>
+
+      <main className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-lg items-center justify-center px-4 py-10 sm:px-6">
+        <div className="w-full max-w-md rounded-2xl border border-white/70 bg-white/95 p-5 shadow-[0_25px_50px_-12px_rgba(47,91,72,0.22)] backdrop-blur-sm sm:p-7">
+          <div className="mb-6 flex flex-col items-center text-center">
+            <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[#769482] text-white shadow-lg shadow-[#769482]/35 ring-4 ring-[#769482]/15">
+              <img src={logo} alt="" className="h-8 w-8 object-contain" />
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-white">OpenMarket</h1>
-              <p className="text-xs text-white/80">Tu marketplace sostenible</p>
-            </div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">OpenMarket</h1>
+            <p className="mt-1 text-sm text-slate-500">Tu marketplace sostenible</p>
           </div>
 
-          <div className="mb-6">
-            <h2 className="text-2xl font-extrabold text-white">
-              {isLogin ? "Inicia sesión" : "Crea tu cuenta"}
-            </h2>
-            <p className="mt-1 text-sm text-white/80">
-              {isLogin
-                ? "Accede para descubrir productos y ofertas."
-                : "Regístrate para empezar a comprar en OpenMarket."}
-            </p>
+          <div className="mb-6 text-center">
+            <p className="text-lg font-semibold text-slate-800">Bienvenido</p>
+            <p className="mt-1 text-sm text-slate-500">Accede a tu cuenta o regístrate</p>
           </div>
 
-          <div className="mb-6 grid grid-cols-2 rounded-2xl bg-white/20 p-1.5">
+          <div className="mb-6 flex rounded-full bg-slate-100/90 p-1 shadow-inner">
             <button
               type="button"
               onClick={() => { setIsLogin(true); setError(null); }}
-              className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
-                isLogin ? "bg-white text-[#355347] shadow" : "text-white/85 hover:bg-white/10"
+              className={`flex-1 rounded-full px-3 py-2.5 text-sm font-semibold transition-all duration-200 ${
+                isLogin
+                  ? "bg-white text-[#355347] shadow-md shadow-slate-200/80"
+                  : "text-slate-500 hover:text-slate-700"
               }`}
             >
               Iniciar sesión
@@ -108,8 +126,10 @@ export default function AuthPage() {
             <button
               type="button"
               onClick={() => { setIsLogin(false); setError(null); }}
-              className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
-                !isLogin ? "bg-white text-[#355347] shadow" : "text-white/85 hover:bg-white/10"
+              className={`flex-1 rounded-full px-3 py-2.5 text-sm font-semibold transition-all duration-200 ${
+                !isLogin
+                  ? "bg-white text-[#355347] shadow-md shadow-slate-200/80"
+                  : "text-slate-500 hover:text-slate-700"
               }`}
             >
               Registrarse
@@ -117,7 +137,7 @@ export default function AuthPage() {
           </div>
 
           {error && (
-            <div className="mb-4 rounded-xl border border-red-300/70 bg-red-500/15 px-4 py-2 text-sm text-red-100">
+            <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700">
               {error}
             </div>
           )}
@@ -125,18 +145,18 @@ export default function AuthPage() {
           <form className="space-y-4" onSubmit={handleSubmit}>
             {!isLogin && (
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-white/90">
+                <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-slate-500">
                   Nombre completo
                 </label>
-                <div className="flex items-center rounded-xl border border-white/40 bg-white/15 px-3 py-2 text-white">
-                  <User size={18} className="mr-2 text-white/80" />
+                <div className="flex items-center rounded-xl border border-slate-200/90 bg-slate-50 px-3 py-2.5 transition focus-within:border-[#769482]/50 focus-within:ring-2 focus-within:ring-[#769482]/20">
+                  <User size={18} className="mr-2.5 shrink-0 text-[#769482]" />
                   <input
                     type="text"
                     name="name"
                     value={form.name}
                     onChange={handleChange}
                     placeholder="Tu nombre"
-                    className="w-full bg-transparent text-sm text-white placeholder:text-white/60 outline-none"
+                    className="w-full bg-transparent text-sm text-slate-800 placeholder:text-slate-400 outline-none"
                     required
                   />
                 </div>
@@ -144,36 +164,36 @@ export default function AuthPage() {
             )}
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-white/90">
+              <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-slate-500">
                 Correo electrónico
               </label>
-              <div className="flex items-center rounded-xl border border-white/40 bg-white/15 px-3 py-2 text-white">
-                <Mail size={18} className="mr-2 text-white/80" />
+              <div className="flex items-center rounded-xl border border-slate-200/90 bg-slate-50 px-3 py-2.5 transition focus-within:border-[#769482]/50 focus-within:ring-2 focus-within:ring-[#769482]/20">
+                <Mail size={18} className="mr-2.5 shrink-0 text-[#769482]" />
                 <input
                   type="email"
                   name="email"
                   value={form.email}
                   onChange={handleChange}
                   placeholder="tu@correo.com"
-                  className="w-full bg-transparent text-sm text-white placeholder:text-white/60 outline-none"
+                  className="w-full bg-transparent text-sm text-slate-800 placeholder:text-slate-400 outline-none"
                   required
                 />
               </div>
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-white/90">
+              <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-slate-500">
                 Contraseña
               </label>
-              <div className="flex items-center rounded-xl border border-white/40 bg-white/15 px-3 py-2 text-white">
-                <Lock size={18} className="mr-2 text-white/80" />
+              <div className="flex items-center rounded-xl border border-slate-200/90 bg-slate-50 px-3 py-2.5 transition focus-within:border-[#769482]/50 focus-within:ring-2 focus-within:ring-[#769482]/20">
+                <Lock size={18} className="mr-2.5 shrink-0 text-[#769482]" />
                 <input
                   type="password"
                   name="password"
                   value={form.password}
                   onChange={handleChange}
-                  placeholder="********"
-                  className="w-full bg-transparent text-sm text-white placeholder:text-white/60 outline-none"
+                  placeholder="••••••••"
+                  className="w-full bg-transparent text-sm text-slate-800 placeholder:text-slate-400 outline-none"
                   required
                 />
               </div>
@@ -181,18 +201,18 @@ export default function AuthPage() {
 
             {!isLogin && (
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-white/90">
+                <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-slate-500">
                   Confirmar contraseña
                 </label>
-                <div className="flex items-center rounded-xl border border-white/40 bg-white/15 px-3 py-2 text-white">
-                  <Lock size={18} className="mr-2 text-white/80" />
+                <div className="flex items-center rounded-xl border border-slate-200/90 bg-slate-50 px-3 py-2.5 transition focus-within:border-[#769482]/50 focus-within:ring-2 focus-within:ring-[#769482]/20">
+                  <Lock size={18} className="mr-2.5 shrink-0 text-[#769482]" />
                   <input
                     type="password"
                     name="confirmPassword"
                     value={form.confirmPassword}
                     onChange={handleChange}
-                    placeholder="********"
-                    className="w-full bg-transparent text-sm text-white placeholder:text-white/60 outline-none"
+                    placeholder="••••••••"
+                    className="w-full bg-transparent text-sm text-slate-800 placeholder:text-slate-400 outline-none"
                     required
                   />
                 </div>
@@ -202,13 +222,13 @@ export default function AuthPage() {
             <button
               type="submit"
               disabled={loading}
-              className="mt-2 w-full rounded-xl bg-[#6B9080] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#5f8273] disabled:cursor-not-allowed disabled:opacity-70"
+              className="mt-2 w-full rounded-xl bg-[#769482] px-4 py-3 text-sm font-semibold text-white shadow-md shadow-[#769482]/30 transition hover:bg-[#6a8879] hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? "Cargando..." : isLogin ? "Iniciar sesión" : "Crear cuenta"}
             </button>
           </form>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
