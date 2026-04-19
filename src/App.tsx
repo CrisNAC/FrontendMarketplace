@@ -54,6 +54,8 @@ import ChangePassword from './features/clients/pages/ChangePassword';
 
 import EditProductPage from './features/commerces/pages/EditProductPage';
 import { AdminUsersPage } from './features/admin/pages/AdminUsersPage';
+import { AdminCategoriesPage } from './features/admin/pages/AdminCategoriesPage';
+import { AdminCategoryDetailPage } from './features/admin/pages/AdminCategoryDetailPage';
 
 import Wishlist from "./features/clients/pages/Wishlist"
 import FavoritesPage from "./features/clients/pages/FavoritesPage";
@@ -210,6 +212,12 @@ function App() {
         {/* ── Área de administración (con sidebar) ──────────────────────── */}
         <Route path="/admin/usuarios" element={
           <AdminLayout><AdminUsersPage /></AdminLayout>
+        } />
+        <Route path="/admin/categorias" element={
+          <AdminLayout><AdminCategoriesPage /></AdminLayout>
+        } />
+        <Route path="/admin/categorias/:id" element={
+          <AdminLayout><AdminCategoryDetailPage /></AdminLayout>
         } />
 
         {/* ── Páginas de error ───────────────────────────────────────────── */}
