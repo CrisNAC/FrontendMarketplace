@@ -1,12 +1,15 @@
+import { useState } from "react";
 import { ArrowLeft, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { CreationResultModal } from "../components/createProduct/CreationResultModal";
+import { CategoryRequestModal } from "../components/createProduct/CategoryRequestModal";
 import Toggle from "../components/createProduct/Toggle";
 import {
   MAX_TAGS,
   MAX_VISIBLE_TAG_SUGGESTIONS,
   useCreateProduct,
 } from "../hooks/useCreateProduct";
+import { useCategoryRequest } from "../hooks/useCategoryRequest";
 
 const inputClassName =
   "mb-3 w-full rounded-[10px] border border-[#d2d8d4] bg-[#f0f2f1] px-3 py-2 text-[14px] text-[#1f2e27] outline-none transition focus:border-[#8fb6a3] focus:ring-4 focus:ring-[rgba(107,144,128,0.16)] disabled:cursor-not-allowed disabled:opacity-60";
@@ -42,6 +45,34 @@ export default function CreateProductPage() {
     toggleTag,
     handleSubmit,
   } = useCreateProduct();
+
+  // ── Modal de solicitud de categoría ──────────────────────────────────────
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+
+  const {
+    formData: categoryRequestFormData,
+    validationErrors: categoryRequestErrors,
+    isSubmitting: isSubmittingCategoryRequest,
+    resultModal: categoryRequestResultModal,
+    closeModal: closeCategoryRequestResultModal,
+    onFieldChange: onCategoryRequestFieldChange,
+    resetForm: resetCategoryRequestForm,
+    handleSubmit: handleCategoryRequestSubmit,
+  } = useCategoryRequest();
+
+  const handleCloseCategoryModal = () => {
+    setIsCategoryModalOpen(false);
+    if (!isSubmittingCategoryRequest) resetCategoryRequestForm();
+  };
+
+  const handleCategoryRequestSuccess = () => {
+    if (categoryRequestResultModal.variant === "success") {
+      // Resetear el selector de categorías al estado inicial
+      setFormData((prev) => ({ ...prev, categoryId: "" }));
+      setIsCategoryModalOpen(false);
+      resetCategoryRequestForm();
+    }
+  };
 
   const handleCancel = () => {
     navigate("/comercio");
@@ -144,25 +175,36 @@ export default function CreateProductPage() {
               <label className={labelClassName} htmlFor="categoryId">
                 Categoria *
               </label>
-              <select
-                id="categoryId"
-                name="categoryId"
-                value={formData.categoryId}
-                onChange={onFieldChange}
-                className={inputClassName}
-                disabled={isFormDisabled}
-              >
-                <option value="">
-                  {isLoadingInitialData
-                    ? "Cargando categorias..."
-                    : "Selecciona una categoria"}
-                </option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
+              <div className="flex flex-col gap-1.5">
+                <select
+                  id="categoryId"
+                  name="categoryId"
+                  value={formData.categoryId}
+                  onChange={onFieldChange}
+                  className={inputClassName}
+                  disabled={isFormDisabled}
+                >
+                  <option value="">
+                    {isLoadingInitialData
+                      ? "Cargando categorias..."
+                      : "Selecciona una categoria"}
                   </option>
-                ))}
-              </select>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+                {/* ── Solicitar nueva categoría ── */}
+                <button
+                  type="button"
+                  onClick={() => setIsCategoryModalOpen(true)}
+                  disabled={isFormDisabled}
+                  className="self-start text-xs font-semibold text-[#2f63f2] hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  ¿No encontrás tu categoría? Solicitala
+                </button>
+              </div>
               {validationErrors.categoryId && (
                 <p className={errorClassName}>{validationErrors.categoryId}</p>
               )}
@@ -381,6 +423,22 @@ export default function CreateProductPage() {
         title={resultModal.title}
         message={resultModal.message}
         onClose={closeModal}
+      />
+
+      {/* ── Modal de solicitud de categoría ── */}
+      <CategoryRequestModal
+        isOpen={isCategoryModalOpen}
+        onClose={handleCloseCategoryModal}
+        formData={categoryRequestFormData}
+        validationErrors={categoryRequestErrors}
+        isSubmitting={isSubmittingCategoryRequest}
+        onFieldChange={onCategoryRequestFieldChange}
+        handleSubmit={handleCategoryRequestSubmit}
+        resultModal={categoryRequestResultModal}
+        closeResultModal={() => {
+          closeCategoryRequestResultModal();
+          handleCategoryRequestSuccess();
+        }}
       />
     </div>
   );

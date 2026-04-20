@@ -1,8 +1,11 @@
+import { useState } from "react";
 import { ArrowLeft, X } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useEditProduct } from "../hooks/useEditProduct";
 import { CreationResultModal } from "../components/createProduct/CreationResultModal";
+import { CategoryRequestModal } from "../components/createProduct/CategoryRequestModal";
 import Toggle from "../components/createProduct/Toggle";
+import { useCategoryRequest } from "../hooks/useCategoryRequest";
 
 // ─── Clases reutilizadas de CreateProductPage (misma apariencia) ──────────────
 const inputClassName =
@@ -41,6 +44,34 @@ export default function EditProductPage() {
         MAX_TAGS,
         availableTags,
     } = useEditProduct(id);
+
+    // ── Modal de solicitud de categoría ──────────────────────────────────────
+    const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+
+    const {
+        formData: categoryRequestFormData,
+        validationErrors: categoryRequestErrors,
+        isSubmitting: isSubmittingCategoryRequest,
+        resultModal: categoryRequestResultModal,
+        closeModal: closeCategoryRequestResultModal,
+        onFieldChange: onCategoryRequestFieldChange,
+        resetForm: resetCategoryRequestForm,
+        handleSubmit: handleCategoryRequestSubmit,
+    } = useCategoryRequest();
+
+    const handleCloseCategoryModal = () => {
+        setIsCategoryModalOpen(false);
+        if (!isSubmittingCategoryRequest) resetCategoryRequestForm();
+    };
+
+    const handleCategoryRequestSuccess = () => {
+        if (categoryRequestResultModal.variant === "success") {
+            // En EditProduct no tenemos setFormData, usamos onFieldChange
+            onFieldChange({ target: { name: "categoryId", value: "", type: "text" } });
+            setIsCategoryModalOpen(false);
+            resetCategoryRequestForm();
+        }
+    };
 
     return (
         <div className="ml-0 mr-auto w-full max-w-[1160px] text-[#22312a]">
@@ -148,25 +179,36 @@ export default function EditProductPage() {
                             <label className={labelClassName} htmlFor="categoryId">
                                 Categoría *
                             </label>
-                            <select
-                                id="categoryId"
-                                name="categoryId"
-                                value={formData.categoryId}
-                                onChange={onFieldChange}
-                                className={inputClassName}
-                                disabled={isFormDisabled}
-                            >
-                                <option value="">
-                                    {isLoadingInitialData
-                                        ? "Cargando categorías..."
-                                        : "Seleccioná una categoría"}
-                                </option>
-                                {categories.map((cat) => (
-                                    <option key={cat.id} value={cat.id}>
-                                        {cat.name}
+                            <div className="flex flex-col gap-1.5">
+                                <select
+                                    id="categoryId"
+                                    name="categoryId"
+                                    value={formData.categoryId}
+                                    onChange={onFieldChange}
+                                    className={inputClassName}
+                                    disabled={isFormDisabled}
+                                >
+                                    <option value="">
+                                        {isLoadingInitialData
+                                            ? "Cargando categorías..."
+                                            : "Seleccioná una categoría"}
                                     </option>
-                                ))}
-                            </select>
+                                    {categories.map((cat) => (
+                                        <option key={cat.id} value={cat.id}>
+                                            {cat.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                {/* ── Solicitar nueva categoría ── */}
+                                <button
+                                    type="button"
+                                    onClick={() => setIsCategoryModalOpen(true)}
+                                    disabled={isFormDisabled}
+                                    className="self-start text-xs font-semibold text-[#2f63f2] hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                    ¿No encontrás tu categoría? Solicitala
+                                </button>
+                            </div>
                             {validationErrors.categoryId && (
                                 <p className={errorClassName}>{validationErrors.categoryId}</p>
                             )}
@@ -302,7 +344,7 @@ export default function EditProductPage() {
                             </div>
 
                             {!showAllTagSuggestions &&
-                                availableTags.length > MAX_VISIBLE_TAG_SUGGESTIONS && (
+                                availableTags.length > 6 && (
                                     <div className="mt-3">
                                         <button
                                             type="button"
@@ -458,6 +500,22 @@ export default function EditProductPage() {
                     : closeModal
                 }
                 closeLabel={resultModal.variant === "success" ? "Ir a Productos" : "Cerrar"}
+            />
+
+            {/* ── Modal de solicitud de categoría ── */}
+            <CategoryRequestModal
+                isOpen={isCategoryModalOpen}
+                onClose={handleCloseCategoryModal}
+                formData={categoryRequestFormData}
+                validationErrors={categoryRequestErrors}
+                isSubmitting={isSubmittingCategoryRequest}
+                onFieldChange={onCategoryRequestFieldChange}
+                handleSubmit={handleCategoryRequestSubmit}
+                resultModal={categoryRequestResultModal}
+                closeResultModal={() => {
+                    closeCategoryRequestResultModal();
+                    handleCategoryRequestSuccess();
+                }}
             />
         </div>
     );
