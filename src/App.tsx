@@ -1,5 +1,5 @@
 import './App.css'
-import { BrowserRouter as Router, Routes, Route,  useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 
 import { Toaster } from "react-hot-toast";
@@ -56,6 +56,8 @@ import EditProductPage from './features/commerces/pages/EditProductPage';
 import { AdminUsersPage } from './features/admin/pages/AdminUsersPage';
 import { AdminCategoriesPage } from './features/admin/pages/AdminCategoriesPage';
 import { AdminCategoryDetailPage } from './features/admin/pages/AdminCategoryDetailPage';
+import { AdminDashboardPage } from './features/admin/pages/AdminDashboardPage';
+import { AdminModulePlaceholderPage } from './features/admin/pages/AdminModulePlaceholderPage';
 
 import Wishlist from "./features/clients/pages/Wishlist"
 import FavoritesPage from "./features/clients/pages/FavoritesPage";
@@ -85,7 +87,7 @@ const HomePageRoutes = () => (
     <p className="mt-4">Navega a <a href="/perfil" className="text-blue-500 underline">Mi Perfil</a></p>
     <p className="mt-4">Navega a <a href="/producto-detalle/:id" className="text-blue-500 underline">Detalle de Producto</a></p>
     <p className="mt-4">Navega a <a href="/comercio" className="text-blue-500 underline">Mi Comercio (Dashboard)</a></p>
-    <p className="mt-4">Navega a <a href="/admin/usuarios" className="text-blue-500 underline">Mi Panel de Admin</a></p>
+    <p className="mt-4">Navega a <a href="/admin/dashboard" className="text-blue-500 underline">Mi Panel de Admin</a></p>
     <p className="mt-4">Navega a <a href="/perfil-comercio" className="text-blue-500 underline">Perfil comercio</a></p>
     <p className="mt-4">Navega a <a href="/comercio/productos/1" className="text-blue-500 underline">Ver Producto Comercio (ID 1)</a></p>
     <p className="mt-4">Navega a <a href="/comercio/productos/nuevo" className="text-blue-500 underline">Crear Producto Comercio</a></p>
@@ -210,6 +212,34 @@ function App() {
         } />
 
         {/* ── Área de administración (con sidebar) ──────────────────────── */}
+        <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="/admin/dashboard" element={
+          <AdminLayout><AdminDashboardPage /></AdminLayout>
+        } />
+        <Route path="/admin/productos" element={
+          <AdminLayout>
+            <AdminModulePlaceholderPage
+              title="Moderación de Productos"
+              description="Revisá reportes, validá productos sospechosos y tomá acciones de moderación."
+            />
+          </AdminLayout>
+        } />
+        <Route path="/admin/resenas" element={
+          <AdminLayout>
+            <AdminModulePlaceholderPage
+              title="Moderación de Reseñas"
+              description="Gestioná reseñas reportadas por usuarios y mantené la calidad del contenido."
+            />
+          </AdminLayout>
+        } />
+        <Route path="/admin/comercios" element={
+          <AdminLayout>
+            <AdminModulePlaceholderPage
+              title="Aprobación de Comercios"
+              description="Revisá solicitudes pendientes y aprobá comercios para operar en la plataforma."
+            />
+          </AdminLayout>
+        } />
         <Route path="/admin/usuarios" element={
           <AdminLayout><AdminUsersPage /></AdminLayout>
         } />
