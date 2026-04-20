@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Search, ShoppingCart, Store, Shield, Truck, Eye } from "lucide-react";
 import { fetchAdminUsers } from "../services/adminUsersApi";
 
@@ -28,15 +29,22 @@ const STATUS_LABEL = { true: "activo", false: "suspendido" };
 // ── Componente principal ───────────────────────────────────────────────────
 
 export const AdminUsersPage = () => {
+  const [searchParams] = useSearchParams();
+
   const [users,      setUsers]      = useState([]);
   const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 20, totalPages: 1 });
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState(null);
 
   const [search, setSearch] = useState("");
-  const [role,   setRole]   = useState("");
-  const [status, setStatus] = useState("");
+  const [role,   setRole]   = useState(() => searchParams.get("role") ?? "");
+  const [status, setStatus] = useState(() => searchParams.get("status") ?? "");
   const [page,   setPage]   = useState(1);
+
+  useEffect(() => {
+    setRole(searchParams.get("role") ?? "");
+    setStatus(searchParams.get("status") ?? "");
+  }, [searchParams]);
 
   const loadUsers = useCallback(async (currentPage) => {
     setLoading(true);
