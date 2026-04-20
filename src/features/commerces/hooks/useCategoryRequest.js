@@ -6,7 +6,7 @@ import {
 } from "../services/categoryRequestApi";
 
 export const useCategoryRequest = () => {
-  const [formData, setFormData] = useState({ name: "", description: "" });
+  const [formData, setFormData] = useState({ name: "" });
   const [validationErrors, setValidationErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [resultModal, setResultModal] = useState({
@@ -23,7 +23,7 @@ export const useCategoryRequest = () => {
   };
 
   const resetForm = () => {
-    setFormData({ name: "", description: "" });
+    setFormData({ name: "" });
     setValidationErrors({});
   };
 
@@ -34,7 +34,6 @@ export const useCategoryRequest = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    // Validación
     if (!formData.name.trim()) {
       setValidationErrors({ name: "El nombre de la categoría es obligatorio." });
       return;

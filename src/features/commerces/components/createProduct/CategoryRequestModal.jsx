@@ -22,19 +22,26 @@ export function CategoryRequestModal({
 
   return (
     <>
-      {/* Overlay */}
+      {/* Overlay*/}
       <div
         className="fixed inset-0 z-40 bg-black/50"
-        onClick={onClose}
+        onClick={isSubmitting ? undefined : onClose}
         role="presentation"
       />
 
       {/* Modal */}
-      <div className="fixed left-1/2 top-1/2 z-50 w-full max-w-[460px] -translate-x-1/2 -translate-y-1/2 rounded-[16px] border border-[#d8dfdb] bg-white shadow-lg">
-
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="category-request-title"
+        className="fixed left-1/2 top-1/2 z-50 w-full max-w-[460px] -translate-x-1/2 -translate-y-1/2 rounded-[16px] border border-[#d8dfdb] bg-white shadow-lg"
+      >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[#d8dfdb] px-5 py-4">
-          <h2 className="text-[17px] font-semibold text-[#273830]">
+          <h2
+            id="category-request-title"
+            className="text-[17px] font-semibold text-[#273830]"
+          >
             Solicitar Nueva Categoría
           </h2>
           <button
@@ -72,20 +79,6 @@ export function CategoryRequestModal({
           {validationErrors.name && (
             <p className={errorClassName}>{validationErrors.name}</p>
           )}
-
-          {/* Descripción (opcional, no se envía al backend pero mejora la UX) */}
-          <label className={labelClassName} htmlFor="categoryDescription">
-            Descripción (opcional)
-          </label>
-          <textarea
-            id="categoryDescription"
-            name="description"
-            value={formData.description}
-            onChange={onFieldChange}
-            className={`${inputClassName} min-h-[72px] resize-y`}
-            placeholder="Describí brevemente qué productos abarca esta categoría"
-            disabled={isSubmitting}
-          />
 
           {/* Botones */}
           <div className="flex items-center justify-end gap-3 border-t border-[#d0d7d2] pt-4">
