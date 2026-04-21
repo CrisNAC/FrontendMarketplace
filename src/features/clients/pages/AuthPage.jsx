@@ -8,7 +8,7 @@ import logo from "/src/assets/feather.png";
 function getPostLoginPath(role) {
   switch (role) {
     case "ADMIN":
-      return "/admin/usuarios";
+      return "/admin/dashboard";
     case "SELLER":
       return "/comercio";
     case "CUSTOMER":
