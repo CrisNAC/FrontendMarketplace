@@ -10,7 +10,7 @@ import {
   UserRound,
   Users,
 } from "lucide-react";
-import { fetchAdminDashboardStats } from "../services/adminDashboardApi";
+import { fetchAdminDashboardStats, fetchAdminRecentActivity } from "../services/adminDashboardApi";
 
 const cardStyle = {
   backgroundColor: "var(--background-white)",
@@ -19,10 +19,16 @@ const cardStyle = {
   boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
 };
 
-const formatRelativeTime = (minutesAgo) => {
-  if (minutesAgo < 60) return `Hace ${minutesAgo} minuto${minutesAgo !== 1 ? "s" : ""}`;
-  const hours = Math.floor(minutesAgo / 60);
-  return `Hace ${hours} hora${hours !== 1 ? "s" : ""}`;
+const formatRelativeTime = (dateMs) => {
+  if (!dateMs) return "Recientemente";
+  const diffMs = Date.now() - dateMs;
+  const minutes = Math.max(1, Math.floor(diffMs / 60000));
+
+  if (minutes < 60) return `Hace ${minutes} minuto${minutes !== 1 ? "s" : ""}`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `Hace ${hours} hora${hours !== 1 ? "s" : ""}`;
+  const days = Math.floor(hours / 24);
+  return `Hace ${days} dia${days !== 1 ? "s" : ""}`;
 };
 
 export const AdminDashboardPage = () => {
@@ -37,14 +43,19 @@ export const AdminDashboardPage = () => {
     pendingReviews: 0,
     pendingCommerces: 0,
   });
+  const [recentActivity, setRecentActivity] = useState([]);
 
   useEffect(() => {
     const loadDashboard = async () => {
       setLoading(true);
       setError("");
       try {
-        const result = await fetchAdminDashboardStats();
-        setStats(result);
+        const [statsResult, activityResult] = await Promise.all([
+          fetchAdminDashboardStats(),
+          fetchAdminRecentActivity(),
+        ]);
+        setStats(statsResult);
+        setRecentActivity(activityResult);
       } catch (err) {
         setError(err?.response?.data?.error?.message || "No se pudo cargar el dashboard.");
       } finally {
@@ -93,43 +104,6 @@ export const AdminDashboardPage = () => {
     [stats]
   );
 
-  const recentActivity = useMemo(
-    () => [
-      {
-        id: "a1",
-        type: "info",
-        label: "info",
-        description: "Nuevo comprador registrado",
-        detail: "Mario González",
-        minutesAgo: 5,
-      },
-      {
-        id: "a2",
-        type: "warning",
-        label: "warning",
-        description: "Producto reportado",
-        detail: "iPhone 15 Pro",
-        minutesAgo: 15,
-      },
-      {
-        id: "a3",
-        type: "error",
-        label: "error",
-        description: "Reseña reportada por contenido inapropiado",
-        detail: "",
-        minutesAgo: 30,
-      },
-      {
-        id: "a4",
-        type: "success",
-        label: "success",
-        description: "Comercio aprobado",
-        detail: "TechStore S.A.",
-        minutesAgo: 60,
-      },
-    ],
-    []
-  );
 
   const pendingTasks = useMemo(
     () => [
@@ -275,6 +249,11 @@ export const AdminDashboardPage = () => {
           </p>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            {!loading && recentActivity.length === 0 && (
+              <p style={{ margin: 0, fontSize: "13px", color: "#6b7280" }}>
+                Aun no hay actividad disponible para mostrar.
+              </p>
+            )}
             {recentActivity.map((activity) => (
               <div key={activity.id} style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
                 <span
@@ -297,7 +276,7 @@ export const AdminDashboardPage = () => {
                     {activity.detail ? <strong> {activity.detail}</strong> : ""}
                   </p>
                   <p style={{ margin: 0, fontSize: "12px", color: "#6b7280" }}>
-                    {formatRelativeTime(activity.minutesAgo)}
+                    {formatRelativeTime(activity.dateMs)}
                   </p>
                 </div>
               </div>
