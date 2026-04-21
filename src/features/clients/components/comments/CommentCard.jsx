@@ -1,5 +1,3 @@
-import { useState } from 'react';
-
 export const CommentCard = ({
   author = 'Usuario',
   rating = 5,
@@ -9,12 +7,10 @@ export const CommentCard = ({
   location = 'País',
   date = new Date(),
   productDetails = {},
-  onReport = () => { }
+  reportedByViewer = false,
+  onReport = () => { },
 }) => {
-  const [reported, setReported] = useState(false);
-
   const handleReport = () => {
-    setReported(true);
     onReport();
   };
 
@@ -90,9 +86,9 @@ export const CommentCard = ({
         <button
           className="text-xs text-gray-500 cursor-pointer bg-transparent border-none p-0 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={handleReport}
-          disabled={reported}
+          disabled={reportedByViewer}
         >
-          {reported ? '✓ Reportado' : 'Reportar'}
+          {reportedByViewer ? '✓ Reportado' : 'Reportar'}
         </button>
       </div>
     </div>
