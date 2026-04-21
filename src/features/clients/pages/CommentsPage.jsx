@@ -3,21 +3,25 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { RatingsDistribution } from '../components/comments/RatingsDistribution';
 import { CommentsList } from '../components/comments/CommentsList';
 import { AddReviewModal } from '../components/comments/AddReviewModal';
+import { ReportModal } from '../components/comments/ReportModal';
 import { ArrowLeft } from "lucide-react";
 import apiClient from "../../../lib/apiClient";
+import { reportProductReview } from "../../../lib/reviewReportsApi";
 import toast from 'react-hot-toast';
-
 
 export const CommentsPage = () => {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [selectedComment, setSelectedComment] = useState(null);
   const [comments, setComments] = useState([]);
   const [stats, setStats] = useState(null);
   const [ratings, setRatings] = useState({ 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [reportedReviewIds, setReportedReviewIds] = useState([]);
   const { id } = useParams();
-
 
   const fetchReviews = async () => {
     try {
@@ -49,13 +53,12 @@ export const CommentsPage = () => {
         if (dist[r.rating] !== undefined) dist[r.rating]++;
       });
       setRatings(dist);
-
     } catch (error) {
       setError(error.response?.data?.message || 'No se pudieron cargar las reseñas.');
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
     fetchReviews();
@@ -68,7 +71,6 @@ export const CommentsPage = () => {
         comment: reviewData.comment,
       });
 
-      //mapear respuesta
       const newComment = {
         id: data.id,
         author: data.customerName,
@@ -78,42 +80,64 @@ export const CommentsPage = () => {
         verified: data.isVerified,
         location: 'Paraguay',
         date: new Date().toLocaleDateString('es-PY', {
-          year: 'numeric', month: 'long', day: 'numeric',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
         }),
         productDetails: {},
       };
 
       setComments([newComment, ...comments]);
       setShowModal(false);
-      await fetchReviews(); //recargar para actualizar
+      await fetchReviews();
       toast.success('¡Reseña enviada exitosamente!');
-    }
-    catch (error) {
+    } catch (error) {
       const data = error.response?.data;
       const message = data?.errors?.auth?.messsage || data?.message || 'No se pudo enviar la reseña.';
       toast.error(message);
     }
   };
 
+  const handleOpenReportModal = (comment) => {
+    setSelectedComment(comment);
+    setShowReportModal(true);
+  };
+
+  const handleSubmitReport = async ({ reason, description }) => {
+    if (!selectedComment?.id) return;
+    try {
+      setReportSubmitting(true);
+      await reportProductReview(selectedComment.id, { reason, description });
+      setReportedReviewIds((prev) =>
+        prev.includes(selectedComment.id) ? prev : [...prev, selectedComment.id]
+      );
+      toast.success('Reporte enviado. Gracias por ayudarnos a mejorar la comunidad.');
+      setShowReportModal(false);
+      setSelectedComment(null);
+    } catch (err) {
+      const message =
+        err?.response?.data?.error?.message ||
+        err?.response?.data?.message ||
+        'No se pudo enviar el reporte.';
+      toast.error(message);
+    } finally {
+      setReportSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen p-0" style={{ background: '#F5F5F5' }}>
       <div className="max-w-6xl mx-auto min-h-screen">
-        {/* Header - SIN fondo blanco, sobre el fondo gris */}
         <div className="px-6 py-4 flex items-center gap-4">
           <ArrowLeft className="w-6 h-6 cursor-pointer" onClick={() => navigate(-1)} />
           <h1 className="text-2xl font-bold">Comentarios</h1>
         </div>
 
-        {/* Contenido principal */}
         <div className="grid grid-cols-[300px_1fr] gap-6 px-6 pb-8">
-          {/* Sidebar izquierdo */}
           <aside className="flex flex-col gap-4">
-            {/* Card de ratings */}
             <div className="bg-white border border-gray-200 rounded-lg">
-              <RatingsDistribution ratings={ratings} averageRating={stats?.averageRating ?? 0} /> {/**ahora se le pasa averageRating como prop */}
+              <RatingsDistribution ratings={ratings} averageRating={stats?.averageRating ?? 0} />
 
-              {/* Texto escribir opinión - dentro del card */}
               <div className="px-4 pb-4 pt-2 border-t border-gray-200">
                 <h3 className="text-base font-bold m-0 mb-1 text-gray-800">
                   Escribir opinión de este producto
@@ -124,7 +148,6 @@ export const CommentsPage = () => {
               </div>
             </div>
 
-            {/* Botón fuera del card, directamente sobre el fondo gris */}
             <button
               className="w-full py-2.5 px-4 text-white rounded-full text-sm font-semibold cursor-pointer transition-all hover:opacity-90 active:translate-y-0.5"
               style={{ background: '#6B9080' }}
@@ -134,7 +157,6 @@ export const CommentsPage = () => {
             </button>
           </aside>
 
-          {/* Contenido principal: Comentarios */}
           <main className="flex flex-col gap-0">
             {loading && (
               <p className="text-gray-500 text-sm">Cargando reseñas...</p>
@@ -143,17 +165,32 @@ export const CommentsPage = () => {
               <p className="text-red-500 text-sm">{error}</p>
             )}
             {!loading && !error && (
-              <CommentsList comments={comments} />
+              <CommentsList
+                comments={comments.map((c) => ({
+                  ...c,
+                  reportedByViewer: reportedReviewIds.includes(c.id),
+                }))}
+                onReport={handleOpenReportModal}
+              />
             )}
           </main>
         </div>
       </div>
 
-      {/* Modal para agregar reseña */}
       <AddReviewModal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
         onSubmit={handleAddReview}
+      />
+
+      <ReportModal
+        isOpen={showReportModal}
+        onClose={() => {
+          setShowReportModal(false);
+          setSelectedComment(null);
+        }}
+        onSubmit={handleSubmitReport}
+        isSubmitting={reportSubmitting}
       />
     </div>
   );

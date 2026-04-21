@@ -1,18 +1,17 @@
 import { CommentCard } from './CommentCard';
 
-export const CommentsList = ({ comments = [] }) => {
-
-  const commentsToShow = comments; //comentarios a mostrar
+export const CommentsList = ({ comments = [], onReport }) => {
+  const commentsToShow = comments;
 
   return (
     <div className="w-full">
       <div className="flex flex-col gap-0">
         {commentsToShow.length > 0 ? (
-          commentsToShow.map(comment => (
-            <CommentCard 
+          commentsToShow.map((comment) => (
+            <CommentCard
               key={comment.id}
               {...comment}
-              onReport={() => console.log('Reportar comentario:', comment.id)}
+              onReport={() => onReport(comment)}
             />
           ))
         ) : (

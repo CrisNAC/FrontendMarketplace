@@ -2,6 +2,12 @@ import apiClient from '../../../lib/apiClient';
 
 const BASE = '/api/admin/categories';
 
+// POST /api/admin/categories — acepta { name }
+export const createAdminCategory = async (name) => {
+    const { data } = await apiClient.post(BASE, { name });
+    return data; // { id, name, visible, status, createdAt }
+};
+
 // GET /api/admin/categories
 export const fetchAdminCategories = async ({ visible, searchCategory, categoryPage, categoryLimit } = {}) => {
     const params = {};
@@ -37,6 +43,7 @@ export const fetchCategoriesWithProducts = async (filters = {}) => {
     return data;
 };
 
+// PUT /api/admin/categories/:id — acepta { name?, visible? }
 export const updateAdminCategory = async (id, payload) => {
     const { data } = await apiClient.put(`${BASE}/${id}`, payload);
     return data; // { id, name, visible, createdAt, updatedAt }

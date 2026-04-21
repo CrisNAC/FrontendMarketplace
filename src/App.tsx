@@ -54,10 +54,14 @@ import ChangePassword from './features/clients/pages/ChangePassword';
 
 import EditProductPage from './features/commerces/pages/EditProductPage';
 import { AdminUsersPage } from './features/admin/pages/AdminUsersPage';
+import { AdminPendingStoresPage } from './features/admin/pages/AdminPendingStoresPage';
 import { AdminCategoriesPage } from './features/admin/pages/AdminCategoriesPage';
 import { AdminCategoryDetailPage } from './features/admin/pages/AdminCategoryDetailPage';
 import { AdminDashboardPage } from './features/admin/pages/AdminDashboardPage';
 import { AdminModulePlaceholderPage } from './features/admin/pages/AdminModulePlaceholderPage';
+import ReclamosPage from './features/admin/pages/ReclamosPage';
+import Reclamos from './features/admin/pages/Reclamos';
+import CommerceClaims from './features/commerces/pages/CommerceClaims';
 
 import Wishlist from "./features/clients/pages/Wishlist"
 import FavoritesPage from "./features/clients/pages/FavoritesPage";
@@ -100,6 +104,9 @@ const HomePageRoutes = () => (
     <p className="mt-4">Navega a <a href="/cambiar-contrasena" className="text-blue-500 underline">Cambiar Contraseña</a></p>
     <p className="mt-4">Navega a <a href="/carrito" className="text-blue-500 underline">Carrito de Compras</a></p>
     <p className="mt-4">Navega a <a href="/cart" className="text-blue-500 underline">Carrito de Compras</a></p>
+    <p className="mt-4">Navega a <a href="/admin/reviews" className="text-blue-500 underline">Reclamos</a></p>
+    <p className="mt-4">Navega a <a href="/admin/claims" className="text-blue-500 underline">Reclamos</a></p>
+    <p className="mt-4">Navega a <a href="/comercio/claims" className="text-blue-500 underline">Reclamos Comercio</a></p>
 
   </div>
 );
@@ -210,6 +217,9 @@ function App() {
         <Route path="/comercio/productos/:id/editar" element={
           <MyCommerceLayout><EditProductPage /></MyCommerceLayout>
         } />
+        <Route path="/comercio/claims" element={
+          <MyCommerceLayout><CommerceClaims/></MyCommerceLayout>
+        } />
 
         {/* ── Área de administración (con sidebar) ──────────────────────── */}
         <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
@@ -243,11 +253,20 @@ function App() {
         <Route path="/admin/usuarios" element={
           <AdminLayout><AdminUsersPage /></AdminLayout>
         } />
+        <Route path="/admin/comercios-pendientes" element={
+          <AdminLayout><AdminPendingStoresPage /></AdminLayout>
+        } />
         <Route path="/admin/categorias" element={
           <AdminLayout><AdminCategoriesPage /></AdminLayout>
         } />
         <Route path="/admin/categorias/:id" element={
           <AdminLayout><AdminCategoryDetailPage /></AdminLayout>
+        } />
+        <Route path="/admin/claims" element={
+          <AdminLayout><Reclamos/></AdminLayout>
+        } />
+        <Route path="/admin/reviews" element={
+          <AdminLayout><ReclamosPage /></AdminLayout>
         } />
 
         {/* ── Páginas de error ───────────────────────────────────────────── */}
