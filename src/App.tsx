@@ -54,6 +54,7 @@ import ChangePassword from './features/clients/pages/ChangePassword';
 
 import EditProductPage from './features/commerces/pages/EditProductPage';
 import { AdminUsersPage } from './features/admin/pages/AdminUsersPage';
+import { AdminPendingStoresPage } from './features/admin/pages/AdminPendingStoresPage';
 import { AdminCategoriesPage } from './features/admin/pages/AdminCategoriesPage';
 import { AdminCategoryDetailPage } from './features/admin/pages/AdminCategoryDetailPage';
 import { AdminDashboardPage } from './features/admin/pages/AdminDashboardPage';
@@ -242,6 +243,9 @@ function App() {
         } />
         <Route path="/admin/usuarios" element={
           <AdminLayout><AdminUsersPage /></AdminLayout>
+        } />
+        <Route path="/admin/comercios-pendientes" element={
+          <AdminLayout><AdminPendingStoresPage /></AdminLayout>
         } />
         <Route path="/admin/categorias" element={
           <AdminLayout><AdminCategoriesPage /></AdminLayout>

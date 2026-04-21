@@ -1,7 +1,7 @@
 // src/features/commerces/pages/MyCommercePage.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Package, Star, MessageSquare, Layers } from "lucide-react";
+import { Package, Star, MessageSquare, Layers, AlertCircle, Info } from "lucide-react";
 import { Topbar } from "../components/dashboard/Topbar";
 import { StatCard } from "../components/dashboard/StatCard";
 import { BestRatedSection } from "../components/dashboard/BestRatedSection";
@@ -58,6 +58,27 @@ export const MyCommercePage = () => {
     return (
         <>
             <Topbar storeName={store?.name} />
+
+            {/* Banner de estado del comercio */}
+            {store?.store_status === 'INACTIVE' && (
+                <div style={{ backgroundColor: '#fffbeb', border: '1px solid #fde68a', borderRadius: '10px', padding: '16px', marginBottom: '24px', color: '#92400e', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <Info size={24} />
+                    <div>
+                        <strong style={{ display: 'block', fontSize: '15px', marginBottom: '4px' }}>Comercio en revisión</strong>
+                        <span style={{ fontSize: '14px' }}>Tu comercio está pendiente de aprobación por un administrador. Podés seguir configurando tu catálogo, pero no estará visible al público hasta ser aprobado.</span>
+                    </div>
+                </div>
+            )}
+            
+            {store?.store_status === 'SUSPENDED' && (
+                <div style={{ backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '10px', padding: '16px', marginBottom: '24px', color: '#991b1b', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <AlertCircle size={24} />
+                    <div>
+                        <strong style={{ display: 'block', fontSize: '15px', marginBottom: '4px' }}>Comercio no aprobado o suspendido</strong>
+                        <span style={{ fontSize: '14px' }}>Tu comercio ha sido rechazado o suspendido y no está visible al público. Revisá tus notificaciones para más detalles o comunicate con soporte.</span>
+                    </div>
+                </div>
+            )}
 
             {/* Estadísticas */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "24px" }}>
