@@ -1,11 +1,26 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, MoreVertical } from "lucide-react";
 import axios from "axios";
 import { addToCartApi } from "../../../lib/cartApi";
 import { mergeCartResponseFromApi } from "../../../lib/cartLocalStorage";
 import { formatGuarani } from "../../../lib/formatGuarani.js";
+import {
+  REPORT_REASON_LABELS,
+  fetchPendingProductReport,
+  fetchProductReportReasons,
+  hasLocalReportForProduct,
+  rememberLocalReport,
+  submitProductReport,
+} from "../services/productReportApi.js";
+
+function apiErrorMessage(data) {
+  if (!data) return null;
+  if (typeof data.message === "string") return data.message;
+  if (data.error && typeof data.error.message === "string") return data.error.message;
+  return null;
+}
 
 function SvgIcon({ children, className = "w-4 h-4" }) {
   return (
@@ -71,6 +86,193 @@ export default function DetalleProducto() {
   const [cantidad, setCantidad] = useState(1);
   const [addingToWishlist, setAddingToWishlist] = useState(false);
   const [addingToCart, setAddingToCart] = useState(false);
+
+  const [sessionUserId, setSessionUserId] = useState(null);
+  const [sessionRole, setSessionRole] = useState(null);
+  const [sessionChecked, setSessionChecked] = useState(false);
+  /** true hasta saber si el usuario ya tiene reporte pendiente (evita mostrar ⋯ antes de tiempo). */
+  const [checkingReport, setCheckingReport] = useState(true);
+  const [hasPendingReport, setHasPendingReport] = useState(false);
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [reportDescription, setReportDescription] = useState("");
+  const [reportModalError, setReportModalError] = useState("");
+  const [submittingReport, setSubmittingReport] = useState(false);
+  const [reportReasonOptions, setReportReasonOptions] = useState(REPORT_REASON_LABELS);
+
+  useEffect(() => {
+    let active = true;
+    const base = apiBase || "http://localhost:3000";
+    axios
+      .get(`${base}/api/session/user-session`, { withCredentials: true })
+      .then((res) => {
+        if (!active) return;
+        setSessionUserId(res.data?.user?.id_user ?? null);
+        setSessionRole(res.data?.user?.role ?? null);
+      })
+      .catch(() => {
+        if (active) {
+          setSessionUserId(null);
+          setSessionRole(null);
+        }
+      })
+      .finally(() => {
+        if (active) setSessionChecked(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, [apiBase]);
+
+  useEffect(() => {
+    if (!sessionChecked || sessionRole !== "CUSTOMER") return;
+    let cancelled = false;
+    (async () => {
+      const list = await fetchProductReportReasons();
+      if (!cancelled && list && list.length > 0) {
+        setReportReasonOptions(list);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionChecked, sessionRole]);
+
+  useEffect(() => {
+    if (!sessionChecked) return;
+
+    if (!sessionUserId || sessionRole !== "CUSTOMER") {
+      setHasPendingReport(false);
+      setCheckingReport(false);
+      return;
+    }
+
+    if (!productId || !Number.isFinite(productId)) {
+      setHasPendingReport(false);
+      setCheckingReport(false);
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      setCheckingReport(true);
+      try {
+        const pending = await fetchPendingProductReport(productId);
+        if (cancelled) return;
+        if (pending === null) {
+          setHasPendingReport(hasLocalReportForProduct(sessionUserId, productId));
+        } else {
+          setHasPendingReport(Boolean(pending));
+        }
+      } catch {
+        if (!cancelled) {
+          setHasPendingReport(hasLocalReportForProduct(sessionUserId, productId));
+        }
+      } finally {
+        if (!cancelled) setCheckingReport(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionChecked, sessionUserId, sessionRole, productId]);
+
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    const onDown = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [menuOpen]);
+
+  useEffect(() => {
+    if (!reportModalOpen) return undefined;
+    const onKey = (e) => {
+      if (e.key === "Escape" && !submittingReport) {
+        setReportModalOpen(false);
+        setReportModalError("");
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [reportModalOpen, submittingReport]);
+
+  const showReportMenu =
+    sessionChecked
+    && sessionUserId
+    && sessionRole === "CUSTOMER"
+    && !checkingReport
+    && !hasPendingReport
+    && status === "success";
+
+  const openReportModal = () => {
+    setReportReason("");
+    setReportDescription("");
+    setReportModalError("");
+    setReportModalOpen(true);
+  };
+
+  const closeReportModal = () => {
+    if (submittingReport) return;
+    setReportModalOpen(false);
+    setReportModalError("");
+  };
+
+  const handleSubmitReport = async () => {
+    if (!reportReason || !productId || !sessionUserId) return;
+    setSubmittingReport(true);
+    setReportModalError("");
+    try {
+      const res = await submitProductReport({
+        productId,
+        reason: reportReason,
+        description: reportDescription,
+      });
+
+      if (res.status === 201) {
+        rememberLocalReport(sessionUserId, productId);
+        setHasPendingReport(true);
+        setReportModalOpen(false);
+        toast.success("Gracias por tu reporte. Lo revisaremos pronto.");
+        return;
+      }
+
+      if (res.status === 400) {
+        setReportModalError(
+          apiErrorMessage(res.data) || "Ya enviaste un reporte para este producto."
+        );
+        return;
+      }
+
+      if (res.status === 409) {
+        setReportModalError(
+          apiErrorMessage(res.data) || "Ya enviaste un reporte para este producto."
+        );
+        return;
+      }
+
+      const msg = apiErrorMessage(res.data);
+      toast.error(msg ? String(msg) : "No se pudo enviar el reporte");
+    } catch (e) {
+      const code = e?.response?.status;
+      const msg = apiErrorMessage(e?.response?.data);
+      if (code === 400 || code === 409) {
+        setReportModalError(msg || "Ya enviaste un reporte para este producto.");
+        return;
+      }
+      toast.error(msg ? String(msg) : "No se pudo enviar el reporte");
+    } finally {
+      setSubmittingReport(false);
+    }
+  };
 
   const agregarAListaDeseados = async () => {
     if (addingToWishlist || !productId) return;
@@ -197,9 +399,43 @@ export default function DetalleProducto() {
   return (
     <div className="min-h-screen flex flex-col">
       <div className="max-w-7xl mx-auto w-full px-6 py-6">
-        <div className="flex items-center gap-4 mb-8">
-          <ArrowLeft className="w-6 h-6 cursor-pointer" onClick={() => navigate(-1)} />
-          <h1 className="text-2xl font-bold">{titleText}</h1>
+        <div className="flex items-center gap-4 mb-8 w-full">
+          <div className="flex items-center gap-4 flex-1 min-w-0">
+            <ArrowLeft className="w-6 h-6 shrink-0 cursor-pointer" onClick={() => navigate(-1)} />
+            <h1 className="text-2xl font-bold truncate">{titleText}</h1>
+          </div>
+          {showReportMenu && (
+            <div className="relative shrink-0" ref={menuRef}>
+              <button
+                type="button"
+                className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+                aria-label="Más opciones"
+                aria-expanded={menuOpen}
+                aria-haspopup="menu"
+                onClick={() => setMenuOpen((o) => !o)}
+              >
+                <MoreVertical className="w-6 h-6" strokeWidth={2} />
+              </button>
+              {menuOpen && (
+                <div
+                  role="menu"
+                  className="absolute right-0 top-full mt-1 z-30 min-w-[200px] py-1 bg-white rounded-lg border border-gray-200 shadow-lg"
+                >
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="w-full text-left px-4 py-2.5 text-[13px] text-gray-800 hover:bg-gray-50"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      openReportModal();
+                    }}
+                  >
+                    Reportar producto
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-16 items-start">
@@ -313,6 +549,92 @@ export default function DetalleProducto() {
           </div>
         </div>
       </div>
+
+      {reportModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/45"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="report-product-title"
+          onClick={closeReportModal}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 border border-gray-100"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 id="report-product-title" className="text-lg font-semibold text-gray-900 mb-1">
+              Reportar producto
+            </h2>
+            <p className="text-[13px] text-gray-500 mb-4">
+              Ayudanos a moderar el catálogo. Tu reporte será revisado por un administrador.
+            </p>
+
+            <label className="block text-[13px] font-semibold text-gray-800 mb-1.5" htmlFor="report-reason">
+              Motivo <span className="text-red-600">*</span>
+            </label>
+            <select
+              id="report-reason"
+              value={reportReason}
+              onChange={(e) => {
+                setReportReason(e.target.value);
+                setReportModalError("");
+              }}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-[13px] text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#6B9080]/40 focus:border-[#6B9080]"
+            >
+              <option value="" disabled>
+                Seleccioná un motivo
+              </option>
+              {reportReasonOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+
+            <label className="block text-[13px] font-semibold text-gray-800 mt-4 mb-1.5" htmlFor="report-desc">
+              Descripción <span className="text-gray-400 font-normal">(opcional)</span>
+            </label>
+            <textarea
+              id="report-desc"
+              value={reportDescription}
+              maxLength={300}
+              rows={4}
+              onChange={(e) => setReportDescription(e.target.value)}
+              placeholder="Contanos más detalles si querés..."
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-[13px] text-gray-900 resize-y min-h-[96px] focus:outline-none focus:ring-2 focus:ring-[#6B9080]/40 focus:border-[#6B9080]"
+            />
+            <div className="text-right text-[11px] text-gray-400 mt-1">
+              {reportDescription.length}/300
+            </div>
+
+            {reportModalError && (
+              <div className="mt-3 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-[13px] text-amber-900">
+                {reportModalError}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                type="button"
+                onClick={closeReportModal}
+                disabled={submittingReport}
+                className="px-4 py-2 rounded-lg border border-gray-300 text-[13px] font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmitReport}
+                disabled={!reportReason || submittingReport}
+                className="px-4 py-2 rounded-lg text-[13px] font-medium text-white disabled:opacity-50"
+                style={{ backgroundColor: "#6B9080" }}
+              >
+                {submittingReport ? "Enviando..." : "Enviar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
