@@ -228,7 +228,7 @@ export const AdminDashboardPage = () => {
             </p>
             <button
               type="button"
-              onClick={() => navigate("/admin/claims")}
+              onClick={() => navigate("/admin/reviews")}
               style={{
                 marginTop: "10px",
                 padding: "8px 14px",
