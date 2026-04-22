@@ -12,29 +12,31 @@ export const apiClient = axios.create({
  * Envía una solicitud de nueva categoría al administrador.
  * POST /api/commerces/category-requests
  *
- * @param {{ name: string, description?: string }} payload
+ * @param {{ name: string }} payload
  * @returns {Promise<{ message: string, data: object }>}
  */
 export const submitCategoryRequest = async (payload) => {
   const response = await apiClient.post("/api/commerces/category-requests", {
-    name: payload.name
-    // Nota: el backend actual solo acepta "name", description no está implementada
+    name: payload.name,
   });
   return response.data;
 };
 
 /**
- * Extrae el mensaje de error del backend de forma legible.
+ * Extrae el mensaje de error del backend como string.
+ * El backend puede devolver { message } o { code, message } según el error.
  */
 export const getBackendErrorMessage = (error, fallbackMessage) => {
   if (axios.isAxiosError(error)) {
-    const backendMessage =
-      error.response?.data?.message ||
-      error.response?.data?.error ||
-      error.response?.data?.detail;
+    const data = error.response?.data;
 
-    if (backendMessage) return backendMessage;
+    // Extraer siempre como string, nunca devolver el objeto crudo
+    if (typeof data === "string") return data;
+    if (typeof data?.message === "string") return data.message;
+    if (typeof data?.error === "string") return data.error;
+    if (typeof data?.detail === "string") return data.detail;
 
+    // Fallbacks por status HTTP
     if (error.response?.status === 400) return "Datos inválidos. Completá el nombre de la categoría.";
     if (error.response?.status === 401) return "Necesitas iniciar sesión para solicitar una categoría.";
     if (error.response?.status === 403) return "Solo los comercios pueden solicitar nuevas categorías.";
