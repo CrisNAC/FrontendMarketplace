@@ -9,10 +9,18 @@ import { formatGuarani } from "../../../lib/formatGuarani.js";
 import {
   REPORT_REASON_LABELS,
   fetchPendingProductReport,
+  fetchProductReportReasons,
   hasLocalReportForProduct,
   rememberLocalReport,
   submitProductReport,
 } from "../services/productReportApi.js";
+
+function apiErrorMessage(data) {
+  if (!data) return null;
+  if (typeof data.message === "string") return data.message;
+  if (data.error && typeof data.error.message === "string") return data.error.message;
+  return null;
+}
 
 function SvgIcon({ children, className = "w-4 h-4" }) {
   return (
@@ -94,6 +102,7 @@ export default function DetalleProducto() {
   const [reportDescription, setReportDescription] = useState("");
   const [reportModalError, setReportModalError] = useState("");
   const [submittingReport, setSubmittingReport] = useState(false);
+  const [reportReasonOptions, setReportReasonOptions] = useState(REPORT_REASON_LABELS);
 
   useEffect(() => {
     let active = true;
@@ -118,6 +127,20 @@ export default function DetalleProducto() {
       active = false;
     };
   }, [apiBase]);
+
+  useEffect(() => {
+    if (!sessionChecked || sessionRole !== "CUSTOMER") return;
+    let cancelled = false;
+    (async () => {
+      const list = await fetchProductReportReasons();
+      if (!cancelled && list && list.length > 0) {
+        setReportReasonOptions(list);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionChecked, sessionRole]);
 
   useEffect(() => {
     if (!sessionChecked) return;
@@ -223,17 +246,26 @@ export default function DetalleProducto() {
       }
 
       if (res.status === 400) {
-        setReportModalError("Ya enviaste un reporte para este producto.");
+        setReportModalError(
+          apiErrorMessage(res.data) || "Ya enviaste un reporte para este producto."
+        );
         return;
       }
 
-      const msg = res.data?.message;
+      if (res.status === 409) {
+        setReportModalError(
+          apiErrorMessage(res.data) || "Ya enviaste un reporte para este producto."
+        );
+        return;
+      }
+
+      const msg = apiErrorMessage(res.data);
       toast.error(msg ? String(msg) : "No se pudo enviar el reporte");
     } catch (e) {
       const code = e?.response?.status;
-      const msg = e?.response?.data?.message;
-      if (code === 400) {
-        setReportModalError("Ya enviaste un reporte para este producto.");
+      const msg = apiErrorMessage(e?.response?.data);
+      if (code === 400 || code === 409) {
+        setReportModalError(msg || "Ya enviaste un reporte para este producto.");
         return;
       }
       toast.error(msg ? String(msg) : "No se pudo enviar el reporte");
@@ -552,7 +584,7 @@ export default function DetalleProducto() {
               <option value="" disabled>
                 Seleccioná un motivo
               </option>
-              {REPORT_REASON_LABELS.map((o) => (
+              {reportReasonOptions.map((o) => (
                 <option key={o.value} value={o.value}>
                   {o.label}
                 </option>

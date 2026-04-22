@@ -42,6 +42,7 @@ export const AdminDashboardPage = () => {
     pendingProducts: 0,
     pendingReviews: 0,
     pendingCommerces: 0,
+    pendingProductReports: 0,
   });
   const [recentActivity, setRecentActivity] = useState([]);
 
@@ -108,6 +109,17 @@ export const AdminDashboardPage = () => {
   const pendingTasks = useMemo(
     () => [
       {
+        key: "productReports",
+        title: "Reportes de productos",
+        subtitle: `${stats.pendingProductReports} reporte${stats.pendingProductReports !== 1 ? "s" : ""} de usuario${stats.pendingProductReports !== 1 ? "s" : ""} pendiente${stats.pendingProductReports !== 1 ? "s" : ""}`,
+        count: stats.pendingProductReports,
+        bg: "#fff7ed",
+        border: "#fdba74",
+        color: "#9a3412",
+        Icon: AlertTriangle,
+        route: "/admin/claims",
+      },
+      {
         key: "products",
         title: "Productos sospechosos",
         subtitle: `${stats.pendingProducts} producto${stats.pendingProducts !== 1 ? "s" : ""} requieren revisión`,
@@ -144,6 +156,8 @@ export const AdminDashboardPage = () => {
     [stats]
   );
 
+  const hasProductReportWarnings = stats.pendingProductReports > 0;
+
   const badgeStyleByType = {
     info: { color: "#1d4ed8", backgroundColor: "#dbeafe" },
     warning: { color: "#92400e", backgroundColor: "#fef3c7" },
@@ -172,6 +186,64 @@ export const AdminDashboardPage = () => {
           }}
         >
           {error}
+        </div>
+      )}
+
+      {!loading && hasProductReportWarnings && (
+        <div
+          role="alert"
+          style={{
+            ...cardStyle,
+            marginBottom: "16px",
+            display: "flex",
+            alignItems: "flex-start",
+            gap: "14px",
+            backgroundColor: "#fffbeb",
+            border: "1px solid #fcd34d",
+            color: "#92400e",
+          }}
+        >
+          <span
+            style={{
+              flexShrink: 0,
+              width: "40px",
+              height: "40px",
+              borderRadius: "10px",
+              backgroundColor: "#fef3c7",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <AlertTriangle size={22} color="#d97706" aria-hidden />
+          </span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ margin: "0 0 4px 0", fontSize: "15px", fontWeight: "700" }}>
+              Hay reportes de productos pendientes
+            </p>
+            <p style={{ margin: 0, fontSize: "13px", lineHeight: 1.45, opacity: 0.95 }}>
+              {stats.pendingProductReports === 1
+                ? "Un comprador reportó un producto. Revisá el reclamo y coordiná con el comercio si hace falta."
+                : `${stats.pendingProductReports} compradores reportaron productos. Revisá los reclamos en el panel.`}
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate("/admin/claims")}
+              style={{
+                marginTop: "10px",
+                padding: "8px 14px",
+                fontSize: "13px",
+                fontWeight: "600",
+                borderRadius: "8px",
+                border: "1px solid #d97706",
+                backgroundColor: "#fff",
+                color: "#9a3412",
+                cursor: "pointer",
+              }}
+            >
+              Ir a reportes de productos
+            </button>
+          </div>
         </div>
       )}
 

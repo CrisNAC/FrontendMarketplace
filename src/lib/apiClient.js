@@ -47,6 +47,11 @@ const apiClient = axios.create({
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    /** Peticiones que manejan errores localmente (ej. dashboard con Promise.allSettled). */
+    if (error?.config?.skipGlobalErrorRedirect) {
+      return Promise.reject(error);
+    }
+
     const rawCode =
       error?.response?.data?.error?.code ?? error?.response?.status;
     const code = Number(rawCode);
