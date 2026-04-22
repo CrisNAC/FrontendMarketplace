@@ -226,14 +226,7 @@ function App() {
         <Route path="/admin/dashboard" element={
           <AdminLayout><AdminDashboardPage /></AdminLayout>
         } />
-        <Route path="/admin/productos" element={
-          <AdminLayout>
-            <AdminModulePlaceholderPage
-              title="Moderación de Productos"
-              description="Revisá reportes, validá productos sospechosos y tomá acciones de moderación."
-            />
-          </AdminLayout>
-        } />
+        <Route path="/admin/productos" element={<Navigate to="/admin/reviews" replace />} />
         <Route path="/admin/resenas" element={
           <AdminLayout>
             <AdminModulePlaceholderPage
