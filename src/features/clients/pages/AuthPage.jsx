@@ -1,9 +1,26 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Mail, Lock, User } from "lucide-react";
 import apiClient from "../../../lib/apiClient";
 import logo from "/src/assets/feather.png";
 
+/** Ruta tras login según rol del backend (ADMIN | CUSTOMER | SELLER | DELIVERY). */
+function getPostLoginPath(role) {
+  switch (role) {
+    case "ADMIN":
+      return "/admin/dashboard";
+    case "SELLER":
+      return "/comercio";
+    case "CUSTOMER":
+    case "DELIVERY":
+    default:
+      return "/homepage";
+  }
+}
+
 export default function AuthPage() {
+  const navigate = useNavigate();
+
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -24,7 +41,6 @@ export default function AuthPage() {
     e.preventDefault();
     setError(null);
 
-    // Validación de pass en registro
     if (!isLogin && form.password !== form.confirmPassword) {
       setError("Las contraseñas no coinciden");
       return;
@@ -39,16 +55,16 @@ export default function AuthPage() {
           password: form.password,
         });
 
-        console.log(res.data);
-        window.location = "/homepage";
+        const role = res.data?.user?.role;
+        const path = getPostLoginPath(role);
+        navigate(path, { replace: true });
       } else {
-        const res = await apiClient.post("/api/users/register", {
+        await apiClient.post("/api/users/register", {
           name: form.name,
           email: form.email,
           password: form.password,
         });
 
-        console.log("Registro exitoso:", res.data);
         setIsLogin(true);
       }
     } catch (err) {
@@ -56,178 +72,163 @@ export default function AuthPage() {
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="min-h-screen bg-[#DCE5E1] flex flex-col items-center justify-center px-4">
-
-      {/* Logo */}
-      <div className="flex flex-col items-center mb-8 mt-10">
-        <div className="w-20 h-20 bg-[#6B9080] rounded-full flex items-center justify-center mb-4">
-          <span>
-            <img src={logo} alt="Logo" className="w-[30px] h-auto" />
-          </span>
+    <div className="relative min-h-[100dvh] w-full overflow-x-hidden">
+      {/* Fondo fijo: gradiente marca + orbes (estilo “dots”) + burbujas */}
+      <div className="pointer-events-none fixed inset-0 z-0" aria-hidden>
+        <div className="auth-bg-gradient" />
+        <div className="auth-bg-orbs">
+          <span className="auth-bg-orbs__item auth-bg-orbs__item--a" />
+          <span className="auth-bg-orbs__item auth-bg-orbs__item--b" />
         </div>
-
-        <h1 className="text-2xl font-semibold text-gray-900"
-        style={{ fontSize: "25px", fontWeight: "bold" }}>
-          OpenMarket
-        </h1>
-        <p className="text-sm text-gray-600">
-          Tu marketplace sostenible
-        </p>
+        <div className="auth-bg-dots">
+          <span className="auth-bg-dots__cloud auth-bg-dots__cloud--1" />
+          <span className="auth-bg-dots__cloud auth-bg-dots__cloud--2" />
+          <span className="auth-bg-dots__cloud auth-bg-dots__cloud--3" />
+          <span className="auth-bg-dots__cloud auth-bg-dots__cloud--4" />
+        </div>
+        <ul className="auth-bg-bubbles">
+          {Array.from({ length: 10 }, (_, i) => (
+            <li key={i} />
+          ))}
+        </ul>
       </div>
 
-      {/* Card */}
-      <div className="bg-white w-full max-w-md rounded-2xl shadow-lg p-8">
-
-        <div className="text-center mb-6">
-          <h2 className="text-lg font-semibold text-[#6B9080]"
-                  style={{ fontSize: "20px", fontWeight: "bold" }}>
-            {isLogin ? "Bienvenido" : "Crear Cuenta"}
-          </h2>
-          <p className="text-sm text-gray-500">
-            {isLogin
-              ? "Accede a tu cuenta"
-              : "Regístrate para comenzar"}
-          </p>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex bg-[#E5EAE9] rounded-full p-1 mb-6">
-          <button
-            onClick={() => { setIsLogin(true); setError(null); }}
-            className={`flex-1 py-2 text-sm font-medium rounded-full transition-all ${
-              isLogin
-                ? "bg-white shadow"
-                : "text-gray-600"
-            }`}
-            style={{
-              padding: "6px 10px",
-              borderRadius: "12px",
-              cursor: "pointer"
-            }}
-          >
-            Iniciar Sesión
-          </button>
-
-          <button
-            onClick={() => { setIsLogin(false); setError(null); }}
-            className={`flex-1 py-2 text-sm font-medium rounded-full transition-all ${
-              !isLogin
-                ? "bg-white shadow"
-                : "text-gray-600"
-            }`}
-            style={{
-              padding: "6px 10px",
-              borderRadius: "12px",
-              cursor: "pointer"
-            }}
-          >
-            Registrarse
-          </button>
-        </div>
-
-        {/* Error */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg px-4 py-2 mb-4">
-            {error}
+      <main className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-lg items-center justify-center px-4 py-10 sm:px-6">
+        <div className="w-full max-w-md rounded-2xl border border-white/70 bg-white/95 p-5 shadow-[0_25px_50px_-12px_rgba(47,91,72,0.22)] backdrop-blur-sm sm:p-7">
+          <div className="mb-6 flex flex-col items-center text-center">
+            <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[#769482] text-white shadow-lg shadow-[#769482]/35 ring-4 ring-[#769482]/15">
+              <img src={logo} alt="" className="h-8 w-8 object-contain" />
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">OpenMarket</h1>
+            <p className="mt-1 text-sm text-slate-500">Tu marketplace sostenible</p>
           </div>
-        )}
 
-        {/* Form */}
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          {!isLogin && (
+          <div className="mb-6 text-center">
+            <p className="text-lg font-semibold text-slate-800">Bienvenido</p>
+            <p className="mt-1 text-sm text-slate-500">Accede a tu cuenta o regístrate</p>
+          </div>
+
+          <div className="mb-6 flex rounded-full bg-slate-100/90 p-1 shadow-inner">
+            <button
+              type="button"
+              onClick={() => { setIsLogin(true); setError(null); }}
+              className={`flex-1 rounded-full px-3 py-2.5 text-sm font-semibold transition-all duration-200 ${
+                isLogin
+                  ? "bg-white text-[#355347] shadow-md shadow-slate-200/80"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              Iniciar sesión
+            </button>
+            <button
+              type="button"
+              onClick={() => { setIsLogin(false); setError(null); }}
+              className={`flex-1 rounded-full px-3 py-2.5 text-sm font-semibold transition-all duration-200 ${
+                !isLogin
+                  ? "bg-white text-[#355347] shadow-md shadow-slate-200/80"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              Registrarse
+            </button>
+          </div>
+
+          {error && (
+            <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700">
+              {error}
+            </div>
+          )}
+
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            {!isLogin && (
+              <div>
+                <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-slate-500">
+                  Nombre completo
+                </label>
+                <div className="flex items-center rounded-xl border border-slate-200/90 bg-slate-50 px-3 py-2.5 transition focus-within:border-[#769482]/50 focus-within:ring-2 focus-within:ring-[#769482]/20">
+                  <User size={18} className="mr-2.5 shrink-0 text-[#769482]" />
+                  <input
+                    type="text"
+                    name="name"
+                    value={form.name}
+                    onChange={handleChange}
+                    placeholder="Tu nombre"
+                    className="w-full bg-transparent text-sm text-slate-800 placeholder:text-slate-400 outline-none"
+                    required
+                  />
+                </div>
+              </div>
+            )}
+
             <div>
-              <label className="text-sm text-gray-600 block mb-1">
-                Nombre completo
+              <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-slate-500">
+                Correo electrónico
               </label>
-              <div className="flex items-center bg-gray-100 rounded-lg px-3 py-2">
-                <User size={18} className="text-gray-400 mr-2" />
+              <div className="flex items-center rounded-xl border border-slate-200/90 bg-slate-50 px-3 py-2.5 transition focus-within:border-[#769482]/50 focus-within:ring-2 focus-within:ring-[#769482]/20">
+                <Mail size={18} className="mr-2.5 shrink-0 text-[#769482]" />
                 <input
-                  type="text"
-                  name="name"
-                  value={form.name}
+                  type="email"
+                  name="email"
+                  value={form.email}
                   onChange={handleChange}
-                  placeholder="Tu nombre"
-                  className="bg-transparent outline-none w-full text-sm"
+                  placeholder="tu@correo.com"
+                  className="w-full bg-transparent text-sm text-slate-800 placeholder:text-slate-400 outline-none"
                   required
                 />
               </div>
             </div>
-          )}
 
-          {/* Email */}
-          <div>
-            <label className="text-sm text-gray-600 block mb-1">
-              Correo electrónico
-            </label>
-            <div className="flex items-center bg-gray-100 rounded-lg px-3 py-2">
-              <Mail size={18} className="text-gray-400 mr-2" />
-              <input
-                type="email"
-                name="email"
-                value={form.email}
-                onChange={handleChange}
-                placeholder="tu@correo.com"
-                className="bg-transparent outline-none w-full text-sm"
-                required
-              />
-            </div>
-          </div>
-
-          {/* Password */}
-          <div>
-            <label className="text-sm text-gray-600 block mb-1">
-              Contraseña
-            </label>
-            <div className="flex items-center bg-gray-100 rounded-lg px-3 py-2">
-              <Lock size={18} className="text-gray-400 mr-2" />
-              <input
-                type="password"
-                name="password"
-                value={form.password}
-                onChange={handleChange}
-                className="bg-transparent outline-none w-full text-sm"
-                required
-              />
-            </div>
-          </div>
-
-          {/* Confirmar contraseña solo en registro */}
-          {!isLogin && (
             <div>
-              <label className="text-sm text-gray-600 block mb-1">
-                Confirmar contraseña
+              <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-slate-500">
+                Contraseña
               </label>
-              <div className="flex items-center bg-gray-100 rounded-lg px-3 py-2">
-                <Lock size={18} className="text-gray-400 mr-2" />
+              <div className="flex items-center rounded-xl border border-slate-200/90 bg-slate-50 px-3 py-2.5 transition focus-within:border-[#769482]/50 focus-within:ring-2 focus-within:ring-[#769482]/20">
+                <Lock size={18} className="mr-2.5 shrink-0 text-[#769482]" />
                 <input
                   type="password"
-                  name="confirmPassword"
-                  value={form.confirmPassword}
+                  name="password"
+                  value={form.password}
                   onChange={handleChange}
-                  className="bg-transparent outline-none w-full text-sm"
+                  placeholder="••••••••"
+                  className="w-full bg-transparent text-sm text-slate-800 placeholder:text-slate-400 outline-none"
+                  required
                 />
               </div>
             </div>
-          )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-[#6B9080] hover:bg-[#5f8273] transition-all duration-200 text-white py-3 rounded-xl font-medium mt-2"
-            style={{
-              padding: "6px 10px",
-              borderRadius: "12px",
-              cursor: "pointer"
-            }}
-          >
-            {loading ? "Cargando..." : isLogin ? "Iniciar Sesión" : "Crear Cuenta"}
-          </button>
+            {!isLogin && (
+              <div>
+                <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-slate-500">
+                  Confirmar contraseña
+                </label>
+                <div className="flex items-center rounded-xl border border-slate-200/90 bg-slate-50 px-3 py-2.5 transition focus-within:border-[#769482]/50 focus-within:ring-2 focus-within:ring-[#769482]/20">
+                  <Lock size={18} className="mr-2.5 shrink-0 text-[#769482]" />
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    value={form.confirmPassword}
+                    onChange={handleChange}
+                    placeholder="••••••••"
+                    className="w-full bg-transparent text-sm text-slate-800 placeholder:text-slate-400 outline-none"
+                    required
+                  />
+                </div>
+              </div>
+            )}
 
-        </form>
-      </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="mt-2 w-full rounded-xl bg-[#769482] px-4 py-3 text-sm font-semibold text-white shadow-md shadow-[#769482]/30 transition hover:bg-[#6a8879] hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loading ? "Cargando..." : isLogin ? "Iniciar sesión" : "Crear cuenta"}
+            </button>
+          </form>
+        </div>
+      </main>
     </div>
   );
 }

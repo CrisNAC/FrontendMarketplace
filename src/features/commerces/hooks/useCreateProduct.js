@@ -1,8 +1,10 @@
+//useCreateProduct.js
 import { useEffect, useMemo, useState } from "react";
 import {
   createProduct,
   fetchProductCategories,
   fetchProductTags,
+  uploadProductImage,
   getBackendErrorMessage,
 } from "../services/createProductApi";
 
@@ -60,14 +62,6 @@ const validateForm = (formData, selectedTags) => {
     errors.tags = `No puedes seleccionar mas de ${MAX_TAGS} tags.`;
   }
 
-  if (formData.imageUrl.trim()) {
-    try {
-      new URL(formData.imageUrl.trim());
-    } catch {
-      errors.imageUrl = "Ingresa una URL valida para la imagen.";
-    }
-  }
-
   return errors;
 };
 
@@ -87,6 +81,9 @@ export const useCreateProduct = () => {
   });
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // archivo de imagen seleccionado localmente (se sube después de crear el producto)
+  const [imageFile, setImageFile] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -162,6 +159,11 @@ export const useCreateProduct = () => {
     }));
   };
 
+  // acepta un File para preview local, o null para limpiar
+  const onImageFileChange = (file) => {
+    setImageFile(file);
+  };
+
   const addTag = (tag) => {
     if (!tag || selectedTags.length >= MAX_TAGS) {
       return;
@@ -210,6 +212,7 @@ export const useCreateProduct = () => {
     setSelectedTags([]);
     setValidationErrors({});
     setShowAllTagSuggestions(false);
+    setImageFile(null);
   };
 
   const handleSubmit = async (event) => {
@@ -234,7 +237,16 @@ export const useCreateProduct = () => {
     setIsSubmitting(true);
 
     try {
-      await createProduct({ payload });
+      const created = await createProduct({ payload });
+
+      // si el usuario seleccionó una imagen, la subimos usando el id del producto recién creado
+      if (imageFile instanceof File && (created?.id_product ?? created?.id)) {
+        await uploadProductImage(created.id_product ?? created.id, imageFile).catch((err) => {
+          // no bloqueamos el éxito del producto por un fallo de imagen
+          console.warn("[WARN] No se pudo subir la imagen del producto:", err);
+        });
+      }
+
       setResultModal({
         isOpen: true,
         variant: "success",
@@ -271,10 +283,12 @@ export const useCreateProduct = () => {
     isLoadingInitialData,
     isSubmitting,
     isFormDisabled: isLoadingInitialData || isSubmitting,
+    imageFile,
     setFormData,
     setShowAllTagSuggestions,
     closeModal,
     onFieldChange,
+    onImageFileChange,
     toggleTag,
     removeTag,
     handleSubmit,

@@ -10,14 +10,17 @@ import {
     ChevronLeft,
     ChevronRight,
     ShieldCheck,
+    Store,    
+    Flag,
 } from "lucide-react";
 
 const NAV_ITEMS = [
-    { label: "Dashboard",               icon: LayoutDashboard, route: "/admin",            disabled: true },
+    { label: "Dashboard",               icon: LayoutDashboard, route: "/admin/dashboard" },
     { label: "Gestión de Usuarios",     icon: Users,           route: "/admin/usuarios" },
-    { label: "Moderación de Productos", icon: Package,         route: "/admin/productos",  disabled: true },
-    { label: "Moderación de Reseñas",   icon: MessageSquare,   route: "/admin/resenas",    disabled: true },
-    { label: "Gestión de Categorías",   icon: Tag,             route: "/admin/categorias", disabled: true },
+    { label: "Comercios por Aprobar",   icon: Store,           route: "/admin/comercios-pendientes" },
+    { label: "Moderación de Productos", icon: Package,         route: "/admin/productos" },
+    { label: "Moderación de Reseñas",   icon: MessageSquare,   route: "/admin/reviews"},    
+    { label: "Gestión de Categorías",   icon: Tag,             route: "/admin/categorias" },
 ];
 
 export const SidebarAdmin = ({ collapsed, onToggle }) => {

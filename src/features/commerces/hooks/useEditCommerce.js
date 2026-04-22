@@ -4,6 +4,7 @@ import {
     fetchCommerceById,
     fetchCommerceCategories,
     updateCommerce,
+    uploadStoreImage,
     getBackendErrorMessage,
     apiClient,
 } from "../services/editCommerceApi";
@@ -104,6 +105,7 @@ const validateForm = (formData) => {
 export const useEditCommerce = () => {
     // id_store obtenido de la sesión del backend (no hardcodeado)
     const [commerceId, setCommerceId] = useState(null);
+
     // ── Estado del formulario ─────────────────────────────────────────────────
     const [formData, setFormData] = useState({
         name: "",
@@ -124,6 +126,9 @@ export const useEditCommerce = () => {
 
     // logoPreview: URL para mostrar la imagen en pantalla
     const [logoPreview, setLogoPreview] = useState("");
+
+    // archivo de logo seleccionado localmente (antes de subir)
+    const [logoFile, setLogoFile] = useState(null);
 
     const [validationErrors, setValidationErrors] = useState({});
 
@@ -247,8 +252,19 @@ export const useEditCommerce = () => {
         setValidationErrors((prev) => ({ ...prev, [name]: "" }));
     };
 
+    // acepta un File para preview local, o null para limpiar
+    const onLogoFileChange = (file) => {
+        setLogoFile(file);
+        if (file) {
+            setLogoPreview(URL.createObjectURL(file));
+        } else {
+            setLogoPreview(formData.logoUrl || "");
+        }
+    };
+
     const removeLogo = () => {
         setLogoPreview("");
+        setLogoFile(null);
         setFormData((prev) => ({ ...prev, logoUrl: "" }));
     };
 
@@ -287,8 +303,8 @@ export const useEditCommerce = () => {
             ...(formData.categoryId && {
                 fk_store_category: Number(formData.categoryId),
             }),
-            // logo → string URL o null para borrar
-            logo: formData.logoUrl.trim() || null,
+            // logo → string URL o null para borrar (solo si no se subió un archivo nuevo)
+            logo: logoFile ? undefined : (formData.logoUrl.trim() || null),
             // Redes sociales → null si vacío (validateOptionalStringField acepta null)
             website_url: formData.websiteUrl.trim() || null,
             instagram_url: formData.instagramUrl.trim() || null,
@@ -305,8 +321,14 @@ export const useEditCommerce = () => {
         try {
             await updateCommerce({ commerceId, payload });
 
-            // Actualizar preview si se cambió el logo por URL
-            if (formData.logoUrl.trim()) {
+            // si el usuario seleccionó un archivo de logo, lo subimos a Supabase
+            if (logoFile instanceof File) {
+                const { logo } = await uploadStoreImage(commerceId, logoFile);
+                setLogoPreview(logo);
+                setFormData((prev) => ({ ...prev, logoUrl: logo }));
+                setLogoFile(null);
+            } else if (formData.logoUrl.trim()) {
+                // si se cambió por URL, actualizamos el preview
                 setLogoPreview(formData.logoUrl.trim());
             }
 
@@ -329,6 +351,7 @@ export const useEditCommerce = () => {
     return {
         formData,
         logoPreview,
+        logoFile,
         validationErrors,
         categories,
         isLoadingInitialData,
@@ -340,6 +363,7 @@ export const useEditCommerce = () => {
         closeErrorModal,
         onFieldChange,
         onLocationChange,
+        onLogoFileChange,
         removeLogo,
         handleSubmit,
         errorRef,

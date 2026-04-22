@@ -1,12 +1,15 @@
-import { ArrowLeft } from "lucide-react";
+import { useState } from "react";
+import { ArrowLeft, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { CreationResultModal } from "../components/createProduct/CreationResultModal";
+import { CategoryRequestModal } from "../components/createProduct/CategoryRequestModal";
 import Toggle from "../components/createProduct/Toggle";
 import {
   MAX_TAGS,
   MAX_VISIBLE_TAG_SUGGESTIONS,
   useCreateProduct,
 } from "../hooks/useCreateProduct";
+import { useCategoryRequest } from "../hooks/useCategoryRequest";
 
 const inputClassName =
   "mb-3 w-full rounded-[10px] border border-[#d2d8d4] bg-[#f0f2f1] px-3 py-2 text-[14px] text-[#1f2e27] outline-none transition focus:border-[#8fb6a3] focus:ring-4 focus:ring-[rgba(107,144,128,0.16)] disabled:cursor-not-allowed disabled:opacity-60";
@@ -33,13 +36,43 @@ export default function CreateProductPage() {
     isLoadingInitialData,
     isSubmitting,
     isFormDisabled,
+    imageFile,
     setFormData,
     setShowAllTagSuggestions,
     closeModal,
     onFieldChange,
+    onImageFileChange,
     toggleTag,
     handleSubmit,
   } = useCreateProduct();
+
+  // ── Modal de solicitud de categoría ──────────────────────────────────────
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+
+  const {
+    formData: categoryRequestFormData,
+    validationErrors: categoryRequestErrors,
+    isSubmitting: isSubmittingCategoryRequest,
+    resultModal: categoryRequestResultModal,
+    closeModal: closeCategoryRequestResultModal,
+    onFieldChange: onCategoryRequestFieldChange,
+    resetForm: resetCategoryRequestForm,
+    handleSubmit: handleCategoryRequestSubmit,
+  } = useCategoryRequest();
+
+  const handleCloseCategoryModal = () => {
+    setIsCategoryModalOpen(false);
+    if (!isSubmittingCategoryRequest) resetCategoryRequestForm();
+  };
+
+  const handleCategoryRequestSuccess = () => {
+    if (categoryRequestResultModal.variant === "success") {
+      // Resetear el selector de categorías al estado inicial
+      setFormData((prev) => ({ ...prev, categoryId: "" }));
+      setIsCategoryModalOpen(false);
+      resetCategoryRequestForm();
+    }
+  };
 
   const handleCancel = () => {
     navigate("/comercio");
@@ -142,25 +175,36 @@ export default function CreateProductPage() {
               <label className={labelClassName} htmlFor="categoryId">
                 Categoria *
               </label>
-              <select
-                id="categoryId"
-                name="categoryId"
-                value={formData.categoryId}
-                onChange={onFieldChange}
-                className={inputClassName}
-                disabled={isFormDisabled}
-              >
-                <option value="">
-                  {isLoadingInitialData
-                    ? "Cargando categorias..."
-                    : "Selecciona una categoria"}
-                </option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
+              <div className="flex flex-col gap-1.5">
+                <select
+                  id="categoryId"
+                  name="categoryId"
+                  value={formData.categoryId}
+                  onChange={onFieldChange}
+                  className={inputClassName}
+                  disabled={isFormDisabled}
+                >
+                  <option value="">
+                    {isLoadingInitialData
+                      ? "Cargando categorias..."
+                      : "Selecciona una categoria"}
                   </option>
-                ))}
-              </select>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+                {/* ── Solicitar nueva categoría ── */}
+                <button
+                  type="button"
+                  onClick={() => setIsCategoryModalOpen(true)}
+                  disabled={isFormDisabled}
+                  className="self-start text-xs font-semibold text-[#2f63f2] hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  ¿No encontrás tu categoría? Solicitala
+                </button>
+              </div>
               {validationErrors.categoryId && (
                 <p className={errorClassName}>{validationErrors.categoryId}</p>
               )}
@@ -261,21 +305,53 @@ export default function CreateProductPage() {
         </section>
 
         <aside className="flex flex-col gap-5">
+
+          {/* ── Imagen del Producto ── */}
           <section className={cardClassName}>
             <h2 className={cardTitleClassName}>Imagen del Producto</h2>
-            <label className={labelClassName} htmlFor="imageUrl">
-              URL de la Imagen (opcional)
+
+            {/* Preview: muestra la imagen seleccionada antes de crear el producto */}
+            {imageFile ? (
+              <div className="relative overflow-hidden rounded-[10px] border border-[#d2d8d4] bg-[#f0f2f1] mb-3">
+                <img
+                  src={URL.createObjectURL(imageFile)}
+                  alt="Vista previa del producto"
+                  className="h-[160px] w-full object-cover"
+                  onError={(e) => { e.currentTarget.style.display = "none"; }}
+                />
+                {/* Botón para quitar la imagen seleccionada */}
+                <button
+                  type="button"
+                  onClick={() => onImageFileChange(null)}
+                  disabled={isFormDisabled}
+                  className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 shadow-sm transition hover:bg-red-50 disabled:cursor-not-allowed"
+                  aria-label="Quitar imagen"
+                >
+                  <X size={14} className="text-red-500" />
+                </button>
+              </div>
+            ) : (
+              <div className="mb-3 flex h-[100px] items-center justify-center rounded-[10px] border border-dashed border-[#d2d8d4] bg-[#f0f2f1] text-[13px] text-[#9ca3af]">
+                Sin imagen
+              </div>
+            )}
+
+            {/* Selector de archivo — reemplaza el campo de URL */}
+            <label className={`cursor-pointer inline-flex items-center gap-2 bg-[#6b9080] text-white px-4 py-2 rounded-[10px] text-[13px] font-semibold hover:bg-[#5a7d6d] transition ${isFormDisabled ? "opacity-60 cursor-not-allowed pointer-events-none" : ""}`}>
+              Seleccionar imagen
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                disabled={isFormDisabled}
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) onImageFileChange(file);
+                }}
+              />
             </label>
-            <input
-              id="imageUrl"
-              name="imageUrl"
-              type="url"
-              value={formData.imageUrl}
-              onChange={onFieldChange}
-              className={inputClassName}
-              placeholder="https://..."
-              disabled={isFormDisabled}
-            />
+            <p className="mt-2 text-[11px] text-[#9ca3af]">JPG o PNG recomendado</p>
+
             {validationErrors.imageUrl && (
               <p className={errorClassName}>{validationErrors.imageUrl}</p>
             )}
@@ -347,6 +423,22 @@ export default function CreateProductPage() {
         title={resultModal.title}
         message={resultModal.message}
         onClose={closeModal}
+      />
+
+      {/* ── Modal de solicitud de categoría ── */}
+      <CategoryRequestModal
+        isOpen={isCategoryModalOpen}
+        onClose={handleCloseCategoryModal}
+        formData={categoryRequestFormData}
+        validationErrors={categoryRequestErrors}
+        isSubmitting={isSubmittingCategoryRequest}
+        onFieldChange={onCategoryRequestFieldChange}
+        handleSubmit={handleCategoryRequestSubmit}
+        resultModal={categoryRequestResultModal}
+        closeResultModal={() => {
+          closeCategoryRequestResultModal();
+          handleCategoryRequestSuccess();
+        }}
       />
     </div>
   );

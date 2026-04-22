@@ -1,8 +1,11 @@
+import { useState } from "react";
 import { ArrowLeft, X } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useEditProduct } from "../hooks/useEditProduct";
 import { CreationResultModal } from "../components/createProduct/CreationResultModal";
+import { CategoryRequestModal } from "../components/createProduct/CategoryRequestModal";
 import Toggle from "../components/createProduct/Toggle";
+import { useCategoryRequest } from "../hooks/useCategoryRequest";
 
 // ─── Clases reutilizadas de CreateProductPage (misma apariencia) ──────────────
 const inputClassName =
@@ -33,6 +36,8 @@ export default function EditProductPage() {
         resultModal,
         closeModal,
         onFieldChange,
+        onImageFileChange,
+        imageFile,
         toggleTag,
         removeTag,
         handleSubmit,
@@ -40,6 +45,33 @@ export default function EditProductPage() {
         availableTags,
     } = useEditProduct(id);
 
+    // ── Modal de solicitud de categoría ──────────────────────────────────────
+    const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+
+    const {
+        formData: categoryRequestFormData,
+        validationErrors: categoryRequestErrors,
+        isSubmitting: isSubmittingCategoryRequest,
+        resultModal: categoryRequestResultModal,
+        closeModal: closeCategoryRequestResultModal,
+        onFieldChange: onCategoryRequestFieldChange,
+        resetForm: resetCategoryRequestForm,
+        handleSubmit: handleCategoryRequestSubmit,
+    } = useCategoryRequest();
+
+    const handleCloseCategoryModal = () => {
+        setIsCategoryModalOpen(false);
+        if (!isSubmittingCategoryRequest) resetCategoryRequestForm();
+    };
+
+    const handleCategoryRequestSuccess = () => {
+        if (categoryRequestResultModal.variant === "success") {
+            // En EditProduct no tenemos setFormData, usamos onFieldChange
+            onFieldChange({ target: { name: "categoryId", value: "", type: "text" } });
+            setIsCategoryModalOpen(false);
+            resetCategoryRequestForm();
+        }
+    };
 
     return (
         <div className="ml-0 mr-auto w-full max-w-[1160px] text-[#22312a]">
@@ -147,32 +179,43 @@ export default function EditProductPage() {
                             <label className={labelClassName} htmlFor="categoryId">
                                 Categoría *
                             </label>
-                            <select
-                                id="categoryId"
-                                name="categoryId"
-                                value={formData.categoryId}
-                                onChange={onFieldChange}
-                                className={inputClassName}
-                                disabled={isFormDisabled}
-                            >
-                                <option value="">
-                                    {isLoadingInitialData
-                                        ? "Cargando categorías..."
-                                        : "Seleccioná una categoría"}
-                                </option>
-                                {categories.map((cat) => (
-                                    <option key={cat.id} value={cat.id}>
-                                        {cat.name}
+                            <div className="flex flex-col gap-1.5">
+                                <select
+                                    id="categoryId"
+                                    name="categoryId"
+                                    value={formData.categoryId}
+                                    onChange={onFieldChange}
+                                    className={inputClassName}
+                                    disabled={isFormDisabled}
+                                >
+                                    <option value="">
+                                        {isLoadingInitialData
+                                            ? "Cargando categorías..."
+                                            : "Seleccioná una categoría"}
                                     </option>
-                                ))}
-                            </select>
+                                    {categories.map((cat) => (
+                                        <option key={cat.id} value={cat.id}>
+                                            {cat.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                {/* ── Solicitar nueva categoría ── */}
+                                <button
+                                    type="button"
+                                    onClick={() => setIsCategoryModalOpen(true)}
+                                    disabled={isFormDisabled}
+                                    className="self-start text-xs font-semibold text-[#2f63f2] hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                    ¿No encontrás tu categoría? Solicitala
+                                </button>
+                            </div>
                             {validationErrors.categoryId && (
                                 <p className={errorClassName}>{validationErrors.categoryId}</p>
                             )}
                         </div>
                     </div>
 
-                    {/* ── Etiquetas actuales (chips removibles) ── */}
+                    {/* ── Oferta ── */}
                     <div className="mt-1 rounded-[12px] border border-[#d2d8d4] bg-white px-4 py-3">
                         <div className="flex items-center justify-between gap-3">
                             <div>
@@ -239,6 +282,7 @@ export default function EditProductPage() {
                         )}
                     </div>
 
+                    {/* ── Etiquetas actuales (chips removibles) ── */}
                     <label className={labelClassName}>
                         Etiquetas actuales
                     </label>
@@ -300,7 +344,7 @@ export default function EditProductPage() {
                             </div>
 
                             {!showAllTagSuggestions &&
-                                availableTags.length > MAX_VISIBLE_TAG_SUGGESTIONS && (
+                                availableTags.length > 6 && (
                                     <div className="mt-3">
                                         <button
                                             type="button"
@@ -330,60 +374,53 @@ export default function EditProductPage() {
                     <section className={cardClassName}>
                         <h2 className={cardTitleClassName}>Imagen del Producto</h2>
 
-                        <label className={labelClassName} htmlFor="imageUrl">
-                            URL de la Imagen *
-                        </label>
-                        <input
-                            id="imageUrl"
-                            name="imageUrl"
-                            type="url"
-                            value={formData.imageUrl}
-                            onChange={onFieldChange}
-                            className={inputClassName}
-                            placeholder="https://..."
-                            disabled={isFormDisabled}
-                        />
-                        {validationErrors.imageUrl && (
-                            <p className={errorClassName}>{validationErrors.imageUrl}</p>
-                        )}
-
-                        {/* Vista previa de la imagen */}
-                        {formData.imageUrl.trim() && (
-                            <div className="mt-2">
-                                <p className="mb-1.5 text-[13px] font-semibold text-[#44564d]">
-                                    Vista previa:
-                                </p>
-                                <div className="relative overflow-hidden rounded-[10px] border border-[#d2d8d4] bg-[#f0f2f1]">
-                                    <img
-                                        src={formData.imageUrl}
-                                        alt="Vista previa del producto"
-                                        className="h-[160px] w-full object-cover"
-                                        onError={(e) => {
-                                            e.currentTarget.style.display = "none";
-                                        }}
-                                    />
-                                    {/* Botón eliminar imagen */}
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            onFieldChange({
-                                                target: { name: "imageUrl", value: "", type: "text" },
-                                            })
-                                        }
-                                        disabled={isFormDisabled}
-                                        className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 shadow-sm transition hover:bg-red-50 disabled:cursor-not-allowed"
-                                        aria-label="Eliminar imagen"
-                                    >
-                                        <X size={14} className="text-red-500" />
-                                    </button>
-                                </div>
+                        {/* Preview: muestra la imagen nueva si se seleccionó, o la actual del producto */}
+                        {(formData.imageUrl || imageFile) ? (
+                            <div className="relative overflow-hidden rounded-[10px] border border-[#d2d8d4] bg-[#f0f2f1] mb-3">
+                                <img
+                                    src={imageFile ? URL.createObjectURL(imageFile) : formData.imageUrl}
+                                    alt="Vista previa del producto"
+                                    className="h-[160px] w-full object-cover"
+                                    onError={(e) => { e.currentTarget.style.display = "none"; }}
+                                />
+                                {/* Botón para quitar la imagen seleccionada o limpiar la actual */}
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        onImageFileChange(null);
+                                        onFieldChange({ target: { name: "imageUrl", value: "", type: "text" } });
+                                    }}
+                                    disabled={isFormDisabled}
+                                    className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 shadow-sm transition hover:bg-red-50 disabled:cursor-not-allowed"
+                                    aria-label="Eliminar imagen"
+                                >
+                                    <X size={14} className="text-red-500" />
+                                </button>
                             </div>
-                        )}
-
-                        {!formData.imageUrl.trim() && (
-                            <div className="mt-2 flex h-[100px] items-center justify-center rounded-[10px] border border-dashed border-[#d2d8d4] bg-[#f0f2f1] text-[13px] text-[#9ca3af]">
+                        ) : (
+                            <div className="mb-3 flex h-[100px] items-center justify-center rounded-[10px] border border-dashed border-[#d2d8d4] bg-[#f0f2f1] text-[13px] text-[#9ca3af]">
                                 Sin imagen
                             </div>
+                        )}
+
+                        {/* Selector de archivo — reemplaza el campo de URL */}
+                        <label className={`cursor-pointer inline-flex items-center gap-2 bg-[#6b9080] text-white px-4 py-2 rounded-[10px] text-[13px] font-semibold hover:bg-[#5a7d6d] transition ${isFormDisabled ? "opacity-60 cursor-not-allowed pointer-events-none" : ""}`}>
+                            Seleccionar imagen
+                            <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                disabled={isFormDisabled}
+                                onChange={(e) => {
+                                    const file = e.target.files[0];
+                                    if (file) onImageFileChange(file);
+                                }}
+                            />
+                        </label>
+                        <p className="mt-2 text-[11px] text-[#9ca3af]">JPG o PNG recomendado</p>
+
+                        {validationErrors.imageUrl && (
+                            <p className={errorClassName}>{validationErrors.imageUrl}</p>
                         )}
                     </section>
 
@@ -463,6 +500,22 @@ export default function EditProductPage() {
                     : closeModal
                 }
                 closeLabel={resultModal.variant === "success" ? "Ir a Productos" : "Cerrar"}
+            />
+
+            {/* ── Modal de solicitud de categoría ── */}
+            <CategoryRequestModal
+                isOpen={isCategoryModalOpen}
+                onClose={handleCloseCategoryModal}
+                formData={categoryRequestFormData}
+                validationErrors={categoryRequestErrors}
+                isSubmitting={isSubmittingCategoryRequest}
+                onFieldChange={onCategoryRequestFieldChange}
+                handleSubmit={handleCategoryRequestSubmit}
+                resultModal={categoryRequestResultModal}
+                closeResultModal={() => {
+                    closeCategoryRequestResultModal();
+                    handleCategoryRequestSuccess();
+                }}
             />
         </div>
     );
