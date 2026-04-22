@@ -210,13 +210,12 @@ export default function DetalleProducto() {
     && sessionUserId
     && sessionRole === "CUSTOMER"
     && !checkingReport
-    && !hasPendingReport
     && status === "success";
 
   const openReportModal = () => {
     setReportReason("");
     setReportDescription("");
-    setReportModalError("");
+    setReportModalError(hasPendingReport ? "Ya enviaste un reporte para este producto." : "");
     setReportModalOpen(true);
   };
 
@@ -227,6 +226,10 @@ export default function DetalleProducto() {
   };
 
   const handleSubmitReport = async () => {
+    if (hasPendingReport) {
+      setReportModalError("Ya enviaste un reporte para este producto.");
+      return;
+    }
     if (!reportReason || !productId || !sessionUserId) return;
     setSubmittingReport(true);
     setReportModalError("");
@@ -575,6 +578,7 @@ export default function DetalleProducto() {
             <select
               id="report-reason"
               value={reportReason}
+              disabled={hasPendingReport}
               onChange={(e) => {
                 setReportReason(e.target.value);
                 setReportModalError("");
@@ -597,6 +601,7 @@ export default function DetalleProducto() {
             <textarea
               id="report-desc"
               value={reportDescription}
+              disabled={hasPendingReport}
               maxLength={300}
               rows={4}
               onChange={(e) => setReportDescription(e.target.value)}
@@ -625,7 +630,7 @@ export default function DetalleProducto() {
               <button
                 type="button"
                 onClick={handleSubmitReport}
-                disabled={!reportReason || submittingReport}
+                disabled={!reportReason || submittingReport || hasPendingReport}
                 className="px-4 py-2 rounded-lg text-[13px] font-medium text-white disabled:opacity-50"
                 style={{ backgroundColor: "#6B9080" }}
               >
