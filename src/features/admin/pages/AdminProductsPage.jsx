@@ -25,6 +25,7 @@ const ProductDetailModal = ({ isOpen, product, onClose, onApprove, onReject, isS
 
   const statusConfig = APPROVAL_STATUS[product.approvalStatus] ?? APPROVAL_STATUS.PENDING;
   const isPending    = product.approvalStatus === "PENDING";
+  const imageUrl     = product.image_url ?? product.imageUrl ?? null;
 
   const DetailRow = ({ label, value }) => (
     <div>
@@ -55,8 +56,11 @@ const ProductDetailModal = ({ isOpen, product, onClose, onApprove, onReject, isS
 
           {/* Imagen + nombre + estado */}
           <div style={{ display: "flex", gap: "16px", marginBottom: "24px" }}>
-            <div style={{ width: "72px", height: "72px", borderRadius: "10px", border: "1px solid #e5e7eb", backgroundColor: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <Package size={30} color="#9ca3af" />
+            <div style={{ width: "72px", height: "72px", borderRadius: "10px", border: "1px solid #e5e7eb", backgroundColor: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
+              {imageUrl
+                ? <img src={imageUrl} alt={product.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => { e.currentTarget.style.display = "none"; e.currentTarget.nextSibling.style.display = "block"; }} />
+                : null}
+              <Package size={30} color="#9ca3af" style={{ display: imageUrl ? "none" : "block" }} />
             </div>
             <div style={{ flex: 1 }}>
               <h4 style={{ margin: "0 0 6px", fontSize: "17px", fontWeight: "700", color: "#111827" }}>{product.name}</h4>
@@ -226,6 +230,7 @@ const RejectModal = ({ isOpen, productName, onClose, onConfirm, isSubmitting }) 
 const ProductRow = ({ product, onViewDetail, onApprove, onReject, isSubmitting }) => {
   const statusConfig = APPROVAL_STATUS[product.approvalStatus] ?? APPROVAL_STATUS.PENDING;
   const isPending    = product.approvalStatus === "PENDING";
+  const imageUrl     = product.image_url ?? product.imageUrl ?? null;
 
   return (
     <div
@@ -233,8 +238,11 @@ const ProductRow = ({ product, onViewDetail, onApprove, onReject, isSubmitting }
       onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f9fafb")}
       onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
     >
-      <div style={{ width: "56px", height: "56px", borderRadius: "8px", border: "1px solid #e5e7eb", flexShrink: 0, backgroundColor: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <Package size={24} color="#9ca3af" />
+      <div style={{ width: "56px", height: "56px", borderRadius: "8px", border: "1px solid #e5e7eb", flexShrink: 0, backgroundColor: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+        {imageUrl
+          ? <img src={imageUrl} alt={product.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => { e.currentTarget.style.display = "none"; e.currentTarget.nextSibling.style.display = "flex"; }} />
+          : null}
+        <Package size={24} color="#9ca3af" style={{ display: imageUrl ? "none" : "block" }} />
       </div>
 
       <div style={{ flex: "2", minWidth: "180px" }}>
