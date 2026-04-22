@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Trash2, Eye, AlertTriangle, Tag, Package, Pencil, X, CheckCircle, XCircle, Clock } from "lucide-react";
-import { fetchCategoriesWithProducts, updateAdminCategory, deleteAdminCategory } from "../services/adminCategoriesApi";
+import { Search, Trash2, Eye, AlertTriangle, Tag, Package, Pencil, X, Plus, CheckCircle, XCircle, Clock } from "lucide-react";
+import { fetchCategoriesWithProducts, updateAdminCategory, deleteAdminCategory, createAdminCategory } from "../services/adminCategoriesApi";
 
 const cardStyle = {
     backgroundColor: "var(--background-white)",
@@ -9,6 +9,78 @@ const cardStyle = {
     padding: "20px",
     boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
 };
+
+function CreateModal({ onSave, onCancel }) {
+    const [name, setName]         = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError]       = useState("");
+
+    const handleSubmit = async () => {
+        const trimmed = name.trim();
+        if (!trimmed) { setError("El nombre es requerido."); return; }
+        if (trimmed.length > 100) { setError("El nombre no puede superar 100 caracteres."); return; }
+
+        setIsSubmitting(true);
+        setError("");
+        try {
+            await onSave(trimmed);
+        } catch (err) {
+            setError(err?.response?.data?.message || "No se pudo crear la categoría.");
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <div style={{ position: "fixed", inset: 0, zIndex: 50, backgroundColor: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
+            onClick={isSubmitting ? undefined : onCancel}>
+            <div style={{ backgroundColor: "white", borderRadius: "16px", padding: "24px", maxWidth: "460px", width: "100%", boxShadow: "0 20px 40px rgba(0,0,0,0.15)" }}
+                onClick={e => e.stopPropagation()}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+                    <h3 style={{ fontSize: "18px", fontWeight: "700", margin: 0 }}>Nueva Categoría</h3>
+                    <button type="button" onClick={isSubmitting ? undefined : onCancel} disabled={isSubmitting}
+                        style={{ background: "none", border: "none", cursor: isSubmitting ? "not-allowed" : "pointer", color: "#6b7280", opacity: isSubmitting ? 0.4 : 1 }}>
+                        <X size={20} />
+                    </button>
+                </div>
+
+                {error && (
+                    <div style={{ backgroundColor: "#fff1f2", border: "1px solid #fecdd3", borderRadius: "8px", padding: "10px 12px", color: "#be123c", fontSize: "13px", marginBottom: "16px" }}>
+                        {error}
+                    </div>
+                )}
+
+                <div style={{ marginBottom: "20px" }}>
+                    <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#374151", marginBottom: "6px" }}>
+                        Nombre *
+                    </label>
+                    <input
+                        value={name}
+                        onChange={e => setName(e.target.value)}
+                        disabled={isSubmitting}
+                        maxLength={100}
+                        placeholder="Ej: Electrónica"
+                        autoFocus
+                        style={{ width: "100%", padding: "8px 12px", border: "1px solid #e5e7eb", borderRadius: "8px", fontSize: "14px", outline: "none", boxSizing: "border-box" }}
+                    />
+                    <p style={{ fontSize: "12px", color: "#9ca3af", marginTop: "4px" }}>
+                        La categoría se creará como visible y activa por defecto.
+                    </p>
+                </div>
+
+                <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+                    <button type="button" onClick={onCancel} disabled={isSubmitting}
+                        style={{ padding: "8px 20px", borderRadius: "8px", border: "1px solid #d1d5db", backgroundColor: "white", fontSize: "14px", fontWeight: "500", color: "#374151", cursor: isSubmitting ? "not-allowed" : "pointer" }}>
+                        Cancelar
+                    </button>
+                    <button type="button" onClick={handleSubmit} disabled={isSubmitting}
+                        style={{ padding: "8px 20px", borderRadius: "8px", border: "none", backgroundColor: "var(--primary-dark)", fontSize: "14px", fontWeight: "600", color: "white", cursor: isSubmitting ? "not-allowed" : "pointer", opacity: isSubmitting ? 0.7 : 1 }}>
+                        {isSubmitting ? "Creando..." : "Crear Categoría"}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
 
 // ─── Modal: Editar categoría ──────────────────────────────────────────────────
 function EditModal({ category, onSave, onCancel }) {
@@ -317,6 +389,7 @@ export const AdminCategoriesPage = () => {
     const [filterVisible, setFilterVisible] = useState("all");
     const [page, setPage]                   = useState(1);
 
+    const [showCreateModal, setShowCreateModal] = useState(false);
     const [categoryToEdit, setCategoryToEdit]     = useState(null);
     const [categoryToDelete, setCategoryToDelete] = useState(null);
     const [isDeleting, setIsDeleting]             = useState(false);
@@ -391,6 +464,13 @@ export const AdminCategoriesPage = () => {
     useEffect(() => {
         if (activeTab === "requests") loadRequests(requestPage);
     }, [activeTab, requestPage, loadRequests]);
+
+    const handleCreate = async (name) => {
+        await createAdminCategory(name);
+        setShowCreateModal(false);
+        setPage(1);
+        load(1);
+    };
 
     // ── Handlers: Categorías ──────────────────────────────────────────────────
     const handleSaveEdit = async (id, payload) => {
@@ -519,6 +599,39 @@ export const AdminCategoriesPage = () => {
             {/* ════════════════ TAB: CATEGORÍAS ════════════════ */}
             {activeTab === "categories" && (
                 <>
+                <div style={{ 
+                    display: "flex", 
+                    justifyContent: "space-between", 
+                    alignItems: "center", 
+                    marginBottom: "20px" 
+                }}>
+                    <div>
+                        <h2 style={{ margin: 0, fontSize: "18px", fontWeight: "600" }}>
+                            Categorías
+                        </h2>
+                        <p style={{ margin: "2px 0 0", fontSize: "13px", color: "#6b7280" }}>
+                            Gestiona las categorías de productos
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => setShowCreateModal(true)}
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            padding: "8px 16px",
+                            backgroundColor: "var(--primary-dark)",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "8px",
+                            fontSize: "13px",
+                            fontWeight: "500",
+                            cursor: "pointer",
+                        }}
+                    >
+                        <Plus size={14} /> Nueva Categoría
+                    </button>
+                </div>
                     {/* Stat cards */}
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "20px" }}>
                         {[
@@ -659,6 +772,12 @@ export const AdminCategoriesPage = () => {
             )}
 
             {/* ── Modales: Categorías ── */}
+            {showCreateModal && (
+                <CreateModal
+                    onSave={handleCreate}
+                    onCancel={() => setShowCreateModal(false)}
+                />
+            )}
             {categoryToEdit && (
                 <EditModal
                     category={categoryToEdit}
