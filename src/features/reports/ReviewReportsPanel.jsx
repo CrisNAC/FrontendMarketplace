@@ -58,6 +58,7 @@ function formatDate(iso) {
 
 export default function ReviewReportsPanel({ embedded = false }) {
   const navigate = useNavigate();
+
   const [items, setItems] = useState([]);
   const [meta, setMeta] = useState({
     total: 0,
@@ -65,13 +66,19 @@ export default function ReviewReportsPanel({ embedded = false }) {
     limit: 10,
     total_pages: 0,
   });
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [reportStatus, setReportStatus] = useState("");
   const [page, setPage] = useState(1);
   const [actingId, setActingId] = useState(null);
+
+  // ESTADOS NUEVOS DEL MODAL
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [reportToDelete, setReportToDelete] = useState(null);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 400);
@@ -85,6 +92,7 @@ export default function ReviewReportsPanel({ embedded = false }) {
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
+
     try {
       const filtered = await fetchFilteredReviewReports({
         report_status: reportStatus || undefined,
@@ -92,6 +100,7 @@ export default function ReviewReportsPanel({ embedded = false }) {
         page,
         limit: 10,
       });
+
       setItems(filtered.data ?? []);
       setMeta(
         filtered.meta ?? {
@@ -116,29 +125,39 @@ export default function ReviewReportsPanel({ embedded = false }) {
     load();
   }, [load]);
 
-  const handleDecision = async (reportId, decision) => {
-    if (decision === "REMOVE_REVIEW") {
-      const ok = window.confirm(
-        "¿Ocultar esta reseña? Dejará de mostrarse en el producto y el reporte quedará resuelto."
-      );
-      if (!ok) return;
-    }
+  const openDeleteModal = (reportId) => {
+    setReportToDelete(reportId);
+    setShowDeleteModal(true);
+  };
 
+  const closeDeleteModal = () => {
+    if (actingId) return;
+    setShowDeleteModal(false);
+    setReportToDelete(null);
+  };
+
+  const handleDecision = async (reportId, decision) => {
     setActingId(reportId);
+
     try {
       await resolveReviewReport(reportId, { decision });
+
       toast.success(
         decision === "KEEP_REVIEW"
           ? "Reporte descartado. La reseña sigue visible."
-          : "Reseña oculta y reporte resuelto."
+          : "La reseña fue ocultada. El comentario desaparecerá del producto."
       );
+
       await load();
     } catch (err) {
       toast.error(
-        err?.response?.data?.error?.message || "No se pudo actualizar el reporte."
+        err?.response?.data?.error?.message ||
+          "No se pudo actualizar el reporte."
       );
     } finally {
       setActingId(null);
+      setShowDeleteModal(false);
+      setReportToDelete(null);
     }
   };
 
@@ -157,9 +176,10 @@ export default function ReviewReportsPanel({ embedded = false }) {
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar por quien reporta, autor de la reseña o producto..."
+          placeholder="Buscar por quien reporta, autor de la reseña o producto."
           className="flex-1 bg-gray-100 px-3 py-2 rounded-lg outline-none border border-transparent focus:border-[#6B9080]"
         />
+
         <select
           value={reportStatus}
           onChange={(e) => setReportStatus(e.target.value)}
@@ -191,11 +211,11 @@ export default function ReviewReportsPanel({ embedded = false }) {
       )}
 
       {!loading && !error && items.length > 0 && (
-        <div className="flex flex-col gap-4">
+        <div className="space-y-3">
           {items.map((r) => {
             const pr = r.product_review;
             const productId = pr?.product?.id_product;
-            const rating = pr?.rating ?? 0;
+            const rating = Number(pr?.rating) || 0;
             const st = r.report_status;
             const open = st === "PENDING" || st === "IN_PROGRESS";
             const reviewHidden = pr?.status === false;
@@ -231,15 +251,17 @@ export default function ReviewReportsPanel({ embedded = false }) {
                   </div>
 
                   <span
-                    className={`text-xs px-2 py-1 rounded w-fit ${STATUS_STYLE[st] ?? "bg-gray-100"}`}
+                    className={`text-xs px-2 py-1 rounded w-fit ${
+                      STATUS_STYLE[st] ?? "bg-gray-100"
+                    }`}
                   >
                     {STATUS_LABEL[st] ?? st}
                   </span>
 
                   <span className="text-xs font-semibold text-gray-700">
-                    Motivo del reporte:{" "}
-                    {REASON_LABEL[r.reason] ?? r.reason}
+                    Motivo del reporte: {REASON_LABEL[r.reason] ?? r.reason}
                   </span>
+
                   {r.description && (
                     <p className="text-xs text-gray-600">{r.description}</p>
                   )}
@@ -248,11 +270,13 @@ export default function ReviewReportsPanel({ embedded = false }) {
                     {"★".repeat(Math.min(5, Math.max(0, rating)))}
                     {"☆".repeat(Math.max(0, 5 - Math.min(5, rating)))}
                   </div>
+
                   {reviewHidden && (
                     <p className="text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded px-2 py-1 w-fit">
                       Reseña oculta por moderación
                     </p>
                   )}
+
                   <p className="text-sm text-gray-700 whitespace-pre-wrap border-l-2 border-gray-200 pl-2">
                     {pr?.comment ?? "—"}
                   </p>
@@ -269,6 +293,7 @@ export default function ReviewReportsPanel({ embedded = false }) {
                         <Eye size={14} /> Ver producto
                       </button>
                     )}
+
                     {open && (
                       <>
                         <button
@@ -286,12 +311,11 @@ export default function ReviewReportsPanel({ embedded = false }) {
                           )}
                           Aceptar reseña
                         </button>
+
                         <button
                           type="button"
                           disabled={busy}
-                          onClick={() =>
-                            handleDecision(r.id_review_report, "REMOVE_REVIEW")
-                          }
+                          onClick={() => openDeleteModal(r.id_review_report)}
                           className="w-fit bg-red-600 text-white text-sm px-3 py-1.5 rounded-lg flex items-center gap-1 disabled:opacity-60"
                         >
                           {busy ? (
@@ -321,6 +345,64 @@ export default function ReviewReportsPanel({ embedded = false }) {
         </div>
       )}
 
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+          
+          <div className="w-full max-w-md rounded-3xl bg-white shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-[#d7e3dc] overflow-hidden">
+            
+            {/* HEADER */}
+            <div className="bg-[#eef5f1] px-6 py-5 border-b border-[#d7e3dc]">
+              <h3 className="text-[#355f4c] text-lg font-semibold">
+                Confirmar acción
+              </h3>
+              <p className="text-sm text-[#6b8f80] mt-1">
+                Estás por moderar una reseña
+              </p>
+            </div>
+
+            {/* BODY */}
+            <div className="p-6">
+              <p className="text-sm text-gray-700 leading-6">
+                ¿Deseas ocultar esta reseña?
+              </p>
+
+              <div className="mt-4 bg-[#f7faf8] border border-[#dfeae4] rounded-2xl p-4">
+                <p className="text-sm text-[#557565] leading-6">
+                  El comentario dejará de mostrarse en el producto y el reporte quedará resuelto.
+                </p>
+              </div>
+
+              {/* BOTONES */}
+              <div className="mt-6 flex justify-end gap-3">
+                
+                <button
+                  type="button"
+                  onClick={closeDeleteModal}
+                  disabled={!!actingId}
+                  className="px-4 py-2 rounded-xl bg-[#eef5f1] text-[#355f4c] hover:bg-[#e3eee8] transition disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleDecision(reportToDelete, "REMOVE_REVIEW")
+                  }
+                  disabled={actingId === reportToDelete}
+                  className="px-4 py-2 rounded-xl bg-[#f8c8c8] text-[#7a2e2e] hover:bg-[#f4b4b4] transition disabled:opacity-60"
+                >
+                  {actingId === reportToDelete
+                    ? "Eliminando..."
+                    : "Sí, ocultar"}
+                </button>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {!loading && !error && meta.total_pages > 1 && (
         <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
           <button
@@ -331,9 +413,11 @@ export default function ReviewReportsPanel({ embedded = false }) {
           >
             <ChevronLeft size={18} /> Anterior
           </button>
+
           <span className="text-sm text-gray-600">
             Página {meta.page} de {meta.total_pages} ({meta.total} total)
           </span>
+
           <button
             type="button"
             disabled={page >= meta.total_pages}

@@ -59,6 +59,7 @@ import { AdminCategoriesPage } from './features/admin/pages/AdminCategoriesPage'
 import { AdminCategoryDetailPage } from './features/admin/pages/AdminCategoryDetailPage';
 import { AdminDashboardPage } from './features/admin/pages/AdminDashboardPage';
 import { AdminModulePlaceholderPage } from './features/admin/pages/AdminModulePlaceholderPage';
+import { AdminProductsPage } from './features/admin/pages/AdminProductsPage';
 import ReclamosPage from './features/admin/pages/ReclamosPage';
 import Reclamos from './features/admin/pages/Reclamos';
 import CommerceClaims from './features/commerces/pages/CommerceClaims';
@@ -226,7 +227,9 @@ function App() {
         <Route path="/admin/dashboard" element={
           <AdminLayout><AdminDashboardPage /></AdminLayout>
         } />
-        <Route path="/admin/productos" element={<Navigate to="/admin/reviews" replace />} />
+        <Route path="/admin/productos" element={
+          <AdminLayout><AdminProductsPage /></AdminLayout>
+        } />
         <Route path="/admin/resenas" element={
           <AdminLayout>
             <AdminModulePlaceholderPage

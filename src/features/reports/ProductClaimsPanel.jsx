@@ -249,9 +249,13 @@ export default function ProductClaimsPanel({ canResolve = false, embedded = fals
                   <p className="text-xs font-semibold text-gray-800">
                     {r.reason}
                   </p>
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                    {r.description}
-                  </p>
+                  {r.description && (
+                    <div className="w-full min-w-0 rounded-xl bg-[#f7faf8] border border-[#dfeae4] px-3 py-2">
+                      <p className="text-xs sm:text-sm text-gray-600 leading-6 whitespace-pre-wrap break-words overflow-hidden">
+                        {r.description}
+                      </p>
+                    </div>
+                  )}
                   {r.notes && (
                     <p className="text-xs text-gray-600 border-l-2 border-gray-300 pl-2">
                       <span className="font-medium">Nota del comercio: </span>
