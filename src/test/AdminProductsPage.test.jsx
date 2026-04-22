@@ -431,10 +431,9 @@ describe('AdminProductsPage', () => {
 
     await waitFor(() => screen.getByText('Auriculares Bluetooth'));
 
-    expect(screen.getAllByTitle('Aprobar producto').length).toBe(1);
-    expect(screen.getAllByTitle('Rechazar producto').length).toBe(1);
-    // ACTIVE y REJECTED no tienen botones de acción
-    expect(screen.queryByTitle('Aprobar producto')).toBeInTheDocument();
+    // Sólo el producto PENDING tiene botones de acción (ACTIVE y REJECTED no)
+    expect(screen.getAllByTitle('Aprobar producto')).toHaveLength(1);
+    expect(screen.getAllByTitle('Rechazar producto')).toHaveLength(1);
   });
 
   it('llama a approveProduct y recarga la lista al aprobar desde la fila', async () => {
@@ -448,7 +447,10 @@ describe('AdminProductsPage', () => {
     await waitFor(() => {
       expect(mockApproveProduct).toHaveBeenCalledWith(1);
     });
-    expect(mockFetchAdminProducts).toHaveBeenCalledTimes(3);
+    await waitFor(() => {
+      const last = mockFetchAdminProducts.mock.calls.at(-1)[0];
+      expect(last).toMatchObject({ page: 1, approvalStatus: 'PENDING' });
+    });
   });
 
   it('abre el modal de rechazo al hacer clic en el botón de rechazo de la fila', async () => {
@@ -479,7 +481,10 @@ describe('AdminProductsPage', () => {
     await waitFor(() => {
       expect(mockRejectProduct).toHaveBeenCalledWith(1, 'Producto con imágenes robadas');
     });
-    expect(mockFetchAdminProducts).toHaveBeenCalledTimes(3);
+    await waitFor(() => {
+      const last = mockFetchAdminProducts.mock.calls.at(-1)[0];
+      expect(last).toMatchObject({ page: 1, approvalStatus: 'PENDING' });
+    });
   });
 
   it('no llama a rejectProduct si el motivo está vacío', async () => {

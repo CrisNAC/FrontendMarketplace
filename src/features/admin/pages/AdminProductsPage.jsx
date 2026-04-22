@@ -76,7 +76,7 @@ const ProductDetailModal = ({ isOpen, product, onClose, onApprove, onReject, isS
           <div style={{ marginBottom: "20px" }}>
             <p style={{ margin: "0 0 10px", fontSize: "13px", fontWeight: "600", color: "#374151", borderBottom: "1px solid #f3f4f6", paddingBottom: "4px" }}>Datos del producto</p>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-              <DetailRow label="Precio" value={`Gs. ${product.price.toLocaleString("es-PY")}`} />
+              <DetailRow label="Precio" value={`Gs. ${Number(product.price ?? 0).toLocaleString("es-PY")}`} />
               <DetailRow label="Visible en tienda" value={product.visible ? "Sí" : "No"} />
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <Tag size={13} color="#6b7280" />
@@ -88,7 +88,10 @@ const ProductDetailModal = ({ isOpen, product, onClose, onApprove, onReject, isS
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <Calendar size={13} color="#6b7280" />
-                <DetailRow label="Publicado el" value={new Date(product.createdAt).toLocaleDateString("es-PY")} />
+                <DetailRow
+                  label="Publicado el"
+                  value={product.createdAt ? new Date(product.createdAt).toLocaleDateString("es-PY") : "—"}
+                />
               </div>
             </div>
           </div>
@@ -260,7 +263,7 @@ const ProductRow = ({ product, onViewDetail, onApprove, onReject, isSubmitting }
 
       <div style={{ minWidth: "120px", textAlign: "right" }}>
         <p style={{ margin: "0 0 2px", fontWeight: "600", fontSize: "13px", color: "#111827" }}>
-          Gs. {product.price.toLocaleString("es-PY")}
+          Gs. {Number(product.price ?? 0).toLocaleString("es-PY")}
         </p>
         <p style={{ margin: 0, fontSize: "12px", color: "#6b7280" }}>{product.category?.name ?? "—"}</p>
       </div>
@@ -311,6 +314,7 @@ export const AdminProductsPage = () => {
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState(null);
 
+  const [searchInput,    setSearchInput]    = useState("");
   const [search,         setSearch]         = useState("");
   const [approvalStatus, setApprovalStatus] = useState("PENDING");
   const [page,           setPage]           = useState(1);
@@ -319,6 +323,13 @@ export const AdminProductsPage = () => {
   const [isDetailOpen,    setIsDetailOpen]    = useState(false);
   const [isRejectOpen,    setIsRejectOpen]    = useState(false);
   const [isSubmitting,    setIsSubmitting]    = useState(false);
+
+  // ── Debounce del buscador ──────────────────────────────────────────────
+
+  useEffect(() => {
+    const id = setTimeout(() => setSearch(searchInput), 300);
+    return () => clearTimeout(id);
+  }, [searchInput]);
 
   // ── Carga de datos ─────────────────────────────────────────────────────
 
@@ -336,14 +347,15 @@ export const AdminProductsPage = () => {
     }
   }, [search, approvalStatus]);
 
-  useEffect(() => {
-    setPage(1);
-    loadProducts(1);
-  }, [search, approvalStatus]);
-
+  // Un solo efecto para el fetch; loadProducts cambia cuando cambian search/approvalStatus.
   useEffect(() => {
     loadProducts(page);
-  }, [page]);
+  }, [page, loadProducts]);
+
+  // Resetea a página 1 cuando cambian los filtros; el efecto de arriba ejecuta el fetch.
+  useEffect(() => {
+    setPage(1);
+  }, [search, approvalStatus]);
 
   // ── Acciones ───────────────────────────────────────────────────────────
 
@@ -409,8 +421,8 @@ export const AdminProductsPage = () => {
             <input
               type="text"
               placeholder="Buscar por nombre de producto o vendedor..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               style={{ width: "100%", paddingLeft: "32px", paddingRight: "12px", paddingTop: "8px", paddingBottom: "8px", border: "1px solid #e5e7eb", borderRadius: "8px", fontSize: "13px", outline: "none", boxSizing: "border-box" }}
             />
           </div>
