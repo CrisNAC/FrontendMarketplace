@@ -59,6 +59,7 @@ import { AdminCategoriesPage } from './features/admin/pages/AdminCategoriesPage'
 import { AdminCategoryDetailPage } from './features/admin/pages/AdminCategoryDetailPage';
 import { AdminDashboardPage } from './features/admin/pages/AdminDashboardPage';
 import { AdminModulePlaceholderPage } from './features/admin/pages/AdminModulePlaceholderPage';
+import { AdminProductsPage } from './features/admin/pages/AdminProductsPage';
 import ReclamosPage from './features/admin/pages/ReclamosPage';
 import Reclamos from './features/admin/pages/Reclamos';
 import CommerceClaims from './features/commerces/pages/CommerceClaims';
@@ -227,12 +228,7 @@ function App() {
           <AdminLayout><AdminDashboardPage /></AdminLayout>
         } />
         <Route path="/admin/productos" element={
-          <AdminLayout>
-            <AdminModulePlaceholderPage
-              title="Moderación de Productos"
-              description="Revisá reportes, validá productos sospechosos y tomá acciones de moderación."
-            />
-          </AdminLayout>
+          <AdminLayout><AdminProductsPage /></AdminLayout>
         } />
         <Route path="/admin/resenas" element={
           <AdminLayout>
