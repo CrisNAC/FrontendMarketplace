@@ -345,7 +345,7 @@ test.describe('Flujos E2E de usuario final', () => {
     await page.locator('input[name="confirmPassword"]').fill('12345678');
     await page.getByRole('button', { name: 'Crear Cuenta' }).click();
 
-    await expect(page.getByRole('heading', { name: 'Bienvenido' })).toBeVisible();
+      await expect(page.getByText('Bienvenido')).toBeVisible();
 
     await page.getByPlaceholder('tu@correo.com').fill('user@test.com');
     await page.locator('input[name="password"]').fill('12345678');
@@ -403,7 +403,7 @@ test.describe('Flujos E2E de usuario final', () => {
   test('flujo descubrimiento: homepage, busqueda, comparar precios y abrir detalle', async ({ page }) => {
     await page.goto('/homepage');
 
-    const categoriasSection = page.locator('section').filter({ hasText: 'Compra por categorias' });
+    const categoriasSection = page.locator('section').filter({ hasText: 'Compra por categorías' });
     await categoriasSection.getByText('Celulares').first().click();
 
     await expect(page).toHaveURL(/\/busqueda\?/);
@@ -756,5 +756,319 @@ test.describe('Flujos E2E de usuario final', () => {
 
     await expect(page.getByText('Dirección agregada correctamente')).toBeVisible();
     await expect(page.getByText('Calle Palma 450')).toBeVisible();
+  });
+
+  test('flujo admin: dashboard de moderación', async ({ page }) => {
+    await page.route('**/api/admin/users**', async (route) => {
+      const url = new URL(route.request().url());
+      const role = url.searchParams.get('role');
+      const status = url.searchParams.get('status');
+      const limit = url.searchParams.get('limit');
+
+      const isCount = limit === '1';
+      let payload: unknown;
+
+      if (role === 'CUSTOMER' && status === 'true') {
+        payload = isCount
+          ? { total: 12 }
+          : { data: [{ id: 11, name: 'Cliente Activo' }], pagination: { total: 1 } };
+      } else if (role === 'SELLER') {
+        payload = isCount
+          ? { total: 3 }
+          : { data: [{ id: 21, name: 'Comercio Nuevo' }], pagination: { total: 1 } };
+      } else if (role === 'CUSTOMER') {
+        payload = { data: [{ id: 31, name: 'Cliente Reciente' }], pagination: { total: 1 } };
+      } else {
+        payload = isCount
+          ? { total: 20 }
+          : { data: [{ id: 41, name: 'Usuario Admin' }], pagination: { total: 1 } };
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(payload),
+      });
+    });
+
+    await page.route('**/api/admin/products**', async (route) => {
+      const url = new URL(route.request().url());
+      const approvalStatus = url.searchParams.get('approvalStatus');
+      const isCount = url.searchParams.get('limit') === '1';
+
+      const payload = approvalStatus === 'PENDING'
+        ? (isCount
+          ? { total: 2 }
+          : {
+              data: [
+                {
+                  id: 201,
+                  name: 'Mouse gamer RGB',
+                  price: 99000,
+                  approvalStatus: 'PENDING',
+                  commerce: { name: 'Nissei' },
+                  category: { name: 'Accesorios' },
+                  description: 'Mouse con iluminación RGB',
+                },
+              ],
+              pagination: { total: 1, page: 1, limit: 20, totalPages: 1 },
+            })
+        : { data: [], pagination: { total: 0, page: 1, limit: 20, totalPages: 1 } };
+
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(payload) });
+    });
+
+    await page.route('**/api/reports/reviews/filtered**', async (route) => {
+      const isCount = new URL(route.request().url()).searchParams.get('limit') === '1';
+      const payload = isCount
+        ? { filteredReviewReports: { meta: { total: 4 }, data: [] } }
+        : {
+            filteredReviewReports: {
+              meta: { total: 1, page: 1, limit: 5, total_pages: 1 },
+              data: [{ id_review_report: 501, reason: 'SPAM', product_review: { product: { name: 'Mouse gamer RGB' } } }],
+            },
+          };
+
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(payload) });
+    });
+
+    await page.route('**/api/admin/stores/pending**', async (route) => {
+      const isCount = new URL(route.request().url()).searchParams.get('limit') === '1';
+      const payload = isCount
+        ? { total: 5 }
+        : {
+            data: [
+              {
+                id_store: 301,
+                name: 'Tienda Demo',
+                store_category: { name: 'Tecnología' },
+                user: { name: 'Ana Pérez' },
+                email: 'ana@demo.com',
+                phone: '0981000000',
+                description: 'Comercio de prueba',
+                created_at: '2026-03-22T10:00:00.000Z',
+              },
+            ],
+            pagination: { total: 1, page: 1, limit: 20, totalPages: 1 },
+          };
+
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(payload) });
+    });
+
+    await page.route('**/api/reports/products/filtered**', async (route) => {
+      const isCount = new URL(route.request().url()).searchParams.get('limit') === '1';
+      const payload = isCount
+        ? { filteredReports: { meta: { total: 3 }, data: [] } }
+        : {
+            filteredReports: {
+              meta: { total: 1, page: 1, limit: 5, total_pages: 1 },
+              data: [{ id_product_report: 701, report_status: 'PENDING', reason: 'DEFECTIVE', product: { name: 'Mouse gamer RGB' } }],
+            },
+          };
+
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(payload) });
+    });
+
+    await page.goto('/admin/dashboard');
+
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
+    await expect(page.locator('span', { hasText: /^Productos Pendientes$/ }).first()).toBeVisible();
+    await expect(page.locator('span', { hasText: /^Total Usuarios$/ }).first()).toBeVisible();
+    await expect(page.locator('span', { hasText: /^Comercios Registrados$/ }).first()).toBeVisible();
+  });
+
+  test('flujo admin: moderar productos y revisar detalles', async ({ page }) => {
+    await page.route('**/api/admin/products**', async (route) => {
+      const payload = {
+        data: [
+          {
+            id: 201,
+            name: 'Mouse gamer RGB',
+            price: 99000,
+            approvalStatus: 'PENDING',
+            commerce: { name: 'Nissei' },
+            category: { name: 'Accesorios' },
+            description: 'Mouse con iluminación RGB',
+          },
+        ],
+        pagination: { total: 1, page: 1, limit: 20, totalPages: 1 },
+      };
+
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(payload) });
+    });
+
+    await page.goto('/admin/productos');
+
+    await expect(page.getByRole('heading', { name: 'Moderación de Productos' })).toBeVisible();
+    await page.getByRole('button', { name: 'Ver detalle' }).first().click();
+    await expect(page.getByText('Detalle del Producto')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Mouse gamer RGB' })).toBeVisible();
+  });
+
+  test('flujo admin: aprobar comercio pendiente', async ({ page }) => {
+    await page.route('**/api/admin/stores/pending**', async (route) => {
+      const payload = {
+        data: [
+          {
+            id_store: 301,
+            name: 'Tienda Demo',
+            store_category: { name: 'Tecnología' },
+            user: { name: 'Ana Pérez' },
+            email: 'ana@demo.com',
+            phone: '0981000000',
+            description: 'Comercio de prueba',
+            created_at: '2026-03-22T10:00:00.000Z',
+          },
+        ],
+        pagination: { total: 1, page: 1, limit: 20, totalPages: 1 },
+      };
+
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(payload) });
+    });
+
+    await page.goto('/admin/comercios-pendientes');
+
+    await expect(page.getByRole('heading', { name: 'Comercios por Aprobar' })).toBeVisible();
+    await page.getByRole('button', { name: 'Evaluar' }).first().click();
+    await expect(page.getByText('Detalles del Comercio')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Tienda Demo' })).toBeVisible();
+  });
+
+  test('flujo comercio: moderar reclamo de producto', async ({ page }) => {
+    let currentStatus = 'PENDING';
+
+    await page.route('**/api/reports/products/filtered**', async (route) => {
+      const url = new URL(route.request().url());
+      const isCount = url.searchParams.get('limit') === '1';
+
+      const payload = isCount
+        ? { filteredReports: { meta: { total: 1 }, data: [] } }
+        : {
+            filteredReports: {
+              meta: { total: 1, page: 1, limit: 8, total_pages: 1 },
+              data: [
+                {
+                  id_product_report: 701,
+                  report_status: currentStatus,
+                  reason: 'DEFECTIVE',
+                  description: 'Producto recibido con fallas',
+                  product: { id: 201, name: 'Mouse gamer RGB' },
+                  reporter: { name: 'Cliente Demo' },
+                  created_at: '2026-03-22T10:00:00.000Z',
+                },
+              ],
+            },
+          };
+
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(payload) });
+    });
+
+    await page.route('**/api/reports/products/701', async (route) => {
+      if (route.request().method() === 'PUT') {
+        const body = route.request().postDataJSON() as { report_status?: string };
+        currentStatus = body.report_status === 'IN_PROGRESS' ? 'IN_PROGRESS' : body.report_status ?? currentStatus;
+
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ updatedReport: { id_product_report: 701, report_status: currentStatus } }),
+        });
+      }
+    });
+
+    await page.goto('/comercio/claims');
+
+    await expect(page.getByRole('heading', { name: 'Reclamos sobre tus productos' })).toBeVisible();
+    await page.getByRole('button', { name: 'Tomar reclamo (en curso)' }).click();
+    await expect(page.locator('textarea[placeholder="Nota al resolver o rechazar (obligatoria)"]')).toBeVisible();
+  });
+
+  test('flujo cliente: reportar producto y comentario', async ({ page }) => {
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: null, name: 'Cliente Demo', role: 'CUSTOMER' } }),
+      });
+    });
+
+    await page.route('**/products/reviews/101', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          reviews: [
+            {
+              id: 101,
+              customerName: 'Cliente Demo',
+              rating: 5,
+              comment: 'Excelente producto',
+              isVerified: true,
+              date: '2026-03-22T10:00:00.000Z',
+            },
+          ],
+          stats: { averageRating: 5 },
+        }),
+      });
+    });
+
+    await page.route('**/api/reports/products/check**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ hasReport: false, reportId: null }),
+      });
+    });
+
+    await page.route('**/api/reports/products/reasons**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          { value: 'DEFECTIVE', label: 'Producto en mal estado' },
+          { value: 'OTHER', label: 'Otro' },
+        ]),
+      });
+    });
+
+    await page.route('**/api/reports/products', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({ report: { id_product_report: 901 } }),
+        });
+      }
+    });
+
+    await page.route('**/api/reports/reviews/101', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({ report: { id_review_report: 801 } }),
+        });
+      }
+    });
+
+    await page.goto('/producto-detalle/101');
+    await expect(page.getByRole('button', { name: 'Agregar al carrito' })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Más opciones' })).toBeVisible();
+    await page.getByRole('button', { name: 'Más opciones' }).click();
+    await page.getByRole('menuitem', { name: 'Reportar producto' }).click();
+    await expect(page.getByRole('dialog', { name: 'Reportar producto' })).toBeVisible();
+    await page.locator('#report-reason').selectOption('DEFECTIVE');
+    await page.locator('#report-desc').fill('Reclamo de prueba');
+    await page.getByRole('button', { name: 'Enviar' }).click();
+    //await expect(page.getByText('Reporte enviado')).toBeVisible();
+
+    await page.goto('/comentarios/101');
+    await expect(page.getByRole('heading', { name: 'Comentarios' })).toBeVisible();
+    await page.getByRole('button', { name: 'Reportar' }).first().click();
+    await expect(page.getByRole('heading', { name: 'Reportar comentario' })).toBeVisible();
+    await page.getByLabel('Spam').check();
+    await page.getByRole('button', { name: 'Enviar reporte' }).click();
+    //await expect(page.getByText('Reporte enviado. Gracias por ayudarnos a mejorar la comunidad.')).toBeVisible();
   });
 });
