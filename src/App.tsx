@@ -34,6 +34,7 @@ import { VistaComercioPage } from './features/clients/pages/VistaComercioPage'
 import { ClientOrdersPage } from './features/clients/pages/ClientOrdersPage'
 import { ClientOrderDetailsPage } from './features/clients/pages/ClientOrderDetailsPage'
 import { HomePage } from './features/clients/pages/HomePage'
+import { BecomeDeliveryPage } from './features/clients/pages/BecomeDeliveryPage'
 import { BusquedaPage } from './features/clients/pages/BusquedaPage'
 import { CommentsPage } from './features/clients/pages/CommentsPage'
 import { CreateCommercePage } from './features/clients/pages/CreateCommercePage'
@@ -151,6 +152,7 @@ function App() {
         <Route path="/pedidos" element={<ClientOrdersPage />} />
         <Route path="/pedidos/:orderId" element={<ClientOrderDetailsPage />} />
         <Route path="/homepage" element={<HomePage />} />
+        <Route path="/quiero-ser-delivery" element={<BecomeDeliveryPage />} />
         <Route path="/wishlist" element={<VistaComercioLayout><Wishlist/></VistaComercioLayout>}/>
         <Route path="/favoritos" element={<VistaComercioLayout><FavoritesPage /></VistaComercioLayout>}/>
         <Route path="/carrito" element={
