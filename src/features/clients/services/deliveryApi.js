@@ -13,7 +13,7 @@ export const getCurrentUserForDeliveryForm = async () => {
   return {
     userId,
     sessionUser: session.user,
-    profile: profileResponse?.data ?? null,
+    profile: profileResponse ?? null,
   };
 };
 
@@ -34,12 +34,6 @@ export const getCurrentUserForDeliveryForm = async () => {
  * @param {number} payload.baseLongitude
  */
 export const becomeDelivery = async (userId, payload) => {
-  await updateUserProfile(userId, {
-    name: payload.name,
-    email: payload.email,
-    phone: payload.phone,
-  });
-
   const registerBody = {
     fk_user: userId,
     role: "DELIVERY",
@@ -65,6 +59,11 @@ export const becomeDelivery = async (userId, payload) => {
 
   try {
     const { data } = await apiClient.post("/api/deliveries/register", registerBody);
+    await updateUserProfile(userId, {
+      name: payload.name,
+      email: payload.email,
+      phone: payload.phone,
+    });
     return { data, usedFallback: false };
   } catch (error) {
     const status = Number(error?.response?.status);
