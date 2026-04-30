@@ -51,6 +51,7 @@ function StatusBadge({ status }) {
 
 // ─── Tab: Pedidos Pendientes ──────────────────────────────────────────────────
 function PendingOrderCard({ order, onAccept, onReject, isAccepting, isRejecting }) {
+    const isBusy = isAccepting || isRejecting;
     return (
         <div style={{ backgroundColor: "white", borderRadius: "14px", padding: "16px 20px", boxShadow: "0 1px 4px rgba(0,0,0,0.07)", marginBottom: "12px", borderLeft: "3px solid var(--primary-dark)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
@@ -80,17 +81,17 @@ function PendingOrderCard({ order, onAccept, onReject, isAccepting, isRejecting 
                         <p style={{ fontSize: "18px", fontWeight: "700", color: "#111827", margin: 0 }}>{formatGuarani(order.total)}</p>
                     </div>
                     <div style={{ display: "flex", gap: "8px" }}>
-                        <button type="button" onClick={() => onAccept(order.id)} disabled={isAccepting || isRejecting} style={{
+                        <button type="button" onClick={() => onAccept(order.id)} disabled={isBusy} style={{
                             display: "flex", alignItems: "center", gap: "5px", padding: "7px 14px", borderRadius: "8px",
                             backgroundColor: "var(--primary-dark)", color: "white", border: "none", fontSize: "13px", fontWeight: "600",
-                            cursor: (isAccepting || isRejecting) ? "not-allowed" : "pointer", opacity: isAccepting ? 0.6 : 1,
+                            cursor: isBusy ? "not-allowed" : "pointer", opacity: isBusy ? 0.6 : 1,
                         }}>
                             <CheckCircle size={14} /> {isAccepting ? "Aceptando..." : "Aceptar"}
                         </button>
-                        <button type="button" onClick={() => onReject(order.id)} disabled={isAccepting || isRejecting} style={{
+                        <button type="button" onClick={() => onReject(order.id)} disabled={isBusy} style={{
                             display: "flex", alignItems: "center", gap: "5px", padding: "7px 14px", borderRadius: "8px",
                             backgroundColor: "white", color: "#dc2626", border: "1px solid #fecdd3", fontSize: "13px", fontWeight: "600",
-                            cursor: (isAccepting || isRejecting) ? "not-allowed" : "pointer", opacity: isRejecting ? 0.6 : 1,
+                            cursor: isBusy ? "not-allowed" : "pointer", opacity: isBusy ? 0.6 : 1,
                         }}>
                             <XCircle size={14} /> {isRejecting ? "Rechazando..." : "Rechazar"}
                         </button>
