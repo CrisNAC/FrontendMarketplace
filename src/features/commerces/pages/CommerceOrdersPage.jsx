@@ -50,7 +50,8 @@ function StatusBadge({ status }) {
 }
 
 // ─── Tab: Pedidos Pendientes ──────────────────────────────────────────────────
-function PendingOrderCard({ order, onAccept, onReject, isActioning }) {
+function PendingOrderCard({ order, onAccept, onReject, isAccepting, isRejecting }) {
+    const isBusy = isAccepting || isRejecting;
     return (
         <div style={{ backgroundColor: "white", borderRadius: "14px", padding: "16px 20px", boxShadow: "0 1px 4px rgba(0,0,0,0.07)", marginBottom: "12px", borderLeft: "3px solid var(--primary-dark)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
@@ -80,19 +81,19 @@ function PendingOrderCard({ order, onAccept, onReject, isActioning }) {
                         <p style={{ fontSize: "18px", fontWeight: "700", color: "#111827", margin: 0 }}>{formatGuarani(order.total)}</p>
                     </div>
                     <div style={{ display: "flex", gap: "8px" }}>
-                        <button type="button" onClick={() => onAccept(order.id)} disabled={isActioning} style={{
+                        <button type="button" onClick={() => onAccept(order.id)} disabled={isBusy} style={{
                             display: "flex", alignItems: "center", gap: "5px", padding: "7px 14px", borderRadius: "8px",
                             backgroundColor: "var(--primary-dark)", color: "white", border: "none", fontSize: "13px", fontWeight: "600",
-                            cursor: isActioning ? "not-allowed" : "pointer", opacity: isActioning ? 0.6 : 1,
+                            cursor: isBusy ? "not-allowed" : "pointer", opacity: isBusy ? 0.6 : 1,
                         }}>
-                            <CheckCircle size={14} /> Aceptar
+                            <CheckCircle size={14} /> {isAccepting ? "Aceptando..." : "Aceptar"}
                         </button>
-                        <button type="button" onClick={() => onReject(order.id)} disabled={isActioning} style={{
+                        <button type="button" onClick={() => onReject(order.id)} disabled={isBusy} style={{
                             display: "flex", alignItems: "center", gap: "5px", padding: "7px 14px", borderRadius: "8px",
                             backgroundColor: "white", color: "#dc2626", border: "1px solid #fecdd3", fontSize: "13px", fontWeight: "600",
-                            cursor: isActioning ? "not-allowed" : "pointer", opacity: isActioning ? 0.6 : 1,
+                            cursor: isBusy ? "not-allowed" : "pointer", opacity: isBusy ? 0.6 : 1,
                         }}>
-                            <XCircle size={14} /> Rechazar
+                            <XCircle size={14} /> {isRejecting ? "Rechazando..." : "Rechazar"}
                         </button>
                     </div>
                 </div>
@@ -274,8 +275,13 @@ export function CommerceOrdersPage() {
     const [error, setError] = useState("");
     const [activeTab, setActiveTab] = useState("pending"); // "pending" | "tracking" | "history"
     const [page, setPage] = useState(1);
-    const [isActioning, setIsActioning] = useState(false);
+    const [actioningSet, setActioningSet] = useState(new Set());
     const [actionError, setActionError] = useState("");
+
+    const addActioning    = (id, action) => setActioningSet(prev => new Set(prev).add(`${id}:${action}`));
+    const removeActioning = (id, action) => setActioningSet(prev => { const s = new Set(prev); s.delete(`${id}:${action}`); return s; });
+    const isActioning     = (id, action) => actioningSet.has(`${id}:${action}`);
+    const isAnyActioning  = (id) => [`${id}:accept`, `${id}:reject`, `${id}:advance`].some(k => actioningSet.has(k));
 
     const loadOrders = useCallback(async (sid) => {
         try {
@@ -313,14 +319,22 @@ export function CommerceOrdersPage() {
     const currentTotalPages = Math.ceil(activeOrders.length / ITEMS_PER_PAGE);
     const paginated         = activeOrders.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
-    const handleStatusUpdate = async (orderId, newStatus) => {
-        setIsActioning(true);
+    const handleStatusUpdate = async (orderId, newStatus, action) => {
+        addActioning(orderId, action);
         setActionError("");
         try {
             await updateOrderStatus(orderId, newStatus);
             await loadOrders(storeId);
-            // Ajustar página si queda vacía
-            const leavesActiveList = activeTab === "pending" || (activeTab === "tracking" && newStatus === "DELIVERED");
+
+            if (newStatus === "PROCESSING") {
+                setActiveTab("tracking");
+                setPage(1);
+                return;
+            }
+
+            const leavesActiveList =
+                activeTab === "pending" ||
+                (activeTab === "tracking" && newStatus === "DELIVERED");
             if (leavesActiveList) {
                 const remaining = activeOrders.length - 1;
                 const newTotalPages = Math.ceil(remaining / ITEMS_PER_PAGE);
@@ -329,15 +343,15 @@ export function CommerceOrdersPage() {
         } catch (err) {
             setActionError(getOrderErrorMessage(err, "No se pudo actualizar el pedido."));
         } finally {
-            setIsActioning(false);
+            removeActioning(orderId, action);
         }
     };
 
-    const handleAccept  = (id) => handleStatusUpdate(id, "PROCESSING");
-    const handleReject  = (id) => handleStatusUpdate(id, "CANCELLED");
+    const handleAccept  = (id) => handleStatusUpdate(id, "PROCESSING", "accept");
+    const handleReject  = (id) => handleStatusUpdate(id, "CANCELLED",  "reject");
     const handleAdvance = (id, currentStatus) => {
         const next = NEXT_STATUS[currentStatus];
-        if (next) handleStatusUpdate(id, next);
+        if (next) handleStatusUpdate(id, next, "advance");
     };
 
     const tabStyle = (tab) => ({
@@ -412,11 +426,11 @@ export function CommerceOrdersPage() {
                 </div>
             ) : activeTab === "pending" ? (
                 paginated.map(order => (
-                    <PendingOrderCard key={order.id} order={order} onAccept={handleAccept} onReject={handleReject} isActioning={isActioning} />
+                    <PendingOrderCard key={order.id} order={order} onAccept={handleAccept} onReject={handleReject} isAccepting={isActioning(order.id, "accept")} isRejecting={isActioning(order.id, "reject")} />
                 ))
             ) : (
                 paginated.map(order => (
-                    <TrackingOrderCard key={order.id} order={order} onAdvance={handleAdvance} isActioning={isActioning} />
+                    <TrackingOrderCard key={order.id} order={order} onAdvance={handleAdvance} isActioning={isAnyActioning(order.id)} />
                 ))
             )}
 
