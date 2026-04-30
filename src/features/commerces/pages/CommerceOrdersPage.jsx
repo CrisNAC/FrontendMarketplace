@@ -274,8 +274,13 @@ export function CommerceOrdersPage() {
     const [error, setError] = useState("");
     const [activeTab, setActiveTab] = useState("pending"); // "pending" | "tracking" | "history"
     const [page, setPage] = useState(1);
-    const [actioning, setActioning] = useState(null);
+    const [actioningSet, setActioningSet] = useState(new Set());
     const [actionError, setActionError] = useState("");
+
+    const addActioning    = (id, action) => setActioningSet(prev => new Set(prev).add(`${id}:${action}`));
+    const removeActioning = (id, action) => setActioningSet(prev => { const s = new Set(prev); s.delete(`${id}:${action}`); return s; });
+    const isActioning     = (id, action) => actioningSet.has(`${id}:${action}`);
+    const isAnyActioning  = (id) => [`${id}:accept`, `${id}:reject`, `${id}:advance`].some(k => actioningSet.has(k));
 
     const loadOrders = useCallback(async (sid) => {
         try {
@@ -314,7 +319,7 @@ export function CommerceOrdersPage() {
     const paginated         = activeOrders.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
     const handleStatusUpdate = async (orderId, newStatus, action) => {
-        setActioning({ id: orderId, action });
+        addActioning(orderId, action);
         setActionError("");
         try {
             await updateOrderStatus(orderId, newStatus);
@@ -337,10 +342,10 @@ export function CommerceOrdersPage() {
         } catch (err) {
             setActionError(getOrderErrorMessage(err, "No se pudo actualizar el pedido."));
         } finally {
-            setActioning(null);
+            removeActioning(orderId, action);
         }
     };
-    
+
     const handleAccept  = (id) => handleStatusUpdate(id, "PROCESSING", "accept");
     const handleReject  = (id) => handleStatusUpdate(id, "CANCELLED",  "reject");
     const handleAdvance = (id, currentStatus) => {
@@ -420,11 +425,11 @@ export function CommerceOrdersPage() {
                 </div>
             ) : activeTab === "pending" ? (
                 paginated.map(order => (
-                    <PendingOrderCard key={order.id} order={order} onAccept={handleAccept} onReject={handleReject} isAccepting={actioning?.id === order.id && actioning?.action === "accept"} isRejecting={actioning?.id === order.id && actioning?.action === "reject"} />
+                    <PendingOrderCard key={order.id} order={order} onAccept={handleAccept} onReject={handleReject} isAccepting={isActioning(order.id, "accept")} isRejecting={isActioning(order.id, "reject")} />
                 ))
             ) : (
                 paginated.map(order => (
-                    <TrackingOrderCard key={order.id} order={order} onAdvance={handleAdvance} isActioning={actioning?.id === order.id} />
+                    <TrackingOrderCard key={order.id} order={order} onAdvance={handleAdvance} isActioning={isAnyActioning(order.id)} />
                 ))
             )}
 
