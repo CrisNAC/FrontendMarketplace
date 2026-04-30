@@ -50,7 +50,7 @@ function StatusBadge({ status }) {
 }
 
 // ─── Tab: Pedidos Pendientes ──────────────────────────────────────────────────
-function PendingOrderCard({ order, onAccept, onReject, isActioning }) {
+function PendingOrderCard({ order, onAccept, onReject, isAccepting, isRejecting }) {
     return (
         <div style={{ backgroundColor: "white", borderRadius: "14px", padding: "16px 20px", boxShadow: "0 1px 4px rgba(0,0,0,0.07)", marginBottom: "12px", borderLeft: "3px solid var(--primary-dark)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
@@ -80,19 +80,19 @@ function PendingOrderCard({ order, onAccept, onReject, isActioning }) {
                         <p style={{ fontSize: "18px", fontWeight: "700", color: "#111827", margin: 0 }}>{formatGuarani(order.total)}</p>
                     </div>
                     <div style={{ display: "flex", gap: "8px" }}>
-                        <button type="button" onClick={() => onAccept(order.id)} disabled={isActioning} style={{
+                        <button type="button" onClick={() => onAccept(order.id)} disabled={isAccepting || isRejecting} style={{
                             display: "flex", alignItems: "center", gap: "5px", padding: "7px 14px", borderRadius: "8px",
                             backgroundColor: "var(--primary-dark)", color: "white", border: "none", fontSize: "13px", fontWeight: "600",
-                            cursor: isActioning ? "not-allowed" : "pointer", opacity: isActioning ? 0.6 : 1,
+                            cursor: (isAccepting || isRejecting) ? "not-allowed" : "pointer", opacity: isAccepting ? 0.6 : 1,
                         }}>
-                            <CheckCircle size={14} /> Aceptar
+                            <CheckCircle size={14} /> {isAccepting ? "Aceptando..." : "Aceptar"}
                         </button>
-                        <button type="button" onClick={() => onReject(order.id)} disabled={isActioning} style={{
+                        <button type="button" onClick={() => onReject(order.id)} disabled={isAccepting || isRejecting} style={{
                             display: "flex", alignItems: "center", gap: "5px", padding: "7px 14px", borderRadius: "8px",
                             backgroundColor: "white", color: "#dc2626", border: "1px solid #fecdd3", fontSize: "13px", fontWeight: "600",
-                            cursor: isActioning ? "not-allowed" : "pointer", opacity: isActioning ? 0.6 : 1,
+                            cursor: (isAccepting || isRejecting) ? "not-allowed" : "pointer", opacity: isRejecting ? 0.6 : 1,
                         }}>
-                            <XCircle size={14} /> Rechazar
+                            <XCircle size={14} /> {isRejecting ? "Rechazando..." : "Rechazar"}
                         </button>
                     </div>
                 </div>
@@ -274,7 +274,7 @@ export function CommerceOrdersPage() {
     const [error, setError] = useState("");
     const [activeTab, setActiveTab] = useState("pending"); // "pending" | "tracking" | "history"
     const [page, setPage] = useState(1);
-    const [actioningId, setActioningId] = useState(null);
+    const [actioning, setActioning] = useState(null);
     const [actionError, setActionError] = useState("");
 
     const loadOrders = useCallback(async (sid) => {
@@ -313,21 +313,19 @@ export function CommerceOrdersPage() {
     const currentTotalPages = Math.ceil(activeOrders.length / ITEMS_PER_PAGE);
     const paginated         = activeOrders.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
-    const handleStatusUpdate = async (orderId, newStatus) => {
-        setActioningId(orderId);
+    const handleStatusUpdate = async (orderId, newStatus, action) => {
+        setActioning({ id: orderId, action });
         setActionError("");
         try {
             await updateOrderStatus(orderId, newStatus);
             await loadOrders(storeId);
 
-            // Si se aceptó un pedido, llevarlo automáticamente a Seguimiento
             if (newStatus === "PROCESSING") {
                 setActiveTab("tracking");
                 setPage(1);
                 return;
             }
 
-            // Ajustar página si queda vacía (para rechazos o avances)
             const leavesActiveList =
                 activeTab === "pending" ||
                 (activeTab === "tracking" && newStatus === "DELIVERED");
@@ -339,15 +337,15 @@ export function CommerceOrdersPage() {
         } catch (err) {
             setActionError(getOrderErrorMessage(err, "No se pudo actualizar el pedido."));
         } finally {
-            setActioningId(null);
+            setActioning(null);
         }
     };
-
-    const handleAccept  = (id) => handleStatusUpdate(id, "PROCESSING");
-    const handleReject  = (id) => handleStatusUpdate(id, "CANCELLED");
+    
+    const handleAccept  = (id) => handleStatusUpdate(id, "PROCESSING", "accept");
+    const handleReject  = (id) => handleStatusUpdate(id, "CANCELLED",  "reject");
     const handleAdvance = (id, currentStatus) => {
         const next = NEXT_STATUS[currentStatus];
-        if (next) handleStatusUpdate(id, next);
+        if (next) handleStatusUpdate(id, next, "advance");
     };
 
     const tabStyle = (tab) => ({
@@ -422,11 +420,11 @@ export function CommerceOrdersPage() {
                 </div>
             ) : activeTab === "pending" ? (
                 paginated.map(order => (
-                    <PendingOrderCard key={order.id} order={order} onAccept={handleAccept} onReject={handleReject} isActioning={actioningId === order.id} />
+                    <PendingOrderCard key={order.id} order={order} onAccept={handleAccept} onReject={handleReject} isAccepting={actioning?.id === order.id && actioning?.action === "accept"} isRejecting={actioning?.id === order.id && actioning?.action === "reject"} />
                 ))
             ) : (
                 paginated.map(order => (
-                    <TrackingOrderCard key={order.id} order={order} onAdvance={handleAdvance} isActioning={actioningId === order.id} />
+                    <TrackingOrderCard key={order.id} order={order} onAdvance={handleAdvance} isActioning={actioning?.id === order.id} />
                 ))
             )}
 
