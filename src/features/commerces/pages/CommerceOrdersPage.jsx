@@ -274,7 +274,7 @@ export function CommerceOrdersPage() {
     const [error, setError] = useState("");
     const [activeTab, setActiveTab] = useState("pending"); // "pending" | "tracking" | "history"
     const [page, setPage] = useState(1);
-    const [isActioning, setIsActioning] = useState(false);
+    const [actioningId, setActioningId] = useState(null);
     const [actionError, setActionError] = useState("");
 
     const loadOrders = useCallback(async (sid) => {
@@ -314,13 +314,23 @@ export function CommerceOrdersPage() {
     const paginated         = activeOrders.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
     const handleStatusUpdate = async (orderId, newStatus) => {
-        setIsActioning(true);
+        setActioningId(orderId);
         setActionError("");
         try {
             await updateOrderStatus(orderId, newStatus);
             await loadOrders(storeId);
-            // Ajustar página si queda vacía
-            const leavesActiveList = activeTab === "pending" || (activeTab === "tracking" && newStatus === "DELIVERED");
+
+            // Si se aceptó un pedido, llevarlo automáticamente a Seguimiento
+            if (newStatus === "PROCESSING") {
+                setActiveTab("tracking");
+                setPage(1);
+                return;
+            }
+
+            // Ajustar página si queda vacía (para rechazos o avances)
+            const leavesActiveList =
+                activeTab === "pending" ||
+                (activeTab === "tracking" && newStatus === "DELIVERED");
             if (leavesActiveList) {
                 const remaining = activeOrders.length - 1;
                 const newTotalPages = Math.ceil(remaining / ITEMS_PER_PAGE);
@@ -329,7 +339,7 @@ export function CommerceOrdersPage() {
         } catch (err) {
             setActionError(getOrderErrorMessage(err, "No se pudo actualizar el pedido."));
         } finally {
-            setIsActioning(false);
+            setActioningId(null);
         }
     };
 
@@ -412,11 +422,11 @@ export function CommerceOrdersPage() {
                 </div>
             ) : activeTab === "pending" ? (
                 paginated.map(order => (
-                    <PendingOrderCard key={order.id} order={order} onAccept={handleAccept} onReject={handleReject} isActioning={isActioning} />
+                    <PendingOrderCard key={order.id} order={order} onAccept={handleAccept} onReject={handleReject} isActioning={actioningId === order.id} />
                 ))
             ) : (
                 paginated.map(order => (
-                    <TrackingOrderCard key={order.id} order={order} onAdvance={handleAdvance} isActioning={isActioning} />
+                    <TrackingOrderCard key={order.id} order={order} onAdvance={handleAdvance} isActioning={actioningId === order.id} />
                 ))
             )}
 
