@@ -40,6 +40,7 @@ import { CreateCommercePage } from './features/clients/pages/CreateCommercePage'
 import { CommerceProfilePage } from './features/commerces/pages/CommerceProfilePage';
 import { CommerceProductsPage } from './features/commerces/pages/CommerceProductsPage'
 import { CommerceOrdersPage } from './features/commerces/pages/CommerceOrdersPage'
+import { CommerceDeliveryReviewsPage } from './features/commerces/pages/CommerceDeliveryReviewsPage'
 import { EditCommercePage } from './features/commerces/pages/EditCommercePage'
 import AuthPage from './features/clients/pages/AuthPage';
 
@@ -220,6 +221,9 @@ function App() {
         } />
         <Route path="/comercio/claims" element={
           <MyCommerceLayout><CommerceClaims/></MyCommerceLayout>
+        } />
+        <Route path="/comercio/delivery" element={
+          <MyCommerceLayout><CommerceDeliveryReviewsPage /></MyCommerceLayout>
         } />
 
         {/* ── Área de administración (con sidebar) ──────────────────────── */}
