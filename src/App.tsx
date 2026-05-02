@@ -41,6 +41,8 @@ import { CreateCommercePage } from './features/clients/pages/CreateCommercePage'
 import { CommerceProfilePage } from './features/commerces/pages/CommerceProfilePage';
 import { CommerceProductsPage } from './features/commerces/pages/CommerceProductsPage'
 import { CommerceOrdersPage } from './features/commerces/pages/CommerceOrdersPage'
+import { CommerceDeliveriesPage } from './features/commerces/pages/CommerceDeliveriesPage'
+import { AddStoreDeliveryPage } from './features/commerces/pages/AddStoreDeliveryPage'
 import { EditCommercePage } from './features/commerces/pages/EditCommercePage'
 import AuthPage from './features/clients/pages/AuthPage';
 
@@ -207,6 +209,12 @@ function App() {
         } />
         <Route path="/comercio/pedidos" element={
           <MyCommerceLayout><CommerceOrdersPage /></MyCommerceLayout>
+        } />
+        <Route path="/delivery" element={
+          <MyCommerceLayout><CommerceDeliveriesPage /></MyCommerceLayout>
+        } />
+        <Route path="/delivery/agregar" element={
+          <MyCommerceLayout><AddStoreDeliveryPage /></MyCommerceLayout>
         } />
         <Route path="/comercio/productos" element={
           <MyCommerceLayout><CommerceProductsPage /></MyCommerceLayout>
