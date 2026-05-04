@@ -11,9 +11,7 @@ const apiClient = axios.create({
  * GET /api/stores/:storeId/orders/:orderId/deliveries
  */
 export const fetchAvailableDeliveries = async (storeId, orderId) => {
-  const res = await apiClient.get(
-    `/api/stores/${storeId}/orders/${orderId}/deliveries`
-  );
+  const res = await apiClient.get(`/api/stores/${storeId}/orders/${orderId}/deliveries`);
   return res.data;
 };
 
@@ -27,16 +25,10 @@ export const createDeliveryAssignment = async (fk_order, fk_delivery) => {
   return res.data;
 };
 
-export const getAssignmentErrorMessage = (error, fallback = "Ocurrió un error inesperado.") => {
-  if (axios.isAxiosError(error)) {
-    return (
-      error.response?.data?.message ||
-      error.response?.data?.error?.message ||
-      fallback
-    );
-  }
-  return error?.message || fallback;
-};
+/**
+ * Verifica si un pedido ya tiene un delivery asignado.
+ * GET /api/orders/:orderId/assignment
+ */
 export const checkOrderAssignment = async (orderId) => {
   try {
     const res = await apiClient.get(`/api/orders/${orderId}/assignment`);
@@ -47,4 +39,15 @@ export const checkOrderAssignment = async (orderId) => {
     }
     throw err;
   }
+};
+
+export const getAssignmentErrorMessage = (error, fallback = "Ocurrió un error inesperado.") => {
+  if (axios.isAxiosError(error)) {
+    return (
+      error.response?.data?.message ||
+      error.response?.data?.error?.message ||
+      fallback
+    );
+  }
+  return error?.message || fallback;
 };
