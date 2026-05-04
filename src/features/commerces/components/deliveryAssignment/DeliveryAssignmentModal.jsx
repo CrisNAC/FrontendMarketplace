@@ -288,6 +288,8 @@ export function DeliveryAssignmentModal({ order, storeId, onClose, onSuccess }) 
           background-color: rgba(0, 0, 0, 0.45);
         }
         dialog {
+            margin: auto;
+          
           padding: 0;
           border: none;
           border-radius: 18px;
