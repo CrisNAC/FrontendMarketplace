@@ -17,6 +17,11 @@ export const getCurrentUserForDeliveryForm = async () => {
   };
 };
 
+export const getDeliveryProfile = async (deliveryId) => {
+  const { data } = await apiClient.get(`/api/deliveries/${deliveryId}`);
+  return data;
+};
+
 /**
  * @param {number} userId
  * @param {Object} payload - Datos del formulario (usuario + cobertura)

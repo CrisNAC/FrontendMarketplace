@@ -24,6 +24,7 @@ import { AdminLayout } from './layouts/AdminLayout';
 import { MyCommerceLayout } from './layouts/MyCommerceLayout';
 import { VistaComercioLayout } from './layouts/VistaComercioLayout';
 import { CommentsLayout } from './layouts/CommentsLayout';
+import { DeliveryLayout } from './layouts/DeliveryLayout';
 
 /**
  * Pages
@@ -64,6 +65,7 @@ import { AdminProductsPage } from './features/admin/pages/AdminProductsPage';
 import ReclamosPage from './features/admin/pages/ReclamosPage';
 import Reclamos from './features/admin/pages/Reclamos';
 import CommerceClaims from './features/commerces/pages/CommerceClaims';
+import DeliveryProfilePage from './features/delivery/pages/DeliveryProfilePage';
 
 import Wishlist from "./features/clients/pages/Wishlist"
 import FavoritesPage from "./features/clients/pages/FavoritesPage";
@@ -222,6 +224,12 @@ function App() {
         } />
         <Route path="/comercio/claims" element={
           <MyCommerceLayout><CommerceClaims/></MyCommerceLayout>
+        } />
+
+        {/* ── Área de delivery (con sidebar) ───────────────────────────── */}
+        <Route path="/delivery" element={<Navigate to="/delivery/perfil" replace />} />
+        <Route path="/delivery/perfil" element={
+          <DeliveryLayout><DeliveryProfilePage /></DeliveryLayout>
         } />
 
         {/* ── Área de administración (con sidebar) ──────────────────────── */}

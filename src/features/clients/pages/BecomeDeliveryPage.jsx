@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import Navbar from "../../../components/navbar/Navbar";
 import MapView from "../components/Map.jsx";
@@ -72,6 +73,7 @@ function buildVehicleForApi(vehicleType, vehicleDetails) {
 }
 
 export const BecomeDeliveryPage = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -240,8 +242,11 @@ export const BecomeDeliveryPage = () => {
       if (result.usedFallback) {
         setSuccess("Tu perfil fue actualizado. El backend aún no expone el alta de delivery; avisá al equipo de API.");
       } else {
-        setSuccess("Ahora sos delivery. Tu registro y zona quedaron guardados.");
+        setSuccess("Ahora sos delivery. Redirigiendo a tu panel...");
         setIsAlreadyDelivery(true);
+        setTimeout(() => {
+          navigate("/delivery");
+        }, 1500);
       }
     } catch (err) {
       setError(getBackendErrorMessage(err, "No se pudo completar el alta como delivery."));
