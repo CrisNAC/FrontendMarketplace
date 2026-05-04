@@ -1,10 +1,12 @@
 // src/features/commerces/pages/CommerceOrdersPage.jsx
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { ShoppingBag, Clock, CheckCircle, XCircle, Truck, MapPin, ChevronDown, Calendar, Filter } from "lucide-react";
+import { ShoppingBag, Clock, CheckCircle, XCircle, Truck, MapPin, Calendar, Filter } from "lucide-react";
 import { Pagination } from "../../clients/components/commerceProfile/Pagination";
 import { OrderStepper } from "../../clients/components/OrderStepper";
 import { apiClient as commerceApiClient } from "../services/editCommerceApi";
 import { ordersApiClient, fetchStoreOrders, updateOrderStatus, getOrderErrorMessage } from "../services/commerceOrdersApi";
+import { DeliveryAssignmentModal } from "../components/deliveryAssignment/DeliveryAssignmentModal.jsx";
+import { checkOrderAssignment } from "../services/deliveryAssignmentApi.js";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -16,13 +18,11 @@ const STATUS_LABELS = {
     CANCELLED:  "Cancelado",
 };
 
-// Siguiente estado permitido para el SELLER
 const NEXT_STATUS = {
     PROCESSING: "SHIPPED",
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-export function timeAgo(dateStr) {
+function timeAgo(dateStr) {
     const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
     if (diff < 60) return "hace unos segundos";
     if (diff < 3600) return `hace ${Math.floor(diff / 60)} min`;
@@ -50,8 +50,10 @@ function StatusBadge({ status }) {
 }
 
 // ─── Tab: Pedidos Pendientes ──────────────────────────────────────────────────
-function PendingOrderCard({ order, onAccept, onReject, isAccepting, isRejecting }) {
-    const isBusy = isAccepting || isRejecting;
+function PendingOrderCard({ order, onDelegate, onAccept, onReject, isDelegating, isAccepting, isRejecting, isAssigned }) {
+    const isPickup = !order.address;
+    const isBusy = isDelegating || isAccepting || isRejecting;
+ 
     return (
         <div style={{ backgroundColor: "white", borderRadius: "14px", padding: "16px 20px", boxShadow: "0 1px 4px rgba(0,0,0,0.07)", marginBottom: "12px", borderLeft: "3px solid var(--primary-dark)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
@@ -61,7 +63,11 @@ function PendingOrderCard({ order, onAccept, onReject, isAccepting, isRejecting 
                     </p>
                     <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "8px", flexWrap: "wrap" }}>
                         <span style={{ fontSize: "12px", color: "#6b7280", display: "flex", alignItems: "center", gap: "4px" }}>
-                            <MapPin size={12} /> {order.address?.city ?? "—"}{order.address?.region ? `, ${order.address.region}` : ""}
+                            <MapPin size={12} />
+                            {isPickup
+                                ? "Retiro en tienda"
+                                : `${order.address?.city ?? "—"}${order.address?.region ? `, ${order.address.region}` : ""}`
+                            }
                         </span>
                         <span style={{ fontSize: "12px", color: "#6b7280", display: "flex", alignItems: "center", gap: "4px" }}>
                             <Clock size={12} /> {timeAgo(order.createdAt)}
@@ -74,28 +80,75 @@ function PendingOrderCard({ order, onAccept, onReject, isAccepting, isRejecting 
                         <p style={{ fontSize: "11px", color: "#9ca3af", margin: 0, fontStyle: "italic" }}>{order.notes}</p>
                     )}
                 </div>
-
+ 
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "10px", flexShrink: 0 }}>
                     <div style={{ textAlign: "right" }}>
                         <p style={{ fontSize: "11px", color: "#6b7280", margin: "0 0 2px 0", textTransform: "uppercase", letterSpacing: "0.05em" }}>Total del pedido</p>
                         <p style={{ fontSize: "18px", fontWeight: "700", color: "#111827", margin: 0 }}>{formatGuarani(order.total)}</p>
                     </div>
-                    <div style={{ display: "flex", gap: "8px" }}>
-                        <button type="button" onClick={() => onAccept(order.id)} disabled={isBusy} style={{
-                            display: "flex", alignItems: "center", gap: "5px", padding: "7px 14px", borderRadius: "8px",
-                            backgroundColor: "var(--primary-dark)", color: "white", border: "none", fontSize: "13px", fontWeight: "600",
-                            cursor: isBusy ? "not-allowed" : "pointer", opacity: isBusy ? 0.6 : 1,
+ 
+                    {isPickup ? (
+                        // Pedido de retiro en tienda — aceptar o rechazar directo
+                        <div style={{ display: "flex", gap: "8px" }}>
+                            <button
+                                type="button"
+                                onClick={() => onAccept(order.id)}
+                                disabled={isBusy}
+                                style={{
+                                    display: "flex", alignItems: "center", gap: "5px",
+                                    padding: "7px 14px", borderRadius: "8px",
+                                    backgroundColor: "var(--primary-dark)", color: "white",
+                                    border: "none", fontSize: "13px", fontWeight: "600",
+                                    cursor: isBusy ? "not-allowed" : "pointer",
+                                    opacity: isBusy ? 0.6 : 1,
+                                }}
+                            >
+                                <CheckCircle size={14} /> {isAccepting ? "Aceptando..." : "Aceptar"}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => onReject(order.id)}
+                                disabled={isBusy}
+                                style={{
+                                    display: "flex", alignItems: "center", gap: "5px",
+                                    padding: "7px 14px", borderRadius: "8px",
+                                    backgroundColor: "white", color: "#dc2626",
+                                    border: "1px solid #fecdd3", fontSize: "13px", fontWeight: "600",
+                                    cursor: isBusy ? "not-allowed" : "pointer",
+                                    opacity: isBusy ? 0.6 : 1,
+                                }}
+                            >
+                                <XCircle size={14} /> {isRejecting ? "Rechazando..." : "Rechazar"}
+                            </button>
+                        </div>
+                    ) : isAssigned ? (
+                        // Pedido ya tiene delivery asignado
+                        <div style={{
+                            display: "flex", alignItems: "center", gap: "6px",
+                            padding: "7px 14px", borderRadius: "8px",
+                            backgroundColor: "#dcfce7", color: "#15803d",
+                            border: "1px solid #bbf7d0", fontSize: "13px", fontWeight: "600",
                         }}>
-                            <CheckCircle size={14} /> {isAccepting ? "Aceptando..." : "Aceptar"}
+                            <CheckCircle size={14} /> Delivery asignado
+                        </div>
+                    ) : (
+                        // Pedido sin delivery — abrir modal de asignación
+                        <button
+                            type="button"
+                            onClick={() => onDelegate(order)}
+                            disabled={isBusy}
+                            style={{
+                                display: "flex", alignItems: "center", gap: "5px",
+                                padding: "7px 14px", borderRadius: "8px",
+                                backgroundColor: "var(--primary-dark)", color: "white",
+                                border: "none", fontSize: "13px", fontWeight: "600",
+                                cursor: isBusy ? "not-allowed" : "pointer",
+                                opacity: isBusy ? 0.6 : 1,
+                            }}
+                        >
+                            <Truck size={14} /> {isDelegating ? "Abriendo..." : "Asignar delivery"}
                         </button>
-                        <button type="button" onClick={() => onReject(order.id)} disabled={isBusy} style={{
-                            display: "flex", alignItems: "center", gap: "5px", padding: "7px 14px", borderRadius: "8px",
-                            backgroundColor: "white", color: "#dc2626", border: "1px solid #fecdd3", fontSize: "13px", fontWeight: "600",
-                            cursor: isBusy ? "not-allowed" : "pointer", opacity: isBusy ? 0.6 : 1,
-                        }}>
-                            <XCircle size={14} /> {isRejecting ? "Rechazando..." : "Rechazar"}
-                        </button>
-                    </div>
+                    )}
                 </div>
             </div>
         </div>
@@ -103,9 +156,10 @@ function PendingOrderCard({ order, onAccept, onReject, isAccepting, isRejecting 
 }
 
 // ─── Tab: Seguimiento ─────────────────────────────────────────────────────────
-function TrackingOrderCard({ order, onAdvance, isActioning }) {
+function TrackingOrderCard({ order, onAccept, onReject, onAdvance, isAccepting, isRejecting, isActioning }) {
     const stepperEstado = STATUS_LABELS[order.status] ?? order.status;
     const canAdvance = !!NEXT_STATUS[order.status];
+    const isBusy = isAccepting || isRejecting || isActioning;
 
     return (
         <div style={{ backgroundColor: "white", borderRadius: "14px", padding: "16px 20px", boxShadow: "0 1px 4px rgba(0,0,0,0.07)", marginBottom: "12px" }}>
@@ -120,15 +174,29 @@ function TrackingOrderCard({ order, onAdvance, isActioning }) {
                     </p>
                 </div>
 
-                {canAdvance && (
-                    <button type="button" onClick={() => onAdvance(order.id, order.status)} disabled={isActioning} style={{
-                        display: "flex", alignItems: "center", gap: "5px", padding: "7px 14px", borderRadius: "8px",
-                        backgroundColor: "var(--primary-dark)", color: "white", border: "none", fontSize: "13px", fontWeight: "600",
-                        cursor: isActioning ? "not-allowed" : "pointer", opacity: isActioning ? 0.6 : 1, flexShrink: 0,
-                    }}>
-                        <Truck size={14} /> Marcar como Enviado
-                    </button>
-                )}
+                <div style={{ display: "flex", gap: "8px", flexShrink: 0, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                    {/* Aceptar / Rechazar si está en PROCESSING y viene de delegación */}
+                    {order.status === "PROCESSING" && (
+                        <>
+                            <button type="button" onClick={() => onReject(order.id)} disabled={isBusy} style={{
+                                display: "flex", alignItems: "center", gap: "5px", padding: "7px 12px", borderRadius: "8px",
+                                backgroundColor: "white", color: "#dc2626", border: "1px solid #fecdd3", fontSize: "13px", fontWeight: "600",
+                                cursor: isBusy ? "not-allowed" : "pointer", opacity: isBusy ? 0.6 : 1,
+                            }}>
+                                <XCircle size={14} /> {isRejecting ? "Cancelando..." : "Cancelar"}
+                            </button>
+                        </>
+                    )}
+                    {canAdvance && (
+                        <button type="button" onClick={() => onAdvance(order.id, order.status)} disabled={isBusy} style={{
+                            display: "flex", alignItems: "center", gap: "5px", padding: "7px 14px", borderRadius: "8px",
+                            backgroundColor: "var(--primary-dark)", color: "white", border: "none", fontSize: "13px", fontWeight: "600",
+                            cursor: isBusy ? "not-allowed" : "pointer", opacity: isBusy ? 0.6 : 1,
+                        }}>
+                            <Truck size={14} /> Marcar como Enviado
+                        </button>
+                    )}
+                </div>
             </div>
 
             <OrderStepper estado={stepperEstado} />
@@ -153,48 +221,29 @@ function HistoryTab({ storeId }) {
     const [totalPages, setTotalPages] = useState(1);
 
     const fetchHistory = useCallback(async () => {
-        if (!storeId) {
-            setOrders([]);
-            setTotalPages(1);
-            setLoading(false);
-            return;
-        }
-        setLoading(true);
-        setError("");
+        if (!storeId) { setOrders([]); setTotalPages(1); setLoading(false); return; }
+        setLoading(true); setError("");
         try {
             const filters = { page, limit: ITEMS_PER_PAGE };
-            
-            // Siempre filtrar por estados completados
-            if (filterStatus === "all") {
-                filters.order_status = ["DELIVERED", "CANCELLED"];
-            } else {
-                filters.order_status = filterStatus;
-            }
-            
+            if (filterStatus === "all") { filters.order_status = ["DELIVERED", "CANCELLED"]; }
+            else { filters.order_status = filterStatus; }
             if (filterFrom) filters.date_from = filterFrom;
             if (filterTo)   filters.date_to   = filterTo;
-            
             const data = await fetchStoreOrders(storeId, filters);
             setOrders(data.orders);
             setTotalPages(data.total_page ?? 1);
         } catch (err) {
             setError(getOrderErrorMessage(err, "No se pudo cargar el historial."));
-        } finally {
-            setLoading(false);
-        }
+        } finally { setLoading(false); }
     }, [storeId, filterStatus, filterFrom, filterTo, page]);
 
     useEffect(() => { fetchHistory(); }, [fetchHistory]);
 
     const inputStyle = { padding: "7px 10px", borderRadius: "8px", fontSize: "13px", border: "1px solid #e5e7eb", backgroundColor: "white", outline: "none" };
-
-    const visibleOrders = filterMinAmount
-    ? orders.filter(o => Number(o.total) >= Number(filterMinAmount))
-    : orders;
+    const visibleOrders = filterMinAmount ? orders.filter(o => Number(o.total) >= Number(filterMinAmount)) : orders;
 
     return (
         <>
-            {/* Filtros */}
             <div style={{ backgroundColor: "white", borderRadius: "12px", padding: "14px 16px", boxShadow: "0 1px 4px rgba(0,0,0,0.07)", marginBottom: "16px", display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "flex-end" }}>
                 <div>
                     <p style={{ fontSize: "11px", fontWeight: "600", color: "#6b7280", margin: "0 0 4px 0", textTransform: "uppercase" }}>Desde</p>
@@ -246,9 +295,7 @@ function HistoryTab({ storeId }) {
                         </div>
                         {visibleOrders.map((order, idx) => (
                             <div key={order.id} style={{ display: "grid", gridTemplateColumns: "120px 100px 1fr 80px 150px 110px", padding: "12px 16px", alignItems: "center", borderBottom: idx < visibleOrders.length - 1 ? "1px solid #f9fafb" : "none" }}>
-                                <span style={{ fontSize: "12px", color: "#6b7280" }}>
-                                    {new Date(order.createdAt).toLocaleDateString("es-PY", { day: "numeric", month: "short", year: "numeric" })}
-                                </span>
+                                <span style={{ fontSize: "12px", color: "#6b7280" }}>{new Date(order.createdAt).toLocaleDateString("es-PY", { day: "numeric", month: "short", year: "numeric" })}</span>
                                 <span style={{ fontSize: "13px", fontWeight: "600", color: "#374151" }}>#OM-{order.id}</span>
                                 <span style={{ fontSize: "13px", color: "#111827" }}>{order.address?.city ?? "—"}</span>
                                 <span style={{ fontSize: "13px", color: "#6b7280" }}>{order.items?.length ?? 0} ítem{order.items?.length !== 1 ? "s" : ""}</span>
@@ -257,9 +304,7 @@ function HistoryTab({ storeId }) {
                             </div>
                         ))}
                     </div>
-                    <p style={{ fontSize: "12px", color: "#9ca3af", marginTop: "10px" }}>
-                        Mostrando {visibleOrders.length} pedido{visibleOrders.length !== 1 ? "s" : ""}
-                    </p>
+                    <p style={{ fontSize: "12px", color: "#9ca3af", marginTop: "10px" }}>Mostrando {visibleOrders.length} pedido{visibleOrders.length !== 1 ? "s" : ""}</p>
                     {totalPages > 1 && <Pagination totalPages={totalPages} currentPage={page} onPageChange={setPage} />}
                 </>
             )}
@@ -269,30 +314,52 @@ function HistoryTab({ storeId }) {
 
 // ─── Página principal ─────────────────────────────────────────────────────────
 export function CommerceOrdersPage() {
-    const [storeId, setStoreId] = useState(null);
-    const [orders, setOrders] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
-    const [activeTab, setActiveTab] = useState("pending"); // "pending" | "tracking" | "history"
-    const [page, setPage] = useState(1);
-    const [actioningSet, setActioningSet] = useState(new Set());
-    const [actionError, setActionError] = useState("");
+    const [storeId, setStoreId]             = useState(null);
+    const [orders, setOrders]               = useState([]);
+    const [loading, setLoading]             = useState(true);
+    const [error, setError]                 = useState("");
+    const [activeTab, setActiveTab]         = useState("pending");
+    const [page, setPage]                   = useState(1);
+    const [actioningSet, setActioningSet]   = useState(new Set());
+    const [actionError, setActionError]     = useState("");
+    const [assignedOrders, setAssignedOrders] = useState(new Set());
+
+    // Modal de asignación de delivery
+    const [delegatingOrder, setDelegatingOrder] = useState(null); // order seleccionado para delegar
 
     const addActioning    = (id, action) => setActioningSet(prev => new Set(prev).add(`${id}:${action}`));
     const removeActioning = (id, action) => setActioningSet(prev => { const s = new Set(prev); s.delete(`${id}:${action}`); return s; });
     const isActioning     = (id, action) => actioningSet.has(`${id}:${action}`);
-    const isAnyActioning  = (id) => [`${id}:accept`, `${id}:reject`, `${id}:advance`].some(k => actioningSet.has(k));
+    const isAnyActioning  = (id) => [`${id}:reject`, `${id}:advance`].some(k => actioningSet.has(k));
 
     const loadOrders = useCallback(async (sid) => {
         try {
             const data = await fetchStoreOrders(sid, {
                 order_status: ["PENDING", "PROCESSING", "SHIPPED"],
-                limit: 100
-        });
-        setOrders(data.orders);
+                limit: 100,
+            });
+            setOrders(data.orders);
         } catch (err) {
             setError(getOrderErrorMessage(err, "No se pudieron cargar los pedidos."));
         }
+    }, []);
+
+    const checkAssignments = useCallback(async (orderList) => {
+        const assigned = new Set();
+        for (const order of orderList) {
+            // Solo verificar pedidos con dirección (no retiro en tienda)
+            if (!order.address) continue;
+            
+            try {
+                const result = await checkOrderAssignment(order.id);
+                if (result.has_assignment) {
+                    assigned.add(order.id);
+                }
+            } catch (err) {
+                console.error(`Error verificando asignación de pedido ${order.id}:`, err);
+            }
+        }
+        setAssignedOrders(assigned);
     }, []);
 
     useEffect(() => {
@@ -303,7 +370,7 @@ export function CommerceOrdersPage() {
                 if (!sid) { setError("No tenés un comercio registrado."); setLoading(false); return; }
                 setStoreId(sid);
                 await loadOrders(sid);
-            } catch (err) {
+            } catch {
                 setError("No se pudo cargar la sesión.");
             } finally {
                 setLoading(false);
@@ -315,9 +382,16 @@ export function CommerceOrdersPage() {
     const pendingOrders  = useMemo(() => orders.filter(o => o.status === "PENDING"), [orders]);
     const trackingOrders = useMemo(() => orders.filter(o => o.status === "PROCESSING" || o.status === "SHIPPED"), [orders]);
 
-    const activeOrders     = activeTab === "pending" ? pendingOrders : trackingOrders;
+    const activeOrders      = activeTab === "pending" ? pendingOrders : trackingOrders;
     const currentTotalPages = Math.ceil(activeOrders.length / ITEMS_PER_PAGE);
     const paginated         = activeOrders.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+
+    // Verificar asignaciones cuando cambian los pedidos activos
+    useEffect(() => {
+        if (activeOrders.length > 0) {
+            checkAssignments(activeOrders);
+        }
+    }, [activeOrders, checkAssignments]);
 
     const handleStatusUpdate = async (orderId, newStatus, action) => {
         addActioning(orderId, action);
@@ -325,16 +399,7 @@ export function CommerceOrdersPage() {
         try {
             await updateOrderStatus(orderId, newStatus);
             await loadOrders(storeId);
-
-            if (newStatus === "PROCESSING") {
-                setActiveTab("tracking");
-                setPage(1);
-                return;
-            }
-
-            const leavesActiveList =
-                activeTab === "pending" ||
-                (activeTab === "tracking" && newStatus === "DELIVERED");
+            const leavesActiveList = activeTab === "tracking" && newStatus === "DELIVERED";
             if (leavesActiveList) {
                 const remaining = activeOrders.length - 1;
                 const newTotalPages = Math.ceil(remaining / ITEMS_PER_PAGE);
@@ -347,11 +412,20 @@ export function CommerceOrdersPage() {
         }
     };
 
-    const handleAccept  = (id) => handleStatusUpdate(id, "PROCESSING", "accept");
-    const handleReject  = (id) => handleStatusUpdate(id, "CANCELLED",  "reject");
+    const handleReject  = (id) => handleStatusUpdate(id, "CANCELLED", "reject");
     const handleAdvance = (id, currentStatus) => {
         const next = NEXT_STATUS[currentStatus];
         if (next) handleStatusUpdate(id, next, "advance");
+    };
+
+    // Abre el modal de asignación de delivery
+    const handleDelegate = (order) => {
+        setDelegatingOrder(order);
+    };
+
+    // Cierra el modal y recarga los pedidos
+    const handleAssignmentSuccess = () => {
+        loadOrders(storeId);
     };
 
     const tabStyle = (tab) => ({
@@ -366,6 +440,16 @@ export function CommerceOrdersPage() {
 
     return (
         <>
+            {/* Modal de asignación */}
+            {delegatingOrder && storeId && (
+                <DeliveryAssignmentModal
+                    order={delegatingOrder}
+                    storeId={storeId}
+                    onClose={() => setDelegatingOrder(null)}
+                    onSuccess={handleAssignmentSuccess}
+                />
+            )}
+
             {/* Header */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "24px" }}>
                 <div>
@@ -374,7 +458,7 @@ export function CommerceOrdersPage() {
                     </h4>
                     <p style={{ color: "#6b7280", margin: 0, fontSize: "14px" }}>
                         {activeTab === "pending"
-                            ? "Gestioná las solicitudes entrantes de tus clientes."
+                            ? "Asigná un delivery a cada pedido entrante."
                             : activeTab === "tracking"
                             ? "Gestioná y actualizá el progreso de tus ventas en tiempo real."
                             : "Gestioná y revisá todas tus transacciones pasadas en un solo lugar."}
@@ -426,11 +510,26 @@ export function CommerceOrdersPage() {
                 </div>
             ) : activeTab === "pending" ? (
                 paginated.map(order => (
-                    <PendingOrderCard key={order.id} order={order} onAccept={handleAccept} onReject={handleReject} isAccepting={isActioning(order.id, "accept")} isRejecting={isActioning(order.id, "reject")} />
+                    <PendingOrderCard
+                        key={order.id}
+                        order={order}
+                        onDelegate={handleDelegate}
+                        onAccept={() => handleStatusUpdate(order.id, "PROCESSING", "accept")}
+                        onReject={handleReject}
+                        isDelegating={delegatingOrder?.id === order.id}
+                        isAssigned={assignedOrders.has(order.id)}
+                    />
                 ))
             ) : (
                 paginated.map(order => (
-                    <TrackingOrderCard key={order.id} order={order} onAdvance={handleAdvance} isActioning={isAnyActioning(order.id)} />
+                    <TrackingOrderCard
+                        key={order.id}
+                        order={order}
+                        onReject={handleReject}
+                        onAdvance={handleAdvance}
+                        isRejecting={isActioning(order.id, "reject")}
+                        isActioning={isAnyActioning(order.id)}
+                    />
                 ))
             )}
 
