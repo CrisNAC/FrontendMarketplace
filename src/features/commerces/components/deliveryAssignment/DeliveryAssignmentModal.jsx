@@ -1,5 +1,5 @@
 // src/features/commerces/components/deliveryAssignment/DeliveryAssignmentModal.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import PropTypes from "prop-types";
 import { X, Truck, MapPin, User, Phone, AlertCircle, CheckCircle, Loader } from "lucide-react";
 import { fetchAvailableDeliveries, createDeliveryAssignment, getAssignmentErrorMessage } from "../../services/deliveryAssignmentApi";
@@ -165,6 +165,7 @@ export function DeliveryAssignmentModal({ order, storeId, onClose, onSuccess }) 
   const [loading, setLoading] = useState(true);
   const [assigning, setAssigning] = useState(false);
   const [error, setError] = useState("");
+  const dialogRef = useRef(null);
 
   useEffect(() => {
     const load = async () => {
@@ -183,6 +184,28 @@ export function DeliveryAssignmentModal({ order, storeId, onClose, onSuccess }) 
     load();
   }, [storeId, order.id]);
 
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (dialog) {
+      dialog.showModal();
+    }
+
+    const handleCancel = (e) => {
+      if (assigning) {
+        e.preventDefault();
+      }
+    };
+
+    dialog?.addEventListener("cancel", handleCancel);
+
+    return () => {
+      if (dialog?.open) {
+        dialog.close();
+      }
+      dialog?.removeEventListener("cancel", handleCancel);
+    };
+  }, [assigning]);
+
   const handleAssign = async () => {
     if (!selected) return;
     setAssigning(true);
@@ -190,7 +213,7 @@ export function DeliveryAssignmentModal({ order, storeId, onClose, onSuccess }) 
     try {
       await createDeliveryAssignment(order.id, selected);
       onSuccess?.();
-      onClose();
+      handleClose();
     } catch (err) {
       setError(getAssignmentErrorMessage(err, "No se pudo crear la asignación."));
     } finally {
@@ -198,39 +221,17 @@ export function DeliveryAssignmentModal({ order, storeId, onClose, onSuccess }) 
     }
   };
 
-  const handleOverlayClick = (e) => {
-    if (e.target === e.currentTarget && !assigning) {
-      onClose();
-    }
-  };
-
-  const handleOverlayKeyDown = (e) => {
-    if (e.key === "Escape" && !assigning) {
-      onClose();
-    }
-  };
-
-  const handleCloseButtonClick = () => {
+  const handleClose = () => {
     if (!assigning) {
+      const dialog = dialogRef.current;
+      if (dialog?.open) {
+        dialog.close();
+      }
       onClose();
     }
   };
 
   // ─── Estilos ────────────────────────────────────────────────────────────
-
-  const overlay = {
-    position: "fixed", inset: 0, zIndex: 1000,
-    backgroundColor: "rgba(0,0,0,0.45)",
-    display: "flex", alignItems: "center", justifyContent: "center",
-    padding: "16px",
-  };
-
-  const modal = {
-    backgroundColor: "white", borderRadius: "18px",
-    width: "100%", maxWidth: "460px",
-    boxShadow: "0 24px 64px rgba(0,0,0,0.18)",
-    overflow: "hidden",
-  };
 
   const header = {
     padding: "20px 24px 16px",
@@ -281,81 +282,93 @@ export function DeliveryAssignmentModal({ order, storeId, onClose, onSuccess }) 
   // ─── Render ──────────────────────────────────────────────────────────────
 
   return (
-    <div
-      style={overlay}
-      onClick={handleOverlayClick}
-      onKeyDown={handleOverlayKeyDown}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="modal-title"
-    >
-      <div style={modal}>
-
-        {/* Header */}
-        <div style={header}>
-          <div>
-            <p id="modal-title" style={{ fontSize: "17px", fontWeight: "700", color: "#111827", margin: "0 0 4px 0", display: "flex", alignItems: "center", gap: "8px" }}>
-              <Truck size={18} /> Asignar delivery
-            </p>
-            <p style={{ fontSize: "13px", color: "#6b7280", margin: 0 }}>
-              Pedido #ORD-{order.id}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={handleCloseButtonClick}
-            disabled={assigning}
-            style={closeButtonStyle}
-            aria-label="Cerrar modal"
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        {/* Dirección de entrega */}
-        <DeliveryAddress address={deliveryAddress} />
-
-        {/* Body */}
-        <div style={body}>
-          {error && (
-            <div style={{ backgroundColor: "#fff1f2", border: "1px solid #fecdd3", borderRadius: "10px", padding: "11px 14px", color: "#be123c", fontSize: "13px", marginBottom: "14px", display: "flex", gap: "8px", alignItems: "center" }}>
-              <AlertCircle size={15} style={{ flexShrink: 0 }} /> {error}
-            </div>
-          )}
-          <BodyContent
-            loading={loading}
-            deliveries={deliveries}
-            selected={selected}
-            onSelect={setSelected}
-          />
-        </div>
-
-        {/* Footer */}
-        <div style={footer}>
-          <button
-            type="button"
-            style={btnSecondary}
-            onClick={onClose}
-            disabled={assigning}
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            style={btnPrimary}
-            onClick={handleAssign}
-            disabled={assigning || !selected}
-          >
-            {assignButtonContent}
-          </button>
-        </div>
-      </div>
-
+    <>
       <style>{`
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .spin { animation: spin 1s linear infinite; }
+        dialog::backdrop {
+          background-color: rgba(0, 0, 0, 0.45);
+        }
+        dialog {
+          padding: 0;
+          border: none;
+          border-radius: 18px;
+          box-shadow: 0 24px 64px rgba(0,0,0,0.18);
+          max-width: 460px;
+          width: calc(100% - 32px);
+        }
+        @keyframes spin { 
+          from { transform: rotate(0deg); } 
+          to { transform: rotate(360deg); } 
+        }
+        .spin { 
+          animation: spin 1s linear infinite; 
+        }
       `}</style>
-    </div>
+      <dialog
+        ref={dialogRef}
+        aria-labelledby="modal-title"
+      >
+        <div>
+          {/* Header */}
+          <div style={header}>
+            <div>
+              <p id="modal-title" style={{ fontSize: "17px", fontWeight: "700", color: "#111827", margin: "0 0 4px 0", display: "flex", alignItems: "center", gap: "8px" }}>
+                <Truck size={18} /> Asignar delivery
+              </p>
+              <p style={{ fontSize: "13px", color: "#6b7280", margin: 0 }}>
+                Pedido #ORD-{order.id}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleClose}
+              disabled={assigning}
+              style={closeButtonStyle}
+              aria-label="Cerrar modal"
+            >
+              <X size={20} />
+            </button>
+          </div>
+
+          {/* Dirección de entrega */}
+          <DeliveryAddress address={deliveryAddress} />
+
+          {/* Body */}
+          <div style={body}>
+            {error && (
+              <div style={{ backgroundColor: "#fff1f2", border: "1px solid #fecdd3", borderRadius: "10px", padding: "11px 14px", color: "#be123c", fontSize: "13px", marginBottom: "14px", display: "flex", gap: "8px", alignItems: "center" }}>
+                <AlertCircle size={15} style={{ flexShrink: 0 }} /> {error}
+              </div>
+            )}
+            <BodyContent
+              loading={loading}
+              deliveries={deliveries}
+              selected={selected}
+              onSelect={setSelected}
+            />
+          </div>
+
+          {/* Footer */}
+          <div style={footer}>
+            <button
+              type="button"
+              style={btnSecondary}
+              onClick={handleClose}
+              disabled={assigning}
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              style={btnPrimary}
+              onClick={handleAssign}
+              disabled={assigning || !selected}
+            >
+              {assignButtonContent}
+            </button>
+          </div>
+        </div>
+      </dialog>
+    </>
   );
 }
 
