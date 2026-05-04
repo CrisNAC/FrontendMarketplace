@@ -1,5 +1,5 @@
 // src/features/commerces/components/deliveryAssignment/DeliveryAssignmentModal.jsx
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { X, Truck, MapPin, User, Phone, AlertCircle, CheckCircle, Loader } from "lucide-react";
 import { fetchAvailableDeliveries, createDeliveryAssignment, getAssignmentErrorMessage } from "../../services/deliveryAssignmentApi";
@@ -165,7 +165,6 @@ export function DeliveryAssignmentModal({ order, storeId, onClose, onSuccess }) 
   const [loading, setLoading] = useState(true);
   const [assigning, setAssigning] = useState(false);
   const [error, setError] = useState("");
-  const dialogRef = useRef(null);
 
   useEffect(() => {
     const load = async () => {
@@ -184,19 +183,6 @@ export function DeliveryAssignmentModal({ order, storeId, onClose, onSuccess }) 
     load();
   }, [storeId, order.id]);
 
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (dialog) {
-      dialog.showModal();
-    }
-
-    return () => {
-      if (dialog?.open) {
-        dialog.close();
-      }
-    };
-  }, []);
-
   const handleAssign = async () => {
     if (!selected) return;
     setAssigning(true);
@@ -204,7 +190,7 @@ export function DeliveryAssignmentModal({ order, storeId, onClose, onSuccess }) 
     try {
       await createDeliveryAssignment(order.id, selected);
       onSuccess?.();
-      handleClose();
+      onClose();
     } catch (err) {
       setError(getAssignmentErrorMessage(err, "No se pudo crear la asignación."));
     } finally {
@@ -212,49 +198,36 @@ export function DeliveryAssignmentModal({ order, storeId, onClose, onSuccess }) 
     }
   };
 
-  const handleClose = () => {
-    if (!assigning) {
-      const dialog = dialogRef.current;
-      if (dialog?.open) {
-        dialog.close();
-      }
+  const handleOverlayClick = (e) => {
+    if (e.target === e.currentTarget && !assigning) {
       onClose();
     }
   };
 
-  const handleDialogClick = (e) => {
-    if (e.target === dialogRef.current) {
-      handleClose();
+  const handleOverlayKeyDown = (e) => {
+    if (e.key === "Escape" && !assigning) {
+      onClose();
+    }
+  };
+
+  const handleCloseButtonClick = () => {
+    if (!assigning) {
+      onClose();
     }
   };
 
   // ─── Estilos ────────────────────────────────────────────────────────────
 
-  const dialogStyle = {
-    position: "fixed",
-    top: "50%",
-    left: "50%",
-    transform: "translate(-50%, -50%)",
-    padding: 0,
-    border: "none",
-    borderRadius: "18px",
-    boxShadow: "0 24px 64px rgba(0,0,0,0.18)",
-    maxWidth: "460px",
-    width: "100%",
-    maxHeight: "90vh",
-  };
-
-  const dialogBackdropStyle = {
-    position: "fixed",
-    inset: 0,
+  const overlay = {
+    position: "fixed", inset: 0, zIndex: 1000,
     backgroundColor: "rgba(0,0,0,0.45)",
+    display: "flex", alignItems: "center", justifyContent: "center",
+    padding: "16px",
   };
 
   const modal = {
-    backgroundColor: "white",
-    borderRadius: "18px",
-    width: "100%",
-    maxWidth: "460px",
+    backgroundColor: "white", borderRadius: "18px",
+    width: "100%", maxWidth: "460px",
     boxShadow: "0 24px 64px rgba(0,0,0,0.18)",
     overflow: "hidden",
   };
@@ -308,96 +281,81 @@ export function DeliveryAssignmentModal({ order, storeId, onClose, onSuccess }) 
   // ─── Render ──────────────────────────────────────────────────────────────
 
   return (
-    <>
-      <style>{`
-        dialog::backdrop {
-          background-color: rgba(0, 0, 0, 0.45);
-        }
-        dialog {
-          padding: 0;
-          border: none;
-          border-radius: 18px;
-          box-shadow: 0 24px 64px rgba(0,0,0,0.18);
-          max-width: 460px;
-          width: calc(100% - 32px);
-        }
-        @keyframes spin { 
-          from { transform: rotate(0deg); } 
-          to { transform: rotate(360deg); } 
-        }
-        .spin { 
-          animation: spin 1s linear infinite; 
-        }
-      `}</style>
-      <dialog
-        ref={dialogRef}
-        onClick={handleDialogClick}
-        style={dialogStyle}
-        aria-labelledby="modal-title"
-      >
-        <div style={modal}>
+    <div
+      style={overlay}
+      onClick={handleOverlayClick}
+      onKeyDown={handleOverlayKeyDown}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
+    >
+      <div style={modal}>
 
-          {/* Header */}
-          <div style={header}>
-            <div>
-              <p id="modal-title" style={{ fontSize: "17px", fontWeight: "700", color: "#111827", margin: "0 0 4px 0", display: "flex", alignItems: "center", gap: "8px" }}>
-                <Truck size={18} /> Asignar delivery
-              </p>
-              <p style={{ fontSize: "13px", color: "#6b7280", margin: 0 }}>
-                Pedido #ORD-{order.id}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={handleClose}
-              disabled={assigning}
-              style={closeButtonStyle}
-              aria-label="Cerrar modal"
-            >
-              <X size={20} />
-            </button>
+        {/* Header */}
+        <div style={header}>
+          <div>
+            <p id="modal-title" style={{ fontSize: "17px", fontWeight: "700", color: "#111827", margin: "0 0 4px 0", display: "flex", alignItems: "center", gap: "8px" }}>
+              <Truck size={18} /> Asignar delivery
+            </p>
+            <p style={{ fontSize: "13px", color: "#6b7280", margin: 0 }}>
+              Pedido #ORD-{order.id}
+            </p>
           </div>
-
-          {/* Dirección de entrega */}
-          <DeliveryAddress address={deliveryAddress} />
-
-          {/* Body */}
-          <div style={body}>
-            {error && (
-              <div style={{ backgroundColor: "#fff1f2", border: "1px solid #fecdd3", borderRadius: "10px", padding: "11px 14px", color: "#be123c", fontSize: "13px", marginBottom: "14px", display: "flex", gap: "8px", alignItems: "center" }}>
-                <AlertCircle size={15} style={{ flexShrink: 0 }} /> {error}
-              </div>
-            )}
-            <BodyContent
-              loading={loading}
-              deliveries={deliveries}
-              selected={selected}
-              onSelect={setSelected}
-            />
-          </div>
-
-          {/* Footer */}
-          <div style={footer}>
-            <button
-              type="button"
-              style={btnSecondary}
-              onClick={handleClose}
-              disabled={assigning}
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              style={btnPrimary}
-              onClick={handleAssign}
-              disabled={assigning || !selected}
-            >
-              {assignButtonContent}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={handleCloseButtonClick}
+            disabled={assigning}
+            style={closeButtonStyle}
+            aria-label="Cerrar modal"
+          >
+            <X size={20} />
+          </button>
         </div>
-      </dialog>
-    </>
+
+        {/* Dirección de entrega */}
+        <DeliveryAddress address={deliveryAddress} />
+
+        {/* Body */}
+        <div style={body}>
+          {error && (
+            <div style={{ backgroundColor: "#fff1f2", border: "1px solid #fecdd3", borderRadius: "10px", padding: "11px 14px", color: "#be123c", fontSize: "13px", marginBottom: "14px", display: "flex", gap: "8px", alignItems: "center" }}>
+              <AlertCircle size={15} style={{ flexShrink: 0 }} /> {error}
+            </div>
+          )}
+          <BodyContent
+            loading={loading}
+            deliveries={deliveries}
+            selected={selected}
+            onSelect={setSelected}
+          />
+        </div>
+
+        {/* Footer */}
+        <div style={footer}>
+          <button
+            type="button"
+            style={btnSecondary}
+            onClick={onClose}
+            disabled={assigning}
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            style={btnPrimary}
+            onClick={handleAssign}
+            disabled={assigning || !selected}
+          >
+            {assignButtonContent}
+          </button>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .spin { animation: spin 1s linear infinite; }
+      `}</style>
+    </div>
   );
 }
 
