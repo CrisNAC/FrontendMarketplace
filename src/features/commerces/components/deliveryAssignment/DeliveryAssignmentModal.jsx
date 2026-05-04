@@ -25,10 +25,10 @@ function DeliveryAddress({ address }) {
 }
 
 DeliveryAddress.propTypes = {
-  address:PropTypes.shape({
-    address:PropTypes.string,
-    city:PropTypes.string,
-    region:PropTypes.string,
+  address: PropTypes.shape({
+    address: PropTypes.string,
+    city: PropTypes.string,
+    region: PropTypes.string,
   }),
 };
 
@@ -54,16 +54,19 @@ function DeliveryCard({ delivery, isSelected, onSelect }) {
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === "Enter" || e.key === " ") onSelect();
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onSelect();
+    }
   };
 
   return (
-    <div
-      role="button"
-      tabIndex={0}
+    <button
+      type="button"
       style={cardStyle}
       onClick={onSelect}
       onKeyDown={handleKeyDown}
+      aria-pressed={isSelected}
     >
       <div style={avatarStyle}>
         {delivery.avatar_url
@@ -84,19 +87,19 @@ function DeliveryCard({ delivery, isSelected, onSelect }) {
       {isSelected && (
         <CheckCircle size={20} color="var(--primary-dark, #111827)" style={{ flexShrink: 0 }} />
       )}
-    </div>
+    </button>
   );
 }
 
 DeliveryCard.propTypes = {
   delivery: PropTypes.shape({
     id_delivery: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-    name:        PropTypes.string.isRequired,
-    avatar_url:  PropTypes.string,
-    phone:       PropTypes.string,
+    name: PropTypes.string.isRequired,
+    avatar_url: PropTypes.string,
+    phone: PropTypes.string,
   }).isRequired,
   isSelected: PropTypes.bool.isRequired,
-  onSelect:   PropTypes.func.isRequired,
+  onSelect: PropTypes.func.isRequired,
 };
 
 function BodyContent({ loading, deliveries, selected, onSelect }) {
@@ -141,12 +144,12 @@ function BodyContent({ loading, deliveries, selected, onSelect }) {
 }
 
 BodyContent.propTypes = {
-  loading:    PropTypes.bool.isRequired,
+  loading: PropTypes.bool.isRequired,
   deliveries: PropTypes.arrayOf(
     PropTypes.shape({ id_delivery: PropTypes.oneOfType([PropTypes.string, PropTypes.number]) })
   ).isRequired,
-  selected:   PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-  onSelect:   PropTypes.func.isRequired,
+  selected: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  onSelect: PropTypes.func.isRequired,
 };
 
 BodyContent.defaultProps = {
@@ -156,12 +159,12 @@ BodyContent.defaultProps = {
 // ─── Modal principal ──────────────────────────────────────────────────────────
 
 export function DeliveryAssignmentModal({ order, storeId, onClose, onSuccess }) {
-  const [deliveries, setDeliveries]           = useState([]);
+  const [deliveries, setDeliveries] = useState([]);
   const [deliveryAddress, setDeliveryAddress] = useState(null);
-  const [selected, setSelected]               = useState(null);
-  const [loading, setLoading]                 = useState(true);
-  const [assigning, setAssigning]             = useState(false);
-  const [error, setError]                     = useState("");
+  const [selected, setSelected] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [assigning, setAssigning] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const load = async () => {
@@ -196,11 +199,21 @@ export function DeliveryAssignmentModal({ order, storeId, onClose, onSuccess }) 
   };
 
   const handleOverlayClick = (e) => {
-    if (e.target === e.currentTarget) onClose();
+    if (e.target === e.currentTarget && !assigning) {
+      onClose();
+    }
   };
 
   const handleOverlayKeyDown = (e) => {
-    if (e.key === "Escape") onClose();
+    if (e.key === "Escape" && !assigning) {
+      onClose();
+    }
+  };
+
+  const handleCloseButtonClick = () => {
+    if (!assigning) {
+      onClose();
+    }
   };
 
   // ─── Estilos ────────────────────────────────────────────────────────────
@@ -246,7 +259,18 @@ export function DeliveryAssignmentModal({ order, storeId, onClose, onSuccess }) 
     padding: "9px 20px", borderRadius: "10px",
     backgroundColor: "white", color: "#374151",
     border: "1px solid #e5e7eb", fontSize: "14px", fontWeight: "600",
-    cursor: "pointer",
+    cursor: assigning ? "not-allowed" : "pointer",
+    opacity: assigning ? 0.6 : 1,
+  };
+
+  const closeButtonStyle = {
+    background: "none",
+    border: "none",
+    cursor: assigning ? "not-allowed" : "pointer",
+    padding: "4px",
+    borderRadius: "8px",
+    color: "#9ca3af",
+    opacity: assigning ? 0.6 : 1,
   };
 
   // Ternario extraído a variable independiente (fix Sonar)
@@ -258,24 +282,32 @@ export function DeliveryAssignmentModal({ order, storeId, onClose, onSuccess }) 
 
   return (
     <div
-      role="presentation"
       style={overlay}
       onClick={handleOverlayClick}
       onKeyDown={handleOverlayKeyDown}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
     >
       <div style={modal}>
 
         {/* Header */}
         <div style={header}>
           <div>
-            <p style={{ fontSize: "17px", fontWeight: "700", color: "#111827", margin: "0 0 4px 0", display: "flex", alignItems: "center", gap: "8px" }}>
+            <p id="modal-title" style={{ fontSize: "17px", fontWeight: "700", color: "#111827", margin: "0 0 4px 0", display: "flex", alignItems: "center", gap: "8px" }}>
               <Truck size={18} /> Asignar delivery
             </p>
             <p style={{ fontSize: "13px", color: "#6b7280", margin: 0 }}>
               Pedido #ORD-{order.id}
             </p>
           </div>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", borderRadius: "8px", color: "#9ca3af" }}>
+          <button
+            type="button"
+            onClick={handleCloseButtonClick}
+            disabled={assigning}
+            style={closeButtonStyle}
+            aria-label="Cerrar modal"
+          >
             <X size={20} />
           </button>
         </div>
@@ -300,10 +332,20 @@ export function DeliveryAssignmentModal({ order, storeId, onClose, onSuccess }) 
 
         {/* Footer */}
         <div style={footer}>
-          <button style={btnSecondary} onClick={onClose} disabled={assigning}>
+          <button
+            type="button"
+            style={btnSecondary}
+            onClick={onClose}
+            disabled={assigning}
+          >
             Cancelar
           </button>
-          <button style={btnPrimary} onClick={handleAssign} disabled={assigning || !selected}>
+          <button
+            type="button"
+            style={btnPrimary}
+            onClick={handleAssign}
+            disabled={assigning || !selected}
+          >
             {assignButtonContent}
           </button>
         </div>
@@ -318,11 +360,11 @@ export function DeliveryAssignmentModal({ order, storeId, onClose, onSuccess }) 
 }
 
 DeliveryAssignmentModal.propTypes = {
-  order:     PropTypes.shape({
+  order: PropTypes.shape({
     id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
   }).isRequired,
-  storeId:   PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-  onClose:   PropTypes.func.isRequired,
+  storeId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  onClose: PropTypes.func.isRequired,
   onSuccess: PropTypes.func,
 };
 
