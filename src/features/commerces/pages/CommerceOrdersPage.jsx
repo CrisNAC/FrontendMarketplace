@@ -26,7 +26,7 @@ const NEXT_STATUS = {
   PROCESSING: "SHIPPED",
 };
 
-function timeAgo(dateStr) {
+export function timeAgo(dateStr) {
   const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
   if (diff < 60)    return "hace unos segundos";
   if (diff < 3600)  return `hace ${Math.floor(diff / 60)} min`;
