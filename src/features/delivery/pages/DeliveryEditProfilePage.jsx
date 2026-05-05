@@ -272,6 +272,7 @@ export function DeliveryEditProfilePage() {
     // ── Guardar ───────────────────────────────────────────────────────────────
     const handleSave = async () => {
         if (!name.trim()) { setError("El nombre es obligatorio."); return; }
+        if (!phone.trim()) { setError("El teléfono es obligatorio."); return; }
         if (!deliveryId) { setError("No se encontró el ID del delivery."); return; }
 
         setSaving(true);
@@ -335,10 +336,11 @@ export function DeliveryEditProfilePage() {
 
                                 {/* Nombre */}
                                 <div>
-                                    <label style={s.label}>
+                                    <label htmlFor="delivery-name" style={s.label}>
                                         Nombre completo <span style={s.required}>*</span>
                                     </label>
                                     <input
+                                        id="delivery-name"
                                         type="text"
                                         value={name}
                                         onChange={e => setName(e.target.value)}
@@ -350,8 +352,9 @@ export function DeliveryEditProfilePage() {
 
                                 {/* Email (solo lectura) */}
                                 <div>
-                                    <label style={s.label}>Email de Contacto</label>
+                                    <label htmlFor="delivery-email" style={s.label}>Email de Contacto</label>
                                     <input
+                                        id="delivery-email"
                                         type="email"
                                         value={email}
                                         readOnly
@@ -362,10 +365,11 @@ export function DeliveryEditProfilePage() {
 
                                 {/* Teléfono */}
                                 <div>
-                                    <label style={s.label}>
+                                    <label htmlFor="delivery-phone" style={s.label}>
                                         Teléfono <span style={s.required}>*</span>
                                     </label>
                                     <input
+                                        id="delivery-phone"
                                         type="tel"
                                         value={phone}
                                         onChange={e => setPhone(e.target.value)}
@@ -399,7 +403,7 @@ export function DeliveryEditProfilePage() {
 
                             {/* ── Foto de perfil (igual al bloque "Logo" del form de comercio) ── */}
                             <div>
-                                <label style={s.label}>Foto de perfil</label>
+                                <label htmlFor="delivery-avatar" style={s.label}>Foto de perfil</label>
                                 <p style={{ ...s.fieldNote, marginBottom: "10px" }}>
                                     JPG, PNG o WebP · Máx. 5 MB
                                 </p>
@@ -425,6 +429,7 @@ export function DeliveryEditProfilePage() {
                                             </span>
                                         </div>
                                         <input
+                                            id="delivery-avatar"
                                             ref={fileInputRef}
                                             type="file"
                                             accept="image/*"
