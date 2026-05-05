@@ -1,5 +1,6 @@
 // src/features/commerces/services/commerceDeliveryApi.js
-import { apiClient } from "./editCommerceApi"; // reutiliza el cliente con withCredentials
+import axios from "axios";
+import { apiClient } from "./editCommerceApi";
 
 /**
  * GET /api/stores/:storeId/deliveries

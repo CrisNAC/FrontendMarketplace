@@ -46,7 +46,6 @@ import { CommerceDeliveryReviewsPage } from './features/commerces/pages/Commerce
 import { CommerceDeliveriesPage } from './features/commerces/pages/CommerceDeliveriesPage'
 import { AddStoreDeliveryPage } from './features/commerces/pages/AddStoreDeliveryPage'
 import { EditCommercePage } from './features/commerces/pages/EditCommercePage'
-import { CommerceDeliveryPage } from './features/commerces/pages/CommerceDeliveryPage'
 import AuthPage from './features/clients/pages/AuthPage';
 
 import ProductDetailView from './features/commerces/pages/ProductDetailView';
@@ -220,6 +219,7 @@ function App() {
         } />
         <Route path="/comercio/deliveries/resenas" element={
           <MyCommerceLayout><CommerceDeliveryReviewsPage /></MyCommerceLayout>
+        } />    
         <Route path="/comercio/delivery" element={
           <MyCommerceLayout><CommerceDeliveriesPage /></MyCommerceLayout>
         } />
@@ -240,9 +240,6 @@ function App() {
         } />
         <Route path="/comercio/claims" element={
           <MyCommerceLayout><CommerceClaims/></MyCommerceLayout>
-        } />
-        <Route path="/comercio/delivery" element={
-          <MyCommerceLayout><CommerceDeliveryPage/></MyCommerceLayout>
         } />
 
         {/* ── Área de delivery (con sidebar) ───────────────────────────── */}
