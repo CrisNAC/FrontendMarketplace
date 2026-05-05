@@ -64,3 +64,13 @@ export const updateMyDelivery = async (deliveryId, { name, phone, vehicleType },
     });
     return data;
 };
+export const updateDeliveryStatus = async (deliveryId, newStatus) => {
+  try {
+    const response = await apiClient.patch(`/api/deliveries/${deliveryId}/status`, {
+      delivery_status: newStatus
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
