@@ -24,5 +24,9 @@ export function prependCachedStoreDelivery(storeId, entry) {
     const prev = readCachedStoreDeliveries(storeId);
     if (prev.some((p) => Number(p.fk_user) === Number(entry.fk_user))) return;
     const next = [{ ...entry, addedAt: entry.addedAt ?? new Date().toISOString() }, ...prev];
-    sessionStorage.setItem(storageKey(storeId), JSON.stringify(next));
+    try {
+        sessionStorage.setItem(storageKey(storeId), JSON.stringify(next));
+    } catch (error) {
+        console.warn("No se pudo persistir cache local de deliveries.", error);
+    }
 }

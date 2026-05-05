@@ -70,7 +70,7 @@ export function CommerceDeliveriesPage() {
                 </div>
                 <button
                     type="button"
-                    onClick={() => navigate("/delivery/agregar")}
+                    onClick={() => navigate("/comercio/delivery/agregar")}
                     style={{
                         display: "inline-flex",
                         alignItems: "center",
@@ -99,7 +99,7 @@ export function CommerceDeliveriesPage() {
                     </p>
                     <button
                         type="button"
-                        onClick={() => navigate("/delivery/agregar")}
+                        onClick={() => navigate("/comercio/delivery/agregar")}
                         style={{
                             display: "inline-flex",
                             alignItems: "center",

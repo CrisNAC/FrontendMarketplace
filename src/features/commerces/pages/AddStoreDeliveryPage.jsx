@@ -167,7 +167,9 @@ export function AddStoreDeliveryPage() {
             setLoadingList(true);
             setListError("");
             try {
-                const data = await searchDeliveries();
+                // El backend actual requiere q para devolver candidatos.
+                // Usamos "@" para traer la mayor cantidad posible por email.
+                const data = await searchDeliveries("@");
                 if (!active) return;
                 setCandidates(data);
             } catch (err) {
@@ -210,7 +212,7 @@ export function AddStoreDeliveryPage() {
             toast.success("Repartidor agregado a tu comercio.");
             setModalOpen(false);
             setSelected(null);
-            navigate("/delivery");
+            navigate("/comercio/delivery");
         } catch (err) {
             toast.error(getStoreDeliveryErrorMessage(err, "No se pudo agregar al repartidor."));
         } finally {
@@ -231,7 +233,7 @@ export function AddStoreDeliveryPage() {
             <div style={{ marginBottom: "20px" }}>
                 <button
                     type="button"
-                    onClick={() => navigate("/delivery")}
+                    onClick={() => navigate("/comercio/delivery")}
                     style={{
                         display: "inline-flex",
                         alignItems: "center",
@@ -256,8 +258,14 @@ export function AddStoreDeliveryPage() {
 
             <div style={{ position: "relative", marginBottom: "20px" }}>
                 <Search size={18} color="#9ca3af" style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)" }} />
+                <label htmlFor="delivery-search-input" className="sr-only">
+                    Filtrar repartidores por nombre, correo o teléfono
+                </label>
                 <input
+                    id="delivery-search-input"
+                    className="delivery-search-input"
                     type="search"
+                    aria-label="Filtrar repartidores por nombre, correo o teléfono"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Filtrar por nombre, correo o teléfono…"
@@ -269,7 +277,6 @@ export function AddStoreDeliveryPage() {
                         borderRadius: "10px",
                         border: "1px solid #e5e7eb",
                         fontSize: "15px",
-                        outline: "none",
                         boxSizing: "border-box",
                     }}
                 />

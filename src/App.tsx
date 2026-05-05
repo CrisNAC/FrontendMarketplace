@@ -213,10 +213,10 @@ function App() {
         <Route path="/comercio/pedidos" element={
           <MyCommerceLayout><CommerceOrdersPage /></MyCommerceLayout>
         } />
-        <Route path="/delivery" element={
+        <Route path="/comercio/delivery" element={
           <MyCommerceLayout><CommerceDeliveriesPage /></MyCommerceLayout>
         } />
-        <Route path="/delivery/agregar" element={
+        <Route path="/comercio/delivery/agregar" element={
           <MyCommerceLayout><AddStoreDeliveryPage /></MyCommerceLayout>
         } />
         <Route path="/comercio/productos" element={
