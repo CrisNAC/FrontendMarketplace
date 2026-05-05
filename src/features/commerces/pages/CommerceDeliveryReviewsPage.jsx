@@ -227,8 +227,6 @@ export function CommerceDeliveryReviewsPage() {
     setError("");
   };
 
-  const filteredReviews = useMemo(() => payload.reviews, [payload.reviews]);
-
   const avgRating = useMemo(() => {
     if (payload.reviews.length === 0) return 0;
     const total = payload.reviews.reduce((acc, review) => acc + getRating(review), 0);
@@ -642,16 +640,16 @@ export function CommerceDeliveryReviewsPage() {
               </div>
 
               <p style={{ fontSize: "15px", fontWeight: "600", color: "#111827", margin: "0 0 12px 0" }}>
-                Reseñas ({filteredReviews.length})
+                Reseñas ({payload.reviews.length})
               </p>
 
-              {filteredReviews.length === 0 ? (
+              {payload.reviews.length === 0 ? (
                 <div style={{ ...panelStyle, padding: "24px", color: "#6b7280" }}>
                   No hay reseñas que coincidan con los filtros aplicados.
                 </div>
               ) : (
                 <div style={{ display: "grid", gap: "12px" }}>
-                  {filteredReviews.map((review, index) => {
+                  {payload.reviews.map((review, index) => {
                     const stars = getRating(review);
                     const orderCode = getOrderCode(review);
                     return (

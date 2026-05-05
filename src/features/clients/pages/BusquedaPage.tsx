@@ -23,6 +23,16 @@ type ProductCategory = {
     name: string;
 };
 
+function isAbortError(e: unknown): boolean {
+    return (
+        (typeof e === "object" &&
+            e !== null &&
+            "name" in e &&
+            (e as { name: unknown }).name === "AbortError") ||
+        (e instanceof DOMException && e.name === "AbortError")
+    );
+}
+
 type BackendProductsResponse = {
     products?: BackendProduct[];
     content?: BackendProduct[];
@@ -145,8 +155,8 @@ export const BusquedaPage = ({ query = "Todos los Productos" }: Props) => {
                 if (!isActive) return;
                 setCategories(list);
                 setCategoryStatus("success");
-            } catch (e: any) {
-                if (e?.name === "AbortError") return;
+            } catch (e: unknown) {
+                if (isAbortError(e)) return;
                 if (!isActive) return;
                 setCategories([]);
                 setCategoryStatus("error");
@@ -212,8 +222,8 @@ export const BusquedaPage = ({ query = "Todos los Productos" }: Props) => {
                 console.log("Primer producto:", JSON.stringify(list[0], null, 2));
                 setTotalPages(tp);
                 setStatus("success");
-            } catch (e: any) {
-                if (e?.name === "AbortError") return;
+            } catch (e: unknown) {
+                if (isAbortError(e)) return;
                 if (!isActive) return;
                 setProducts([]);
                 setTotalPages(1);

@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect, useCallback } from "react";
 import { Minus, Plus, Trash2, ArrowLeft } from "lucide-react";
 import Navbar from "../../../components/navbar/Navbar";
 import { useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
+import axios, { isAxiosError } from "axios";
 import toast from "react-hot-toast";
 import { getApiBase } from "../../../lib/cartApi";
 import { formatGuarani } from "../../../lib/formatGuarani.js";
@@ -111,8 +111,16 @@ export const CartPage = () => {
 
       setCartItems(mappedItems);
       setStatus("ready");
-    } catch (error: any) {
-      const code = error?.response?.status;
+    } catch (error: unknown) {
+      const code = isAxiosError(error) ? error.response?.status : undefined;
+      const message =
+        isAxiosError(error) &&
+        error.response?.data &&
+        typeof error.response.data === "object" &&
+        error.response.data !== null &&
+        "message" in error.response.data
+          ? String((error.response.data as { message?: unknown }).message ?? "")
+          : "";
 
       if (code === 401) {
         setStatus("unauthorized");
@@ -122,12 +130,15 @@ export const CartPage = () => {
       }
 
       setStatus("error");
-      toast.error(error?.response?.data?.message || "No se pudo cargar el carrito");
+      toast.error(message || "No se pudo cargar el carrito");
     }
   }, [apiBase, cartId, navigate]);
 
   useEffect(() => {
-    loadCart();
+    const id = window.setTimeout(() => {
+      void loadCart();
+    }, 0);
+    return () => window.clearTimeout(id);
   }, [loadCart]);
 
   const updateQuantity = (id: number, type: "inc" | "dec") => {

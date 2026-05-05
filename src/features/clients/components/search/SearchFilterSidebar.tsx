@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 type Category = {
     id: number;
@@ -12,6 +12,70 @@ type Props = {
     selectedCategoryId?: number | null;
 };
 
+type CategoryFilterRadiosProps = {
+    categories: Category[];
+    initialCategoryId: number | null;
+    onSelectionChange: (id: number | null) => void;
+};
+
+function CategoryFilterRadios({ categories, initialCategoryId, onSelectionChange }: CategoryFilterRadiosProps) {
+    const [localCategoryId, setLocalCategoryId] = useState<number | null>(initialCategoryId);
+
+    useLayoutEffect(() => {
+        onSelectionChange(localCategoryId);
+    }, [localCategoryId, onSelectionChange]);
+
+    return (
+        <div style={{ display: "flex", flexDirection: "column", marginBottom: "16px", width: "100%" }}>
+            <label
+                style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: "8px",
+                    cursor: "pointer",
+                    padding: "3px 0 3px 4px",
+                }}
+            >
+                <input
+                    type="radio"
+                    name="search-category-filter"
+                    checked={localCategoryId === null}
+                    onChange={() => setLocalCategoryId(null)}
+                    style={{ cursor: "pointer", accentColor: "#6B9080" }}
+                />
+                <span style={{ color: "#464141", fontSize: "14px", fontWeight: "bold" }}>
+                    Todas
+                </span>
+            </label>
+            {categories.map((cat) => (
+                <label
+                    key={cat.id}
+                    style={{
+                        display: "flex",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: "8px",
+                        cursor: "pointer",
+                        padding: "3px 0 3px 4px",
+                    }}
+                >
+                    <input
+                        type="radio"
+                        name="search-category-filter"
+                        checked={localCategoryId === cat.id}
+                        onChange={() => setLocalCategoryId(cat.id)}
+                        style={{ cursor: "pointer", accentColor: "#6B9080" }}
+                    />
+                    <span style={{ color: "#464141", fontSize: "14px", fontWeight: "bold" }}>
+                        {cat.name}
+                    </span>
+                </label>
+            ))}
+        </div>
+    );
+}
+
 export const SearchFilterSidebar = ({
     onPriceApply,
     onFiltersApply,
@@ -20,16 +84,18 @@ export const SearchFilterSidebar = ({
 }: Props) => {
     const [minPrice, setMinPrice] = useState<string>("");
     const [maxPrice, setMaxPrice] = useState<string>("");
-    const [localCategoryId, setLocalCategoryId] = useState<number | null>(selectedCategoryId);
+    const categoryForApplyRef = useRef<number | null>(selectedCategoryId ?? null);
 
-    useEffect(() => {
-        setLocalCategoryId(selectedCategoryId ?? null);
-    }, [selectedCategoryId]);
+    const notifyCategorySelection = useCallback((id: number | null) => {
+        categoryForApplyRef.current = id;
+    }, []);
 
     const orderedCategories = useMemo(
         () => [...categories].sort((a, b) => a.name.localeCompare(b.name)),
         [categories]
     );
+
+    const categoryGroupKey = String(selectedCategoryId ?? "all");
 
     return (
         <div style={{
@@ -51,54 +117,13 @@ export const SearchFilterSidebar = ({
                 Categoría
             </span>
 
-            {/* Category list */}
-            <div style={{ display: "flex", flexDirection: "column", marginBottom: "16px", width: "100%" }}>
-                <label
-                    style={{
-                        display: "flex",
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: "8px",
-                        cursor: "pointer",
-                        padding: "3px 0 3px 4px",
-                    }}
-                >
-                    <input
-                        type="radio"
-                        name="search-category-filter"
-                        checked={localCategoryId === null}
-                        onChange={() => setLocalCategoryId(null)}
-                        style={{ cursor: "pointer", accentColor: "#6B9080" }}
-                    />
-                    <span style={{ color: "#464141", fontSize: "14px", fontWeight: "bold" }}>
-                        Todas
-                    </span>
-                </label>
-                {orderedCategories.map((cat) => (
-                    <label
-                        key={cat.id}
-                        style={{
-                            display: "flex",
-                            flexDirection: "row",
-                            alignItems: "center",
-                            gap: "8px",
-                            cursor: "pointer",
-                            padding: "3px 0 3px 4px",
-                        }}
-                    >
-                        <input
-                            type="radio"
-                            name="search-category-filter"
-                            checked={localCategoryId === cat.id}
-                            onChange={() => setLocalCategoryId(cat.id)}
-                            style={{ cursor: "pointer", accentColor: "#6B9080" }}
-                        />
-                        <span style={{ color: "#464141", fontSize: "14px", fontWeight: "bold" }}>
-                            {cat.name}
-                        </span>
-                    </label>
-                ))}
-            </div>
+            {/* Category list — key reinicia el borrador cuando cambia la categoría desde el contexto de búsqueda */}
+            <CategoryFilterRadios
+                key={categoryGroupKey}
+                categories={orderedCategories}
+                initialCategoryId={selectedCategoryId ?? null}
+                onSelectionChange={notifyCategorySelection}
+            />
 
             {/* Price title */}
             <span style={{ color: "#000", fontSize: "18px", fontWeight: "bold", marginBottom: "8px", marginLeft: "11px" }}>
@@ -155,6 +180,7 @@ export const SearchFilterSidebar = ({
             {/* Apply button */}
             <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
                 <button
+                    type="button"
                     onClick={() => {
                         const min = minPrice.trim() === "" ? null : Number(minPrice);
                         const max = maxPrice.trim() === "" ? null : Number(maxPrice);
@@ -178,7 +204,7 @@ export const SearchFilterSidebar = ({
                         onFiltersApply?.({
                             min,
                             max,
-                            categoryId: localCategoryId,
+                            categoryId: categoryForApplyRef.current,
                         });
                     }}
                     style={{

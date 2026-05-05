@@ -184,7 +184,7 @@ export function AddStoreDeliveryPage() {
             toast.success("Repartidor agregado a tu comercio.");
             setModalOpen(false);
             setSelected(null);
-            navigate("/delivery");
+            navigate("/comercio/deliveries");
         } catch (err) {
             toast.error(getStoreDeliveryErrorMessage(err, "No se pudo agregar al repartidor."));
         } finally {
@@ -205,7 +205,7 @@ export function AddStoreDeliveryPage() {
             <div style={{ marginBottom: "20px" }}>
                 <button
                     type="button"
-                    onClick={() => navigate("/delivery")}
+                    onClick={() => navigate("/comercio/deliveries")}
                     style={{
                         display: "inline-flex",
                         alignItems: "center",

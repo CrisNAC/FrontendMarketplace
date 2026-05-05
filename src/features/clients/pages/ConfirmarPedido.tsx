@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import axios from "axios";
+import axios, { isAxiosError } from "axios";
 import toast from "react-hot-toast";
 import { getApiBase } from "../../../lib/cartApi";
 import { formatGuarani } from "../../../lib/formatGuarani.js";
@@ -118,8 +118,16 @@ export default function ConfirmarPedido() {
       }
 
       setCart(selectedCart);
-    } catch (error: any) {
-      const code = error?.response?.status;
+    } catch (error: unknown) {
+      const code = isAxiosError(error) ? error.response?.status : undefined;
+      const message =
+        isAxiosError(error) &&
+        error.response?.data &&
+        typeof error.response.data === "object" &&
+        error.response.data !== null &&
+        "message" in error.response.data
+          ? String((error.response.data as { message?: unknown }).message ?? "")
+          : "";
 
       if (code === 401) {
         setStatus("unauthorized");
@@ -129,7 +137,7 @@ export default function ConfirmarPedido() {
       }
 
       setStatus("error");
-      toast.error(error?.response?.data?.message || "No se pudo cargar el pedido");
+      toast.error(message || "No se pudo cargar el pedido");
     }
   }, [apiBase, cartId, navigate]);
 
@@ -156,10 +164,16 @@ export default function ConfirmarPedido() {
         : [];
 
       setAddresses(addressesData);
-    } catch (error: any) {
-      toast.error(
-        error?.response?.data?.message || "No se pudieron cargar las direcciones"
-      );
+    } catch (error: unknown) {
+      const message =
+        isAxiosError(error) &&
+        error.response?.data &&
+        typeof error.response.data === "object" &&
+        error.response.data !== null &&
+        "message" in error.response.data
+          ? String((error.response.data as { message?: unknown }).message ?? "")
+          : "";
+      toast.error(message || "No se pudieron cargar las direcciones");
       setAddresses([]);
     }
   }, [apiBase, navigate]);
@@ -211,12 +225,18 @@ export default function ConfirmarPedido() {
 
       setShippingQuote(response.data);
       setShippingQuoteStatus("ready");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message =
+        isAxiosError(error) &&
+        error.response?.data &&
+        typeof error.response.data === "object" &&
+        error.response.data !== null &&
+        "message" in error.response.data
+          ? String((error.response.data as { message?: unknown }).message ?? "")
+          : "";
       setShippingQuote(null);
       setShippingQuoteStatus("error");
-      toast.error(
-        error?.response?.data?.message || "No se pudo calcular el costo de envío"
-      );
+      toast.error(message || "No se pudo calcular el costo de envío");
     }
   }, [apiBase, cart, selectedAddress, selectedShipping]);
 
@@ -323,10 +343,16 @@ export default function ConfirmarPedido() {
         total,
       },
     });
-  } catch (error: any) {
-    toast.error(
-      error?.response?.data?.message || "No se pudo confirmar el pedido"
-    );
+  } catch (error: unknown) {
+    const message =
+      isAxiosError(error) &&
+      error.response?.data &&
+      typeof error.response.data === "object" &&
+      error.response.data !== null &&
+      "message" in error.response.data
+        ? String((error.response.data as { message?: unknown }).message ?? "")
+        : "";
+    toast.error(message || "No se pudo confirmar el pedido");
   } finally {
     submitLockRef.current = false;
     setIsSubmitting(false);
