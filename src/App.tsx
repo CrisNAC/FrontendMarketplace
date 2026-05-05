@@ -42,6 +42,7 @@ import { CreateCommercePage } from './features/clients/pages/CreateCommercePage'
 import { CommerceProfilePage } from './features/commerces/pages/CommerceProfilePage';
 import { CommerceProductsPage } from './features/commerces/pages/CommerceProductsPage'
 import { CommerceOrdersPage } from './features/commerces/pages/CommerceOrdersPage'
+import { CommerceDeliveryReviewsPage } from './features/commerces/pages/CommerceDeliveryReviewsPage'
 import { CommerceDeliveriesPage } from './features/commerces/pages/CommerceDeliveriesPage'
 import { AddStoreDeliveryPage } from './features/commerces/pages/AddStoreDeliveryPage'
 import { EditCommercePage } from './features/commerces/pages/EditCommercePage'
@@ -216,6 +217,8 @@ function App() {
         <Route path="/comercio/pedidos" element={
           <MyCommerceLayout><CommerceOrdersPage /></MyCommerceLayout>
         } />
+        <Route path="/comercio/deliveries/resenas" element={
+          <MyCommerceLayout><CommerceDeliveryReviewsPage /></MyCommerceLayout>
         <Route path="/comercio/delivery" element={
           <MyCommerceLayout><CommerceDeliveriesPage /></MyCommerceLayout>
         } />

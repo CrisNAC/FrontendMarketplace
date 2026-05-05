@@ -25,6 +25,7 @@ export const SidebarMyCommerce = ({ collapsed, onToggle }) => {
         { label: "Productos",     icon: Package,         route: "/comercio/productos" },
         { label: "Colecciones",   icon: Layers,          route: "/colecciones" },
         { label: "Mis Pedidos",   icon: ShoppingBag,     route: "/comercio/pedidos" },
+        { label: "Reseñas Delivery", icon: Truck,         route: "/comercio/deliveries/resenas" },
         { label: "Reclamos",      icon: Flag,            route: "/comercio/claims" },
         { label: "Delivery",      icon: Truck,           route: "/comercio/delivery" },
         { label: "Mi Comercio",   icon: Store,           route: "/comercio/perfil" },
