@@ -206,6 +206,7 @@ export function CommerceDeliveriesPage() {
             setData(result);
         } catch (err) {
             setError(getDeliveryErrorMessage(err, "No se pudieron cargar los repartidores."));
+            throw err;
         }
     }, []);
 
@@ -306,7 +307,7 @@ export function CommerceDeliveriesPage() {
             ) : (
                 <TableView
                     deliveries={deliveries}
-                    onReviews={d => navigate(`/comercio/delivery/${d.id}/resenas`)}
+                    onReviews={d => navigate("/comercio/deliveries/resenas", { state: { deliveryId: d.id } })}
                     onDelete={d => { setToDelete(d); setDeleteError(""); }}
                 />
             )}

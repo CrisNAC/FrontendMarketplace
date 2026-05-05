@@ -5,56 +5,9 @@ import { apiClient as commerceApiClient, getBackendErrorMessage } from "./editCo
  * Mock data para deliveries disponibles cuando el backend no tiene el endpoint
  */
 const mockAvailableDeliveries = [
-    {
-        id_user: 101,
-        name: "Carlos Rodríguez",
-        email: "carlos.rodriguez@email.com",
-        phone: "+595981234567",
-        total_deliveries: 45,
-        success_rate: 0.92,
-        average_rating: 4.7,
-        vehicle_type: "MOTO"
-    },
-    {
-        id_user: 102,
-        name: "María González",
-        email: "maria.gonzalez@email.com",
-        phone: "+595982345678",
-        total_deliveries: 32,
-        success_rate: 0.88,
-        average_rating: 4.5,
-        vehicle_type: "AUTO"
-    },
-    {
-        id_user: 103,
-        name: "José Silva",
-        email: "jose.silva@email.com",
-        phone: "+595983456789",
-        total_deliveries: 67,
-        success_rate: 0.95,
-        average_rating: 4.8,
-        vehicle_type: "MOTO"
-    },
-    {
-        id_user: 104,
-        name: "Ana López",
-        email: "ana.lopez@email.com",
-        phone: "+595984567890",
-        total_deliveries: 28,
-        success_rate: 0.85,
-        average_rating: 4.3,
-        vehicle_type: "BICICLETA"
-    },
-    {
-        id_user: 105,
-        name: "Pedro Martínez",
-        email: "pedro.martinez@email.com",
-        phone: "+595985678901",
-        total_deliveries: 53,
-        success_rate: 0.90,
-        average_rating: 4.6,
-        vehicle_type: "AUTO"
-    }
+    { id_user: 101, name: "Test User A", email: "test.a@example.invalid", phone: "+595900000001", vehicle_type: "MOTO" },
+    { id_user: 102, name: "Test User B", email: "test.b@example.invalid", phone: "+595900000002", vehicle_type: "AUTO" },
+    { id_user: 103, name: "Test User C", email: "test.c@example.invalid", phone: "+595900000003", vehicle_type: "MOTO" },
 ];
 
 /**

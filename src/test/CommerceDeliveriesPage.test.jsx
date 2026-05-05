@@ -372,26 +372,27 @@ describe('CommerceDeliveriesPage', () => {
 
             expect(screen.getByText('Cancelar')).toBeDisabled()
         })
-
+        
         it('recarga la lista tras desvincular exitosamente', async () => {
-            setupSuccess()
+            apiClient.get.mockResolvedValue(mockSession)
+            fetchStoreDeliveries
+                .mockResolvedValueOnce(mockData)
+                .mockResolvedValueOnce({
+                    stats: { total: 2, available: 1, inDelivery: 1, avgRating: 4.85 },
+                    deliveries: [mockDelivery2, mockDelivery3],
+                })
             deleteStoreDelivery.mockResolvedValueOnce()
-            // Segunda carga sin el delivery eliminado
-            fetchStoreDeliveries.mockResolvedValueOnce({
-                stats: { total: 2, available: 1, inDelivery: 1, avgRating: 4.85 },
-                deliveries: [mockDelivery2, mockDelivery3],
-            })
-
+            
             render(<CommerceDeliveriesPage />)
-
+            
             await waitFor(() => screen.getAllByText('Eliminar'))
             fireEvent.click(screen.getAllByText('Eliminar')[0])
             fireEvent.click(screen.getByText('Desvincular'))
-
+            
             await waitFor(() => {
                 expect(screen.queryByText('Juan Pérez')).not.toBeInTheDocument()
             })
-
+            
             expect(fetchStoreDeliveries).toHaveBeenCalledTimes(2)
         })
     })
