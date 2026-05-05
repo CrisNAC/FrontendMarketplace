@@ -44,11 +44,18 @@ export const becomeDelivery = async (uiVehicleType, phone) => {
 
   const { data } = await apiClient.post("/api/deliveries/register", { vehicleType });
 
-  const session = await getSession();
-  const uid = session?.user?.id_user;
   const trimmed = typeof phone === "string" ? phone.trim() : "";
-  if (uid && trimmed) {
-    await updateUserProfile(uid, { phone: trimmed });
+  if (trimmed) {
+    try {
+      const session = await getSession();
+      const uid = session?.user?.id_user;
+      if (uid) {
+        await updateUserProfile(uid, { phone: trimmed });
+      }
+    } catch (err) {
+      // El alta como delivery ya fue exitosa; no invalidar el flujo si falla sesión o guardado de teléfono.
+      console.warn("[becomeDelivery] No se pudo actualizar el teléfono en el perfil:", err);
+    }
   }
 
   return data;

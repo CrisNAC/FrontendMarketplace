@@ -10,9 +10,11 @@ const formSchema = z.object({
   phone: z
     .string()
     .trim()
-    .min(8, "Ingresá un número de teléfono válido (mínimo 8 dígitos)")
     .max(20, "Máximo 20 caracteres")
-    .regex(/^[\d\s+().\-]+$/, "Usá solo números y símbolos habituales (+, espacio, guiones)"),
+    .regex(
+      /^(?=(?:.*\d){8,})[\d\s+().\-]+$/,
+      "Ingresá al menos 8 dígitos; solo números y símbolos habituales (+, espacio, guiones, paréntesis)"
+    ),
 });
 
 const VEHICLE_TYPE_LABELS = {
