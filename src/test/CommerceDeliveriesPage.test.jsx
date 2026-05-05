@@ -1,5 +1,4 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { CommerceDeliveriesPage } from '../features/commerces/pages/CommerceDeliveriesPage'
 
@@ -69,7 +68,7 @@ const mockDelivery3 = {
     status: 'UNAVAILABLE',
     vehicleType: 'BICYCLE',
     completedDeliveries: 87,
-    successRate: 97.0,
+    successRate: 97,
     avgRating: null,
     reviewCount: 0,
 }
@@ -382,17 +381,17 @@ describe('CommerceDeliveriesPage', () => {
                     deliveries: [mockDelivery2, mockDelivery3],
                 })
             deleteStoreDelivery.mockResolvedValueOnce()
-            
+
             render(<CommerceDeliveriesPage />)
-            
+
             await waitFor(() => screen.getAllByText('Eliminar'))
             fireEvent.click(screen.getAllByText('Eliminar')[0])
             fireEvent.click(screen.getByText('Desvincular'))
-            
+
             await waitFor(() => {
                 expect(screen.queryByText('Juan Pérez')).not.toBeInTheDocument()
             })
-            
+
             expect(fetchStoreDeliveries).toHaveBeenCalledTimes(2)
         })
     })

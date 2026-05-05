@@ -10,8 +10,8 @@ import { fetchStoreDeliveries, deleteStoreDelivery, getDeliveryErrorMessage } fr
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const STATUS_CFG = {
-    AVAILABLE:   { label: "Disponible",    bg: "#dcfce7", color: "#15803d" },
-    IN_DELIVERY: { label: "En entrega",    bg: "#dbeafe", color: "#1e40af" },
+    AVAILABLE: { label: "Disponible", bg: "#dcfce7", color: "#15803d" },
+    IN_DELIVERY: { label: "En entrega", bg: "#dbeafe", color: "#1e40af" },
     UNAVAILABLE: { label: "No disponible", bg: "#f3f4f6", color: "#4b5563" },
 };
 
@@ -121,7 +121,7 @@ function CardView({ deliveries, onReviews, onDelete }) {
                     <div style={{ display: "flex", gap: "24px", flexShrink: 0, flexWrap: "wrap" }}>
                         {[
                             { label: "Cant. Entregas", value: d.completedDeliveries, color: "#111827", prefix: <TrendingUp size={13} color="#6b9080" /> },
-                            { label: "% Éxito",        value: d.successRate !== null ? `${d.successRate} %` : "—", color: d.successRate !== null ? "#16a34a" : "#9ca3af" },
+                            { label: "% Éxito", value: d.successRate !== null ? `${d.successRate} %` : "—", color: d.successRate !== null ? "#16a34a" : "#9ca3af" },
                         ].map(({ label, value, color, prefix }) => (
                             <div key={label}>
                                 <p style={{ fontSize: "11px", color: "#9ca3af", margin: "0 0 2px 0", textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</p>
@@ -191,12 +191,12 @@ function TableView({ deliveries, onReviews, onDelete }) {
 // ─── Página principal ─────────────────────────────────────────────────────────
 export function CommerceDeliveriesPage() {
     const navigate = useNavigate();
-    const [storeId, setStoreId]       = useState(null);
-    const [data, setData]             = useState(null);
-    const [loading, setLoading]       = useState(true);
-    const [error, setError]           = useState("");
-    const [view, setView]             = useState("cards");
-    const [toDelete, setToDelete]     = useState(null);
+    const [storeId, setStoreId] = useState(null);
+    const [data, setData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+    const [view, setView] = useState("cards");
+    const [toDelete, setToDelete] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState("");
 
@@ -275,10 +275,10 @@ export function CommerceDeliveriesPage() {
             {/* Stats */}
             {stats && (
                 <div style={{ display: "flex", gap: "14px", marginBottom: "24px", flexWrap: "wrap" }}>
-                    <StatCard label="Disponibles"       value={stats.available}        icon={CheckCircle2} iconColor="#16a34a" />
-                    <StatCard label="En Entrega"        value={stats.inDelivery}       icon={Clock}        iconColor="#3b82f6" />
-                    <StatCard label="Total Repartidores" value={stats.total}           icon={Users}        iconColor="#6b9080" />
-                    <StatCard label="Rating Promedio"   value={stats.avgRating ?? "—"} icon={Star}         iconColor="#f59e0b" />
+                    <StatCard label="Disponibles" value={stats.available} icon={CheckCircle2} iconColor="#16a34a" />
+                    <StatCard label="En Entrega" value={stats.inDelivery} icon={Clock} iconColor="#3b82f6" />
+                    <StatCard label="Total Repartidores" value={stats.total} icon={Users} iconColor="#6b9080" />
+                    <StatCard label="Rating Promedio" value={stats.avgRating ?? "—"} icon={Star} iconColor="#f59e0b" />
                 </div>
             )}
 
@@ -296,21 +296,27 @@ export function CommerceDeliveriesPage() {
             </div>
 
             {/* Contenido */}
-            {deliveries.length === 0 ? (
-                <EmptyState onAdd={() => navigate("/comercio/delivery/agregar")} />
-            ) : view === "cards" ? (
-                <CardView
-                    deliveries={deliveries}
-                    onReviews={d => navigate("/comercio/deliveries/resenas", { state: { deliveryId: d.id } })}
-                    onDelete={d => { setToDelete(d); setDeleteError(""); }}
-                />
-            ) : (
-                <TableView
-                    deliveries={deliveries}
-                    onReviews={d => navigate("/comercio/deliveries/resenas", { state: { deliveryId: d.id } })}
-                    onDelete={d => { setToDelete(d); setDeleteError(""); }}
-                />
-            )}
+            {(() => {
+                if (deliveries.length === 0) {
+                    return <EmptyState onAdd={() => navigate("/comercio/delivery/agregar")} />;
+                }
+                if (view === "cards") {
+                    return (
+                        <CardView
+                            deliveries={deliveries}
+                            onReviews={d => navigate("/comercio/deliveries/resenas", { state: { deliveryId: d.id } })}
+                            onDelete={d => { setToDelete(d); setDeleteError(""); }}
+                        />
+                    );
+                }
+                return (
+                    <TableView
+                        deliveries={deliveries}
+                        onReviews={d => navigate("/comercio/deliveries/resenas", { state: { deliveryId: d.id } })}
+                        onDelete={d => { setToDelete(d); setDeleteError(""); }}
+                    />
+                );
+            })()}
 
             {toDelete && (
                 <DeleteModal
