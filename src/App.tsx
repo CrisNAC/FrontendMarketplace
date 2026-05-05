@@ -75,6 +75,8 @@ import { CartPage } from "./features/clients/pages/CartPage";
 import OrdenesComprasPage from "./features/clients/pages/OrdenesComprasPage";
 import ConfirmarPedido from './features/clients/pages/ConfirmarPedido';
 import PedidoConfirmadoPage from './features/clients/pages/PedidoConfirmadoPage';
+import DeliveryOrderScreen from "./features/delivery/pages/DeliveryOrderScreen";
+import DeliveryHistoryPage from './features/delivery/pages/DeliveryHistoryPage';
 //import Map from "./features/clients/components/Map";
 
 /**
@@ -233,6 +235,12 @@ function App() {
           <DeliveryLayout><DeliveryProfilePage /></DeliveryLayout>
         } />
         <Route path="/delivery/perfil/editar" element={<DeliveryEditProfilePage />} />
+        <Route path="/delivery/order" element={
+          <DeliveryLayout><DeliveryOrderScreen /></DeliveryLayout>
+        } />
+        <Route path="/delivery/history" element={
+          <DeliveryLayout><DeliveryHistoryPage /></DeliveryLayout>
+        } />
 
         {/* ── Área de administración (con sidebar) ──────────────────────── */}
         <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
