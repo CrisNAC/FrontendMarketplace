@@ -2,7 +2,8 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useLogout } from "../hooks/useLogout";
 import {
-    LayoutDashboard,
+    Package,
+    History,
     User,
     LogOut,
     ChevronLeft,
@@ -16,8 +17,10 @@ export const SidebarDelivery = ({ collapsed, onToggle }) => {
     const logout = useLogout();
 
     const NAV_ITEMS = [
-        { label: "Mi Perfil",     icon: User,            route: "/delivery/perfil" },
-        { label: "Cerrar Sesión", icon: LogOut,          onClick: logout },
+        { label: "Mi Perfil",   icon: User,     route: "/delivery/perfil" },
+        { label: "Órdenes",      icon: Package,  route: "/delivery/order" },
+        { label: "Historial",   icon: History,  route: "/delivery/history" },
+        { label: "Cerrar Sesión", icon: LogOut, onClick: logout },
     ];
 
     // Activo basado en la URL actual — ordena por especificidad (rutas más largas primero)
