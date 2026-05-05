@@ -139,7 +139,7 @@ export function DeliveryProfilePage() {
                         {isActive ? "Disponible" : "Inactivo"}
                     </span>
                 </div>
-                <button type="button" onClick={() => {}} style={{
+                <button type="button" onClick={() => navigate("/delivery/perfil/editar")} style={{
                     display: "flex", alignItems: "center", gap: "6px",
                     backgroundColor: "var(--primary-dark)", color: "white",
                     border: "none", borderRadius: "8px", padding: "8px 16px",

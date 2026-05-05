@@ -66,6 +66,7 @@ import ReclamosPage from './features/admin/pages/ReclamosPage';
 import Reclamos from './features/admin/pages/Reclamos';
 import CommerceClaims from './features/commerces/pages/CommerceClaims';
 import DeliveryProfilePage from './features/delivery/pages/DeliveryProfilePage';
+import { DeliveryEditProfilePage } from './features/delivery/pages/DeliveryEditProfilePage';
 
 import Wishlist from "./features/clients/pages/Wishlist"
 import FavoritesPage from "./features/clients/pages/FavoritesPage";
@@ -231,6 +232,7 @@ function App() {
         <Route path="/delivery/perfil" element={
           <DeliveryLayout><DeliveryProfilePage /></DeliveryLayout>
         } />
+        <Route path="/delivery/perfil/editar" element={<DeliveryEditProfilePage />} />
 
         {/* ── Área de administración (con sidebar) ──────────────────────── */}
         <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
