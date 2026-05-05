@@ -67,6 +67,7 @@ import Reclamos from './features/admin/pages/Reclamos';
 import CommerceClaims from './features/commerces/pages/CommerceClaims';
 import DeliveryProfilePage from './features/delivery/pages/DeliveryProfilePage';
 import { DeliveryEditProfilePage } from './features/delivery/pages/DeliveryEditProfilePage';
+import DeliveryOrdersPage from './features/delivery/pages/DeliveryOrdersPage';
 
 import Wishlist from "./features/clients/pages/Wishlist"
 import FavoritesPage from "./features/clients/pages/FavoritesPage";
@@ -234,9 +235,14 @@ function App() {
         <Route path="/delivery/perfil" element={
           <DeliveryLayout><DeliveryProfilePage /></DeliveryLayout>
         } />
-        <Route path="/delivery/perfil/editar" element={<DeliveryEditProfilePage />} />
+        <Route path="/delivery/perfil/editar" element={
+          <DeliveryLayout><DeliveryEditProfilePage /></DeliveryLayout>
+        } />
         <Route path="/delivery/order" element={
           <DeliveryLayout><DeliveryOrderScreen /></DeliveryLayout>
+        } />
+        <Route path="/delivery/pedidos" element={
+          <DeliveryLayout><DeliveryOrdersPage /></DeliveryLayout>
         } />
         <Route path="/delivery/history" element={
           <DeliveryLayout><DeliveryHistoryPage /></DeliveryLayout>
