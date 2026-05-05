@@ -26,7 +26,7 @@ export const SidebarMyCommerce = ({ collapsed, onToggle }) => {
         { label: "Colecciones",   icon: Layers,          route: "/colecciones" },
         { label: "Mis Pedidos",   icon: ShoppingBag,     route: "/comercio/pedidos" },
         { label: "Reclamos",      icon: Flag,            route: "/comercio/claims" },
-        { label: "Delivery",      icon: Truck,           route: "/delivery" },
+        // { label: "Delivery",      icon: Truck,           route: "/delivery" },
         // ← ruta actualizada a /comercio/perfil
         { label: "Mi Comercio",   icon: Store,           route: "/comercio/perfil" },
         { label: "Cerrar Sesión", icon: LogOut,          onClick: logout },

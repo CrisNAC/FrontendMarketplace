@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { User, Mail, Phone, MapPin, Map, Star, Truck, Calendar, Activity, Clock } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { User, Mail, Phone, MapPin, Map, Star, Truck, Calendar, Activity, Clock, Edit } from "lucide-react";
 import { getCurrentUserForDeliveryForm, getDeliveryProfile } from "../../clients/services/deliveryApi";
 import { getBackendErrorMessage } from "../../commerces/services/editUserProfileApi";
 
@@ -53,6 +54,7 @@ function StatRow({ label, children }) {
 
 // ─── Página principal ─────────────────────────────────────────────────────────
 export function DeliveryProfilePage() {
+    const navigate = useNavigate();
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -64,6 +66,10 @@ export function DeliveryProfilePage() {
                 const { profile: userProfile, sessionUser } = await getCurrentUserForDeliveryForm();
                 
                 if (active) {
+                    if (sessionUser?.role !== "DELIVERY") {
+                        navigate("/quiero-ser-delivery", { replace: true });
+                        return;
+                    }
                     let deliveryProfile = null;
                     if (sessionUser?.id_delivery) {
                         try {
@@ -133,6 +139,14 @@ export function DeliveryProfilePage() {
                         {isActive ? "Disponible" : "Inactivo"}
                     </span>
                 </div>
+                <button type="button" onClick={() => {}} style={{
+                    display: "flex", alignItems: "center", gap: "6px",
+                    backgroundColor: "var(--primary-dark)", color: "white",
+                    border: "none", borderRadius: "8px", padding: "8px 16px",
+                    fontSize: "14px", fontWeight: "500", cursor: "pointer",
+                }}>
+                    <Edit size={14} /> Editar Perfil
+                </button>
             </div>
 
             {/* ── Grid ──────────────────────────────────────────────────────── */}
