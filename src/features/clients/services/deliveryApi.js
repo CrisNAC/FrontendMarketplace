@@ -1,5 +1,5 @@
 import apiClient from "../../../lib/apiClient";
-import { getSession, fetchUserProfile } from "../../commerces/services/editUserProfileApi";
+import { getSession, fetchUserProfile, updateUserProfile } from "../../commerces/services/editUserProfileApi";
 
 export const getCurrentUserForDeliveryForm = async () => {
   const session = await getSession();
@@ -32,16 +32,25 @@ const UI_VEHICLE_TO_API = {
 
 /**
  * Registra al usuario autenticado como delivery.
- * El backend solo acepta { vehicleType: CAR | MOTORCYCLE | BICYCLE | ON_FOOT }; la identidad sale de la cookie JWT.
+ * El backend solo acepta { vehicleType }; el teléfono se guarda después con PUT perfil.
  *
  * @param {string} uiVehicleType - BICICLETA | MOTOCICLETA | AUTOMOVIL | A_PIE
+ * @param {string} [phone] - Teléfono a persistir en el perfil (mismo formato que edición de usuario)
  */
-export const becomeDelivery = async (uiVehicleType) => {
+export const becomeDelivery = async (uiVehicleType, phone) => {
   const vehicleType = UI_VEHICLE_TO_API[uiVehicleType];
   if (!vehicleType) {
     throw new Error("Tipo de vehículo no válido.");
   }
 
   const { data } = await apiClient.post("/api/deliveries/register", { vehicleType });
+
+  const session = await getSession();
+  const uid = session?.user?.id_user;
+  const trimmed = typeof phone === "string" ? phone.trim() : "";
+  if (uid && trimmed) {
+    await updateUserProfile(uid, { phone: trimmed });
+  }
+
   return data;
 };

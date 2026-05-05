@@ -1,12 +1,18 @@
 import { useEffect, useState } from "react";
 import { z } from "zod";
-import { X } from "lucide-react";
+import { Phone, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { becomeDelivery, getCurrentUserForDeliveryForm } from "../services/deliveryApi";
 import { getBackendErrorMessage } from "../../commerces/services/editUserProfileApi";
 
-const vehicleSchema = z.object({
+const formSchema = z.object({
   vehicleType: z.enum(["BICICLETA", "MOTOCICLETA", "AUTOMOVIL", "A_PIE"]),
+  phone: z
+    .string()
+    .trim()
+    .min(8, "Ingresá un número de teléfono válido (mínimo 8 dígitos)")
+    .max(20, "Máximo 20 caracteres")
+    .regex(/^[\d\s+().\-]+$/, "Usá solo números y símbolos habituales (+, espacio, guiones)"),
 });
 
 const VEHICLE_TYPE_LABELS = {
@@ -27,18 +33,18 @@ function resolveProfileUser(profile, sessionUser) {
 }
 
 /**
- * Modal mínimo: solo tipo de vehículo y confirmar.
- * Nombre, correo y teléfono se toman del usuario ya registrado (perfil / sesión).
+ * Modal: tipo de vehículo + teléfono (UI moderna); nombre/correo siguen en la cuenta.
  */
 export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
   const [userId, setUserId] = useState(null);
-  const [sessionUser, setSessionUser] = useState(null);
   const [profileUser, setProfileUser] = useState(null);
   const [isAlreadyDelivery, setIsAlreadyDelivery] = useState(false);
   const [vehicleType, setVehicleType] = useState("MOTOCICLETA");
+  const [phone, setPhone] = useState("");
 
   useEffect(() => {
     if (!open) return;
@@ -46,15 +52,16 @@ export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
     let mounted = true;
     setLoading(true);
     setError("");
+    setFieldErrors({});
 
     const load = async () => {
       try {
         const { userId: uid, sessionUser: su, profile } = await getCurrentUserForDeliveryForm();
         if (!mounted) return;
         setUserId(uid);
-        setSessionUser(su);
         const resolved = resolveProfileUser(profile, su);
         setProfileUser(resolved);
+        setPhone((resolved.phone ?? "").trim());
         setIsAlreadyDelivery(resolved.role === "DELIVERY" || su?.role === "DELIVERY");
       } catch (err) {
         if (!mounted) return;
@@ -73,7 +80,9 @@ export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
   useEffect(() => {
     if (!open) {
       setError("");
+      setFieldErrors({});
       setVehicleType("MOTOCICLETA");
+      setPhone("");
     }
   }, [open]);
 
@@ -81,9 +90,16 @@ export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const parsed = vehicleSchema.safeParse({ vehicleType });
+
+    const parsed = formSchema.safeParse({ vehicleType, phone });
     if (!parsed.success) {
-      setError("Elegí un tipo de vehículo.");
+      const next = {};
+      for (const issue of parsed.error.issues) {
+        const key = issue.path[0];
+        if (key && !next[key]) next[key] = issue.message;
+      }
+      setFieldErrors(next);
+      setError("Revisá los datos del formulario.");
       return;
     }
 
@@ -97,7 +113,7 @@ export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
       return;
     }
 
-    const { name, email, phone } = profileUser;
+    const { name, email } = profileUser;
     if (!name?.trim() || !email?.trim()) {
       setError("Completá nombre y correo en tu perfil antes de registrarte como delivery.");
       return;
@@ -105,9 +121,10 @@ export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
 
     setSaving(true);
     setError("");
+    setFieldErrors({});
 
     try {
-      await becomeDelivery(parsed.data.vehicleType);
+      await becomeDelivery(parsed.data.vehicleType, parsed.data.phone);
       window.dispatchEvent(new Event("deliveryRegistered"));
       toast.success("Listo: ahora sos delivery.");
       onSuccess?.();
@@ -121,40 +138,81 @@ export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/50"
+      className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-[2px]"
       role="dialog"
       aria-modal="true"
       aria-labelledby="become-delivery-title"
     >
-      <div className="relative w-full max-w-md rounded-2xl border border-gray-200 bg-white shadow-xl">
+      <div className="relative w-full max-w-md rounded-2xl border border-slate-200/90 bg-white shadow-[0_25px_50px_-12px_rgba(47,91,72,0.18)]">
         <button
           type="button"
           onClick={() => !saving && onClose?.()}
-          className="absolute right-3 top-3 rounded-full p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+          className="absolute right-3 top-3 rounded-full p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors"
           aria-label="Cerrar"
         >
           <X size={20} />
         </button>
 
         <div className="p-6 pt-10">
-          <h2 id="become-delivery-title" className="text-xl font-bold text-[#2d4030] pr-8">
+          <h2 id="become-delivery-title" className="text-xl font-bold text-[#2d4030] pr-8 tracking-tight">
             Quiero ser delivery
           </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Usamos los datos de tu cuenta (nombre, correo y teléfono). Solo indicá con qué vas a repartir.
+          <p className="mt-2 text-sm text-slate-600 leading-relaxed">
+            Confirmá tu <strong>teléfono</strong> y el <strong>tipo de vehículo</strong>. El nombre y el correo siguen siendo los de tu cuenta.
           </p>
 
-          {loading && <p className="mt-6 text-sm text-gray-600">Cargando…</p>}
+          {loading && <p className="mt-6 text-sm text-slate-600">Cargando…</p>}
 
           {!loading && (
-            <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+            <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de vehículo</label>
+                <label htmlFor="delivery-phone" className="block text-sm font-medium text-slate-700 mb-1.5">
+                  Teléfono / WhatsApp
+                </label>
+                <div className="relative">
+                  <Phone
+                    className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[#6B9080]"
+                    aria-hidden
+                  />
+                  <input
+                    id="delivery-phone"
+                    type="tel"
+                    name="phone"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    placeholder="+54 9 11 2345-6789"
+                    value={phone}
+                    disabled={saving || isAlreadyDelivery}
+                    onChange={(e) => {
+                      setPhone(e.target.value);
+                      setFieldErrors((prev) => ({ ...prev, phone: undefined }));
+                      setError("");
+                    }}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/90 py-2.5 pl-10 pr-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[#769482]/45 focus:bg-white focus:ring-2 focus:ring-[#769482]/18 disabled:opacity-60"
+                  />
+                </div>
+                <p className="mt-1.5 text-xs text-slate-500">
+                  Es el número donde te contactaremos para coordinar entregas.
+                </p>
+                {fieldErrors.phone && (
+                  <p className="mt-1 text-xs text-red-600">{fieldErrors.phone}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="delivery-vehicle" className="block text-sm font-medium text-slate-700 mb-1.5">
+                  Tipo de vehículo
+                </label>
                 <select
+                  id="delivery-vehicle"
                   value={vehicleType}
-                  onChange={(e) => setVehicleType(e.target.value)}
+                  onChange={(e) => {
+                    setVehicleType(e.target.value);
+                    setFieldErrors((prev) => ({ ...prev, vehicleType: undefined }));
+                    setError("");
+                  }}
                   disabled={saving || isAlreadyDelivery}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/90 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-[#769482]/45 focus:bg-white focus:ring-2 focus:ring-[#769482]/18 disabled:opacity-60"
                 >
                   {Object.entries(VEHICLE_TYPE_LABELS).map(([value, label]) => (
                     <option key={value} value={value}>
@@ -162,27 +220,31 @@ export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
                     </option>
                   ))}
                 </select>
+                {fieldErrors.vehicleType && (
+                  <p className="mt-1 text-xs text-red-600">{fieldErrors.vehicleType}</p>
+                )}
               </div>
 
-              {profileUser && (
-                <p className="text-xs text-gray-500">
-                  Cuenta: <span className="font-medium text-gray-700">{profileUser.email}</span>
+              {profileUser?.email && (
+                <p className="text-xs text-slate-500 rounded-lg bg-slate-50 px-3 py-2 border border-slate-100">
+                  Cuenta:{" "}
+                  <span className="font-medium text-slate-700">{profileUser.email}</span>
                 </p>
               )}
 
-              <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end pt-2">
+              <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end pt-1">
                 <button
                   type="button"
                   onClick={() => !saving && onClose?.()}
                   disabled={saving}
-                  className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={saving || loading || isAlreadyDelivery}
-                  className="rounded-lg bg-[#5B7B6D] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#4f6f61] disabled:opacity-60"
+                  className="rounded-xl bg-[#5B7B6D] px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-[#5B7B6D]/25 hover:bg-[#4f6f61] disabled:opacity-60 transition-colors"
                 >
                   {saving ? "Confirmando…" : isAlreadyDelivery ? "Ya sos delivery" : "Confirmar"}
                 </button>
@@ -191,7 +253,7 @@ export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
           )}
 
           {error && (
-            <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
+            <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">{error}</div>
           )}
         </div>
       </div>
