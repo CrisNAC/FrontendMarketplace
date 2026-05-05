@@ -16,7 +16,6 @@ export const SidebarDelivery = ({ collapsed, onToggle }) => {
     const logout = useLogout();
 
     const NAV_ITEMS = [
-        { label: "Dashboard",     icon: LayoutDashboard, route: "/delivery" },
         { label: "Mi Perfil",     icon: User,            route: "/delivery/perfil" },
         { label: "Cerrar Sesión", icon: LogOut,          onClick: logout },
     ];
