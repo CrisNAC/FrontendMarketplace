@@ -33,7 +33,7 @@ function resolveProfileUser(profile, sessionUser) {
 }
 
 /**
- * Modal: tipo de vehículo + teléfono (UI moderna); nombre/correo siguen en la cuenta.
+ * Modal: teléfono (editable) + tipo de vehículo. Nombre y correo siguen en la cuenta.
  */
 export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
   const [loading, setLoading] = useState(true);
@@ -158,7 +158,7 @@ export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
             Quiero ser delivery
           </h2>
           <p className="mt-2 text-sm text-slate-600 leading-relaxed">
-            Confirmá tu <strong>teléfono</strong> y el <strong>tipo de vehículo</strong>. El nombre y el correo siguen siendo los de tu cuenta.
+            Indicá tu <strong>teléfono</strong> y el <strong>tipo de vehículo</strong>. El nombre y el correo son los de tu cuenta.
           </p>
 
           {loading && <p className="mt-6 text-sm text-slate-600">Cargando…</p>}
@@ -192,7 +192,7 @@ export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
                   />
                 </div>
                 <p className="mt-1.5 text-xs text-slate-500">
-                  Es el número donde te contactaremos para coordinar entregas.
+                  Donde te podemos contactar para coordinar entregas.
                 </p>
                 {fieldErrors.phone && (
                   <p className="mt-1 text-xs text-red-600">{fieldErrors.phone}</p>

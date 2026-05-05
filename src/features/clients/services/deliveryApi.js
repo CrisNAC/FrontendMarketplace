@@ -31,11 +31,10 @@ const UI_VEHICLE_TO_API = {
 };
 
 /**
- * Registra al usuario autenticado como delivery.
- * El backend solo acepta { vehicleType }; el teléfono se guarda después con PUT perfil.
+ * Registra al usuario autenticado como delivery; el teléfono se guarda en el perfil con PUT.
  *
  * @param {string} uiVehicleType - BICICLETA | MOTOCICLETA | AUTOMOVIL | A_PIE
- * @param {string} [phone] - Teléfono a persistir en el perfil (mismo formato que edición de usuario)
+ * @param {string} [phone] - Número a guardar en Users.phone
  */
 export const becomeDelivery = async (uiVehicleType, phone) => {
   const vehicleType = UI_VEHICLE_TO_API[uiVehicleType];
