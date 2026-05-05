@@ -1,39 +1,29 @@
-// src/components/SidebarMyCommerce.jsx
+// src/components/SidebarDelivery.jsx
 import { useNavigate, useLocation } from "react-router-dom";
 import { useLogout } from "../hooks/useLogout";
 import {
-    LayoutDashboard,
     Package,
-    Layers,
-    Truck,
-    Store,
-    ShoppingBag,
-    Flag,
+    History,
+    User,
     LogOut,
     ChevronLeft,
     ChevronRight,
     HelpCircle,
 } from "lucide-react";
 
-export const SidebarMyCommerce = ({ collapsed, onToggle }) => {
+export const SidebarDelivery = ({ collapsed, onToggle }) => {
     const navigate = useNavigate();
     const location = useLocation();
     const logout = useLogout();
 
     const NAV_ITEMS = [
-        { label: "Dashboard",     icon: LayoutDashboard, route: "/comercio" },
-        { label: "Productos",     icon: Package,         route: "/comercio/productos" },
-        { label: "Colecciones",   icon: Layers,          route: "/colecciones" },
-        { label: "Mis Pedidos",   icon: ShoppingBag,     route: "/comercio/pedidos" },
-        { label: "Reclamos",      icon: Flag,            route: "/comercio/claims" },
-        // { label: "Delivery",      icon: Truck,           route: "/delivery" },
-        // ← ruta actualizada a /comercio/perfil
-        { label: "Mi Comercio",   icon: Store,           route: "/comercio/perfil" },
-        { label: "Cerrar Sesión", icon: LogOut,          onClick: logout },
+        { label: "Mi Perfil",   icon: User,     route: "/delivery/perfil" },
+        { label: "Órdenes",      icon: Package,  route: "/delivery/order" },
+        { label: "Historial",   icon: History,  route: "/delivery/history" },
+        { label: "Cerrar Sesión", icon: LogOut, onClick: logout },
     ];
 
     // Activo basado en la URL actual — ordena por especificidad (rutas más largas primero)
-    // para evitar que /comercio matchee antes que /comercio/perfil o /comercio/editar
     const active = [...NAV_ITEMS]
         .filter(item => item.route)
         .sort((a, b) => b.route.length - a.route.length)
@@ -62,7 +52,7 @@ export const SidebarMyCommerce = ({ collapsed, onToggle }) => {
             }}>
                 {!collapsed && (
                     <span style={{ color: "white", fontWeight: "bold", fontSize: "16px", whiteSpace: "nowrap" }}>
-                        Mi Comercio
+                        Panel Delivery
                     </span>
                 )}
                 <button
@@ -118,7 +108,7 @@ export const SidebarMyCommerce = ({ collapsed, onToggle }) => {
                         <span style={{ fontSize: "13px", fontWeight: "bold" }}>¿Necesitas ayuda?</span>
                     </div>
                     <p style={{ fontSize: "12px", margin: 0, opacity: 0.9 }}>
-                        Consulta nuestra guía para comercios o contacta soporte.
+                        Consulta nuestra guía para repartidores o contacta soporte.
                     </p>
                 </div>
             )}
