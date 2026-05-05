@@ -41,6 +41,10 @@ function formatRating(v) {
     return `${n.toFixed(1)} / 5`;
 }
 
+function candidateKey(c, index) {
+    return String(c.id_user ?? c.email ?? c.phone ?? `candidate-${index}`);
+}
+
 function ResultCard({ candidate, onAdd }) {
     const stats = useMemo(() => pickStats(candidate), [candidate]);
 
@@ -66,7 +70,9 @@ function ResultCard({ candidate, onAdd }) {
         >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px", flexWrap: "wrap" }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ margin: "0 0 10px 0", fontSize: "16px", fontWeight: "700", color: "#111827" }}>{candidate.name ?? "—"}</p>
+                    <p style={{ margin: "0 0 10px 0", fontSize: "16px", fontWeight: "700", color: "#111827" }}>
+                        {candidate.name ?? "—"}
+                    </p>
                     <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                         {row(Phone, "Teléfono", candidate.phone ?? "—")}
                         {row(Mail, "Correo", candidate.email ?? "—")}
@@ -98,20 +104,9 @@ function ResultCard({ candidate, onAdd }) {
     );
 }
 
-export function AddStoreDeliveryPage() {
-    const navigate = useNavigate();
+function useStoreSessionId() {
     const [storeId, setStoreId] = useState(null);
     const [sessionError, setSessionError] = useState("");
-    const [query, setQuery] = useState("");
-    const debouncedQuery = useDebouncedValue(query, 200);
-
-    const [candidates, setCandidates] = useState([]);
-    const [loadingList, setLoadingList] = useState(false);
-    const [listError, setListError] = useState("");
-
-    const [modalOpen, setModalOpen] = useState(false);
-    const [selected, setSelected] = useState(null);
-    const [confirming, setConfirming] = useState(false);
 
     useEffect(() => {
         let active = true;
@@ -134,8 +129,16 @@ export function AddStoreDeliveryPage() {
         };
     }, []);
 
+    return { storeId, sessionError };
+}
+
+function useDeliveryCandidates(storeId) {
+    const [candidates, setCandidates] = useState([]);
+    const [loadingList, setLoadingList] = useState(false);
+    const [listError, setListError] = useState("");
+
     useEffect(() => {
-        if (storeId == null) return;
+        if (storeId == null) return undefined;
         let active = true;
         (async () => {
             setLoadingList(true);
@@ -156,6 +159,111 @@ export function AddStoreDeliveryPage() {
             active = false;
         };
     }, [storeId]);
+
+    return { candidates, loadingList, listError };
+}
+
+function PageIntro({ onBack }) {
+    return (
+        <div style={{ marginBottom: "20px" }}>
+            <button
+                type="button"
+                onClick={onBack}
+                style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    padding: "6px 0",
+                    border: "none",
+                    background: "none",
+                    color: "var(--primary-dark)",
+                    fontWeight: "600",
+                    fontSize: "14px",
+                    cursor: "pointer",
+                    marginBottom: "12px",
+                }}
+            >
+                <ArrowLeft size={18} /> Volver al listado
+            </button>
+            <h4 style={{ fontWeight: "600", margin: "0 0 4px 0" }}>Agregar delivery</h4>
+            <p style={{ color: "#6b7280", margin: 0, fontSize: "14px" }}>
+                Acá ves todos los repartidores disponibles para vincular. Podés filtrar por nombre, correo o teléfono.
+            </p>
+        </div>
+    );
+}
+
+function SearchPanel({ query, onQueryChange, loadingList, candidatesLength, displayedLength }) {
+    return (
+        <div style={{ position: "relative", marginBottom: "20px" }}>
+            <Search size={18} color="#9ca3af" style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)" }} />
+            <input
+                type="search"
+                value={query}
+                onChange={(e) => onQueryChange(e.target.value)}
+                placeholder="Filtrar por nombre, correo o teléfono…"
+                autoComplete="off"
+                style={{
+                    width: "100%",
+                    maxWidth: "480px",
+                    padding: "12px 14px 12px 44px",
+                    borderRadius: "10px",
+                    border: "1px solid #e5e7eb",
+                    fontSize: "15px",
+                    outline: "none",
+                    boxSizing: "border-box",
+                }}
+            />
+            {!loadingList && candidatesLength > 0 && (
+                <span style={{ marginLeft: "12px", fontSize: "13px", color: "#6b7280" }}>
+                    {displayedLength === candidatesLength
+                        ? `${candidatesLength} disponible${candidatesLength !== 1 ? "s" : ""}`
+                        : `${displayedLength} de ${candidatesLength}`}
+                </span>
+            )}
+            {loadingList && (
+                <span style={{ marginLeft: "12px", fontSize: "13px", color: "#6b7280" }}>Cargando lista…</span>
+            )}
+        </div>
+    );
+}
+
+function NoResultsPanel({ candidatesLength }) {
+    return (
+        <div style={{ backgroundColor: "white", borderRadius: "16px", padding: "40px 20px", textAlign: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}>
+            <User size={40} color="#d1d5db" style={{ marginBottom: "12px" }} />
+            <p style={{ fontSize: "15px", fontWeight: "600", color: "#374151", margin: 0 }}>
+                {candidatesLength === 0 ? "No hay repartidores disponibles por ahora." : "Ningún resultado coincide con el filtro."}
+            </p>
+        </div>
+    );
+}
+
+function CandidateList({ displayed, onPickCandidate }) {
+    return (
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            {displayed.map((c, index) => (
+                <ResultCard
+                    key={candidateKey(c, index)}
+                    candidate={c}
+                    onAdd={(row) => onPickCandidate(row)}
+                />
+            ))}
+        </div>
+    );
+}
+
+export function AddStoreDeliveryPage() {
+    const navigate = useNavigate();
+    const { storeId, sessionError } = useStoreSessionId();
+    const { candidates, loadingList, listError } = useDeliveryCandidates(storeId);
+
+    const [query, setQuery] = useState("");
+    const debouncedQuery = useDebouncedValue(query, 200);
+
+    const [modalOpen, setModalOpen] = useState(false);
+    const [selected, setSelected] = useState(null);
+    const [confirming, setConfirming] = useState(false);
 
     const displayed = useMemo(() => {
         const q = debouncedQuery.trim().toLowerCase();
@@ -192,6 +300,11 @@ export function AddStoreDeliveryPage() {
         }
     };
 
+    const openModal = (row) => {
+        setSelected(row);
+        setModalOpen(true);
+    };
+
     if (sessionError) {
         return (
             <div style={{ backgroundColor: "#fff1f2", border: "1px solid #fecdd3", borderRadius: "10px", padding: "12px 16px", color: "#be123c", fontSize: "14px" }}>
@@ -200,64 +313,19 @@ export function AddStoreDeliveryPage() {
         );
     }
 
+    const showEmptyFilter = !loadingList && !listError && displayed.length === 0;
+
     return (
         <>
-            <div style={{ marginBottom: "20px" }}>
-                <button
-                    type="button"
-                    onClick={() => navigate("/comercio/deliveries")}
-                    style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        padding: "6px 0",
-                        border: "none",
-                        background: "none",
-                        color: "var(--primary-dark)",
-                        fontWeight: "600",
-                        fontSize: "14px",
-                        cursor: "pointer",
-                        marginBottom: "12px",
-                    }}
-                >
-                    <ArrowLeft size={18} /> Volver al listado
-                </button>
-                <h4 style={{ fontWeight: "600", margin: "0 0 4px 0" }}>Agregar delivery</h4>
-                <p style={{ color: "#6b7280", margin: 0, fontSize: "14px" }}>
-                    Acá ves todos los repartidores disponibles para vincular. Podés filtrar por nombre, correo o teléfono.
-                </p>
-            </div>
+            <PageIntro onBack={() => navigate("/comercio/deliveries")} />
 
-            <div style={{ position: "relative", marginBottom: "20px" }}>
-                <Search size={18} color="#9ca3af" style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)" }} />
-                <input
-                    type="search"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Filtrar por nombre, correo o teléfono…"
-                    autoComplete="off"
-                    style={{
-                        width: "100%",
-                        maxWidth: "480px",
-                        padding: "12px 14px 12px 44px",
-                        borderRadius: "10px",
-                        border: "1px solid #e5e7eb",
-                        fontSize: "15px",
-                        outline: "none",
-                        boxSizing: "border-box",
-                    }}
-                />
-                {!loadingList && candidates.length > 0 && (
-                    <span style={{ marginLeft: "12px", fontSize: "13px", color: "#6b7280" }}>
-                        {displayed.length === candidates.length
-                            ? `${candidates.length} disponible${candidates.length !== 1 ? "s" : ""}`
-                            : `${displayed.length} de ${candidates.length}`}
-                    </span>
-                )}
-                {loadingList && (
-                    <span style={{ marginLeft: "12px", fontSize: "13px", color: "#6b7280" }}>Cargando lista…</span>
-                )}
-            </div>
+            <SearchPanel
+                query={query}
+                onQueryChange={setQuery}
+                loadingList={loadingList}
+                candidatesLength={candidates.length}
+                displayedLength={displayed.length}
+            />
 
             {listError && (
                 <div style={{ backgroundColor: "#fff1f2", border: "1px solid #fecdd3", borderRadius: "10px", padding: "12px 16px", color: "#be123c", fontSize: "14px", marginBottom: "16px" }}>
@@ -265,28 +333,22 @@ export function AddStoreDeliveryPage() {
                 </div>
             )}
 
-            {!loadingList && !listError && displayed.length === 0 && (
-                <div style={{ backgroundColor: "white", borderRadius: "16px", padding: "40px 20px", textAlign: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}>
-                    <User size={40} color="#d1d5db" style={{ marginBottom: "12px" }} />
-                    <p style={{ fontSize: "15px", fontWeight: "600", color: "#374151", margin: 0 }}>
-                        {candidates.length === 0
-                            ? "No hay repartidores disponibles por ahora."
-                            : "Ningún resultado coincide con el filtro."}
-                    </p>
-                </div>
+            {showEmptyFilter ? (
+                <NoResultsPanel candidatesLength={candidates.length} />
+            ) : (
+                <CandidateList displayed={displayed} onPickCandidate={openModal} />
             )}
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                {displayed.map((c) => (
-                    <ResultCard key={c.id_user} candidate={c} onAdd={(row) => { setSelected(row); setModalOpen(true); }} />
-                ))}
-            </div>
 
             <ConfirmLinkDeliveryModal
                 open={modalOpen}
                 candidate={selected}
                 confirming={confirming}
-                onCancel={() => { if (!confirming) { setModalOpen(false); setSelected(null); } }}
+                onCancel={() => {
+                    if (!confirming) {
+                        setModalOpen(false);
+                        setSelected(null);
+                    }
+                }}
                 onConfirm={handleConfirmLink}
             />
         </>

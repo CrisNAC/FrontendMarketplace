@@ -405,7 +405,7 @@ export function CommerceDeliveryReviewsPage() {
               </div>
               {filteredDrivers.map((d, idx) => (
                 <div
-                  key={d.id}
+                  key={String(d.id ?? d.fk_user ?? `driver-${idx}`)}
                   style={{
                     display: "grid",
                     gridTemplateColumns: hasStatusColumn
