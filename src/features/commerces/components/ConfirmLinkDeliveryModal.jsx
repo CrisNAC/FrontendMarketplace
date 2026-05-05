@@ -1,27 +1,44 @@
+import { useEffect, useRef } from "react";
+import PropTypes from "prop-types";
+
 /**
  * Modal de confirmación para vincular un repartidor al comercio.
+ * Usa <dialog> nativo para accesibilidad (Sonar: evitar role="dialog" en div).
  */
-export function ConfirmLinkDeliveryModal({ open, candidate, onCancel, onConfirm, confirming }) {
-    if (!open || !candidate) return null;
+export function ConfirmLinkDeliveryModal({ open, candidate, onCancel, onConfirm, confirming = false }) {
+    const dialogRef = useRef(null);
+
+    useEffect(() => {
+        const el = dialogRef.current;
+        if (!el) return;
+        if (open && candidate) {
+            if (!el.open) el.showModal();
+        } else if (el.open) {
+            el.close();
+        }
+    }, [open, candidate]);
+
+    useEffect(() => {
+        const el = dialogRef.current;
+        if (!el) return;
+        const handleCancel = (event) => {
+            if (confirming) {
+                event.preventDefault();
+                return;
+            }
+            onCancel();
+        };
+        el.addEventListener("cancel", handleCancel);
+        return () => el.removeEventListener("cancel", handleCancel);
+    }, [confirming, onCancel]);
+
+    if (!candidate) return null;
 
     return (
-        <div
-            role="dialog"
-            aria-modal="true"
+        <dialog
+            ref={dialogRef}
+            className="confirm-link-delivery-modal"
             aria-labelledby="confirm-link-delivery-title"
-            onClick={(e) => {
-                if (e.target === e.currentTarget && !confirming) onCancel();
-            }}
-            style={{
-                position: "fixed",
-                inset: 0,
-                zIndex: 1000,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: "rgba(15, 23, 42, 0.45)",
-                padding: "16px",
-            }}
         >
             <div
                 style={{
@@ -79,6 +96,19 @@ export function ConfirmLinkDeliveryModal({ open, candidate, onCancel, onConfirm,
                     </button>
                 </div>
             </div>
-        </div>
+        </dialog>
     );
 }
+
+ConfirmLinkDeliveryModal.propTypes = {
+    open: PropTypes.bool.isRequired,
+    candidate: PropTypes.shape({
+        id_user: PropTypes.number.isRequired,
+        name: PropTypes.string,
+        email: PropTypes.string,
+        phone: PropTypes.string,
+    }),
+    onCancel: PropTypes.func.isRequired,
+    onConfirm: PropTypes.func.isRequired,
+    confirming: PropTypes.bool,
+};

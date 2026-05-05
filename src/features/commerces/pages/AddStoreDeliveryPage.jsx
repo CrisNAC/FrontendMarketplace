@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import PropTypes from "prop-types";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Search, ArrowLeft, User, Phone, Mail, Package, Percent, Star } from "lucide-react";
@@ -39,6 +40,21 @@ function formatRating(v) {
     const n = Number(v);
     if (!Number.isFinite(n)) return "—";
     return `${n.toFixed(1)} / 5`;
+}
+
+function buildAvailabilityLabel(displayedLen, candidatesLen) {
+    if (displayedLen === candidatesLen) {
+        const suffix = candidatesLen === 1 ? "" : "s";
+        return `${candidatesLen} disponible${suffix}`;
+    }
+    return `${displayedLen} de ${candidatesLen}`;
+}
+
+function getEmptyListMessage(noCandidatesInList) {
+    if (noCandidatesInList) {
+        return "No hay repartidores disponibles por ahora.";
+    }
+    return "Ningún resultado coincide con el filtro.";
 }
 
 function ResultCard({ candidate, onAdd }) {
@@ -97,6 +113,16 @@ function ResultCard({ candidate, onAdd }) {
         </div>
     );
 }
+
+ResultCard.propTypes = {
+    candidate: PropTypes.shape({
+        id_user: PropTypes.number.isRequired,
+        name: PropTypes.string,
+        email: PropTypes.string,
+        phone: PropTypes.string,
+    }).isRequired,
+    onAdd: PropTypes.func.isRequired,
+};
 
 export function AddStoreDeliveryPage() {
     const navigate = useNavigate();
@@ -249,9 +275,7 @@ export function AddStoreDeliveryPage() {
                 />
                 {!loadingList && candidates.length > 0 && (
                     <span style={{ marginLeft: "12px", fontSize: "13px", color: "#6b7280" }}>
-                        {displayed.length === candidates.length
-                            ? `${candidates.length} disponible${candidates.length !== 1 ? "s" : ""}`
-                            : `${displayed.length} de ${candidates.length}`}
+                        {buildAvailabilityLabel(displayed.length, candidates.length)}
                     </span>
                 )}
                 {loadingList && (
@@ -269,9 +293,7 @@ export function AddStoreDeliveryPage() {
                 <div style={{ backgroundColor: "white", borderRadius: "16px", padding: "40px 20px", textAlign: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}>
                     <User size={40} color="#d1d5db" style={{ marginBottom: "12px" }} />
                     <p style={{ fontSize: "15px", fontWeight: "600", color: "#374151", margin: 0 }}>
-                        {candidates.length === 0
-                            ? "No hay repartidores disponibles por ahora."
-                            : "Ningún resultado coincide con el filtro."}
+                        {getEmptyListMessage(candidates.length === 0)}
                     </p>
                 </div>
             )}

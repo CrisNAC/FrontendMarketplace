@@ -508,3 +508,16 @@
     opacity: 0.2;
   }
 }
+
+/* Modal nativo: vincular delivery (OM-408) */
+.confirm-link-delivery-modal {
+  border: none;
+  padding: 0;
+  margin: auto;
+  background: transparent;
+  max-width: min(420px, calc(100vw - 32px));
+}
+
+.confirm-link-delivery-modal::backdrop {
+  background: rgba(15, 23, 42, 0.45);
+}
