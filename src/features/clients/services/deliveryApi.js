@@ -45,3 +45,22 @@ export const becomeDelivery = async (uiVehicleType) => {
   const { data } = await apiClient.post("/api/deliveries/register", { vehicleType });
   return data;
 };
+
+export const UI_VEHICLE_LABELS = {
+    CAR:        "Automóvil",
+    MOTORCYCLE: "Motocicleta / scooter",
+    BICYCLE:    "Bicicleta",
+    ON_FOOT:    "A pie",
+};
+
+export const updateMyDelivery = async (deliveryId, { name, phone, vehicleType }, avatarFile) => {
+    const form = new FormData();
+    if (name)        form.append("name", name);
+    if (phone)       form.append("phone", phone);
+    if (vehicleType) form.append("vehicleType", vehicleType);
+    if (avatarFile)  form.append("avatarUrl", avatarFile);
+    const { data } = await apiClient.put(`/api/deliveries/${deliveryId}`, form, {
+        headers: { "Content-Type": "multipart/form-data" },
+    });
+    return data;
+};
