@@ -90,6 +90,14 @@ const Navbar = () => {
   }, [refreshCartAndSession]);
 
   useEffect(() => {
+    const onDeliveryRegistered = () => {
+      refreshCartAndSession();
+    };
+    window.addEventListener("deliveryRegistered", onDeliveryRegistered);
+    return () => window.removeEventListener("deliveryRegistered", onDeliveryRegistered);
+  }, [refreshCartAndSession]);
+
+  useEffect(() => {
     setProfileOpen(false);
   }, [location.pathname]);
 

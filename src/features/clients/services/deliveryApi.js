@@ -1,5 +1,5 @@
 import apiClient from "../../../lib/apiClient";
-import { getSession, fetchUserProfile, updateUserProfile } from "../../commerces/services/editUserProfileApi";
+import { getSession, fetchUserProfile } from "../../commerces/services/editUserProfileApi";
 
 export const getCurrentUserForDeliveryForm = async () => {
   const session = await getSession();
@@ -17,67 +17,50 @@ export const getCurrentUserForDeliveryForm = async () => {
   };
 };
 
+export const getDeliveryProfile = async (deliveryId) => {
+  const { data } = await apiClient.get(`/api/deliveries/${deliveryId}`);
+  return data;
+};
+
+/** Valores que espera POST /api/deliveries/register (Zod en backend). */
+const UI_VEHICLE_TO_API = {
+  BICICLETA: "BICYCLE",
+  MOTOCICLETA: "MOTORCYCLE",
+  AUTOMOVIL: "CAR",
+  A_PIE: "ON_FOOT",
+};
+
 /**
- * @param {number} userId
- * @param {Object} payload - Datos del formulario (usuario + cobertura)
- * @param {string} payload.name
- * @param {string} payload.email
- * @param {string} payload.phone
- * @param {string} payload.vehicle - descripción resumida para la tabla delivery
- * @param {string|undefined} payload.documentId
- * @param {string} payload.city
- * @param {string} payload.region
- * @param {string} payload.addressReference
- * @param {number} payload.coverageRadiusKm
- * @param {string|undefined} payload.availabilityNotes
- * @param {number} payload.baseLatitude
- * @param {number} payload.baseLongitude
+ * Registra al usuario autenticado como delivery.
+ * El backend solo acepta { vehicleType: CAR | MOTORCYCLE | BICYCLE | ON_FOOT }; la identidad sale de la cookie JWT.
+ *
+ * @param {string} uiVehicleType - BICICLETA | MOTOCICLETA | AUTOMOVIL | A_PIE
  */
-export const becomeDelivery = async (userId, payload) => {
-  const registerBody = {
-    fk_user: userId,
-    role: "DELIVERY",
-    name: payload.name,
-    email: payload.email,
-    phone: payload.phone,
-    vehicle: payload.vehicle,
-    // Valores de negocio / sistema: se calculan en backend; el front solo fija iniciales coherentes
-    total_deliveries: 0,
-    reviews_count: 0,
-    average_rating: 0,
-    delivery_status: "AVAILABLE",
-    // Metadatos de cobertura (el backend puede persistirlos o ignorarlos según DTOs actuales)
-    document_id: payload.documentId,
-    coverage_city: payload.city,
-    coverage_region: payload.region,
-    coverage_address_reference: payload.addressReference,
-    coverage_radius_km: payload.coverageRadiusKm,
-    base_latitude: payload.baseLatitude,
-    base_longitude: payload.baseLongitude,
-    availability_notes: payload.availabilityNotes,
-  };
-
-  try {
-    const { data } = await apiClient.post("/api/deliveries/register", registerBody);
-    await updateUserProfile(userId, {
-      name: payload.name,
-      email: payload.email,
-      phone: payload.phone,
-    });
-    return { data, usedFallback: false };
-  } catch (error) {
-    const status = Number(error?.response?.status);
-    if (status !== 404) {
-      throw error;
-    }
-
-    const fallback = await apiClient.put(`/api/users/${userId}`, {
-      role: "DELIVERY",
-      name: payload.name,
-      email: payload.email,
-      phone: payload.phone,
-    });
-
-    return { data: fallback.data, usedFallback: true };
+export const becomeDelivery = async (uiVehicleType) => {
+  const vehicleType = UI_VEHICLE_TO_API[uiVehicleType];
+  if (!vehicleType) {
+    throw new Error("Tipo de vehículo no válido.");
   }
+
+  const { data } = await apiClient.post("/api/deliveries/register", { vehicleType });
+  return data;
+};
+
+export const UI_VEHICLE_LABELS = {
+    CAR:        "Automóvil",
+    MOTORCYCLE: "Motocicleta / scooter",
+    BICYCLE:    "Bicicleta",
+    ON_FOOT:    "A pie",
+};
+
+export const updateMyDelivery = async (deliveryId, { name, phone, vehicleType }, avatarFile) => {
+    const form = new FormData();
+    if (name)        form.append("name", name);
+    if (phone)       form.append("phone", phone);
+    if (vehicleType) form.append("vehicleType", vehicleType);
+    if (avatarFile)  form.append("avatarUrl", avatarFile);
+    const { data } = await apiClient.put(`/api/deliveries/${deliveryId}`, form, {
+        headers: { "Content-Type": "multipart/form-data" },
+    });
+    return data;
 };
