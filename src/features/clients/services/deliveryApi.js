@@ -17,6 +17,11 @@ export const getCurrentUserForDeliveryForm = async () => {
   };
 };
 
+export const getDeliveryProfile = async (deliveryId) => {
+  const { data } = await apiClient.get(`/api/deliveries/${deliveryId}`);
+  return data;
+};
+
 /** Valores que espera POST /api/deliveries/register (Zod en backend). */
 const UI_VEHICLE_TO_API = {
   BICICLETA: "BICYCLE",
