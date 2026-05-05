@@ -330,7 +330,7 @@ async function setupCommonApiMocks(page: Page) {
 }
 
 test.describe('Flujos E2E de usuario final', () => {
-  
+
   test.beforeEach(async ({ page }) => {
     await setupCommonApiMocks(page);
   });
@@ -345,7 +345,7 @@ test.describe('Flujos E2E de usuario final', () => {
     await page.locator('input[name="confirmPassword"]').fill('12345678');
     await page.getByRole('button', { name: 'Crear Cuenta' }).click();
 
-      await expect(page.getByText('Bienvenido')).toBeVisible();
+    await expect(page.getByText('Bienvenido')).toBeVisible();
 
     await page.getByPlaceholder('tu@correo.com').fill('user@test.com');
     await page.locator('input[name="password"]').fill('12345678');
@@ -800,19 +800,19 @@ test.describe('Flujos E2E de usuario final', () => {
         ? (isCount
           ? { total: 2 }
           : {
-              data: [
-                {
-                  id: 201,
-                  name: 'Mouse gamer RGB',
-                  price: 99000,
-                  approvalStatus: 'PENDING',
-                  commerce: { name: 'Nissei' },
-                  category: { name: 'Accesorios' },
-                  description: 'Mouse con iluminación RGB',
-                },
-              ],
-              pagination: { total: 1, page: 1, limit: 20, totalPages: 1 },
-            })
+            data: [
+              {
+                id: 201,
+                name: 'Mouse gamer RGB',
+                price: 99000,
+                approvalStatus: 'PENDING',
+                commerce: { name: 'Nissei' },
+                category: { name: 'Accesorios' },
+                description: 'Mouse con iluminación RGB',
+              },
+            ],
+            pagination: { total: 1, page: 1, limit: 20, totalPages: 1 },
+          })
         : { data: [], pagination: { total: 0, page: 1, limit: 20, totalPages: 1 } };
 
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(payload) });
@@ -823,11 +823,11 @@ test.describe('Flujos E2E de usuario final', () => {
       const payload = isCount
         ? { filteredReviewReports: { meta: { total: 4 }, data: [] } }
         : {
-            filteredReviewReports: {
-              meta: { total: 1, page: 1, limit: 5, total_pages: 1 },
-              data: [{ id_review_report: 501, reason: 'SPAM', product_review: { product: { name: 'Mouse gamer RGB' } } }],
-            },
-          };
+          filteredReviewReports: {
+            meta: { total: 1, page: 1, limit: 5, total_pages: 1 },
+            data: [{ id_review_report: 501, reason: 'SPAM', product_review: { product: { name: 'Mouse gamer RGB' } } }],
+          },
+        };
 
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(payload) });
     });
@@ -837,20 +837,20 @@ test.describe('Flujos E2E de usuario final', () => {
       const payload = isCount
         ? { total: 5 }
         : {
-            data: [
-              {
-                id_store: 301,
-                name: 'Tienda Demo',
-                store_category: { name: 'Tecnología' },
-                user: { name: 'Ana Pérez' },
-                email: 'ana@demo.com',
-                phone: '0981000000',
-                description: 'Comercio de prueba',
-                created_at: '2026-03-22T10:00:00.000Z',
-              },
-            ],
-            pagination: { total: 1, page: 1, limit: 20, totalPages: 1 },
-          };
+          data: [
+            {
+              id_store: 301,
+              name: 'Tienda Demo',
+              store_category: { name: 'Tecnología' },
+              user: { name: 'Ana Pérez' },
+              email: 'ana@demo.com',
+              phone: '0981000000',
+              description: 'Comercio de prueba',
+              created_at: '2026-03-22T10:00:00.000Z',
+            },
+          ],
+          pagination: { total: 1, page: 1, limit: 20, totalPages: 1 },
+        };
 
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(payload) });
     });
@@ -860,11 +860,11 @@ test.describe('Flujos E2E de usuario final', () => {
       const payload = isCount
         ? { filteredReports: { meta: { total: 3 }, data: [] } }
         : {
-            filteredReports: {
-              meta: { total: 1, page: 1, limit: 5, total_pages: 1 },
-              data: [{ id_product_report: 701, report_status: 'PENDING', reason: 'DEFECTIVE', product: { name: 'Mouse gamer RGB' } }],
-            },
-          };
+          filteredReports: {
+            meta: { total: 1, page: 1, limit: 5, total_pages: 1 },
+            data: [{ id_product_report: 701, report_status: 'PENDING', reason: 'DEFECTIVE', product: { name: 'Mouse gamer RGB' } }],
+          },
+        };
 
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(payload) });
     });
@@ -944,21 +944,21 @@ test.describe('Flujos E2E de usuario final', () => {
       const payload = isCount
         ? { filteredReports: { meta: { total: 1 }, data: [] } }
         : {
-            filteredReports: {
-              meta: { total: 1, page: 1, limit: 8, total_pages: 1 },
-              data: [
-                {
-                  id_product_report: 701,
-                  report_status: currentStatus,
-                  reason: 'DEFECTIVE',
-                  description: 'Producto recibido con fallas',
-                  product: { id: 201, name: 'Mouse gamer RGB' },
-                  reporter: { name: 'Cliente Demo' },
-                  created_at: '2026-03-22T10:00:00.000Z',
-                },
-              ],
-            },
-          };
+          filteredReports: {
+            meta: { total: 1, page: 1, limit: 8, total_pages: 1 },
+            data: [
+              {
+                id_product_report: 701,
+                report_status: currentStatus,
+                reason: 'DEFECTIVE',
+                description: 'Producto recibido con fallas',
+                product: { id: 201, name: 'Mouse gamer RGB' },
+                reporter: { name: 'Cliente Demo' },
+                created_at: '2026-03-22T10:00:00.000Z',
+              },
+            ],
+          },
+        };
 
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(payload) });
     });
@@ -1070,5 +1070,323 @@ test.describe('Flujos E2E de usuario final', () => {
     await page.getByLabel('Spam').check();
     await page.getByRole('button', { name: 'Enviar reporte' }).click();
     //await expect(page.getByText('Reporte enviado. Gracias por ayudarnos a mejorar la comunidad.')).toBeVisible();
+  });
+
+
+
+
+
+  //--------------------------Tests E2E del QA Leo--------------------------
+
+  //OM-479: [FE] Fix 'Mis Pedidos' (Comercio)
+  /**Descripción: Aceptar/Rechazar pedido ya no funciona, corregir.
+    Cuando el repartidor entrega su pedido, el seguimiento del pedido debe cambiar a entregado. 
+  */
+  test('flujo comercio: aceptar/rechazar pedido y marcar como entregado', async ({ page }) => {
+    // Mock para simular la sesión del comercio
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 8, id_store: 5, name: 'Comerciante Demo', role: 'SELLER' } }),
+      });
+    });
+
+    // Estado reactivo para simular cambios de pedidos
+    let ordersState = [
+      {
+        id: 100,
+        status: 'PENDING',
+        total: 450000,
+        notes: null,
+        createdAt: new Date().toISOString(),
+        address: { city: 'Asunción', region: 'Central' },
+        items: [{ id: 1, quantity: 2 }],
+      },
+      {
+        id: 101,
+        status: 'PROCESSING',
+        total: 250000,
+        notes: null,
+        createdAt: new Date(Date.now() - 3600000).toISOString(),
+        address: { city: 'Encarnación', region: 'Itapúa' },
+        items: [{ id: 2, quantity: 1 }],
+      },
+      {
+        id: 102,
+        status: 'PENDING',
+        total: 180000,
+        notes: null,
+        createdAt: new Date().toISOString(),
+        address: { city: 'Ciudad del Este', region: 'Alto Paraná' },
+        items: [{ id: 3, quantity: 1 }],
+      },
+      {
+        id: 103,
+        status: 'PENDING',
+        total: 320000,
+        notes: null,
+        createdAt: new Date().toISOString(),
+        address: { city: 'Villarrica', region: 'Guairá' },
+        items: [{ id: 4, quantity: 1 }],
+      },
+    ];
+
+    // Mock para obtener pedidos del comercio por ID de tienda
+    await page.route('**/api/orders/store/5**', async (route) => {
+      if (route.request().method() === 'GET') {
+        const url = new URL(route.request().url());
+        const statusFilter = url.searchParams.get('order_status');
+
+        let filtered = ordersState;
+        if (statusFilter) {
+          const statuses = statusFilter.split(',');
+          filtered = ordersState.filter(o => statuses.includes(o.status));
+        }
+
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            orders: filtered,
+            total: filtered.length,
+            page: 1,
+            limit: 100,
+            total_page: 1,
+          }),
+        });
+      }
+    });
+
+    // Mock para actualizar estado de pedido
+    await page.route('**/api/orders/*/status', async (route) => {
+      if (route.request().method() === 'PATCH') {
+        const body = route.request().postDataJSON() as { order_status?: string };
+        const orderId = parseInt(route.request().url().split('/orders/')[1].split('/')[0], 10);
+
+        const order = ordersState.find(o => o.id === orderId);
+        if (order) {
+          order.status = body.order_status || order.status;
+        }
+
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ id: orderId, status: body.order_status }),
+        });
+      }
+    });
+
+    // Navegar a la página de pedidos del comercio
+    await page.goto('/comercio/pedidos');
+
+    // ----Aceptar pedido pendiente----
+    await expect(page.getByRole('heading', { name: /Pedidos Pendientes/i })).toBeVisible();
+    await expect(page.getByText('ORD-100')).toBeVisible();
+    await page.getByRole('button', { name: /Aceptar/ }).first().click();
+
+    // Debe hacer auto-switch a Seguimiento
+    await expect(page.getByRole('heading', { name: /Seguimiento de Pedidos/i })).toBeVisible({ timeout: 3000 });
+    await expect(page.getByText('ORD-100')).toBeVisible();
+
+    // ----Rechazar pedido pendiente----
+    await page.getByRole('button', { name: /Pendientes/ }).click();
+    await expect(page.getByText('ORD-102')).toBeVisible();
+    await page.getByRole('button', { name: /Rechazar/ }).first().click();
+    await expect(page.getByText('ORD-102')).not.toBeVisible({ timeout: 3000 });
+
+
+    // ----Validar que el pedido aceptado aparece en Seguimiento----
+    await page.getByRole('button', { name: /Seguimiento/ }).click();
+    await expect(page.getByText('ORD-100')).toBeVisible();
+    await page.getByRole('button', { name: /Marcar como Enviado/ }).first().click();
+    await page.waitForTimeout(500);
+    // El botón debe desaparecer porque SHIPPED no tiene un siguiente estado en el flujo
+    await expect(page.getByRole('button', { name: /Marcar como Enviado/ })).toHaveCount(1); // solo queda ORD-101
+
+    // ----OM479-004: Validar que aparece en Historial una vez entregado----
+    ordersState = ordersState.map(o => o.id === 100 ? { ...o, status: 'DELIVERED' } : o);
+    await page.getByRole('button', { name: /Historial/ }).click();
+    await expect(page.getByRole('heading', { name: /Historial de Pedidos/i })).toBeVisible();
+    await expect(page.getByText('#OM-100')).toBeVisible({ timeout: 5000 });
+
+    // ----Error controlado al aceptar pedido----
+    // Simular que el backend falla al aceptar
+    await page.unroute('**/api/orders/*/status');
+    await page.route('**/api/orders/*/status', async (route) => {
+      if (route.request().method() === 'PATCH') {
+        await route.fulfill({
+          status: 500,
+          contentType: 'application/json',
+          body: JSON.stringify({ message: 'Error interno del servidor' }),
+        });
+      }
+    });
+
+    await page.getByRole('button', { name: /Pendientes/ }).click();
+    await expect(page.getByText('ORD-103')).toBeVisible();
+    await page.getByRole('button', { name: /Aceptar/ }).first().click();
+
+    // La vista no debe romperse
+    await expect(page.getByRole('heading', { name: /Pedidos Pendientes/i })).toBeVisible();
+    // El pedido debe seguir visible (no se eliminó)
+    await expect(page.getByText('ORD-103')).toBeVisible();
+    // Debe mostrarse un mensaje de error
+    await expect(page.locator('div').filter({ hasText: /Error/i }).first()).toBeVisible({ timeout: 3000 });
+
+    // ----Error controlado al rechazar pedido----
+    await page.getByRole('button', { name: /Rechazar/ }).first().click();
+
+    // La vista no debe romperse
+    await expect(page.getByRole('heading', { name: /Pedidos Pendientes/i })).toBeVisible();
+    // El pedido debe seguir visible
+    await expect(page.getByText('ORD-103')).toBeVisible();
+    // Debe mostrarse un mensaje de error
+    await expect(page.locator('div').filter({ hasText: /Error/i }).first()).toBeVisible({ timeout: 3000 });
+  });
+
+  // Mostrar ventana de calificación del delivery al iniciar sesión.
+  test('flujo cliente: mostrar ventana de calificación del delivery al iniciar sesión', async ({ page }) => {
+    await page.unroute('**/api/session');
+    await page.route('**/api/session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ token: 'fake-token', user: { id_user: 7, role: 'CUSTOMER' } }),
+      });
+    });
+
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, role: 'CUSTOMER', name: 'Cliente Demo' } }),
+      });
+    });
+
+    await page.route('**/api/orders/pending-delivery-reviews', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          { orderId: 123, storeName: 'Nissei', deliveryName: 'Juan' },
+        ]),
+      });
+    });
+
+    await page.goto('/login');
+
+    await page.getByPlaceholder('tu@correo.com').fill('cliente@test.com');
+    await page.locator('input[name="password"]').fill('12345678');
+    await page.locator('form button[type="submit"]').click();
+
+    await expect(page).toHaveURL('/homepage');
+
+    await expect(page.getByRole('heading', { name: 'Califica al delivery' })).toBeVisible();
+    await expect(page.getByText('Pedido #123 de Nissei')).toBeVisible();
+  });
+
+  test('flujo cliente: calificar delivery desde la ventana emergente', async ({ page }) => {
+    await page.unroute('**/api/session');
+    await page.route('**/api/session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ token: 'fake-token', user: { id_user: 7, role: 'CUSTOMER' } }),
+      });
+    });
+
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, role: 'CUSTOMER', name: 'Cliente Demo' } }),
+      });
+    });
+
+    await page.route('**/api/orders/pending-delivery-reviews', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([{ orderId: 123, storeName: 'Nissei', deliveryName: 'Juan' }]),
+      });
+    });
+
+    let postCalled = false;
+    await page.route('**/api/orders/123/delivery-review', async (route) => {
+      if (route.request().method() === 'POST') {
+        postCalled = true;
+        await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ message: 'ok' }) });
+        return;
+      }
+      await route.fallback();
+    });
+
+    await page.goto('/login');
+    await page.getByPlaceholder('tu@correo.com').fill('cliente@test.com');
+    await page.locator('input[name="password"]').fill('12345678');
+    await page.locator('form button[type="submit"]').click();
+
+    await expect(page.getByRole('heading', { name: 'Califica al delivery' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Calificar con 5 estrellas' }).click();
+    await page.getByPlaceholder('Cuéntanos cómo fue el servicio del delivery').fill('Excelente servicio');
+
+    await page.getByRole('button', { name: 'Enviar calificación' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Califica al delivery' })).not.toBeVisible();
+    if (!postCalled) throw new Error('No se llamó al endpoint POST de delivery-review');
+  });
+
+  test('flujo cliente: cerrar la ventana de calificación sin enviar', async ({ page }) => {
+    await page.unroute('**/api/session');
+    await page.route('**/api/session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ token: 'fake-token', user: { id_user: 7, role: 'CUSTOMER' } }),
+      });
+    });
+
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, role: 'CUSTOMER', name: 'Cliente Demo' } }),
+      });
+    });
+
+    await page.route('**/api/orders/pending-delivery-reviews', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([{ orderId: 124, storeName: 'Nissei', deliveryName: 'María' }]),
+      });
+    });
+
+    let postCalled = false;
+    await page.route('**/api/orders/*/delivery-review', async (route) => {
+      if (route.request().method() === 'POST') {
+        postCalled = true;
+        await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ message: 'ok' }) });
+        return;
+      }
+      await route.fallback();
+    });
+
+    await page.goto('/login');
+    await page.getByPlaceholder('tu@correo.com').fill('cliente@test.com');
+    await page.locator('input[name="password"]').fill('12345678');
+    await page.locator('form button[type="submit"]').click();
+
+    await expect(page.getByRole('heading', { name: 'Califica al delivery' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Ahora no' }).click();
+    await expect(page.getByRole('heading', { name: 'Califica al delivery' })).not.toBeVisible();
+    if (postCalled) throw new Error('Se llamó al endpoint POST al cerrar el modal sin enviar');
   });
 });
