@@ -227,6 +227,21 @@ describe('DeliveryEditProfilePage', () => {
             expect(screen.getByText('El nombre es obligatorio.')).toBeInTheDocument()
             expect(updateMyDelivery).not.toHaveBeenCalled()
         })
+
+        it('muestra error si se intenta guardar con teléfono vacío', async () => {
+            setupSuccess()
+            const user = userEvent.setup()
+            
+            render(<DeliveryEditProfilePage />)
+            
+            await waitFor(() => screen.getByDisplayValue('0981000000'))
+            
+            await user.clear(screen.getByDisplayValue('0981000000'))
+            await user.click(screen.getByText('Actualizar Perfil'))
+            
+            expect(screen.getByText('El teléfono es obligatorio.')).toBeInTheDocument()
+            expect(updateMyDelivery).not.toHaveBeenCalled()
+        })
     })
 
     // ── Guardado ──────────────────────────────────────────────────────────────
