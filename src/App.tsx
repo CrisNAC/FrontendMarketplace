@@ -219,6 +219,7 @@ function App() {
         } />
         <Route path="/comercio/deliveries/resenas" element={
           <MyCommerceLayout><CommerceDeliveryReviewsPage /></MyCommerceLayout>
+        } />    
         <Route path="/comercio/delivery" element={
           <MyCommerceLayout><CommerceDeliveriesPage /></MyCommerceLayout>
         } />
