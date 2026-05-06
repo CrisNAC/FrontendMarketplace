@@ -1785,4 +1785,216 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page.getByText('CAR')).toBeVisible();
     await expect(page.getByText('Asunción')).toBeVisible();
   });
+
+  // OM-325
+  // Toggle de estado del delivery
+  test('flujo delivery: activar disponibilidad', async ({ page }) => {
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ user: { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'Delivery Demo' } }) });
+    });
+
+    await page.route('**/api/users/7', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000', role: 'DELIVERY' }) });
+    });
+
+    // Perfil de delivery inicialmente INACTIVE
+    const mockDeliveryProfileUnavailable = {
+      id_delivery: 5,
+      delivery_status: 'INACTIVE',
+      vehicle_type: 'CAR',
+      coverage_city: 'Asunción',
+      coverage_region: 'Central',
+      coverage_radius_km: 12,
+      availability_notes: 'Lunes a Viernes',
+      average_rating: 4.8,
+      total_deliveries: 42,
+      reviews_count: 10,
+      created_at: '2025-11-01T10:00:00.000Z'
+    };
+
+    await page.route('**/api/deliveries/5', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(mockDeliveryProfileUnavailable) });
+    });
+
+    let patchCalled = false;
+    let patchBody = null;
+    await page.route('**/api/deliveries/5/status', async (route) => {
+      patchCalled = true;
+      patchBody = route.request().postData();
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ message: 'Estado actualizado' }) });
+    });
+
+    await page.goto('/delivery/perfil');
+
+    await expect(page.getByRole('button', { name: 'Conectarme' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Conectarme' }).click();
+
+    // UI debe reflejar inmediatamente el cambio
+    await expect(page.getByText('Disponible')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Desconectarme' })).toBeVisible();
+
+    expect(patchCalled).toBe(true);
+    const parsed = patchBody ? JSON.parse(patchBody) : {};
+    expect(parsed.delivery_status === 'ACTIVE' || parsed.delivery_status === 'AVAILABLE').toBeTruthy();
+  });
+
+  // OM-325
+  test('flujo delivery: desactivar disponibilidad', async ({ page }) => {
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ user: { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'Delivery Demo' } }) });
+    });
+
+    await page.route('**/api/users/7', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000', role: 'DELIVERY' }) });
+    });
+
+    // Perfil de delivery inicialmente ACTIVE
+    const mockDeliveryProfileAvailable = {
+      id_delivery: 5,
+      delivery_status: 'ACTIVE',
+      vehicle_type: 'CAR',
+      coverage_city: 'Asunción',
+      coverage_region: 'Central',
+      coverage_radius_km: 12,
+      availability_notes: 'Lunes a Viernes',
+      average_rating: 4.8,
+      total_deliveries: 42,
+      reviews_count: 10,
+      created_at: '2025-11-01T10:00:00.000Z'
+    };
+
+    await page.route('**/api/deliveries/5', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(mockDeliveryProfileAvailable) });
+    });
+
+    let patchCalled = false;
+    let patchBody = null;
+    await page.route('**/api/deliveries/5/status', async (route) => {
+      patchCalled = true;
+      patchBody = route.request().postData();
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ message: 'Estado actualizado' }) });
+    });
+
+    await page.goto('/delivery/perfil');
+
+    await expect(page.getByText('Disponible')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Desconectarme' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Desconectarme' }).click();
+
+    // UI debe reflejar inmediatamente el cambio a no disponible
+    await expect(page.getByText('No disponible').or(page.getByText('Inactivo'))).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Conectarme' })).toBeVisible();
+
+    expect(patchCalled).toBe(true);
+    const parsed = patchBody ? JSON.parse(patchBody) : {};
+    expect(parsed.delivery_status === 'INACTIVE' || parsed.delivery_status === 'UNAVAILABLE').toBeTruthy();
+  });
+
+  // OM-325
+  test('flujo delivery: manejo de error al cambiar estado', async ({ page }) => {
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ user: { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'Delivery Demo' } }) });
+    });
+
+    await page.route('**/api/users/7', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000', role: 'DELIVERY' }) });
+    });
+
+    const mockDeliveryProfileAvailable = {
+      id_delivery: 5,
+      delivery_status: 'ACTIVE',
+      vehicle_type: 'CAR',
+      coverage_city: 'Asunción',
+      coverage_region: 'Central',
+      coverage_radius_km: 12,
+      availability_notes: 'Lunes a Viernes',
+      average_rating: 4.8,
+      total_deliveries: 42,
+      reviews_count: 10,
+      created_at: '2025-11-01T10:00:00.000Z'
+    };
+
+    await page.route('**/api/deliveries/5', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(mockDeliveryProfileAvailable) });
+    });
+
+    await page.route('**/api/deliveries/5/status', async (route) => {
+      await route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ message: 'Error interno' }) });
+    });
+
+    await page.goto('/delivery/perfil');
+
+    // Estado inicial: disponible
+    await expect(page.getByText('Disponible')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Desconectarme' })).toBeVisible();
+
+    // Intenta desconectar, falla y redirige a pantalla de error
+    await page.getByRole('button', { name: 'Desconectarme' }).click();
+
+    // Debe redirigir a la pantalla de error 500
+    await expect(page).toHaveURL('/error/500');
+  });
+
+  // OM-325
+  test('flujo delivery: prevenir concurrencia con bloqueo de boton', async ({ page }) => {
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ user: { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'Delivery Demo' } }) });
+    });
+
+    await page.route('**/api/users/7', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000', role: 'DELIVERY' }) });
+    });
+
+    const mockDeliveryProfileAvailable = {
+      id_delivery: 5,
+      delivery_status: 'ACTIVE',
+      vehicle_type: 'CAR',
+      coverage_city: 'Asunción',
+      coverage_region: 'Central',
+      coverage_radius_km: 12,
+      availability_notes: 'Lunes a Viernes',
+      average_rating: 4.8,
+      total_deliveries: 42,
+      reviews_count: 10,
+      created_at: '2025-11-01T10:00:00.000Z'
+    };
+
+    await page.route('**/api/deliveries/5', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(mockDeliveryProfileAvailable) });
+    });
+
+    let patchRequestCount = 0;
+    await page.route('**/api/deliveries/5/status', async (route) => {
+      patchRequestCount++;
+      // Agregar delay para simular latencia de red
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ message: 'Estado actualizado' }) });
+    });
+
+    await page.goto('/delivery/perfil');
+
+    // Estado inicial: disponible
+    await expect(page.getByText('Disponible')).toBeVisible();
+    const desconectarBtn = page.getByRole('button', { name: 'Desconectarme' });
+    await expect(desconectarBtn).toBeVisible();
+
+    // Intentar hacer clic múltiples veces rápidamente
+    await Promise.all([
+      desconectarBtn.click().catch(() => {}),
+      desconectarBtn.click().catch(() => {}),
+      desconectarBtn.click().catch(() => {}),
+    ]);
+
+    // Esperar a que se complete la primera solicitud
+    await page.waitForTimeout(800);
+
+    // Solo debe haberse enviado 1 request al servidor (prevención de concurrencia)
+    expect(patchRequestCount).toBe(1);
+  });
 });
