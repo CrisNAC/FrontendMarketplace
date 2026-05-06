@@ -46,6 +46,7 @@ const Navbar = () => {
   const [loggingOut, setLoggingOut] = useState(false);
 
   const isLoggedIn = Boolean(sessionUser?.id_user);
+  const isCustomer = sessionUser?.role === "CUSTOMER";
 
   const refreshCartAndSession = useCallback(async () => {
     const apiBase = getApiBase() || "http://localhost:3000";
@@ -86,6 +87,14 @@ const Navbar = () => {
     };
     window.addEventListener("cartUpdated", onCartUpdated);
     return () => window.removeEventListener("cartUpdated", onCartUpdated);
+  }, [refreshCartAndSession]);
+
+  useEffect(() => {
+    const onDeliveryRegistered = () => {
+      refreshCartAndSession();
+    };
+    window.addEventListener("deliveryRegistered", onDeliveryRegistered);
+    return () => window.removeEventListener("deliveryRegistered", onDeliveryRegistered);
   }, [refreshCartAndSession]);
 
   useEffect(() => {
@@ -179,6 +188,14 @@ const Navbar = () => {
           >
             Ofertas
           </Link>
+          {isLoggedIn && isCustomer && (
+            <Link
+              to="/quiero-ser-delivery"
+              className="!no-underline !text-[#1f4f3d] font-semibold hover:!text-[#2e6b4f] transition-colors"
+            >
+              Quiero ser delivery
+            </Link>
+          )}
         </nav>
 
         {/* Search */}

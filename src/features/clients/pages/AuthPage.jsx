@@ -11,8 +11,9 @@ function getPostLoginPath(role) {
       return "/admin/dashboard";
     case "SELLER":
       return "/comercio";
-    case "CUSTOMER":
     case "DELIVERY":
+      return "/delivery";
+    case "CUSTOMER":
     default:
       return "/homepage";
   }
@@ -56,6 +57,10 @@ export default function AuthPage() {
         });
 
         const role = res.data?.user?.role;
+        if (role === "CUSTOMER") {
+          sessionStorage.setItem("showDeliveryReviewPrompt", "1");
+        }
+
         const path = getPostLoginPath(role);
         navigate(path, { replace: true });
       } else {

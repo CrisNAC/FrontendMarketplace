@@ -33,6 +33,24 @@ export const cancelOrder = async (orderId) => {
     return response.data;
 };
 
+/**
+ * Pedidos entregados sin calificar al delivery.
+ * GET /api/orders/pending-delivery-reviews
+ */
+export const getPendingDeliveryReviews = async () => {
+    const response = await apiClient.get("/api/orders/pending-delivery-reviews");
+    return response.data;
+};
+
+/**
+ * Crea la calificación del delivery para un pedido entregado.
+ * POST /api/orders/:orderId/delivery-review
+ */
+export const createDeliveryReview = async (orderId, payload) => {
+    const response = await apiClient.post(`/api/orders/${orderId}/delivery-review`, payload);
+    return response.data;
+};
+
 // Manejo de errores backend (mismo patrón que el proyecto)
 export const getBackendErrorMessage = (error, fallback) => {
     if (axios.isAxiosError(error)) {

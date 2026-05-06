@@ -24,6 +24,7 @@ import { AdminLayout } from './layouts/AdminLayout';
 import { MyCommerceLayout } from './layouts/MyCommerceLayout';
 import { VistaComercioLayout } from './layouts/VistaComercioLayout';
 import { CommentsLayout } from './layouts/CommentsLayout';
+import { DeliveryLayout } from './layouts/DeliveryLayout';
 
 /**
  * Pages
@@ -34,12 +35,16 @@ import { VistaComercioPage } from './features/clients/pages/VistaComercioPage'
 import { ClientOrdersPage } from './features/clients/pages/ClientOrdersPage'
 import { ClientOrderDetailsPage } from './features/clients/pages/ClientOrderDetailsPage'
 import { HomePage } from './features/clients/pages/HomePage'
+import { BecomeDeliveryPage } from './features/clients/pages/BecomeDeliveryPage'
 import { BusquedaPage } from './features/clients/pages/BusquedaPage'
 import { CommentsPage } from './features/clients/pages/CommentsPage'
 import { CreateCommercePage } from './features/clients/pages/CreateCommercePage'
 import { CommerceProfilePage } from './features/commerces/pages/CommerceProfilePage';
 import { CommerceProductsPage } from './features/commerces/pages/CommerceProductsPage'
 import { CommerceOrdersPage } from './features/commerces/pages/CommerceOrdersPage'
+import { CommerceDeliveryReviewsPage } from './features/commerces/pages/CommerceDeliveryReviewsPage'
+import { CommerceDeliveriesPage } from './features/commerces/pages/CommerceDeliveriesPage'
+import { AddStoreDeliveryPage } from './features/commerces/pages/AddStoreDeliveryPage'
 import { EditCommercePage } from './features/commerces/pages/EditCommercePage'
 import AuthPage from './features/clients/pages/AuthPage';
 
@@ -63,6 +68,9 @@ import { AdminProductsPage } from './features/admin/pages/AdminProductsPage';
 import ReclamosPage from './features/admin/pages/ReclamosPage';
 import Reclamos from './features/admin/pages/Reclamos';
 import CommerceClaims from './features/commerces/pages/CommerceClaims';
+import DeliveryProfilePage from './features/delivery/pages/DeliveryProfilePage';
+import { DeliveryEditProfilePage } from './features/delivery/pages/DeliveryEditProfilePage';
+import DeliveryOrdersPage from './features/delivery/pages/DeliveryOrdersPage';
 
 import Wishlist from "./features/clients/pages/Wishlist"
 import FavoritesPage from "./features/clients/pages/FavoritesPage";
@@ -71,6 +79,8 @@ import { CartPage } from "./features/clients/pages/CartPage";
 import OrdenesComprasPage from "./features/clients/pages/OrdenesComprasPage";
 import ConfirmarPedido from './features/clients/pages/ConfirmarPedido';
 import PedidoConfirmadoPage from './features/clients/pages/PedidoConfirmadoPage';
+import DeliveryOrderScreen from "./features/delivery/pages/DeliveryOrderScreen";
+import DeliveryHistoryPage from './features/delivery/pages/DeliveryHistoryPage';
 //import Map from "./features/clients/components/Map";
 
 /**
@@ -151,6 +161,7 @@ function App() {
         <Route path="/pedidos" element={<ClientOrdersPage />} />
         <Route path="/pedidos/:orderId" element={<ClientOrderDetailsPage />} />
         <Route path="/homepage" element={<HomePage />} />
+        <Route path="/quiero-ser-delivery" element={<BecomeDeliveryPage />} />
         <Route path="/wishlist" element={<VistaComercioLayout><Wishlist/></VistaComercioLayout>}/>
         <Route path="/favoritos" element={<VistaComercioLayout><FavoritesPage /></VistaComercioLayout>}/>
         <Route path="/carrito" element={
@@ -206,6 +217,15 @@ function App() {
         <Route path="/comercio/pedidos" element={
           <MyCommerceLayout><CommerceOrdersPage /></MyCommerceLayout>
         } />
+        <Route path="/comercio/deliveries/resenas" element={
+          <MyCommerceLayout><CommerceDeliveryReviewsPage /></MyCommerceLayout>
+        } />    
+        <Route path="/comercio/delivery" element={
+          <MyCommerceLayout><CommerceDeliveriesPage /></MyCommerceLayout>
+        } />
+        <Route path="/comercio/delivery/agregar" element={
+          <MyCommerceLayout><AddStoreDeliveryPage /></MyCommerceLayout>
+        } />
         <Route path="/comercio/productos" element={
           <MyCommerceLayout><CommerceProductsPage /></MyCommerceLayout>
         } />
@@ -220,6 +240,24 @@ function App() {
         } />
         <Route path="/comercio/claims" element={
           <MyCommerceLayout><CommerceClaims/></MyCommerceLayout>
+        } />
+
+        {/* ── Área de delivery (con sidebar) ───────────────────────────── */}
+        <Route path="/delivery" element={<Navigate to="/delivery/perfil" replace />} />
+        <Route path="/delivery/perfil" element={
+          <DeliveryLayout><DeliveryProfilePage /></DeliveryLayout>
+        } />
+        <Route path="/delivery/perfil/editar" element={
+          <DeliveryLayout><DeliveryEditProfilePage /></DeliveryLayout>
+        } />
+        <Route path="/delivery/order" element={
+          <DeliveryLayout><DeliveryOrderScreen /></DeliveryLayout>
+        } />
+        <Route path="/delivery/pedidos" element={
+          <DeliveryLayout><DeliveryOrdersPage /></DeliveryLayout>
+        } />
+        <Route path="/delivery/history" element={
+          <DeliveryLayout><DeliveryHistoryPage /></DeliveryLayout>
         } />
 
         {/* ── Área de administración (con sidebar) ──────────────────────── */}
