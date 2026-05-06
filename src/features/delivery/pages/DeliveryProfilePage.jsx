@@ -79,13 +79,20 @@ export function DeliveryProfilePage() {
                         }
                     }
 
+                    const VEHICLE_MAP = {
+                        CAR: "Automóvil",
+                        MOTORCYCLE: "Motocicleta",
+                        BICYCLE: "Bicicleta",
+                        ON_FOOT: "A pie"
+                    };
+
                     setProfile({
                         name: userProfile?.name || sessionUser?.name || "",
                         email: userProfile?.email || sessionUser?.email || "",
                         phone: userProfile?.phone || "",
                         role: userProfile?.role || sessionUser?.role || "DELIVERY",
                         // Datos de la tabla Deliveries y usuarios
-                        vehicle_type: deliveryProfile?.vehicle_type || "N/A",
+                        vehicle_type: deliveryProfile?.vehicle_type ? (VEHICLE_MAP[deliveryProfile.vehicle_type] || deliveryProfile.vehicle_type) : "N/A",
                         delivery_status: deliveryProfile?.delivery_status || "N/A",
                         // Como el backend actualmente no retorna coverage_city en getDeliveryById, se puede usar valores por defecto si no existen
                         coverage_city: deliveryProfile?.coverage_city || "N/A",
