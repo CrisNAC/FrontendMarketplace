@@ -1389,4 +1389,151 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page.getByRole('heading', { name: 'Califica al delivery' })).not.toBeVisible();
     if (postCalled) throw new Error('Se llamó al endpoint POST al cerrar el modal sin enviar');
   });
+
+
+  // Flujo para convertirse en delivery
+  test('flujo cliente: registrarse y convertirse en delivery', async ({ page }) => {
+    // Variable reactiva para simular que tras el POST /api/deliveries/register
+    // el backend actualiza la sesión y ahora el usuario es DELIVERY
+    let deliveryRegistered = false;
+
+    // Session usada en login
+    await page.unroute('**/api/session');
+    await page.route('**/api/session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ token: 'fake-token', user: { id_user: 7 } }),
+      });
+    });
+
+    // session/user-session debe cambiar su role dinámicamente según deliveryRegistered
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      const user = deliveryRegistered
+        ? { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'Cliente Demo' }
+        : { id_user: 7, role: 'CUSTOMER', name: 'Cliente Demo' };
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ user }) });
+    });
+
+    // Perfil usuario (getCurrentUserForDeliveryForm -> fetchUserProfile)
+    await page.route('**/api/users/7', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ id_user: 7, name: 'Cliente Demo', email: 'cliente@test.com', phone: '0981000000', role: 'CUSTOMER' }),
+      });
+    });
+
+    // POST para registrar como delivery
+    await page.route('**/api/deliveries/register', async (route) => {
+      if (route.request().method() === 'POST') {
+        deliveryRegistered = true;
+        await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ id_delivery: 5 }) });
+        return;
+      }
+      await route.fallback();
+    });
+
+    // Registrar cuenta 
+    await page.goto('/login');
+    await page.getByRole('button', { name: 'Registrarse' }).click();
+    await page.getByPlaceholder('Tu nombre').fill('Cliente Demo');
+    await page.getByPlaceholder('tu@correo.com').fill('cliente@test.com');
+    await page.locator('input[name="password"]').fill('12345678');
+    await page.locator('input[name="confirmPassword"]').fill('12345678');
+    await page.getByRole('button', { name: 'Crear Cuenta' }).click();
+
+    // Iniciar sesión
+    await page.getByPlaceholder('tu@correo.com').fill('cliente@test.com');
+    await page.locator('input[name="password"]').fill('12345678');
+    await page.locator('form button[type="submit"]').click();
+
+    // Ir a la página "Quiero ser delivery"
+    await page.goto('/quiero-ser-delivery');
+
+    // Modal debe estar visible
+    await expect(page.getByRole('heading', { name: 'Quiero ser delivery' })).toBeVisible();
+
+    // Rellenar teléfono y seleccionar vehículo
+    await page.getByPlaceholder('+54 9 11 2345-6789').fill('0981000000');
+    await page.locator('#delivery-vehicle').selectOption('AUTOMOVIL');
+
+    // Confirmar (trigger POST -> deliveryRegistered = true)
+    await page.getByRole('button', { name: 'Confirmar' }).click();
+
+    // El modal cierra y redirige a homepage (comportamiento actual)
+    await expect(page).toHaveURL('/homepage');
+
+    // Navegar manualmente al perfil del delivery para validar que el registro fue exitoso
+    await page.goto('/delivery/perfil');
+
+    // Sidebar Panel Delivery debe estar presente
+    await expect(page.getByText('Panel Delivery')).toBeVisible();
+    await expect(page.getByText('Mi Perfil')).toBeVisible();
+  });
+
+  test('flujo delivery: visualizar sidebar del panel', async ({ page }) => {
+    // Session como DELIVERY
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ user: { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'Delivery Demo' } }) });
+    });
+
+    // Perfil de usuario
+    await page.route('**/api/users/7', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000', role: 'DELIVERY' }) });
+    });
+
+    // Navegar al panel delivery
+    await page.goto('/delivery');
+
+    // Debe redirigir a /delivery/perfil y mostrar sidebar
+    await expect(page).toHaveURL(/\/delivery\/perfil/);
+    await expect(page.getByText('Panel Delivery')).toBeVisible();
+    await expect(page.getByText('Mi Perfil')).toBeVisible();
+    await expect(page.getByText('Órdenes')).toBeVisible();
+    await expect(page.getByText('Historial')).toBeVisible();
+  });
+
+  test('flujo delivery: visualizar datos en mi perfil', async ({ page }) => {
+    // Session DELIVERY con id_delivery
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ user: { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'Delivery Demo', email: 'delivery@test.com' } }) });
+    });
+
+    // Perfil usuario
+    await page.route('**/api/users/7', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000' }) });
+    });
+
+    // Perfil de delivery (getDeliveryProfile)
+    const mockDeliveryProfile = {
+      id_delivery: 5,
+      delivery_status: 'AVAILABLE',
+      vehicle_type: 'CAR',
+      coverage_city: 'Asunción',
+      coverage_region: 'Central',
+      coverage_radius_km: 12,
+      availability_notes: 'Lunes a Viernes',
+      average_rating: 4.8,
+      total_deliveries: 42,
+      reviews_count: 10,
+      created_at: '2025-11-01T10:00:00.000Z'
+    };
+
+    await page.route('**/api/deliveries/5', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(mockDeliveryProfile) });
+    });
+
+    await page.goto('/delivery/perfil');
+
+    await expect(page.getByText('Perfil del Delivery')).toBeVisible();
+    await expect(page.getByText('Delivery Demo')).toBeVisible();
+    await expect(page.getByText('delivery@test.com')).toBeVisible();
+    await expect(page.getByText('0981000000')).toBeVisible();
+    await expect(page.getByText('CAR')).toBeVisible();
+    await expect(page.getByText('Asunción')).toBeVisible();
+  });
 });
