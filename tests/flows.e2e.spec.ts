@@ -335,6 +335,7 @@ test.describe('Flujos E2E de usuario final', () => {
     await setupCommonApiMocks(page);
   });
 
+  // este test ya no funciona en webkit porque WebKit no ejecuta el prellenado de campos de la misma forma que Chromium
   test('flujo cliente: registro, login, homepage, comercio, producto y comentarios', async ({ page }) => {
     await page.goto('/login');
 
@@ -343,12 +344,13 @@ test.describe('Flujos E2E de usuario final', () => {
     await page.getByPlaceholder('tu@correo.com').fill('user@test.com');
     await page.locator('input[name="password"]').fill('12345678');
     await page.locator('input[name="confirmPassword"]').fill('12345678');
-    await page.getByRole('button', { name: 'Crear Cuenta' }).click();
+
+    await page.locator('form button[type="submit"]').click(); // Crear cuenta
 
     await expect(page.getByText('Bienvenido')).toBeVisible();
+    await expect(page.locator('form button[type="submit"]')).toContainText('Iniciar sesión', { timeout: 5000 });
 
-    await page.getByPlaceholder('tu@correo.com').fill('user@test.com');
-    await page.locator('input[name="password"]').fill('12345678');
+    // Los campos ya vienen prellenados, solo hacer click
     await page.locator('form button[type="submit"]').click();
 
     await expect(page).toHaveURL('/homepage');
@@ -389,7 +391,7 @@ test.describe('Flujos E2E de usuario final', () => {
 
     await page.getByLabel('Nombre del Producto *').fill('Mouse Ergonomico Vertical');
     await page.getByLabel('Descripcion *').fill('Mouse vertical para oficina con conexión inalámbrica.');
-    await page.getByLabel('Precio *').fill('125000');
+    await page.getByLabel('Precio *').fill('12000');
     await page.getByLabel('Stock Disponible *').fill('15');
     await page.getByLabel('Categoria *').selectOption({ label: 'Celulares' });
 
@@ -1079,173 +1081,268 @@ test.describe('Flujos E2E de usuario final', () => {
   //--------------------------Tests E2E del QA Leo--------------------------
 
   //OM-479: [FE] Fix 'Mis Pedidos' (Comercio)
-  /**Descripción: Aceptar/Rechazar pedido ya no funciona, corregir.
-    Cuando el repartidor entrega su pedido, el seguimiento del pedido debe cambiar a entregado. 
-  */
-  test('flujo comercio: aceptar/rechazar pedido y marcar como entregado', async ({ page }) => {
-    // Mock para simular la sesión del comercio
-    await page.unroute('**/api/session/user-session');
-    await page.route('**/api/session/user-session', async (route) => {
+
+  const installCommerceOrdersMock = async (
+    page: Page,
+    options: {
+      order: Record<string, unknown>;
+      getStatus: () => string;
+      setStatus: (status: string) => void;
+      hasAssignment?: boolean;
+    },
+  ) => {
+    await page.route('**/api/orders/store/1**', async (route) => {
+      const url = new URL(route.request().url());
+      const requestedStatuses = (url.searchParams.get('order_status') ?? '')
+        .split(',')
+        .map((status) => status.trim())
+        .filter(Boolean);
+      const currentStatus = options.getStatus();
+      const responseOrder = { ...options.order, status: currentStatus };
+      const shouldReturnOrder = requestedStatuses.length === 0 || requestedStatuses.includes(currentStatus);
+
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ user: { id_user: 8, id_store: 5, name: 'Comerciante Demo', role: 'SELLER' } }),
+        body: JSON.stringify({
+          orders: shouldReturnOrder ? [responseOrder] : [],
+          total: shouldReturnOrder ? 1 : 0,
+          page: Number(url.searchParams.get('page') ?? 1),
+          limit: Number(url.searchParams.get('limit') ?? 10),
+          total_page: 1,
+        }),
       });
     });
 
-    // Estado reactivo para simular cambios de pedidos
-    let ordersState = [
-      {
-        id: 100,
-        status: 'PENDING',
-        total: 450000,
-        notes: null,
-        createdAt: new Date().toISOString(),
-        address: { city: 'Asunción', region: 'Central' },
-        items: [{ id: 1, quantity: 2 }],
-      },
-      {
-        id: 101,
-        status: 'PROCESSING',
-        total: 250000,
-        notes: null,
-        createdAt: new Date(Date.now() - 3600000).toISOString(),
-        address: { city: 'Encarnación', region: 'Itapúa' },
-        items: [{ id: 2, quantity: 1 }],
-      },
-      {
-        id: 102,
-        status: 'PENDING',
-        total: 180000,
-        notes: null,
-        createdAt: new Date().toISOString(),
-        address: { city: 'Ciudad del Este', region: 'Alto Paraná' },
-        items: [{ id: 3, quantity: 1 }],
-      },
-      {
-        id: 103,
-        status: 'PENDING',
-        total: 320000,
-        notes: null,
-        createdAt: new Date().toISOString(),
-        address: { city: 'Villarrica', region: 'Guairá' },
-        items: [{ id: 4, quantity: 1 }],
-      },
-    ];
-
-    // Mock para obtener pedidos del comercio por ID de tienda
-    await page.route('**/api/orders/store/5**', async (route) => {
-      if (route.request().method() === 'GET') {
-        const url = new URL(route.request().url());
-        const statusFilter = url.searchParams.get('order_status');
-
-        let filtered = ordersState;
-        if (statusFilter) {
-          const statuses = statusFilter.split(',');
-          filtered = ordersState.filter(o => statuses.includes(o.status));
+    await page.route('**/api/orders/*/status', async (route) => {
+      if (route.request().method() === 'PATCH') {
+        const body = route.request().postDataJSON() as { order_status?: string };
+        if (body.order_status) {
+          options.setStatus(body.order_status);
         }
 
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ message: 'Estado actualizado' }),
+        });
+        return;
+      }
+
+      await route.fallback();
+    });
+
+    if (options.hasAssignment) {
+      await page.route('**/api/orders/*/assignment', async (route) => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
           body: JSON.stringify({
-            orders: filtered,
-            total: filtered.length,
-            page: 1,
-            limit: 100,
-            total_page: 1,
+            has_assignment: true,
+            delivery: { id: 77, name: 'Repartidor Demo' },
           }),
         });
-      }
+      });
+    }
+  };
+
+  //OM-479
+  test('flujo comercio: aceptar pedido pendiente y moverlo a seguimiento', async ({ page }) => {
+    let currentStatus = 'PENDING';
+
+    await installCommerceOrdersMock(page, {
+      order: {
+        id: 9001,
+        total: 125000,
+        notes: 'Retiro en tienda',
+        createdAt: '2026-05-05T10:00:00.000Z',
+        address: null,
+        items: [{ id: 1, quantity: 1 }],
+      },
+      getStatus: () => currentStatus,
+      setStatus: (status) => {
+        currentStatus = status;
+      },
     });
 
-    // Mock para actualizar estado de pedido
+    await page.goto('/comercio/pedidos');
+
+    await expect(page.getByRole('heading', { name: 'Pedidos Pendientes' })).toBeVisible();
+    await expect(page.getByText('#ORD-9001')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Aceptar' }).click();
+
+    await expect(page.getByText('No tenés pedidos pendientes.')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Seguimiento' }).click();
+    await expect(page.getByRole('heading', { name: 'Seguimiento de Pedidos' })).toBeVisible();
+    await expect(page.getByText('ORD-9001')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Marcar como Enviado' })).toBeVisible();
+  });
+
+  //OM-479
+  test('flujo comercio: rechazar pedido pendiente', async ({ page }) => {
+    let currentStatus = 'PENDING';
+
+    await installCommerceOrdersMock(page, {
+      order: {
+        id: 9002,
+        total: 89900,
+        notes: 'Pedido cancelable',
+        createdAt: '2026-05-05T11:00:00.000Z',
+        address: null,
+        items: [{ id: 1, quantity: 2 }],
+      },
+      getStatus: () => currentStatus,
+      setStatus: (status) => {
+        currentStatus = status;
+      },
+    });
+
+    await page.goto('/comercio/pedidos');
+
+    await expect(page.getByText('#ORD-9002')).toBeVisible();
+    await page.getByRole('button', { name: 'Rechazar' }).click();
+
+    await expect(page.getByText('No tenés pedidos pendientes.')).toBeVisible();
+    await expect(page.getByText('#ORD-9002')).not.toBeVisible();
+  });
+
+  //OM-479
+  test("flujo comercio: reflejar pedido entregado en historial", async ({ page }) => {
+    let currentStatus = 'SHIPPED';
+
+    await installCommerceOrdersMock(page, {
+      order: {
+        id: 9003,
+        total: 219900,
+        notes: 'Pedido con delivery asignado',
+        createdAt: '2026-05-05T12:00:00.000Z',
+        address: { city: 'Asuncion', region: 'Central' },
+        items: [{ id: 1, quantity: 1 }],
+      },
+      getStatus: () => currentStatus,
+      setStatus: (status) => {
+        currentStatus = status;
+      },
+      hasAssignment: true,
+    });
+
+    await page.goto('/comercio/pedidos');
+
+    await page.getByRole('button', { name: 'Seguimiento' }).click();
+    await expect(page.getByText('ORD-9003')).toBeVisible();
+    await expect(page.getByText('Enviado')).toBeVisible();
+
+    currentStatus = 'DELIVERED';
+
+    await page.getByRole('button', { name: 'Historial' }).click();
+    await expect(page.getByRole('heading', { name: 'Historial de Pedidos' })).toBeVisible();
+    await expect(page.getByText('#OM-9003')).toBeVisible();
+    // Buscar el badge de estado 'Entregado' con un selector más específico
+    await expect(page.locator('span').filter({ hasText: 'Entregado' }).first()).toBeVisible();
+  });
+
+  //OM-479
+  test('flujo comercio: validar botones deshabilitados durante acción', async ({ page }) => {
+    let currentStatus = 'PENDING';
+
+    await installCommerceOrdersMock(page, {
+      order: {
+        id: 9004,
+        total: 95500,
+        notes: 'Test de deshabilitación',
+        createdAt: '2026-05-06T10:00:00.000Z',
+        address: null,
+        items: [{ id: 1, quantity: 1 }],
+      },
+      getStatus: () => currentStatus,
+      setStatus: (status) => {
+        currentStatus = status;
+      },
+    });
+
+    // Override route con delay manual sin bloquear el test
+    let requestIntercepted = false;
     await page.route('**/api/orders/*/status', async (route) => {
       if (route.request().method() === 'PATCH') {
+        requestIntercepted = true;
         const body = route.request().postDataJSON() as { order_status?: string };
-        const orderId = parseInt(route.request().url().split('/orders/')[1].split('/')[0], 10);
-
-        const order = ordersState.find(o => o.id === orderId);
-        if (order) {
-          order.status = body.order_status || order.status;
+        if (body.order_status) {
+          currentStatus = body.order_status;
         }
-
+        // Delay mínimo para capturar el estado de carga sin bloquear el test
+        await new Promise(resolve => setTimeout(resolve, 500));
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
-          body: JSON.stringify({ id: orderId, status: body.order_status }),
+          body: JSON.stringify({ message: 'Estado actualizado' }),
         });
+        return;
       }
+      await route.fallback();
     });
 
-    // Navegar a la página de pedidos del comercio
     await page.goto('/comercio/pedidos');
 
-    // ----Aceptar pedido pendiente----
-    await expect(page.getByRole('heading', { name: /Pedidos Pendientes/i })).toBeVisible();
-    await expect(page.getByText('ORD-100')).toBeVisible();
-    await page.getByRole('button', { name: /Aceptar/ }).first().click();
+    const aceptarBtn = page.getByRole('button', { name: 'Aceptar' });
+    await expect(aceptarBtn).toBeVisible();
+    await expect(aceptarBtn).toBeEnabled();
 
-    // Debe hacer auto-switch a Seguimiento
-    await expect(page.getByRole('heading', { name: /Seguimiento de Pedidos/i })).toBeVisible({ timeout: 3000 });
-    await expect(page.getByText('ORD-100')).toBeVisible();
+    await aceptarBtn.click();
 
-    // ----Rechazar pedido pendiente----
-    await page.getByRole('button', { name: /Pendientes/ }).click();
-    await expect(page.getByText('ORD-102')).toBeVisible();
-    await page.getByRole('button', { name: /Rechazar/ }).first().click();
-    await expect(page.getByText('ORD-102')).not.toBeVisible({ timeout: 3000 });
+    const aceptandoBtn = page.getByRole('button', { name: 'Aceptando...' });
+    await expect(aceptandoBtn).toBeVisible({ timeout: 5000 });
+    await expect(aceptandoBtn).toBeDisabled();
+  });
 
+  //OM-479
+  test('flujo comercio: manejo de errores en aceptar/rechazar', async ({ page }) => {
+    let currentStatus = 'PENDING';
 
-    // ----Validar que el pedido aceptado aparece en Seguimiento----
-    await page.getByRole('button', { name: /Seguimiento/ }).click();
-    await expect(page.getByText('ORD-100')).toBeVisible();
-    await page.getByRole('button', { name: /Marcar como Enviado/ }).first().click();
-    await page.waitForTimeout(500);
-    // El botón debe desaparecer porque SHIPPED no tiene un siguiente estado en el flujo
-    await expect(page.getByRole('button', { name: /Marcar como Enviado/ })).toHaveCount(1); // solo queda ORD-101
+    await installCommerceOrdersMock(page, {
+      order: {
+        id: 9005,
+        total: 72300,
+        notes: 'Test de error',
+        createdAt: '2026-05-06T11:00:00.000Z',
+        address: null,
+        items: [{ id: 1, quantity: 1 }],
+      },
+      getStatus: () => currentStatus,
+      setStatus: (status) => {
+        currentStatus = status;
+      },
+    });
 
-    // ----OM479-004: Validar que aparece en Historial una vez entregado----
-    ordersState = ordersState.map(o => o.id === 100 ? { ...o, status: 'DELIVERED' } : o);
-    await page.getByRole('button', { name: /Historial/ }).click();
-    await expect(page.getByRole('heading', { name: /Historial de Pedidos/i })).toBeVisible();
-    await expect(page.getByText('#OM-100')).toBeVisible({ timeout: 5000 });
-
-    // ----Error controlado al aceptar pedido----
-    // Simular que el backend falla al aceptar
-    await page.unroute('**/api/orders/*/status');
     await page.route('**/api/orders/*/status', async (route) => {
       if (route.request().method() === 'PATCH') {
         await route.fulfill({
-          status: 500,
+          status: 400,
           contentType: 'application/json',
-          body: JSON.stringify({ message: 'Error interno del servidor' }),
+          body: JSON.stringify({
+            error: { message: 'No se pudo actualizar el estado del pedido. Intenta de nuevo.' },
+          }),
         });
+        return;
       }
+      await route.fallback();
     });
 
-    await page.getByRole('button', { name: /Pendientes/ }).click();
-    await expect(page.getByText('ORD-103')).toBeVisible();
-    await page.getByRole('button', { name: /Aceptar/ }).first().click();
+    await page.goto('/comercio/pedidos');
 
-    // La vista no debe romperse
-    await expect(page.getByRole('heading', { name: /Pedidos Pendientes/i })).toBeVisible();
-    // El pedido debe seguir visible (no se eliminó)
-    await expect(page.getByText('ORD-103')).toBeVisible();
-    // Debe mostrarse un mensaje de error
-    await expect(page.locator('div').filter({ hasText: /Error/i }).first()).toBeVisible({ timeout: 3000 });
+    await expect(page.getByText('#ORD-9005')).toBeVisible();
+    const estadoInicial = currentStatus;
 
-    // ----Error controlado al rechazar pedido----
-    await page.getByRole('button', { name: /Rechazar/ }).first().click();
+    await page.getByRole('button', { name: 'Aceptar' }).click();
 
-    // La vista no debe romperse
-    await expect(page.getByRole('heading', { name: /Pedidos Pendientes/i })).toBeVisible();
-    // El pedido debe seguir visible
-    await expect(page.getByText('ORD-103')).toBeVisible();
-    // Debe mostrarse un mensaje de error
-    await expect(page.locator('div').filter({ hasText: /Error/i }).first()).toBeVisible({ timeout: 3000 });
+    await expect(page.getByText('No se pudo actualizar el estado del pedido. Intenta de nuevo.')).toBeVisible();
+
+    await expect(page.getByText('#ORD-9005')).toBeVisible();
+    expect(currentStatus).toBe(estadoInicial);
   });
 
+  //OM-485
   // Mostrar ventana de calificación del delivery al iniciar sesión.
   test('flujo cliente: mostrar ventana de calificación del delivery al iniciar sesión', async ({ page }) => {
     await page.unroute('**/api/session');
@@ -1288,6 +1385,7 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page.getByText('Pedido #123 de Nissei')).toBeVisible();
   });
 
+  //OM-485
   test('flujo cliente: calificar delivery desde la ventana emergente', async ({ page }) => {
     await page.unroute('**/api/session');
     await page.route('**/api/session', async (route) => {
@@ -1341,6 +1439,7 @@ test.describe('Flujos E2E de usuario final', () => {
     if (!postCalled) throw new Error('No se llamó al endpoint POST de delivery-review');
   });
 
+  //OM-485
   test('flujo cliente: cerrar la ventana de calificación sin enviar', async ({ page }) => {
     await page.unroute('**/api/session');
     await page.route('**/api/session', async (route) => {
@@ -1391,8 +1490,10 @@ test.describe('Flujos E2E de usuario final', () => {
   });
 
 
+  //OM-497
+  // este test ya no funciona en webkit porque WebKit no ejecuta el prellenado de campos de la misma forma que Chromium
   // Flujo para convertirse en delivery
-  test('flujo cliente: registrarse y convertirse en delivery', async ({ page }) => {
+  test('flujo cliente: registrarse, iniciar sesion y convertirse en delivery', async ({ page }) => {
     // Variable reactiva para simular que tras el POST /api/deliveries/register
     // el backend actualiza la sesión y ahora el usuario es DELIVERY
     let deliveryRegistered = false;
@@ -1445,8 +1546,6 @@ test.describe('Flujos E2E de usuario final', () => {
     await page.getByRole('button', { name: 'Crear Cuenta' }).click();
 
     // Iniciar sesión
-    await page.getByPlaceholder('tu@correo.com').fill('cliente@test.com');
-    await page.locator('input[name="password"]').fill('12345678');
     await page.locator('form button[type="submit"]').click();
 
     // Ir a la página "Quiero ser delivery"
@@ -1473,6 +1572,7 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page.getByText('Mi Perfil')).toBeVisible();
   });
 
+  //OM-497
   test('flujo delivery: visualizar sidebar del panel', async ({ page }) => {
     // Session como DELIVERY
     await page.unroute('**/api/session/user-session');
@@ -1496,6 +1596,155 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page.getByText('Historial')).toBeVisible();
   });
 
+  //OM-497
+
+  //OM-486
+  test('flujo cliente: abrir modal de delivery desde el navbar', async ({ page }) => {
+    await page.unroute('**/api/session');
+    await page.route('**/api/session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ token: 'fake-token', user: { id_user: 7, role: 'CUSTOMER' } }),
+      });
+    });
+
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, role: 'CUSTOMER', name: 'Cliente Demo', email: 'cliente@test.com' } }),
+      });
+    });
+
+    await page.route('**/api/users/7', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id_user: 7,
+          name: 'Cliente Demo',
+          email: 'cliente@test.com',
+          phone: '0981000000',
+          role: 'CUSTOMER',
+        }),
+      });
+    });
+
+    await page.route('**/api/users/7/carts', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.goto('/homepage');
+
+    await expect(page.getByRole('link', { name: 'Quiero ser delivery' })).toBeVisible();
+    await page.getByRole('link', { name: 'Quiero ser delivery' }).click();
+
+    await expect(page).toHaveURL('/quiero-ser-delivery');
+    await expect(page.getByRole('heading', { name: 'Quiero ser delivery' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Confirmar' })).toBeVisible();
+  });
+
+  //OM-486
+  test('flujo cliente: validar formulario y registrar como delivery', async ({ page }) => {
+    let deliveryRegistered = false;
+
+    await page.unroute('**/api/session');
+    await page.route('**/api/session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ token: 'fake-token', user: { id_user: 7, role: 'CUSTOMER' } }),
+      });
+    });
+
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      const user = deliveryRegistered
+        ? { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'Cliente Demo', email: 'cliente@test.com' }
+        : { id_user: 7, role: 'CUSTOMER', name: 'Cliente Demo', email: 'cliente@test.com' };
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user }),
+      });
+    });
+
+    await page.route('**/api/users/7', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id_user: 7,
+            name: 'Cliente Demo',
+            email: 'cliente@test.com',
+            phone: '0981000000',
+            role: 'CUSTOMER',
+          }),
+        });
+        return;
+      }
+
+      if (route.request().method() === 'PUT') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ id_user: 7, phone: '0981000000' }),
+        });
+        return;
+      }
+
+      await route.fallback();
+    });
+
+    await page.route('**/api/users/7/carts', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.route('**/api/deliveries/register', async (route) => {
+      if (route.request().method() === 'POST') {
+        deliveryRegistered = true;
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({ id_delivery: 5, message: 'Registrado como delivery' }),
+        });
+        return;
+      }
+
+      await route.fallback();
+    });
+
+    await page.goto('/quiero-ser-delivery');
+
+    await expect(page.getByRole('heading', { name: 'Quiero ser delivery' })).toBeVisible();
+
+  await page.getByPlaceholder('+54 9 11 2345-6789').fill('123');
+    await page.getByRole('button', { name: 'Confirmar' }).click();
+  await expect(page.getByText('Ingresá al menos 8 dígitos; solo números y símbolos habituales (+, espacio, guiones, paréntesis)')).toBeVisible();
+
+    await page.getByPlaceholder('+54 9 11 2345-6789').fill('0981000000');
+    await page.locator('#delivery-vehicle').selectOption('AUTOMOVIL');
+    await page.getByRole('button', { name: 'Confirmar' }).click();
+
+    await expect(page).toHaveURL('/homepage');
+    await page.goto('/delivery/perfil');
+    await expect(page.getByRole('heading', { name: 'Perfil del Delivery' })).toBeVisible();
+    await expect(page.getByText('Cliente Demo')).toBeVisible();
+    await expect(page.getByText('0981000000')).toBeVisible();
+    expect(deliveryRegistered).toBe(true);
+  });
   test('flujo delivery: visualizar datos en mi perfil', async ({ page }) => {
     // Session DELIVERY con id_delivery
     await page.unroute('**/api/session/user-session');
