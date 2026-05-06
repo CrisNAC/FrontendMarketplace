@@ -95,8 +95,8 @@ export function DeliveryProfilePage() {
                     setProfile({
                         id_delivery: authUser?.id_delivery || null,
                         name: userProfile?.name || authUser?.name || "",
-                        email: userProfile?.email || authUser?.email || "",
-                        phone: userProfile?.phone || "",
+                        email: userProfile?.email || authUser?.email || deliveryProfile?.user?.email || "",
+                        phone: deliveryProfile?.user?.phone || userProfile?.phone || authUser?.phone || "",
                         role: userProfile?.role || sessionUser?.role || "DELIVERY",
                         // Datos de la tabla Deliveries y usuarios
                         vehicle_type: deliveryProfile?.vehicle_type ? (VEHICLE_MAP[deliveryProfile.vehicle_type] || deliveryProfile.vehicle_type) : "N/A",
@@ -256,20 +256,7 @@ export function DeliveryProfilePage() {
                         <InfoRow icon={Phone} value={profile?.phone} iconColor="#16a34a" />
                     </div>
 
-                    <div style={card}>
-                        <h6 style={sectionTitle}>Zona y Horarios de Reparto</h6>
-                        <p style={labelStyle}>Ciudad</p>
-                        <InfoRow icon={MapPin} value={profile?.coverage_city} iconColor="#ef4444" />
-                        
-                        <p style={labelStyle}>Barrio / Zona Base</p>
-                        <InfoRow icon={Map} value={profile?.coverage_region} iconColor="#f59e0b" />
-                        
-                        <p style={labelStyle}>Radio de Cobertura</p>
-                        <InfoRow icon={Activity} value={`${profile?.coverage_radius_km} km`} iconColor="#0ea5e9" />
 
-                        <p style={labelStyle}>Disponibilidad / Horarios</p>
-                        <InfoRow icon={Clock} value={profile?.availability_notes} iconColor="#8b5cf6" />
-                    </div>
                 </div>
 
                 {/* Columna derecha */}
