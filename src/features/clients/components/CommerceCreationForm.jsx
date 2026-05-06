@@ -31,7 +31,7 @@ export const CommerceCreationForm = () => {
         address: "",
         latitude: null,
         longitude: null,
-        categoryId: "",
+        categoryIds: [],
         description: "",
         websiteUrl: "",
         instagramUrl: "",
@@ -68,7 +68,11 @@ export const CommerceCreationForm = () => {
     }, [])
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value })
+        const { name, value, selectedOptions } = e.target
+        const nextValue = selectedOptions
+            ? Array.from(selectedOptions).map((option) => option.value)
+            : value
+        setFormData({ ...formData, [name]: nextValue })
         setError("")
     }
 
@@ -106,6 +110,7 @@ export const CommerceCreationForm = () => {
             !formData.phone ||
             !formData.address ||
             !formData.description ||
+            !formData.categoryIds.length ||
             formData.basePrice === "" ||
             formData.distancePrice === ""
         ) {
@@ -172,7 +177,7 @@ export const CommerceCreationForm = () => {
         try {
             const payload = {
                 fk_user: userId,
-                fk_store_category: Number(formData.categoryId) || 1,
+                category_ids: formData.categoryIds.map((categoryId) => Number(categoryId)),
                 name: formData.name,
                 email: formData.email,
                 phone: formData.phone,
@@ -328,23 +333,25 @@ export const CommerceCreationForm = () => {
                 </div>
             </div>
 
-            {/* Categoría Principal */}
+            {/* Categorías */}
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Categoría Principal *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Categorías del Comercio *</label>
                 <select
-                    name="categoryId"
-                    value={formData.categoryId}
+                    multiple
+                    name="categoryIds"
+                    value={formData.categoryIds}
                     onChange={handleChange}
                     disabled={loading}
                     className={`${inputCls} select-category`}
+                    style={{ minHeight: "140px" }}
                 >
-                    <option value="">Selecciona una categoría</option>
                     {categories.map((cat) => (
                         <option key={cat.id} value={cat.id}>
                             {cat.name}
                         </option>
                     ))}
                 </select>
+                <p className="text-xs text-gray-500 mt-1">Podés seleccionar varias categorías manteniendo Ctrl o Cmd.</p>
             </div>
 
             {/* Descripción */}
@@ -480,7 +487,7 @@ export const CommerceCreationForm = () => {
                     type="button"
                     onClick={() => navigate("/homepage")}
                     disabled={loading}
-                    className="bg-white text-gray-800 px-4 py-2 rounded border border-gray-800 hover:!bg-green-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="bg-white text-gray-800 px-4 py-2 rounded border border-gray-800 hover:bg-green-100! disabled:cursor-not-allowed disabled:opacity-60"
                 >
                     Cancelar
                 </button>

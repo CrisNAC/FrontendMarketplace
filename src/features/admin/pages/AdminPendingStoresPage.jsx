@@ -10,6 +10,14 @@ const cardStyle = {
   boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
 };
 
+const getStoreCategories = (store) => {
+  if (Array.isArray(store?.categories) && store.categories.length > 0) {
+    return store.categories;
+  }
+
+  return store?.store_category ? [store.store_category] : []; //En el caso de comercios antiguos con relación 1 a 1 de Categoria
+};
+
 // ── Modales para Comercios ─────────────────────────────────────────────────
 
 const RejectReasonModal = ({ isOpen, onClose, onConfirm, isSubmitting }) => {
@@ -81,7 +89,9 @@ const StoreDetailsModal = ({ isOpen, store, onClose, onApprove, onReject, isSubm
             )}
             <div>
               <h4 style={{ margin: "0 0 4px 0", fontSize: "18px", fontWeight: "600", color: "#111827" }}>{store.name}</h4>
-              <p style={{ margin: "0 0 4px 0", fontSize: "14px", color: "#6b7280" }}>Categoría: {store.store_category?.name}</p>
+              <p style={{ margin: "0 0 4px 0", fontSize: "14px", color: "#6b7280" }}>
+                Categorías: {getStoreCategories(store).map((category) => category.name).join(", ") || "Sin categorías"}
+              </p>
               <span style={{ display: "inline-block", padding: "4px 10px", borderRadius: "999px", fontSize: "12px", fontWeight: "500", backgroundColor: "#fef08a", color: "#854d0e" }}>
                 Pendiente
               </span>
@@ -244,7 +254,9 @@ export const AdminPendingStoresPage = () => {
                 </div>
                 <div style={{ flex: "1.5", minWidth: "150px" }}>
                   <p style={{ margin: 0, fontWeight: "600", fontSize: "14px" }}>{store.name}</p>
-                  <p style={{ margin: 0, fontSize: "12px", color: "#6b7280" }}>Categoría: {store.store_category?.name}</p>
+                  <p style={{ margin: 0, fontSize: "12px", color: "#6b7280" }}>
+                    Categorías: {getStoreCategories(store).map((category) => category.name).join(", ") || "Sin categorías"}
+                  </p>
                 </div>
                 <div style={{ flex: "1.5", minWidth: "150px" }}>
                   <p style={{ margin: 0, fontSize: "13px", fontWeight: "500", color: "#374151" }}>{store.user?.name}</p>

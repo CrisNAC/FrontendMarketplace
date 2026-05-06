@@ -21,12 +21,13 @@ export const apiClient = axios.create({
  *
  * El backend devuelve el objeto completo del comercio con la forma:
  * {
- *   id_store, fk_user, fk_store_category,
+ *   id_store, fk_user,
  *   name, email, phone, description, logo,
  *   website_url, instagram_url, tiktok_url,
  *   status, created_at, updated_at,
  *   user: { id_user, name, email, role, status },
- *   store_category: { id_store_category, name, status },
+ *   categories: [{ id_category, name, status }],
+ *   store_category: { id_store_category, name },
  *   products: [...],
  *   addresses: [{ id_address, address, city, region, postal_code, ... }]
  * }
@@ -68,7 +69,7 @@ export const fetchCommerceCategories = async () => {
  *   website_url     String? max 500
  *   instagram_url   String? max 500
  *   tiktok_url      String? max 500
- *   fk_store_category  Int           (ID del rubro, validado en BD)
+ *   category_ids    Int[]          (IDs de los rubros, validados en BD)
  *   address         String            (dirección principal del comercio)
  *   city            String  max 100
  *   region          String  max 100   (OBLIGATORIO si se envía)

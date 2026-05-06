@@ -95,7 +95,7 @@ const validateForm = (formData) => {
  *   store.website_url        → formData.websiteUrl
  *   store.instagram_url      → formData.instagramUrl
  *   store.tiktok_url         → formData.tiktokUrl
- *   store.fk_store_category  → formData.categoryId (string para <select>)
+ *   store.categories         → formData.categoryIds (array para <select multiple>)
  *   store.addresses[0].address     → formData.address
  *   store.addresses[0].latitude    → formData.latitude
  *   store.addresses[0].longitude   → formData.longitude
@@ -112,7 +112,7 @@ export const useEditCommerce = () => {
         email: "",
         phone: "",
         description: "",
-        categoryId: "",
+        categoryIds: [],
         logoUrl: "",
         address: "",
         latitude: null,
@@ -188,10 +188,11 @@ export const useEditCommerce = () => {
                     email: commerce.email ?? "",
                     phone: commerce.phone ?? "",
                     description: commerce.description ?? "",
-                    // fk_store_category como string para que <select> lo reconozca
-                    categoryId: commerce.fk_store_category
-                        ? String(commerce.fk_store_category)
-                        : "",
+                    categoryIds: Array.isArray(commerce.categories) && commerce.categories.length > 0
+                        ? commerce.categories.map((category) => String(category.id_category))
+                        : commerce.store_category?.id_store_category
+                            ? [String(commerce.store_category.id_store_category)]
+                            : [],
                     logoUrl: commerce.logo ?? "",
                     // Campos de Addresses (primer registro del comercio)
                     address: firstAddress.address ?? "",
@@ -299,9 +300,8 @@ export const useEditCommerce = () => {
             email: formData.email.trim(),
             phone: formData.phone.trim(),
             description: formData.description.trim() || null,
-            // fk_store_category → number (validateStoreCategoryService lo requiere)
-            ...(formData.categoryId && {
-                fk_store_category: Number(formData.categoryId),
+            ...(formData.categoryIds.length > 0 && {
+                category_ids: formData.categoryIds.map((categoryId) => Number(categoryId)),
             }),
             // logo → string URL o null para borrar (solo si no se subió un archivo nuevo)
             logo: logoFile ? undefined : (formData.logoUrl.trim() || null),

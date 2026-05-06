@@ -19,6 +19,7 @@ type Store = {
     total_reviews?: number | null;
     open_time?: string | null;
     close_time?: string | null;
+    categories?: Array<{ id_category?: number; name: string }>;
     store_category?: { id_store_category: number; name: string };
     status?: boolean;
     addresses?: Array<{
@@ -207,7 +208,9 @@ export const VistaComercioPage = () => {
     }, [storeId, selectedCategoryId, priceRange.max, priceRange.min, appliedSearch]);
 
     const headerName = store?.name || storeName || "Comercio";
-    const headerCategory = store?.store_category?.name || "Comercio";
+    const headerCategory = Array.isArray(store?.categories) && store.categories.length > 0
+        ? store.categories.map((category) => category.name).join(" · ")
+        : store?.store_category?.name || "Comercio";
     const mainAddress = store?.addresses?.[0];
     const addressText = [mainAddress?.address, mainAddress?.city, mainAddress?.region]
         .filter(Boolean)

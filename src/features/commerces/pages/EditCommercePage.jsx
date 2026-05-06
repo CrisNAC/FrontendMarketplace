@@ -124,7 +124,9 @@ export function EditCommercePage() {
         </div>
     );
 
-    const selectedCategory = categories.find(c => String(c.id) === String(formData.categoryId));
+    const selectedCategories = categories.filter((c) =>
+        Array.isArray(formData.categoryIds) && formData.categoryIds.includes(String(c.id))
+    );
 
     return (
         <>
@@ -196,47 +198,46 @@ export function EditCommercePage() {
                             />
                         </Field>
 
-                        {/* Categoría como chip + selector */}
+                        {/* Categorías como chips + selector múltiple */}
                         <div style={{ marginBottom: "14px" }}>
-                            <label style={labelStyle}>Categorías de Productos *</label>
+                            <label style={labelStyle}>Categorías del Comercio *</label>
 
                             <div style={{ marginBottom: "8px", minHeight: "28px" }}>
-                                {selectedCategory ? (
-                                    <CategoryChip
-                                        name={selectedCategory.name}
-                                        disabled={isFormDisabled}
-                                        onRemove={() => onFieldChange({ target: { name: "categoryId", value: "" } })}
-                                    />
+                                {selectedCategories.length > 0 ? (
+                                    selectedCategories.map((category) => (
+                                        <CategoryChip
+                                            key={category.id}
+                                            name={category.name}
+                                            disabled={isFormDisabled}
+                                            onRemove={() => onFieldChange({
+                                                target: {
+                                                    name: "categoryIds",
+                                                    value: formData.categoryIds.filter((categoryId) => String(categoryId) !== String(category.id)),
+                                                }
+                                            })}
+                                        />
+                                    ))
                                 ) : (
-                                    <span style={{ fontSize: "12px", color: "#9ca3af" }}>Sin categoría seleccionada</span>
+                                    <span style={{ fontSize: "12px", color: "#9ca3af" }}>Sin categorías seleccionadas</span>
                                 )}
                             </div>
 
-                            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                                <select
-                                    name="categoryId" value={formData.categoryId}
-                                    onChange={onFieldChange} disabled={isFormDisabled}
-                                    style={{ ...inputStyle, flex: 1 }}
-                                >
-                                    <option value="">Seleccionar categoría...</option>
-                                    {categories.map(cat => (
-                                        <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                    ))}
-                                </select>
-                                <div
-                                    title="Funcionalidad de múltiples categorías próximamente"
-                                    style={{
-                                        width: "34px", height: "36px", flexShrink: 0,
-                                        backgroundColor: "var(--primary-dark)", color: "white",
-                                        border: "none", borderRadius: "8px", fontSize: "20px",
-                                        display: "flex", alignItems: "center", justifyContent: "center",
-                                        opacity: 0.4, cursor: "not-allowed",
-                                    }}
-                                >
-                                    +
-                                </div>
-                            </div>
-                            {validationErrors.categoryId && <p style={errorMsg}>{validationErrors.categoryId}</p>}
+                            <select
+                                multiple
+                                name="categoryIds"
+                                value={formData.categoryIds}
+                                onChange={onFieldChange}
+                                disabled={isFormDisabled}
+                                style={{ ...inputStyle, minHeight: "140px" }}
+                            >
+                                {categories.map((cat) => (
+                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                ))}
+                            </select>
+                            <p style={{ fontSize: "12px", color: "#6b7280", margin: "8px 0 0 0" }}>
+                                Mantené presionada la tecla Ctrl o Cmd para seleccionar varias categorías.
+                            </p>
+                            {validationErrors.categoryIds && <p style={errorMsg}>{validationErrors.categoryIds}</p>}
                         </div>
                     </div>
 
