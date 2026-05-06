@@ -1,7 +1,9 @@
+// src/features/delivery/pages/DeliveryProfilePage.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Mail, Phone, MapPin, Map, Star, Truck, Calendar, Activity, Clock, Edit } from "lucide-react";
-import { getCurrentUserForDeliveryForm, getDeliveryProfile } from "../../clients/services/deliveryApi";
+import { User, Mail, Phone, MapPin, Map, Star, Truck, Calendar, Activity, Clock, Edit, Power } from "lucide-react";
+import toast from "react-hot-toast";
+import { getCurrentUserForDeliveryForm, getDeliveryProfile, updateDeliveryStatus } from "../../clients/services/deliveryApi";
 import { getBackendErrorMessage } from "../../commerces/services/editUserProfileApi";
 
 // ─── Estilos compartidos ──────────────────────────────────────────────────────
@@ -58,22 +60,26 @@ export function DeliveryProfilePage() {
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [updatingStatus, setUpdatingStatus] = useState(false);
+    const [sessionUser, setSessionUser] = useState(null);
 
     useEffect(() => {
         let active = true;
         const load = async () => {
             try {
-                const { profile: userProfile, sessionUser } = await getCurrentUserForDeliveryForm();
+                const { profile: userProfile, sessionUser: authUser } = await getCurrentUserForDeliveryForm();
                 
                 if (active) {
-                    if (sessionUser?.role !== "DELIVERY") {
+                    setSessionUser(authUser);
+                    
+                    if (authUser?.role !== "DELIVERY") {
                         navigate("/quiero-ser-delivery", { replace: true });
                         return;
                     }
                     let deliveryProfile = null;
-                    if (sessionUser?.id_delivery) {
+                    if (authUser?.id_delivery) {
                         try {
-                            deliveryProfile = await getDeliveryProfile(sessionUser.id_delivery);
+                            deliveryProfile = await getDeliveryProfile(authUser.id_delivery);
                         } catch (err) {
                             console.error("No se pudo obtener el perfil de delivery", err);
                         }
@@ -87,8 +93,9 @@ export function DeliveryProfilePage() {
                     };
 
                     setProfile({
-                        name: userProfile?.name || sessionUser?.name || "",
-                        email: userProfile?.email || sessionUser?.email || "",
+                        id_delivery: authUser?.id_delivery || null,
+                        name: userProfile?.name || authUser?.name || "",
+                        email: userProfile?.email || authUser?.email || "",
                         phone: userProfile?.phone || "",
                         role: userProfile?.role || sessionUser?.role || "DELIVERY",
                         // Datos de la tabla Deliveries y usuarios
@@ -115,6 +122,31 @@ export function DeliveryProfilePage() {
         return () => { active = false; };
     }, []);
 
+    const handleToggleAvailability = async () => {
+        if (!profile?.id_delivery) {
+            toast.error("No se encontró tu ID de delivery");
+            return;
+        }
+
+        setUpdatingStatus(true);
+        try {
+            const newStatus = profile.delivery_status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+            await updateDeliveryStatus(profile.id_delivery, newStatus);
+            
+            setProfile(prev => ({
+                ...prev,
+                delivery_status: newStatus
+            }));
+
+            toast.success(newStatus === "ACTIVE" ? "¡Conectado! Ahora recibirás pedidos" : "Desconectado. No recibirás más pedidos");
+        } catch (err) {
+            console.error("Error al cambiar estado:", err);
+            toast.error("No se pudo cambiar tu estado. Intenta nuevamente.");
+        } finally {
+            setUpdatingStatus(false);
+        }
+    };
+
     if (loading) return <p style={{ color: "#6b7280", padding: "16px" }}>Cargando perfil...</p>;
 
     if (error) return (
@@ -123,16 +155,16 @@ export function DeliveryProfilePage() {
         </div>
     );
 
-    const isActive = profile?.delivery_status === "AVAILABLE" || profile?.delivery_status === "ACTIVE";
+    const isActive = profile?.delivery_status === "ACTIVE";
     const createdAt = profile?.created_at && profile.created_at !== "N/A"
         ? new Date(profile.created_at).toLocaleDateString("es-PY", { day: "numeric", month: "long", year: "numeric" })
         : "—";
 
     return (
         <>
-            {/* ── Header ─────────────────────────────────────────────────────── */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "24px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            {/* ── Header con Toggle de Disponibilidad ─────────────────────── */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "24px", gap: "16px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", flex: 1 }}>
                     <div>
                         <h4 style={{ fontWeight: "600", margin: "0 0 4px 0" }}>Perfil del Delivery</h4>
                         <p style={{ color: "#6b7280", margin: 0, fontSize: "14px" }}>Información general de tu cuenta de repartidor</p>
@@ -142,18 +174,69 @@ export function DeliveryProfilePage() {
                         padding: "3px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: "700",
                         backgroundColor: isActive ? "#dcfce7" : "#fef3c7",
                         color: isActive ? "#15803d" : "#92400e",
+                        whiteSpace: "nowrap",
                     }}>
                         {isActive ? "Disponible" : "Inactivo"}
                     </span>
                 </div>
-                <button type="button" onClick={() => {}} style={{
-                    display: "flex", alignItems: "center", gap: "6px",
-                    backgroundColor: "var(--primary-dark)", color: "white",
-                    border: "none", borderRadius: "8px", padding: "8px 16px",
-                    fontSize: "14px", fontWeight: "500", cursor: "pointer",
-                }}>
-                    <Edit size={14} /> Editar Perfil
-                </button>
+                
+                <div style={{ display: "flex", gap: "8px" }}>
+                    {/* Botón de conectar/desconectar */}
+                    <button
+                        type="button"
+                        onClick={handleToggleAvailability}
+                        disabled={updatingStatus}
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            backgroundColor: isActive ? "#dc2626" : "#16a34a",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "8px",
+                            padding: "8px 16px",
+                            fontSize: "14px",
+                            fontWeight: "500",
+                            cursor: updatingStatus ? "not-allowed" : "pointer",
+                            opacity: updatingStatus ? 0.7 : 1,
+                            transition: "all 0.2s ease",
+                        }}
+                        onMouseEnter={(e) => {
+                            if (!updatingStatus) {
+                                e.target.style.backgroundColor = isActive ? "#b91c1c" : "#15803d";
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            if (!updatingStatus) {
+                                e.target.style.backgroundColor = isActive ? "#dc2626" : "#16a34a";
+                            }
+                        }}
+                    >
+                        <Power size={14} />
+                        {updatingStatus ? "..." : isActive ? "Desconectarme" : "Conectarme"}
+                    </button>
+
+                    {/* Botón de editar perfil */}
+                    <button
+                        type="button"
+                        onClick={() => navigate("/delivery/perfil/editar")}
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            backgroundColor: "var(--primary-dark)",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "8px",
+                            padding: "8px 16px",
+                            fontSize: "14px",
+                            fontWeight: "500",
+                            cursor: "pointer",
+                        }}
+                    >
+                        <Edit size={14} /> Editar
+                    </button>
+                </div>
             </div>
 
             {/* ── Grid ──────────────────────────────────────────────────────── */}
