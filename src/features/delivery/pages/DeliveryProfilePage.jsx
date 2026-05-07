@@ -1,7 +1,7 @@
 // src/features/delivery/pages/DeliveryProfilePage.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Mail, Phone, MapPin, Map, Star, Truck, Calendar, Activity, Clock, Edit, Power } from "lucide-react";
+import { User, Mail, Phone, MapPin, Map, Star, Truck, Calendar, Activity, Clock, Edit, Power, Store } from "lucide-react";
 import toast from "react-hot-toast";
 import { getCurrentUserForDeliveryForm, getDeliveryProfile, updateDeliveryStatus } from "../../clients/services/deliveryApi";
 import { getBackendErrorMessage } from "../../commerces/services/editUserProfileApi";
@@ -98,6 +98,7 @@ export function DeliveryProfilePage() {
                         email: userProfile?.email || authUser?.email || deliveryProfile?.user?.email || "",
                         phone: deliveryProfile?.user?.phone || userProfile?.phone || authUser?.phone || "",
                         role: userProfile?.role || sessionUser?.role || "DELIVERY",
+                        store_name: deliveryProfile?.store?.name || "",
                         // Datos de la tabla Deliveries y usuarios
                         vehicle_type: deliveryProfile?.vehicle_type ? (VEHICLE_MAP[deliveryProfile.vehicle_type] || deliveryProfile.vehicle_type) : "N/A",
                         delivery_status: deliveryProfile?.delivery_status || "N/A",
@@ -256,7 +257,11 @@ export function DeliveryProfilePage() {
                         <InfoRow icon={Phone} value={profile?.phone} iconColor="#16a34a" />
                     </div>
 
-
+                    <div style={card}>
+                        <h6 style={sectionTitle}>Detalles de Trabajo</h6>
+                        <p style={labelStyle}>Comercio Vinculado</p>
+                        <InfoRow icon={Store} value={profile?.store_name} iconColor="#8b5cf6" />
+                    </div>
                 </div>
 
                 {/* Columna derecha */}
