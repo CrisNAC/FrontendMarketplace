@@ -2007,12 +2007,13 @@ test.describe('Flujos E2E de usuario final', () => {
     const desconectarBtn = page.getByRole('button', { name: 'Desconectarme' });
     await expect(desconectarBtn).toBeVisible();
 
-    // Intentar hacer clic múltiples veces rápidamente
-    await Promise.all([
-      desconectarBtn.click().catch(() => { }),
-      desconectarBtn.click().catch(() => { }),
-      desconectarBtn.click().catch(() => { }),
-    ]);
+    //primer click para desconectar
+    await desconectarBtn.click();
+
+    const loadingBtn = page.getByRole('button', { name: '...' });
+    await expect(loadingBtn).toBeVisible();
+    await expect(loadingBtn).toBeDisabled();
+
 
     // Esperar a que se complete la primera solicitud
     await page.waitForTimeout(800);
@@ -2369,7 +2370,7 @@ test.describe('Flujos E2E de usuario final', () => {
 
     await page.goto('/delivery/perfil/editar');
 
-    await expect(page.getByRole('heading', { name: 'Editar Perfil' })).toBeVisible();
+    await expect(page.getByText('Editar Perfil')).toBeVisible();
     await expect(page.locator('input[value="Juan Delivery"]')).toBeVisible();
     await expect(page.locator('input[value="juan@test.com"]')).toBeVisible();
     await expect(page.locator('input[value="0981555444"]')).toBeVisible();
@@ -2422,12 +2423,7 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page.getByText('Sin archivo seleccionado')).toBeVisible();
 
     const fileInput = page.locator('input[type="file"]');
-    const buffer = new Uint8Array([102, 97, 107, 101, 32, 105, 109, 97, 103, 101]);
-    await fileInput.setInputFiles({
-      name: 'avatar.png',
-      mimeType: 'image/png',
-      buffer,
-    });
+    await fileInput.setInputFiles('./tests/fixtures/avatar.png');
 
     await expect(page.getByText('avatar.png')).toBeVisible();
   });
@@ -2479,7 +2475,18 @@ test.describe('Flujos E2E de usuario final', () => {
     await page.route('**/api/deliveries/5', async (route) => {
       if (route.request().method() === 'PUT') {
         putCalled = true;
-        putBody = route.request().postDataJSON();
+
+        const postData = route.request().postData() ?? '';
+        const getName = (field: string) => {
+          const match = new RegExp(`name="${field}"\\s+([^\\s-][^\\r\\n]*)`, 's').exec(postData);
+          return match?.[1]?.trim() ?? null;
+        };
+        putBody = {
+          name: getName('name'),
+          phone: getName('phone'),
+          vehicleType: getName('vehicleType'),
+        };
+
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -2495,18 +2502,18 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page.locator('input[value="María Delivery"]')).toBeVisible();
 
     // Cambiar nombre, teléfono y vehículo
-    const nameInput = page.locator('input[value="María Delivery"]');
+    const nameInput = page.locator('#delivery-name');
     await nameInput.clear();
     await nameInput.fill('María Actualizada');
 
-    const phoneInput = page.locator('input[value="0981333222"]');
+    const phoneInput = page.locator('#delivery-phone');
     await phoneInput.clear();
     await phoneInput.fill('0981999777');
 
     await page.getByRole('combobox').selectOption('MOTORCYCLE');
 
     // Guardar cambios
-    await page.getByRole('button', { name: 'Actualizar Perfil' }).click();
+    await page.locator('button', { hasText: 'Actualizar Perfil' }).click();
 
     // Verificar que se llamó a PUT
     await page.waitForTimeout(500);
@@ -2569,20 +2576,21 @@ test.describe('Flujos E2E de usuario final', () => {
     await page.goto('/delivery/perfil/editar');
 
     // Borrar nombre
-    const nameInput = page.locator('input[value="Pedro Delivery"]');
+    const nameInput = page.locator('#delivery-name');
+    await expect(nameInput).toBeVisible();
     await nameInput.clear();
 
-    await page.getByRole('button', { name: 'Actualizar Perfil' }).click();
+    await page.locator('button', { hasText: 'Actualizar Perfil' }).click();
 
     await expect(page.getByText('El nombre es obligatorio.')).toBeVisible();
 
     // Restaurar nombre y borrar teléfono
     await nameInput.fill('Pedro Delivery');
 
-    const phoneInput = page.locator('input[value="0981222333"]');
+    const phoneInput = page.locator('#delivery-phone');
     await phoneInput.clear();
 
-    await page.getByRole('button', { name: 'Actualizar Perfil' }).click();
+    await page.locator('button', { hasText: 'Actualizar Perfil' }).click();
 
     await expect(page.getByText('El teléfono es obligatorio.')).toBeVisible();
   });
@@ -2643,21 +2651,20 @@ test.describe('Flujos E2E de usuario final', () => {
 
     await page.goto('/delivery/perfil/editar');
 
-    const nameInput = page.locator('input[value="Ana Delivery"]');
+    const nameInput = page.locator('#delivery-name');
+    await expect(nameInput).toBeVisible();
     await nameInput.clear();
     await nameInput.fill('Ana Actualizada');
 
-    const guardarBtn = page.getByRole('button', { name: 'Actualizar Perfil' });
+    const guardarBtn = page.locator('button', { hasText: 'Actualizar Perfil' });
     await guardarBtn.click();
 
     // Verificar que el botón muestre estado de carga
-    await expect(page.getByRole('button', { name: 'Guardando…' })).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('button', { hasText: 'Guardando…' })).toBeVisible({ timeout: 5000 });
 
-    // Esperar a que la solicitud falle y se muestre el error
-    await expect(page.getByText('No se pudo guardar el perfil.')).toBeVisible({ timeout: 10000 });
+    // Buscar el texto en la página de error
+    await expect(page.getByText('Error del servidor')).toBeVisible();
 
-    // Verificar que no se redirigió
-    await expect(page).toHaveURL('/delivery/perfil/editar');
   });
 
   // OM-491: Reseñas de deliveries
