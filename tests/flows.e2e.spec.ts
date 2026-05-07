@@ -1997,4 +1997,257 @@ test.describe('Flujos E2E de usuario final', () => {
     // Solo debe haberse enviado 1 request al servidor (prevención de concurrencia)
     expect(patchRequestCount).toBe(1);
   });
+
+  // OM-327
+  const installDeliveryOrdersMock = async (
+    page: Page,
+    options: {
+      assignments: Array<{
+        id_delivery_assignment: number;
+        order: {
+          id_order: number;
+          order_status?: string;
+          total?: number;
+          shipping_distance_km?: number;
+          created_at?: string;
+          user?: { id_user?: number; name?: string; phone?: string; avatar_url?: string | null };
+          store?: { name?: string };
+          order_items?: Array<{ product?: { name?: string }; quantity?: number }>;
+          address?: { address?: string; city?: string; region?: string } | null;
+        };
+      }>;
+      responseStatus?: number;
+      responseBody?: Record<string, unknown>;
+    },
+  ) => {
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          user: { id_user: 7, name: 'Delivery Demo', role: 'DELIVERY', id_delivery: 5 },
+        }),
+      });
+    });
+
+    await page.unroute('**/api/deliveries/*/assignments');
+    await page.route('**/api/deliveries/*/assignments', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          delivery_assignments: options.assignments,
+          delivery: { id_delivery: 5 },
+        }),
+      });
+    });
+
+    await page.unroute('**/api/assignments/orders/*/delivery-response');
+    await page.route('**/api/assignments/orders/*/delivery-response', async (route) => {
+      const status = options.responseStatus ?? 200;
+      const body = options.responseBody ?? { message: 'ok' };
+      await route.fulfill({
+        status,
+        contentType: 'application/json',
+        body: JSON.stringify(body),
+      });
+    });
+  };
+
+  // OM-327
+  test('flujo delivery: Cargar pantalla de pedidos para aceptar"', async ({ page }) => {
+    await installDeliveryOrdersMock(page, {
+      assignments: [
+        {
+          id_delivery_assignment: 9001,
+          order: {
+            id_order: 8001,
+            order_status: 'PENDING',
+            total: 5000,
+            shipping_distance_km: 3.2,
+            created_at: '2026-05-05T10:00:00.000Z',
+            user: { id_user: 123, name: 'Cliente Uno', phone: '0981 123 456' },
+            store: { name: 'Nissei' },
+            order_items: [{ product: { name: 'Producto A' }, quantity: 1 }],
+            address: { address: 'Calle Falsa 123', city: 'Asuncion', region: 'Central' },
+          },
+        },
+      ],
+    });
+
+    await page.goto('/delivery/order');
+
+    await expect(page.getByRole('heading', { name: 'Pedidos para aceptar' })).toBeVisible();
+    await expect(page.getByText('Nissei')).toBeVisible();
+    await expect(page.getByText('Cliente Uno')).toBeVisible();
+  });
+
+  // OM-327
+  test('flujo delivery: Visualizar tarjeta de pedido', async ({ page }) => {
+    await installDeliveryOrdersMock(page, {
+      assignments: [
+        {
+          id_delivery_assignment: 9002,
+          order: {
+            id_order: 8002,
+            order_status: 'PENDING',
+            total: 15000,
+            shipping_distance_km: 5.5,
+            created_at: '2026-05-05T11:00:00.000Z',
+            user: { id_user: 124, name: 'Cliente Dos', phone: '0981 555 666' },
+            store: { name: 'TechPoint' },
+            order_items: [
+              { product: { name: 'Producto A' }, quantity: 1 },
+              { product: { name: 'Producto B' }, quantity: 2 },
+              { product: { name: 'Producto C' }, quantity: 1 },
+            ],
+            address: { address: 'Av. Siempre Viva 742', city: 'Luque', region: 'Central' },
+          },
+        },
+      ],
+    });
+
+    await page.goto('/delivery/order');
+
+    await expect(page.getByText('TechPoint')).toBeVisible();
+    await expect(page.getByText('Cliente Dos')).toBeVisible();
+    await expect(page.getByText('Producto A × 1')).toBeVisible();
+    await expect(page.getByText('Producto B × 2')).toBeVisible();
+    await expect(page.getByText('+1 más')).toBeVisible();
+    await expect(page.getByText('Av. Siempre Viva 742')).toBeVisible();
+    await expect(page.getByText('Tiempo estimado:')).toBeVisible();
+  });
+
+  // OM-327
+  test('flujo delivery: Aceptar pedido', async ({ page }) => {
+    await installDeliveryOrdersMock(page, {
+      assignments: [
+        {
+          id_delivery_assignment: 9003,
+          order: {
+            id_order: 8003,
+            order_status: 'PENDING',
+            total: 7800,
+            shipping_distance_km: 2.1,
+            created_at: '2026-05-05T12:00:00.000Z',
+            user: { id_user: 125, name: 'Cliente Tres', phone: '0981 777 888' },
+            store: { name: 'Nissei' },
+            order_items: [{ product: { name: 'Producto X' }, quantity: 1 }],
+            address: { address: 'Bº Jardín 45', city: 'Asuncion', region: 'Central' },
+          },
+        },
+      ],
+    });
+
+    await page.goto('/delivery/order');
+
+    const acceptBtn = page.getByRole('button', { name: 'Aceptar' });
+    await expect(acceptBtn).toBeVisible();
+    await acceptBtn.click();
+
+    await expect(page.getByText('Pedido aceptado.')).toBeVisible();
+  });
+
+  // OM-327
+  test('flujo delivery: Rechazar pedido', async ({ page }) => {
+    await installDeliveryOrdersMock(page, {
+      assignments: [
+        {
+          id_delivery_assignment: 9004,
+          order: {
+            id_order: 8004,
+            order_status: 'PENDING',
+            total: 22000,
+            shipping_distance_km: 7.8,
+            created_at: '2026-05-05T13:00:00.000Z',
+            user: { id_user: 126, name: 'Cliente Cuatro', phone: '0981 999 000' },
+            store: { name: 'Nissei' },
+            order_items: [{ product: { name: 'Producto Y' }, quantity: 3 }],
+            address: { address: 'Calle Secundaria 2', city: 'Capiata', region: 'Central' },
+          },
+        },
+      ],
+    });
+
+    await page.goto('/delivery/order');
+
+    const rejectBtn = page.getByRole('button', { name: 'Rechazar' });
+    await expect(rejectBtn).toBeVisible();
+    await rejectBtn.click();
+
+    await expect(page.getByText('Pedido rechazado.')).toBeVisible();
+  });
+
+  // OM-327
+  test('flujo delivery: Manejo de errores al aceptar/rechazar pedido', async ({ page }) => {
+    await installDeliveryOrdersMock(page, {
+      assignments: [
+        {
+          id_delivery_assignment: 9005,
+          order: {
+            id_order: 8005,
+            order_status: 'PENDING',
+            total: 4200,
+            shipping_distance_km: 1.2,
+            created_at: '2026-05-05T14:00:00.000Z',
+            user: { id_user: 127, name: 'Cliente Cinco', phone: '0981 111 222' },
+            store: { name: 'TechPoint' },
+            order_items: [{ product: { name: 'Producto Z' }, quantity: 1 }],
+            address: { address: 'Zona 10', city: 'Asuncion', region: 'Central' },
+          },
+        },
+      ],
+      responseStatus: 500,
+      responseBody: { message: 'Error interno del servidor' },
+    });
+
+    await page.goto('/delivery/order');
+
+    await page.getByRole('button', { name: 'Aceptar' }).click();
+
+    await expect(page.getByText('Error interno del servidor')).toBeVisible();
+  });
+
+  // OM-327
+  test('flujo delivery: Deshabilita botones durante la petición', async ({ page }) => {
+    await installDeliveryOrdersMock(page, {
+      assignments: [
+        {
+          id_delivery_assignment: 9006,
+          order: {
+            id_order: 8006,
+            order_status: 'PENDING',
+            total: 9900,
+            shipping_distance_km: 4.4,
+            created_at: '2026-05-05T15:00:00.000Z',
+            user: { id_user: 128, name: 'Cliente Seis', phone: '0981 333 444' },
+            store: { name: 'Nissei' },
+            order_items: [{ product: { name: 'Producto W' }, quantity: 2 }],
+            address: { address: 'Barrio Centro', city: 'Asuncion', region: 'Central' },
+          },
+        },
+      ],
+    });
+
+    await page.unroute('**/api/assignments/orders/*/delivery-response');
+    await page.route('**/api/assignments/orders/*/delivery-response', async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 700));
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'ok' }),
+      });
+    });
+
+    await page.goto('/delivery/order');
+
+    const acceptBtn = page.getByRole('button', { name: 'Aceptar' });
+    const rejectBtn = page.getByRole('button', { name: 'Rechazar' });
+
+    await acceptBtn.click();
+    await expect(acceptBtn).toBeDisabled();
+    await expect(rejectBtn).toBeDisabled();
+  });
 });
