@@ -1564,12 +1564,35 @@ test.describe('Flujos E2E de usuario final', () => {
     // El modal cierra y redirige a homepage (comportamiento actual)
     await expect(page).toHaveURL('/homepage');
 
+    await page.route('**/api/deliveries/5', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id_delivery: 5,
+            fk_user: 7,
+            delivery_status: 'INACTIVE',
+            vehicle_type: 'CAR',
+            phone: '0981000000',
+            zone: null,
+            schedule: null,
+            rating: 0,
+            total_deliveries: 0,
+            total_reviews: 0,
+            created_at: new Date().toISOString(),
+          }),
+        });
+      }
+    });
     // Navegar manualmente al perfil del delivery para validar que el registro fue exitoso
     await page.goto('/delivery/perfil');
 
     // Sidebar Panel Delivery debe estar presente
     await expect(page.getByText('Panel Delivery')).toBeVisible();
     await expect(page.getByText('Mi Perfil')).toBeVisible();
+
+    await expect(page.getByRole('heading', { name: 'Perfil del Delivery' })).toBeVisible({ timeout: 5000 });
   });
 
   //OM-497
@@ -1730,9 +1753,9 @@ test.describe('Flujos E2E de usuario final', () => {
 
     await expect(page.getByRole('heading', { name: 'Quiero ser delivery' })).toBeVisible();
 
-  await page.getByPlaceholder('+54 9 11 2345-6789').fill('123');
+    await page.getByPlaceholder('+54 9 11 2345-6789').fill('123');
     await page.getByRole('button', { name: 'Confirmar' }).click();
-  await expect(page.getByText('Ingresá al menos 8 dígitos; solo números y símbolos habituales (+, espacio, guiones, paréntesis)')).toBeVisible();
+    await expect(page.getByText('Ingresá al menos 8 dígitos; solo números y símbolos habituales (+, espacio, guiones, paréntesis)')).toBeVisible();
 
     await page.getByPlaceholder('+54 9 11 2345-6789').fill('0981000000');
     await page.locator('#delivery-vehicle').selectOption('AUTOMOVIL');
@@ -1986,9 +2009,9 @@ test.describe('Flujos E2E de usuario final', () => {
 
     // Intentar hacer clic múltiples veces rápidamente
     await Promise.all([
-      desconectarBtn.click().catch(() => {}),
-      desconectarBtn.click().catch(() => {}),
-      desconectarBtn.click().catch(() => {}),
+      desconectarBtn.click().catch(() => { }),
+      desconectarBtn.click().catch(() => { }),
+      desconectarBtn.click().catch(() => { }),
     ]);
 
     // Esperar a que se complete la primera solicitud
@@ -2249,5 +2272,745 @@ test.describe('Flujos E2E de usuario final', () => {
     await acceptBtn.click();
     await expect(acceptBtn).toBeDisabled();
     await expect(rejectBtn).toBeDisabled();
+  });
+
+  // OM-323: Gestionar perfil y datos de contacto del delivery
+  //  Navegar a editar perfil
+  test('flujo delivery: navegar a editar perfil desde pantalla de perfil', async ({ page }) => {
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'Delivery Demo', email: 'delivery@test.com' } }),
+      });
+    });
+
+    await page.route('**/api/users/7', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000' }),
+      });
+    });
+
+    const mockDeliveryProfile = {
+      id_delivery: 5,
+      delivery_status: 'ACTIVE',
+      vehicle_type: 'CAR',
+      coverage_city: 'Asunción',
+      coverage_region: 'Central',
+      coverage_radius_km: 12,
+      availability_notes: 'Lunes a Viernes',
+      average_rating: 4.8,
+      total_deliveries: 42,
+      reviews_count: 10,
+      created_at: '2025-11-01T10:00:00.000Z'
+    };
+
+    await page.route('**/api/deliveries/5', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(mockDeliveryProfile),
+      });
+    });
+
+    await page.goto('/delivery/perfil');
+
+    await expect(page.getByRole('heading', { name: 'Perfil del Delivery' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Editar' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Editar' }).click();
+
+    await expect(page).toHaveURL('/delivery/perfil/editar');
+  });
+
+  // OM-323
+  test('flujo delivery: formulario de edición prellenado con datos actuales', async ({ page }) => {
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'Juan Delivery', email: 'juan@test.com' } }),
+      });
+    });
+
+    await page.route('**/api/users/7', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ id_user: 7, name: 'Juan Delivery', email: 'juan@test.com', phone: '0981555444' }),
+      });
+    });
+
+    const mockDeliveryProfile = {
+      id_delivery: 5,
+      delivery_status: 'ACTIVE',
+      vehicle_type: 'MOTORCYCLE',
+      coverage_city: 'Asunción',
+      coverage_region: 'Central',
+      coverage_radius_km: 15,
+      availability_notes: 'Lunes a Viernes',
+      average_rating: 4.7,
+      total_deliveries: 35,
+      reviews_count: 8,
+      created_at: '2025-11-01T10:00:00.000Z'
+    };
+
+    await page.route('**/api/deliveries/5', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(mockDeliveryProfile),
+      });
+    });
+
+    await page.goto('/delivery/perfil/editar');
+
+    await expect(page.getByRole('heading', { name: 'Editar Perfil' })).toBeVisible();
+    await expect(page.locator('input[value="Juan Delivery"]')).toBeVisible();
+    await expect(page.locator('input[value="juan@test.com"]')).toBeVisible();
+    await expect(page.locator('input[value="0981555444"]')).toBeVisible();
+    await expect(page.getByRole('combobox')).toHaveValue('MOTORCYCLE');
+  });
+
+  // OM-323
+  test('flujo delivery: upload de foto de perfil con vista previa', async ({ page }) => {
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'Carlos Delivery', email: 'carlos@test.com' } }),
+      });
+    });
+
+    await page.route('**/api/users/7', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ id_user: 7, name: 'Carlos Delivery', email: 'carlos@test.com', phone: '0981777888' }),
+      });
+    });
+
+    const mockDeliveryProfile = {
+      id_delivery: 5,
+      delivery_status: 'ACTIVE',
+      vehicle_type: 'BICYCLE',
+      coverage_city: 'Asunción',
+      coverage_region: 'Central',
+      coverage_radius_km: 8,
+      availability_notes: 'Lunes a Sábado',
+      average_rating: 4.9,
+      total_deliveries: 58,
+      reviews_count: 12,
+      created_at: '2025-11-01T10:00:00.000Z'
+    };
+
+    await page.route('**/api/deliveries/5', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(mockDeliveryProfile),
+      });
+    });
+
+    await page.goto('/delivery/perfil/editar');
+
+    await expect(page.getByText('Sin archivo seleccionado')).toBeVisible();
+
+    const fileInput = page.locator('input[type="file"]');
+    const buffer = new Uint8Array([102, 97, 107, 101, 32, 105, 109, 97, 103, 101]);
+    await fileInput.setInputFiles({
+      name: 'avatar.png',
+      mimeType: 'image/png',
+      buffer,
+    });
+
+    await expect(page.getByText('avatar.png')).toBeVisible();
+  });
+
+  // OM-323
+  test('flujo delivery: guardar cambios del perfil con PUT exitoso', async ({ page }) => {
+    let putCalled = false;
+    let putBody = null;
+
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'María Delivery', email: 'maria@test.com' } }),
+      });
+    });
+
+    await page.route('**/api/users/7', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ id_user: 7, name: 'María Delivery', email: 'maria@test.com', phone: '0981333222' }),
+      });
+    });
+
+    const mockDeliveryProfile = {
+      id_delivery: 5,
+      delivery_status: 'ACTIVE',
+      vehicle_type: 'CAR',
+      coverage_city: 'Asunción',
+      coverage_region: 'Central',
+      coverage_radius_km: 20,
+      availability_notes: 'Todos los días',
+      average_rating: 4.6,
+      total_deliveries: 72,
+      reviews_count: 15,
+      created_at: '2025-11-01T10:00:00.000Z'
+    };
+
+    await page.route('**/api/deliveries/5', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(mockDeliveryProfile),
+      });
+    });
+
+    await page.route('**/api/deliveries/5', async (route) => {
+      if (route.request().method() === 'PUT') {
+        putCalled = true;
+        putBody = route.request().postDataJSON();
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ id_delivery: 5, message: 'Perfil actualizado' }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    await page.goto('/delivery/perfil/editar');
+
+    await expect(page.locator('input[value="María Delivery"]')).toBeVisible();
+
+    // Cambiar nombre, teléfono y vehículo
+    const nameInput = page.locator('input[value="María Delivery"]');
+    await nameInput.clear();
+    await nameInput.fill('María Actualizada');
+
+    const phoneInput = page.locator('input[value="0981333222"]');
+    await phoneInput.clear();
+    await phoneInput.fill('0981999777');
+
+    await page.getByRole('combobox').selectOption('MOTORCYCLE');
+
+    // Guardar cambios
+    await page.getByRole('button', { name: 'Actualizar Perfil' }).click();
+
+    // Verificar que se llamó a PUT
+    await page.waitForTimeout(500);
+    expect(putCalled).toBe(true);
+    if (putBody) {
+      const parsedBody = putBody as Record<string, unknown>;
+      expect(parsedBody.name).toBe('María Actualizada');
+      expect(parsedBody.phone).toBe('0981999777');
+      expect(parsedBody.vehicleType).toBe('MOTORCYCLE');
+    }
+
+    // Verificar toast de éxito
+    await expect(page.getByText('Perfil actualizado correctamente.')).toBeVisible();
+
+    // Verificar redirección a perfil
+    await expect(page).toHaveURL('/delivery/perfil');
+  });
+
+  // OM-323
+  test('flujo delivery: validar campos obligatorios del perfil', async ({ page }) => {
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'Pedro Delivery', email: 'pedro@test.com' } }),
+      });
+    });
+
+    await page.route('**/api/users/7', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ id_user: 7, name: 'Pedro Delivery', email: 'pedro@test.com', phone: '0981222333' }),
+      });
+    });
+
+    const mockDeliveryProfile = {
+      id_delivery: 5,
+      delivery_status: 'ACTIVE',
+      vehicle_type: 'CAR',
+      coverage_city: 'Asunción',
+      coverage_region: 'Central',
+      coverage_radius_km: 18,
+      availability_notes: 'Lunes a Viernes',
+      average_rating: 4.5,
+      total_deliveries: 50,
+      reviews_count: 10,
+      created_at: '2025-11-01T10:00:00.000Z'
+    };
+
+    await page.route('**/api/deliveries/5', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(mockDeliveryProfile),
+      });
+    });
+
+    await page.goto('/delivery/perfil/editar');
+
+    // Borrar nombre
+    const nameInput = page.locator('input[value="Pedro Delivery"]');
+    await nameInput.clear();
+
+    await page.getByRole('button', { name: 'Actualizar Perfil' }).click();
+
+    await expect(page.getByText('El nombre es obligatorio.')).toBeVisible();
+
+    // Restaurar nombre y borrar teléfono
+    await nameInput.fill('Pedro Delivery');
+
+    const phoneInput = page.locator('input[value="0981222333"]');
+    await phoneInput.clear();
+
+    await page.getByRole('button', { name: 'Actualizar Perfil' }).click();
+
+    await expect(page.getByText('El teléfono es obligatorio.')).toBeVisible();
+  });
+
+  // OM-323
+  test('flujo delivery: manejo de error al guardar perfil y estados de carga', async ({ page }) => {
+    let putRequestCount = 0;
+
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'Ana Delivery', email: 'ana@test.com' } }),
+      });
+    });
+
+    await page.route('**/api/users/7', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ id_user: 7, name: 'Ana Delivery', email: 'ana@test.com', phone: '0981444555' }),
+      });
+    });
+
+    const mockDeliveryProfile = {
+      id_delivery: 5,
+      delivery_status: 'ACTIVE',
+      vehicle_type: 'CAR',
+      coverage_city: 'Asunción',
+      coverage_region: 'Central',
+      coverage_radius_km: 15,
+      availability_notes: 'Lunes a Viernes',
+      average_rating: 4.5,
+      total_deliveries: 45,
+      reviews_count: 9,
+      created_at: '2025-11-01T10:00:00.000Z'
+    };
+
+    await page.route('**/api/deliveries/5', async (route) => {
+      if (route.request().method() === 'PUT') {
+        putRequestCount++;
+        // Simular latencia de red
+        await new Promise(resolve => setTimeout(resolve, 600));
+        await route.fulfill({
+          status: 500,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: { message: 'Error interno del servidor' } }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(mockDeliveryProfile),
+      });
+    });
+
+    await page.goto('/delivery/perfil/editar');
+
+    const nameInput = page.locator('input[value="Ana Delivery"]');
+    await nameInput.clear();
+    await nameInput.fill('Ana Actualizada');
+
+    const guardarBtn = page.getByRole('button', { name: 'Actualizar Perfil' });
+    await guardarBtn.click();
+
+    // Verificar que el botón muestre estado de carga
+    await expect(page.getByRole('button', { name: 'Guardando…' })).toBeVisible({ timeout: 5000 });
+
+    // Esperar a que la solicitud falle y se muestre el error
+    await expect(page.getByText('No se pudo guardar el perfil.')).toBeVisible({ timeout: 10000 });
+
+    // Verificar que no se redirigió
+    await expect(page).toHaveURL('/delivery/perfil/editar');
+  });
+
+  // OM-491: Reseñas de deliveries
+
+  // Helper para instalar mocks de reseñas de delivery
+  const installDeliveryReviewsMock = async (
+    page: Page,
+    options: {
+      reviews: Array<{
+        id: number;
+        customerName: string;
+        orderId: number;
+        rating: number;
+        comment: string;
+        createdAt: string;
+      }>;
+      total: number;
+    },
+  ) => {
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      });
+    });
+
+    await page.route(/\/api\/stores\/\d+\/deliveries\/\d+\/reviews/, async (route) => {
+      const url = new URL(route.request().url());
+      const minRating = url.searchParams.get('minRating');
+      const maxRating = url.searchParams.get('maxRating');
+      const search = url.searchParams.get('search');
+
+      let filtered = [...options.reviews];
+
+      if (search) {
+        const searchNum = Number(search);
+        filtered = filtered.filter(r => r.orderId === searchNum);
+      }
+
+      if (minRating && maxRating) {
+        const min = Number(minRating);
+        const max = Number(maxRating);
+        filtered = filtered.filter(r => r.rating >= min && r.rating <= max);
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          reviews: filtered,
+          total: filtered.length,
+        }),
+      });
+    });
+  };
+
+  // OM-491
+  test('flujo comercio: visualizar reseñas de un delivery', async ({ page }) => {
+    const mockReviews = [
+      {
+        id: 1,
+        customerName: 'Cliente Uno',
+        orderId: 1001,
+        rating: 5,
+        comment: 'Excelente entrega, llegó rápido',
+        createdAt: '2026-05-01T10:00:00.000Z',
+      },
+      {
+        id: 2,
+        customerName: 'Cliente Dos',
+        orderId: 1002,
+        rating: 4,
+        comment: 'Muy bueno, sin problemas',
+        createdAt: '2026-05-02T10:00:00.000Z',
+      },
+      {
+        id: 3,
+        customerName: 'Cliente Tres',
+        orderId: 1003,
+        rating: 5,
+        comment: 'Perfecto, excelente servicio',
+        createdAt: '2026-05-03T10:00:00.000Z',
+      },
+    ];
+
+    await installDeliveryReviewsMock(page, {
+      reviews: mockReviews,
+      total: mockReviews.length,
+    });
+
+    await page.goto('/comercio/deliveries/resenas');
+
+    await expect(page.getByRole('heading', { name: 'Reseñas de Repartidores' })).toBeVisible();
+
+    // Ingresar ID del repartidor
+    await page.locator('input[placeholder="Ej: 12"]').fill('5');
+
+    // Aplicar filtros (sin búsqueda específica)
+    await page.getByRole('button', { name: 'Aplicar filtros' }).click();
+
+    // Verificar que se cargaron las reseñas
+    await expect(page.getByText('Cliente Uno')).toBeVisible();
+    await expect(page.getByText('Cliente Dos')).toBeVisible();
+    await expect(page.getByText('Cliente Tres')).toBeVisible();
+
+    // Verificar que muestra la calificación promedio
+    await expect(page.getByText('Calificación Promedio')).toBeVisible();
+    await expect(page.getByText('4.7')).toBeVisible();
+
+    // Verificar que muestra el total de reseñas
+    await expect(page.getByText('Total Reseñas')).toBeVisible();
+  });
+
+  // OM-491
+  test('flujo comercio: buscar reseñas por código de pedido', async ({ page }) => {
+    const mockReviews = [
+      {
+        id: 1,
+        customerName: 'Cliente A',
+        orderId: 2001,
+        rating: 5,
+        comment: 'Entrega perfecta',
+        createdAt: '2026-05-01T10:00:00.000Z',
+      },
+      {
+        id: 2,
+        customerName: 'Cliente B',
+        orderId: 2002,
+        rating: 4,
+        comment: 'Buena entrega',
+        createdAt: '2026-05-02T10:00:00.000Z',
+      },
+      {
+        id: 3,
+        customerName: 'Cliente C',
+        orderId: 2003,
+        rating: 3,
+        comment: 'Aceptable',
+        createdAt: '2026-05-03T10:00:00.000Z',
+      },
+    ];
+
+    await installDeliveryReviewsMock(page, {
+      reviews: mockReviews,
+      total: mockReviews.length,
+    });
+
+    await page.goto('/comercio/deliveries/resenas');
+
+    // Ingresar ID del repartidor
+    await page.locator('input[placeholder="Ej: 12"]').fill('1');
+
+    // Ingresar código de pedido
+    await page.locator('input[placeholder="Código de pedido"]').fill('2001');
+
+    // Aplicar filtros
+    await page.getByRole('button', { name: 'Aplicar filtros' }).click();
+
+    // Debe mostrar solo la reseña del pedido 2001
+    await expect(page.getByText('Cliente A')).toBeVisible();
+    await expect(page.getByText('Entrega perfecta')).toBeVisible();
+
+    // No debe mostrar las otras reseñas
+    await expect(page.getByText('Cliente B')).not.toBeVisible();
+    await expect(page.getByText('Cliente C')).not.toBeVisible();
+
+    // Verificar que el total es 1
+    // Buscar dentro del contexto "Total Reseñas"
+    const totalReviewsDiv = page.getByText('Total Reseñas').locator('..');
+    await expect(totalReviewsDiv.locator('p').nth(1)).toContainText('1');
+  });
+
+  // OM-491
+  test('flujo comercio: filtrar reseñas por estrellas', async ({ page }) => {
+    const mockReviews = [
+      {
+        id: 1,
+        customerName: 'Usuario 1',
+        orderId: 3001,
+        rating: 5,
+        comment: 'Excelente',
+        createdAt: '2026-05-01T10:00:00.000Z',
+      },
+      {
+        id: 2,
+        customerName: 'Usuario 2',
+        orderId: 3002,
+        rating: 4,
+        comment: 'Muy bueno',
+        createdAt: '2026-05-02T10:00:00.000Z',
+      },
+      {
+        id: 3,
+        customerName: 'Usuario 3',
+        orderId: 3003,
+        rating: 5,
+        comment: 'Perfecto',
+        createdAt: '2026-05-03T10:00:00.000Z',
+      },
+      {
+        id: 4,
+        customerName: 'Usuario 4',
+        orderId: 3004,
+        rating: 3,
+        comment: 'Regular',
+        createdAt: '2026-05-04T10:00:00.000Z',
+      },
+    ];
+
+    await installDeliveryReviewsMock(page, {
+      reviews: mockReviews,
+      total: mockReviews.length,
+    });
+
+    await page.goto('/comercio/deliveries/resenas');
+
+    // Ingresar ID del repartidor
+    await page.locator('input[placeholder="Ej: 12"]').fill('1');
+
+    // Seleccionar filtro de 5 estrellas
+    await page.locator('select').selectOption('5');
+
+    // Aplicar filtros
+    await page.getByRole('button', { name: 'Aplicar filtros' }).click();
+
+    // Debe mostrar solo las reseñas de 5 estrellas
+    await expect(page.getByText('Usuario 1')).toBeVisible();
+    await expect(page.getByText('Excelente')).toBeVisible();
+    await expect(page.getByText('Usuario 3')).toBeVisible();
+    await expect(page.getByText('Perfecto')).toBeVisible();
+
+    // No debe mostrar reseñas de otras calificaciones
+    await expect(page.getByText('Usuario 2')).not.toBeVisible();
+    await expect(page.getByText('Usuario 4')).not.toBeVisible();
+  });
+
+  // OM-491
+  test('flujo comercio: buscar y filtrar reseñas simultáneamente', async ({ page }) => {
+    const mockReviews = [
+      {
+        id: 1,
+        customerName: 'User Alfa',
+        orderId: 4001,
+        rating: 5,
+        comment: 'Excelente servicio',
+        createdAt: '2026-05-01T10:00:00.000Z',
+      },
+      {
+        id: 2,
+        customerName: 'User Beta',
+        orderId: 4002,
+        rating: 5,
+        comment: 'Muy satisfecho',
+        createdAt: '2026-05-02T10:00:00.000Z',
+      },
+      {
+        id: 3,
+        customerName: 'User Gamma',
+        orderId: 4001,
+        rating: 4,
+        comment: 'Buena entrega',
+        createdAt: '2026-05-03T10:00:00.000Z',
+      },
+      {
+        id: 4,
+        customerName: 'User Delta',
+        orderId: 4003,
+        rating: 5,
+        comment: 'Perfecto',
+        createdAt: '2026-05-04T10:00:00.000Z',
+      },
+    ];
+
+    await installDeliveryReviewsMock(page, {
+      reviews: mockReviews,
+      total: mockReviews.length,
+    });
+
+    await page.goto('/comercio/deliveries/resenas');
+
+    // Ingresar ID del repartidor
+    await page.locator('input[placeholder="Ej: 12"]').fill('1');
+
+    // Ingresar código de pedido
+    await page.locator('input[placeholder="Código de pedido"]').fill('4001');
+
+    // Seleccionar filtro de 5 estrellas
+    await page.locator('select').selectOption('5');
+
+    // Aplicar filtros
+    await page.getByRole('button', { name: 'Aplicar filtros' }).click();
+
+    // Debe mostrar solo la reseña que coincide con ambos filtros (pedido 4001 + 5 estrellas)
+    await expect(page.getByText('User Alfa')).toBeVisible();
+    await expect(page.getByText('Excelente servicio')).toBeVisible();
+
+    // No debe mostrar otras reseñas
+    await expect(page.getByText('User Beta')).not.toBeVisible();
+    await expect(page.getByText('User Gamma')).not.toBeVisible();
+    await expect(page.getByText('User Delta')).not.toBeVisible();
+
+    // Verificar que el total es 1
+    const totalReviewsDiv = page.getByText('Total Reseñas').locator('..');
+    await expect(totalReviewsDiv.locator('p').nth(1)).toContainText('1');
+  });
+
+  // OM-491
+  test('flujo comercio: mostrar estado vacío cuando no hay resultados', async ({ page }) => {
+    const mockReviews = [
+      {
+        id: 1,
+        customerName: 'Reviewer One',
+        orderId: 5001,
+        rating: 4,
+        comment: 'Bueno',
+        createdAt: '2026-05-01T10:00:00.000Z',
+      },
+      {
+        id: 2,
+        customerName: 'Reviewer Two',
+        orderId: 5002,
+        rating: 3,
+        comment: 'Regular',
+        createdAt: '2026-05-02T10:00:00.000Z',
+      },
+    ];
+
+    await installDeliveryReviewsMock(page, {
+      reviews: mockReviews,
+      total: mockReviews.length,
+    });
+
+    await page.goto('/comercio/deliveries/resenas');
+
+    // Ingresar ID del repartidor
+    await page.locator('input[placeholder="Ej: 12"]').fill('5');
+
+    // Buscar un pedido que no existe
+    await page.locator('input[placeholder="Código de pedido"]').fill('9999');
+
+    // Aplicar filtros
+    await page.getByRole('button', { name: 'Aplicar filtros' }).click();
+
+    // Debe mostrar el estado vacío
+    await expect(page.getByText('No hay reseñas para los filtros aplicados.')).toBeVisible();
+
+    // Verificar que el total es 0
+    await expect(page.locator('p', { hasText: /^0$/ })).toBeVisible();
+
+    // No debe mostrar ninguna reseña
+    await expect(page.getByText('Reviewer One')).not.toBeVisible();
+    await expect(page.getByText('Reviewer Two')).not.toBeVisible();
   });
 });
