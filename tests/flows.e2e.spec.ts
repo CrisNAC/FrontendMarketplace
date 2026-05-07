@@ -1762,7 +1762,43 @@ test.describe('Flujos E2E de usuario final', () => {
     await page.getByRole('button', { name: 'Confirmar' }).click();
 
     await expect(page).toHaveURL('/homepage');
+
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'Cliente Demo', email: 'cliente@test.com' } }),
+      });
+    });
+
+    await page.route('**/api/deliveries/5', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id_delivery: 5,
+            delivery_status: 'INACTIVE',
+            vehicle_type: 'CAR',
+            coverage_city: 'Asunción',
+            coverage_region: 'Central',
+            coverage_radius_km: 12,
+            availability_notes: 'Lunes a Viernes',
+            average_rating: 0,
+            total_deliveries: 0,
+            reviews_count: 0,
+            created_at: new Date().toISOString(),
+          }),
+        });
+        return;
+      }
+
+      await route.fallback();
+    });
+
     await page.goto('/delivery/perfil');
+    await expect(page).toHaveURL('/delivery/perfil');
     await expect(page.getByRole('heading', { name: 'Perfil del Delivery' })).toBeVisible();
     await expect(page.getByText('Cliente Demo')).toBeVisible();
     await expect(page.getByText('0981000000')).toBeVisible();
