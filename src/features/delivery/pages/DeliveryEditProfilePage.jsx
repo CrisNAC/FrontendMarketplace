@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import { SidebarMyCommerce } from "../../../components/SidebarMyCommerce";
 import {
     getDeliveryProfile,
     updateMyDelivery,
@@ -198,7 +197,6 @@ const s = {
 export function DeliveryEditProfilePage() {
     const navigate = useNavigate();
     const fileInputRef = useRef(null);
-    const [collapsed, setCollapsed] = useState(false);
 
     // Datos del delivery
     const [deliveryId, setDeliveryId] = useState(null);
@@ -295,9 +293,7 @@ export function DeliveryEditProfilePage() {
     const displayedAvatar = avatarPreview ?? avatarUrl;
 
     return (
-        <div style={s.page}>
-            <SidebarMyCommerce collapsed={collapsed} onToggle={() => setCollapsed(c => !c)} />
-
+        <div style={{ maxWidth: "820px", margin: "0 auto" }}>
             <main style={s.main}>
                 {loading && (
                     <div style={{ display: "flex", justifyContent: "center", padding: "80px 0" }}>
