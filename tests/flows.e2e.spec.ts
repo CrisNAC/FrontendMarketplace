@@ -2117,7 +2117,7 @@ test.describe('Flujos E2E de usuario final', () => {
   };
 
   // OM-327
-  test('flujo delivery: Cargar pantalla de pedidos para aceptar"', async ({ page }) => {
+  test('flujo delivery: Cargar pantalla de pedidos para aceptar', async ({ page }) => {
     await installDeliveryOrdersMock(page, {
       assignments: [
         {
