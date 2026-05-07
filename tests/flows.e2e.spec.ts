@@ -1148,6 +1148,15 @@ test.describe('Flujos E2E de usuario final', () => {
 
   //OM-479
   test('flujo comercio: aceptar pedido pendiente y moverlo a seguimiento', async ({ page }) => {
+    // Restaurar sesión de SELLER al inicio del test
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      });
+    });
     let currentStatus = 'PENDING';
 
     await installCommerceOrdersMock(page, {
@@ -1182,6 +1191,15 @@ test.describe('Flujos E2E de usuario final', () => {
 
   //OM-479
   test('flujo comercio: rechazar pedido pendiente', async ({ page }) => {
+    // Restaurar sesión de SELLER al inicio del test
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      });
+    });
     let currentStatus = 'PENDING';
 
     await installCommerceOrdersMock(page, {
@@ -1210,6 +1228,15 @@ test.describe('Flujos E2E de usuario final', () => {
 
   //OM-479
   test("flujo comercio: reflejar pedido entregado en historial", async ({ page }) => {
+    // Restaurar sesión de SELLER al inicio del test
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      });
+    });
     let currentStatus = 'SHIPPED';
 
     await installCommerceOrdersMock(page, {
@@ -1245,6 +1272,15 @@ test.describe('Flujos E2E de usuario final', () => {
 
   //OM-479
   test('flujo comercio: validar botones deshabilitados durante acción', async ({ page }) => {
+    // Restaurar sesión de SELLER al inicio del test
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      });
+    });
     let currentStatus = 'PENDING';
 
     await installCommerceOrdersMock(page, {
@@ -1298,6 +1334,15 @@ test.describe('Flujos E2E de usuario final', () => {
 
   //OM-479
   test('flujo comercio: manejo de errores en aceptar/rechazar', async ({ page }) => {
+    // Restaurar sesión de SELLER al inicio del test
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      });
+    });
     let currentStatus = 'PENDING';
 
     await installCommerceOrdersMock(page, {
@@ -3055,5 +3100,146 @@ test.describe('Flujos E2E de usuario final', () => {
     // No debe mostrar ninguna reseña
     await expect(page.getByText('Reviewer One')).not.toBeVisible();
     await expect(page.getByText('Reviewer Two')).not.toBeVisible();
+  });
+  // OM-488: Historial de delivery
+
+  test.beforeEach(async ({ page }) => {
+    // Asegurarse de que la sesión corresponde a un delivery con id_delivery
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 42, role: 'DELIVERY', id_delivery: 99, name: 'Delivery Demo' }, success: true }),
+      });
+    });
+  });
+
+  // OM-488
+  test('flujo delivery: Ver historial de pedidos', async ({ page }) => {
+    await page.route('**/api/assignments/**/orders**', async (route) => {
+      const url = new URL(route.request().url());
+      const pageParam = Number(url.searchParams.get('page') || '1');
+      const assignment_status = url.searchParams.get('assignment_status') || '';
+      const items = [
+        { id_delivery_assignment: 1, order: { id_order: 555, user: { name: 'Cliente Uno' }, order_status: 'DELIVERED', created_at: '2026-05-01T10:00:00.000Z' } },
+        { id_delivery_assignment: 2, order: { id_order: 556, user: { name: 'Cliente Dos' }, order_status: 'SHIPPED', created_at: '2026-05-02T12:00:00.000Z' } },
+      ].filter(it => {
+        if (assignment_status && it.order.order_status !== assignment_status) return false;
+        return true;
+      });
+      const payload = { content: items, total_elements: items.length, total_pages: 1, page: pageParam, size: 10 };
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(payload) });
+    });
+
+    await page.goto('/delivery/history');
+
+    await expect(page.getByRole('heading', { name: 'Historial' })).toBeVisible();
+
+    await expect(page.getByRole('cell', { name: '#555' })).toBeVisible();
+
+    await expect(page.getByRole('cell', { name: 'Cliente Uno' })).toBeVisible();
+
+    await expect(page.locator('td span').filter({ hasText: 'Entregado' }).first()).toBeVisible();
+
+    await expect(page.getByText(/Mostrando/)).toBeVisible();
+  });
+
+  // OM-488
+  test('flujo delivery: Paginación funciona correctamente', async ({ page }) => {
+    await page.route('**/api/assignments/**/orders**', async (route) => {
+      const url = new URL(route.request().url());
+      const pageParam = Number(url.searchParams.get('page') || '1');
+      const assignment_status = url.searchParams.get('assignment_status') || '';
+      const total = 25;
+      const size = 10;
+      const totalPages = Math.ceil(total / size);
+      const start = (pageParam - 1) * size + 1;
+      const end = Math.min(pageParam * size, total);
+      const items = [];
+      for (let i = start; i <= end; i++) {
+        items.push({
+          id_delivery_assignment: i,
+          order: { id_order: 1000 + i, user: { name: `Cliente ${i}` }, order_status: 'SHIPPED', created_at: '2026-05-01T10:00:00.000Z' },
+        });
+      }
+      const filtered = assignment_status ? items.filter(it => it.order.order_status === assignment_status) : items;
+      const payload = { content: filtered, total_elements: total, total_pages: totalPages, page: pageParam, size };
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(payload) });
+    });
+
+    await page.goto('/delivery/history');
+
+    await expect(page.getByRole('cell', { name: '#1001' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Siguiente' }).click();
+
+    await expect(page.getByRole('cell', { name: '#1011' })).toBeVisible({ timeout: 2000 });
+
+    await expect(page.getByText(/de 25 resultados/)).toBeVisible();
+  });
+
+  // OM-488
+  test('flujo delivery: Filtrado por periodo y por estado', async ({ page }) => {
+    await page.route('**/api/assignments/**/orders**', async (route) => {
+      const url = new URL(route.request().url());
+      const pageParam = Number(url.searchParams.get('page') || '1');
+      const period = url.searchParams.get('period') || '';
+      const assignment_status = url.searchParams.get('assignment_status') || '';
+      const items = [];
+      if (period === '7d') {
+        items.push({ id_delivery_assignment: 10, order: { id_order: 2001, user: { name: 'Reciente' }, order_status: 'DELIVERED', created_at: '2026-05-05T10:00:00.000Z' } });
+      } else if (period === '1m') {
+        items.push({ id_delivery_assignment: 11, order: { id_order: 2101, user: { name: 'Mes' }, order_status: 'SHIPPED', created_at: '2026-04-10T10:00:00.000Z' } });
+      } else {
+        items.push({ id_delivery_assignment: 12, order: { id_order: 2201, user: { name: 'Todo' }, order_status: 'PENDING', created_at: '2026-03-01T10:00:00.000Z' } });
+      }
+      const filtered = assignment_status ? items.filter(it => it.order.order_status === assignment_status) : items;
+      const payload = { content: filtered, total_elements: filtered.length, total_pages: 1, page: pageParam, size: 10 };
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(payload) });
+    });
+
+    await page.goto('/delivery/history');
+
+    await page.getByRole('button', { name: '7 días' }).click();
+    await expect(page.getByRole('cell', { name: 'Reciente' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Filtros' }).click().catch(() => { });
+    await page.selectOption('select', 'DELIVERED');
+
+    await expect(page.locator('td span').filter({ hasText: 'Entregado' }).first()).toBeVisible();
+  });
+
+  // OM-488
+  test('flujo delivery: Estado vacío y manejo de error/carga', async ({ page }) => {
+    let mockMode = 'empty';
+
+    await page.route('**/api/assignments/**/orders**', async (route) => {
+      if (mockMode === 'error') {
+        await route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ message: 'Server error' }) });
+        return;
+      }
+      if (mockMode === 'delay') {
+        await new Promise((res) => setTimeout(res, 300));
+      }
+      const payload = { content: [], total_elements: 0, total_pages: 1, page: 1, size: 10 };
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(payload) });
+    });
+
+    //Estado vacío
+    await page.goto('/delivery/history');
+    await expect(page.getByText('No hay pedidos que coincidan con los filtros.')).toBeVisible({ timeout: 5000 });
+
+    // Error 500
+    mockMode = 'error';
+    await page.goto('/delivery/history');
+    await expect(page.getByText('Error del servidor')).toBeVisible();
+
+    // Loading spinner
+    mockMode = 'delay';
+    const historialPromise = page.waitForResponse('**/api/assignments/**/orders**');
+    await page.goto('/delivery/history');
+    await expect(page.getByText('Cargando historial…')).toBeVisible();
+    await historialPromise; // esperar que termine la petición
   });
 });
