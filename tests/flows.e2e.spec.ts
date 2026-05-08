@@ -3242,4 +3242,233 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page.getByText('Cargando historial…')).toBeVisible();
     await historialPromise; // esperar que termine la petición
   });
+
+  // OM-321: Gestión de repartidores vinculados (Comercio)
+
+  const installCommerceDeliveriesMock = async (
+    page: Page,
+    options?: {
+      deliveries?: Array<{
+        id: number;
+        user: { id: number; name: string; email: string; phone?: string };
+        status: 'AVAILABLE' | 'IN_DELIVERY' | 'UNAVAILABLE' | 'ASSIGNED' | string;
+        completedDeliveries: number;
+        successRate: number | null;
+        avgRating: number | null;
+        reviewCount: number;
+      }>;
+      stats?: {
+        total: number;
+        available: number;
+        inDelivery: number;
+        assigned?: number;
+        avgRating: number | null;
+      };
+      deleteShouldFail?: boolean;
+    },
+  ) => {
+    const deliveries =
+      options?.deliveries ??
+      [
+        {
+          id: 10,
+          user: {
+            id: 2,
+            name: 'Juan Pérez',
+            email: 'juan@delivery.com',
+            phone: '+595971111111',
+          },
+          status: 'AVAILABLE',
+          completedDeliveries: 156,
+          successRate: 97.4,
+          avgRating: 4.8,
+          reviewCount: 3,
+        },
+        {
+          id: 11,
+          user: {
+            id: 3,
+            name: 'María González',
+            email: 'maria@delivery.com',
+            phone: '+595972222222',
+          },
+          status: 'IN_DELIVERY',
+          completedDeliveries: 243,
+          successRate: 99.2,
+          avgRating: 4.9,
+          reviewCount: 5,
+        },
+        {
+          id: 12,
+          user: {
+            id: 4,
+            name: 'Ana López',
+            email: 'ana@delivery.com',
+            phone: '+595973333333',
+          },
+          status: 'UNAVAILABLE',
+          completedDeliveries: 87,
+          successRate: 97,
+          avgRating: null,
+          reviewCount: 0,
+        },
+      ];
+
+    let mutableDeliveries = [...deliveries];
+
+    const stats =
+      options?.stats ??
+      {
+        total: mutableDeliveries.length,
+        available: mutableDeliveries.filter((d) => d.status === 'AVAILABLE').length,
+        inDelivery: mutableDeliveries.filter((d) => d.status === 'IN_DELIVERY').length,
+        assigned: mutableDeliveries.filter((d) => d.status === 'ASSIGNED').length,
+        avgRating: 4.8,
+      };
+
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' },
+        }),
+      });
+    });
+
+    await page.route('**/api/stores/1/deliveries', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            stats: {
+              ...stats,
+              total: mutableDeliveries.length,
+              available: mutableDeliveries.filter((d) => d.status === 'AVAILABLE').length,
+              inDelivery: mutableDeliveries.filter((d) => d.status === 'IN_DELIVERY').length,
+            },
+            deliveries: mutableDeliveries,
+          }),
+        });
+        return;
+      }
+    });
+
+    await page.route(/\/api\/stores\/1\/deliveries\/\d+$/, async (route) => {
+      if (route.request().method() === 'DELETE') {
+        if (options?.deleteShouldFail) {
+          await route.fulfill({
+            status: 409,
+            contentType: 'application/json',
+            body: JSON.stringify({ message: 'No se pudo desvincular el repartidor.' }),
+          });
+          return;
+        }
+
+        const url = route.request().url();
+        const deliveryId = Number(url.split('/').pop());
+        mutableDeliveries = mutableDeliveries.filter((d) => d.id !== deliveryId);
+
+        await route.fulfill({
+          status: 204,
+          contentType: 'application/json',
+          body: JSON.stringify({}),
+        });
+      }
+    });
+  };
+
+  // OM-321
+  test('flujo comercio: cargar repartidores vinculados con stats y listado', async ({ page }) => {
+    await installCommerceDeliveriesMock(page);
+
+    await page.goto('/comercio/delivery');
+
+    await expect(page.getByRole('heading', { name: 'Gestión de Repartidores' })).toBeVisible();
+    await expect(page.getByText('Repartidores Vinculados', { exact: true })).toBeVisible();
+
+    // Stats superiores
+    await expect(page.getByText('Disponibles')).toBeVisible();
+    await expect(page.getByText('En Entrega', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('Total Repartidores')).toBeVisible();
+    await expect(page.getByText('Rating Promedio')).toBeVisible();
+
+    // Verificar que se cargaron cards
+    await expect(page.getByText('Juan Pérez')).toBeVisible();
+    await expect(page.getByText('María González')).toBeVisible();
+    await expect(page.getByText('Ana López')).toBeVisible();
+    await expect(page.getByText('Cant. Entregas', { exact: true })).toHaveCount(3);
+  });
+
+  // OM-321
+  test('flujo comercio: toggle entre vista cards y vista tabla', async ({ page }) => {
+    await installCommerceDeliveriesMock(page);
+
+    await page.goto('/comercio/delivery');
+
+    await page.getByRole('button', { name: 'Tabla' }).click();
+
+    // Headers de la tabla
+    await expect(page.getByText('Nombre Completo')).toBeVisible();
+    await expect(page.getByText('Estado')).toBeVisible();
+    await expect(page.getByText('Teléfono')).toBeVisible();
+    await expect(page.getByText('Correo')).toBeVisible();
+    await expect(page.getByText('Entregas')).toBeVisible();
+    await expect(page.getByText('% Éxito')).toBeVisible();
+    await expect(page.getByText('Calificación')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Cards' }).click();
+    await expect(page.getByText('Nombre Completo')).not.toBeVisible();
+    await expect(page.getByText('Juan Pérez')).toBeVisible();
+  });
+
+  // OM-321
+  test('flujo comercio: navegar a reseñas desde botón Ver Reseñas', async ({ page }) => {
+    await installCommerceDeliveriesMock(page);
+
+    await page.goto('/comercio/delivery');
+
+    await page.getByRole('button', { name: 'Ver Reseñas' }).first().click();
+
+    await expect(page).toHaveURL('/comercio/deliveries/resenas');
+    await expect(page.getByRole('heading', { name: 'Reseñas de Repartidores' })).toBeVisible();
+  });
+
+  // OM-321
+  test('flujo comercio: abrir y cerrar modal de desvinculación', async ({ page }) => {
+    await installCommerceDeliveriesMock(page);
+
+    await page.goto('/comercio/delivery');
+
+    await page.getByRole('button', { name: 'Eliminar' }).first().click();
+
+    await expect(page.getByText('Desvincular repartidor')).toBeVisible();
+    await expect(page.getByText(/Desvincular a/)).toBeVisible();
+
+    await page.getByRole('button', { name: 'Cancelar' }).click();
+
+    await expect(page.getByText('Desvincular repartidor')).not.toBeVisible();
+  });
+
+  // OM-321
+  test('flujo comercio: desvincular repartidor y refrescar listado', async ({ page }) => {
+    await installCommerceDeliveriesMock(page);
+
+    await page.goto('/comercio/delivery');
+
+    await expect(page.getByText('Juan Pérez')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Eliminar' }).first().click();
+    await page.getByRole('button', { name: 'Desvincular' }).click();
+
+    // El modal se cierra y el listado se recarga sin el delivery eliminado
+    await expect(page.getByText('Desvincular repartidor')).not.toBeVisible();
+    await expect(page.getByText('Juan Pérez')).not.toBeVisible();
+
+    // Se mantiene el resto de deliveries
+    await expect(page.getByText('María González')).toBeVisible();
+    await expect(page.getByText('Ana López')).toBeVisible();
+  });
 });
