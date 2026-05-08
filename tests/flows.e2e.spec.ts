@@ -3103,8 +3103,10 @@ test.describe('Flujos E2E de usuario final', () => {
   });
   // OM-488: Historial de delivery
 
-  test.beforeEach(async ({ page }) => {
-    // Asegurarse de que la sesión corresponde a un delivery con id_delivery
+
+
+  // OM-488
+  test('flujo delivery: Ver historial de pedidos', async ({ page }) => {
     await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
@@ -3113,10 +3115,6 @@ test.describe('Flujos E2E de usuario final', () => {
         body: JSON.stringify({ user: { id_user: 42, role: 'DELIVERY', id_delivery: 99, name: 'Delivery Demo' }, success: true }),
       });
     });
-  });
-
-  // OM-488
-  test('flujo delivery: Ver historial de pedidos', async ({ page }) => {
     await page.route('**/api/assignments/**/orders**', async (route) => {
       const url = new URL(route.request().url());
       const pageParam = Number(url.searchParams.get('page') || '1');
@@ -3147,6 +3145,14 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-488
   test('flujo delivery: Paginación funciona correctamente', async ({ page }) => {
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 42, role: 'DELIVERY', id_delivery: 99, name: 'Delivery Demo' }, success: true }),
+      });
+    });
     await page.route('**/api/assignments/**/orders**', async (route) => {
       const url = new URL(route.request().url());
       const pageParam = Number(url.searchParams.get('page') || '1');
@@ -3181,6 +3187,14 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-488
   test('flujo delivery: Filtrado por periodo y por estado', async ({ page }) => {
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 42, role: 'DELIVERY', id_delivery: 99, name: 'Delivery Demo' }, success: true }),
+      });
+    });
     await page.route('**/api/assignments/**/orders**', async (route) => {
       const url = new URL(route.request().url());
       const pageParam = Number(url.searchParams.get('page') || '1');
@@ -3212,6 +3226,14 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-488
   test('flujo delivery: Estado vacío y manejo de error/carga', async ({ page }) => {
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 42, role: 'DELIVERY', id_delivery: 99, name: 'Delivery Demo' }, success: true }),
+      });
+    });
     let mockMode = 'empty';
 
     await page.route('**/api/assignments/**/orders**', async (route) => {
@@ -3470,5 +3492,270 @@ test.describe('Flujos E2E de usuario final', () => {
     // Se mantiene el resto de deliveries
     await expect(page.getByText('María González')).toBeVisible();
     await expect(page.getByText('Ana López')).toBeVisible();
+  });
+
+  // OM-408: Agregar repartidor existente al comercio
+
+  const installStoreDeliveriesSearchMock = async (
+    page: Page,
+    options: {
+      deliveries?: Array<{
+        id_user: number;
+        name: string;
+        email: string;
+        phone?: string;
+        total_deliveries?: number;
+        success_rate?: number;
+        average_rating?: number;
+      }>;
+      linkShouldFail?: boolean;
+      linkErrorStatus?: number;
+    } = {},
+  ) => {
+    const defaultDeliveries = [
+      {
+        id_user: 201,
+        name: 'Juan Repartidor',
+        email: 'juan.delivery@example.invalid',
+        phone: '+595900111111',
+        total_deliveries: 48,
+        success_rate: 0.95,
+        average_rating: 4.8,
+      },
+      {
+        id_user: 202,
+        name: 'María Entrega',
+        email: 'maria.entrega@example.invalid',
+        phone: '+595900222222',
+        total_deliveries: 32,
+        success_rate: 0.88,
+        average_rating: 4.5,
+      },
+      {
+        id_user: 203,
+        name: 'Carlos Mensajería',
+        email: 'carlos.msg@example.invalid',
+        phone: '+595900333333',
+        total_deliveries: 61,
+        success_rate: 0.92,
+        average_rating: 4.7,
+      },
+    ];
+
+    const deliveriesToUse = options.deliveries ?? defaultDeliveries;
+
+    // GET /api/deliveries/search - lista de repartidores disponibles
+    // CAMBIO: agregado ** al final para matchear URLs con query params (?q=maria)
+    await page.route('**/api/deliveries/search**', async (route) => {
+      const url = new URL(route.request().url());
+      const q = url.searchParams.get('q');
+
+      if (!q) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(deliveriesToUse),
+        });
+        return;
+      }
+
+      // Filtrar por query (correo o teléfono)
+      // FIX: phone es opcional, usar ?? '' para evitar TypeError
+      const filtered = deliveriesToUse.filter(
+        (d) =>
+          d.email.toLowerCase().includes(q.toLowerCase()) ||
+          (d.phone ?? '').includes(q),
+      );
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(filtered),
+      });
+    });
+
+    // GET /api/stores/:id/deliveries - lista de repartidores ya vinculados (devolver vacío para tests)
+    // POST /api/stores/:id/deliveries - vincular repartidor
+    // CAMBIO: agregado ** al final para matchear URLs con query params
+    await page.route('**/api/stores/*/deliveries**', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            stats: {
+              total: 0,
+              available: 0,
+              inDelivery: 0,
+              avgRating: null,
+            },
+            deliveries: [],
+          }),
+        });
+        return;
+      }
+
+      if (route.request().method() === 'POST') {
+        if (options.linkShouldFail) {
+          await route.fulfill({
+            status: options.linkErrorStatus ?? 400,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              message:
+                options.linkErrorStatus === 409
+                  ? 'Ese repartidor ya está vinculado.'
+                  : 'Error al vincular repartidor.',
+            }),
+          });
+          return;
+        }
+
+        const body = route.request().postData();
+        const { fk_user } = JSON.parse(body || '{}');
+
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id_delivery: 5000 + fk_user,
+            fk_user,
+            delivery_status: 'AVAILABLE',
+            created_at: new Date().toISOString(),
+          }),
+        });
+        return;
+      }
+
+      await route.fallback();
+    });
+  };
+
+  // OM-408
+  test('flujo comercio: navegar a pantalla Agregar Delivery', async ({ page }) => {
+    await installStoreDeliveriesSearchMock(page);
+    await setupCommonApiMocks(page);
+
+    await page.goto('/comercio/delivery');
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.getByRole('button', { name: /Agregar delivery/i }).first()).toBeVisible();
+    await page.getByRole('button', { name: /Agregar delivery/i }).first().click();
+
+    await expect(page).toHaveURL('/comercio/delivery/agregar');
+    await expect(page.getByRole('heading', { name: /Agregar delivery/i })).toBeVisible();
+  });
+
+  // OM-408
+  test('flujo comercio: búsqueda por correo en tiempo real', async ({ page }) => {
+    await installStoreDeliveriesSearchMock(page);
+    await setupCommonApiMocks(page);
+
+    await page.goto('/comercio/delivery/agregar');
+    await page.waitForLoadState('networkidle');
+
+    const searchInput = page.getByPlaceholder(/Filtrar por nombre, correo o teléfono/i);
+    await expect(searchInput).toBeVisible();
+
+    await page.waitForTimeout(300);
+
+    await searchInput.fill('maria');
+    await page.waitForTimeout(300);
+
+    await expect(page.locator('text=María Entrega')).toBeVisible();
+    await expect(page.getByText('maria.entrega@example.invalid')).toBeVisible();
+  });
+
+  // OM-408
+  test('flujo comercio: búsqueda por teléfono en tiempo real', async ({ page }) => {
+    await installStoreDeliveriesSearchMock(page);
+    await setupCommonApiMocks(page);
+
+    await page.goto('/comercio/delivery/agregar');
+    await page.waitForLoadState('networkidle');
+
+    const searchInput = page.getByPlaceholder(/Filtrar por nombre, correo o teléfono/i);
+    await page.waitForTimeout(300);
+
+    await searchInput.fill('+595900111111');
+    await page.waitForTimeout(300);
+
+    await expect(page.locator('text=Juan Repartidor')).toBeVisible();
+    await expect(page.getByText('+595900111111')).toBeVisible();
+  });
+
+  // OM-408
+  test('flujo comercio: tarjeta de resultado con datos completos', async ({ page }) => {
+    await installStoreDeliveriesSearchMock(page);
+    await setupCommonApiMocks(page);
+
+    await page.goto('/comercio/delivery/agregar');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(300);
+
+    await expect(page.locator('text=Juan Repartidor')).toBeVisible();
+
+    await expect(page.locator('text=/Teléfono.*\\+595900111111/')).toBeVisible();
+    await expect(page.locator('text=/Correo.*juan.delivery@example.invalid/')).toBeVisible();
+    await expect(page.locator('text=/Entregas.*48/')).toBeVisible();
+    await expect(page.locator('text=/% éxito.*95 %/')).toBeVisible();
+    await expect(page.locator('text=/Calificación.*4.8/')).toBeVisible();
+
+    await expect(page.locator("button:has-text('Agregar')").first()).toBeVisible();
+  });
+
+  // OM-408
+  test('flujo comercio: agregar delivery con confirmación exitosa', async ({ page }) => {
+    await installStoreDeliveriesSearchMock(page);
+    await setupCommonApiMocks(page);
+
+    await page.goto('/comercio/delivery/agregar');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(300);
+
+    await page.locator("button:has-text('Agregar')").first().click();
+
+    await expect(page.locator('dialog')).toBeVisible();
+    await expect(page.getByText('¿Agregar a tu comercio?')).toBeVisible();
+
+    await page.locator("button:has-text('Confirmar')").click();
+
+    await expect(page.getByText(/Repartidor agregado|agregado/i)).toBeVisible();
+
+    await page.waitForURL('/comercio/delivery');
+    await expect(page).toHaveURL('/comercio/delivery');
+  });
+
+  // OM-408
+  test('flujo comercio: error al agregar delivery (ya vinculado)', async ({ page }) => {
+    await installStoreDeliveriesSearchMock(page, { linkShouldFail: true, linkErrorStatus: 409 });
+    await setupCommonApiMocks(page);
+
+    await page.goto('/comercio/delivery/agregar');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(300);
+
+    await page.locator("button:has-text('Agregar')").first().click();
+    await page.locator("button:has-text('Confirmar')").click();
+
+    await expect(page.getByText(/ya está vinculado|No se pudo agregar/i)).toBeVisible();
+  });
+
+  // OM-408
+  test('flujo comercio: cancelar modal de confirmación', async ({ page }) => {
+    await installStoreDeliveriesSearchMock(page);
+    await setupCommonApiMocks(page);
+
+    await page.goto('/comercio/delivery/agregar');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(300);
+
+    await page.locator("button:has-text('Agregar')").first().click();
+
+    await expect(page.locator('dialog')).toBeVisible();
+
+    await page.locator("button:has-text('Cancelar')").click();
+
+    await expect(page.locator('dialog')).not.toBeVisible();
+    await expect(page).toHaveURL('/comercio/delivery/agregar');
   });
 });
