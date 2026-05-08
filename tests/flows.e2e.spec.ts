@@ -4147,4 +4147,95 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page.getByText('No hay deliveries disponibles')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Asignar delivery' })).toBeDisabled();
   });
+
+  // OM-490
+  test('flujo delivery: finalizar pedido activo', async ({ page }) => {
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          user: {
+            id_user: 7,
+            name: 'Delivery Demo',
+            role: 'DELIVERY',
+            id_delivery: 5,
+          },
+        }),
+      });
+    });
+
+    const assignmentId = 9005;
+    const orderId = 8005;
+
+    await page.route('**/api/assignments/deliveries/**/assignments**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          {
+            id_delivery_assignment: 9005,
+            order: {
+              id_order: 8005,
+              order_status: 'SHIPPED',
+              total: 12500,
+              created_at: '2026-05-05T13:00:00.000Z',
+              user: {
+                id_user: 123,
+                name: 'Cliente Demo',
+                phone: '0981 111 222',
+                avatar_url: null,
+              },
+              store: { name: 'Nissei' },
+              order_items: [{ product: { name: 'Producto A' }, quantity: 1 }],
+              address: { address: 'Calle 1', city: 'Asunción', region: 'Central' },
+            },
+          },
+        ]),
+      });
+    });
+
+    await page.route(`**/api/assignments/${assignmentId}/complete`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          message: 'Entrega finalizada correctamente',
+          assignmentId,
+          orderId,
+          order_status: 'DELIVERED',
+        }),
+      });
+    });
+
+    await page.route('**/api/users/7', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id_user: 7,
+          name: 'Delivery Demo',
+          email: 'delivery@test.com',
+          phone: '0981 111 222',
+          role: 'DELIVERY',
+        }),
+      });
+    });
+
+    await page.goto('/delivery/pedidos');
+
+    await expect(page.getByRole('heading', { name: 'Mis Pedidos en Curso' })).toBeVisible();
+    await expect(page.getByText("#ORD-" + orderId)).toBeVisible();
+    await expect(page.getByText('Cliente Demo')).toBeVisible();
+
+    const finishButton = page.getByRole('button', { name: 'Finalizado' });
+    await expect(finishButton).toBeVisible();
+    await finishButton.click();
+
+    await expect(page.getByText('Entrega finalizada correctamente')).toBeVisible();
+    await expect(page.getByText('¡No tienes pedidos activos! Buen trabajo completando entregas.')).toBeVisible();
+  });
 });
