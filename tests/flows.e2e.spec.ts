@@ -699,7 +699,7 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page.getByText('Lista eliminada')).toBeVisible();
   });
 
-  
+
   //hasta aca los de OM-495
 
   test('flujo lista de deseos: agregar a favoritos y ver lista', async ({ page }) => {
@@ -3969,5 +3969,182 @@ test.describe('Flujos E2E de usuario final', () => {
 
     await expect(page.locator('dialog')).not.toBeVisible();
     await expect(page).toHaveURL('/comercio/delivery/agregar');
+  });
+
+  // OM-489
+
+  test('flujo comercio: Listar deliveries elegibles y mostrarlos en modal', async ({ page }) => {
+    // Restaurar sesión de SELLER
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      });
+    });
+
+    let currentStatus = 'PENDING';
+    await installCommerceOrdersMock(page, {
+      order: {
+        id: 9011,
+        total: 150000,
+        notes: 'Pedido para asignación',
+        createdAt: '2026-05-06T10:00:00.000Z',
+        address: { address: 'Calle Falsa 123', city: 'Asuncion' },
+        items: [{ id: 1, quantity: 1 }],
+      },
+      getStatus: () => currentStatus,
+      setStatus: () => { /* no-op */ },
+    });
+
+    // Mock del endpoint de deliveries: backend retorna solo deliveries elegibles (ACTIVE, sin asignaciones)
+    await page.route('**/api/stores/1/orders/9011/deliveries', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          available_deliveries: [
+            { id_delivery: 11, name: 'Delivery Activo Uno', phone: '0991 111111' },
+            { id_delivery: 12, name: 'Delivery Activo Dos', phone: '0992 222222' },
+          ],
+          delivery_address: { address: 'Calle Falsa 123', city: 'Asuncion' },
+          order_id: 9011,
+          order_status: 'PENDING',
+        }),
+      });
+    });
+
+    await page.goto('/comercio/pedidos');
+    await expect(page.getByText('#ORD-9011')).toBeVisible();
+
+    // Abrir modal de asignación
+    await page.getByRole('button', { name: 'Asignar delivery' }).click();
+
+    // Modal visible y lista con los deliveries retornados
+    await expect(page.getByText('Delivery Activo Uno')).toBeVisible();
+    await expect(page.getByText('Delivery Activo Dos')).toBeVisible();
+  });
+
+  // OM-489
+  //Asignar delivery desde modal y POST /api/assignments
+  test('flujo comercio: Asignar delivery desde modal con exito', async ({ page }) => {
+    // Restaurar sesión SELLER
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      });
+    });
+
+    let currentStatus = 'PENDING';
+    await installCommerceOrdersMock(page, {
+      order: {
+        id: 9020,
+        total: 99000,
+        notes: 'Pedido para prueba de asignación',
+        createdAt: '2026-05-06T15:00:00.000Z',
+        address: { address: 'Calle Test 55', city: 'Asuncion' },
+        items: [{ id: 1, quantity: 1 }],
+      },
+      getStatus: () => currentStatus,
+      setStatus: () => { /* no-op */ },
+    });
+
+    // Mock GET deliveries (lista elegible)
+    await page.route('**/api/stores/1/orders/9020/deliveries', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          available_deliveries: [
+            { id_delivery: 52, name: 'Delivery Selector', phone: '0995 555555' },
+            { id_delivery: 53, name: 'Delivery Otra', phone: '0996 666666' },
+          ],
+          delivery_address: { address: 'Calle Test 55', city: 'Asuncion' },
+          order_id: 9020,
+          order_status: 'PENDING',
+        }),
+      });
+    });
+
+    // Capturamos el POST a /api/assignments
+    let capturedBody: Record<string, unknown> | null = null;
+    await page.route('**/api/assignments', async (route) => {
+      if (route.request().method() === 'POST') {
+        capturedBody = route.request().postDataJSON();
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ message: 'Asignación creada', fk_order: 9020, fk_delivery: 52 }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    // Ir a la página de pedidos del comercio y abrir modal
+    await page.goto('/comercio/pedidos');
+    await expect(page.getByText('#ORD-9020')).toBeVisible();
+    await page.getByRole('button', { name: 'Asignar delivery' }).click();
+
+    // Seleccionar el delivery y confirmars
+    await page.getByText('Delivery Selector').click();
+    await page.getByRole('button', { name: 'Asignar delivery' }).click();
+
+    // Esperar que el modal se cierre
+    await expect(page.getByRole('heading', { name: 'Asignar delivery' })).not.toBeVisible();
+
+  });
+
+  // OM-489
+  test('flujo comercio: Sin deliveries disponibles muestra mensaje sin deliveries disponibles y boton Asignar desactivado', async ({ page }) => {
+    // Restaurar sesión SELLER
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      });
+    });
+
+    let currentStatus = 'PENDING';
+    await installCommerceOrdersMock(page, {
+      order: {
+        id: 9015,
+        total: 45000,
+        notes: 'Sin deliveries',
+        createdAt: '2026-05-06T14:00:00.000Z',
+        address: { address: 'Calle Vacia 0', city: 'Villarrica' },
+        items: [{ id: 1, quantity: 1 }],
+      },
+      getStatus: () => currentStatus,
+      setStatus: () => { /* no-op */ },
+    });
+
+    // Endpoint devuelve lista vacía
+    await page.route('**/api/stores/1/orders/9015/deliveries', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          available_deliveries: [],
+          delivery_address: { address: 'Calle Vacia 0', city: 'Villarrica' },
+          order_id: 9015,
+          order_status: 'PENDING',
+        }),
+      });
+    });
+
+    await page.goto('/comercio/pedidos');
+    await expect(page.getByText('#ORD-9015')).toBeVisible();
+    await page.getByRole('button', { name: 'Asignar delivery' }).click();
+
+    // Debe mostrar mensaje de estado vacío y el botón principal debe estar deshabilitado
+    await expect(page.getByText('No hay deliveries disponibles')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Asignar delivery' })).toBeDisabled();
   });
 });
