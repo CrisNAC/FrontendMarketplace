@@ -518,6 +518,190 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page.getByText('Apple iPhone 17 Pro A3256 Dual')).toBeVisible();
   });
 
+  //tests de OM-495
+  test('flujo lista de deseos: crear nueva lista desde el modal de guardar', async ({ page }) => {
+    await page.route('**/api/users/*/wishlists', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify([
+            { id: 1, name: 'Mi lista', itemCount: 1, createdAt: new Date().toISOString() },
+          ]),
+        });
+        return;
+      }
+
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({ id: 2, name: 'Nueva lista', itemCount: 0, createdAt: new Date().toISOString() }),
+        });
+      }
+    });
+
+    await page.route('**/api/users/*/wishlists/2/items', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({ message: 'Producto agregado a la lista' }),
+        });
+      }
+    });
+
+    await page.route('**/api/users/*/wishlists/2/items', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id: 2,
+            name: 'Nueva lista',
+            items: [
+              {
+                id: 10,
+                quantity: 1,
+                product: {
+                  id: 101,
+                  name: 'Apple iPhone 17 Pro A3256 Dual',
+                  price: 13290000,
+                  originalPrice: 13290000,
+                  offerPrice: null,
+                  isOffer: false,
+                },
+              },
+            ],
+          }),
+        });
+        return;
+      }
+
+      await route.fallback();
+    });
+
+    await page.goto('/producto-detalle/101');
+    await expect(page.getByRole('button', { name: 'Agregar al carrito' })).toBeEnabled({ timeout: 10000 });
+
+    await page.getByRole('button', { name: 'Agregar a favoritos' }).click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+
+    //validar campo vacio
+    await page.getByRole('button', { name: 'Crear' }).click();
+    await expect(page.getByText('Ingresá un nombre para la lista')).toBeVisible();
+    //ingresar nombre y crear lista
+    await page.getByPlaceholder('Nombre de la lista').fill('Nueva lista');
+    await page.getByRole('button', { name: 'Crear' }).click();
+
+    await expect(page.getByText('Producto agregado a "Nueva lista"')).toBeVisible();
+  });
+
+  test('flujo cliente: seleccionar lista existente al guardar producto', async ({ page }) => {
+    await page.route('**/api/users/*/wishlists', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify([
+            { id: 1, name: 'Mi lista', itemCount: 1, createdAt: new Date().toISOString() },
+            { id: 2, name: 'Regalos', itemCount: 0, createdAt: new Date().toISOString() },
+          ]),
+        });
+        return;
+      }
+    });
+
+    await page.route('**/api/users/*/wishlists/2/items', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({ message: 'Producto agregado a la lista' }),
+        });
+      }
+    });
+
+    await page.goto('/producto-detalle/101');
+    await expect(page.getByRole('button', { name: 'Agregar al carrito' })).toBeEnabled({ timeout: 10000 });
+
+    await page.getByRole('button', { name: 'Agregar a favoritos' }).click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Regalos' }).click();
+    await expect(page.getByText('Producto agregado a la lista')).toBeVisible();
+  });
+
+  test('flujo cliente: eliminar lista desde wishlist', async ({ page }) => {
+    await page.route('**/api/users/*/wishlists', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify([
+            { id: 1, name: 'Mi lista', itemCount: 1, createdAt: new Date().toISOString() },
+          ]),
+        });
+        return;
+      }
+    });
+
+    await page.route('**/api/users/*/wishlists/1/items', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id: 1,
+            name: 'Mi lista',
+            items: [
+              {
+                id: 10,
+                quantity: 2,
+                product: {
+                  id: 101,
+                  name: 'Apple iPhone 17 Pro A3256 Dual',
+                  price: 13290000,
+                  originalPrice: 13290000,
+                  offerPrice: null,
+                  isOffer: false,
+                },
+              },
+            ],
+          }),
+        });
+      }
+    });
+
+    await page.route('**/api/users/*/wishlists/1', async (route) => {
+      if (route.request().method() === 'DELETE') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ message: 'Lista eliminada' }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    await page.goto('/wishlist');
+    await expect(page.getByRole('heading', { name: 'Lista de deseos' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Eliminar lista' })).toBeVisible();
+    await expect(page.getByText('Apple iPhone 17 Pro A3256 Dual')).toBeVisible();
+
+    // Interceptar el dialog nativo ANTES de hacer click
+    page.once('dialog', async (dialog) => {
+      await dialog.accept(); // simula click en "Aceptar"
+    });
+
+    await page.getByRole('button', { name: 'Eliminar lista' }).click();
+    await expect(page.getByText('Lista eliminada')).toBeVisible();
+  });
+
+  
+  //hasta aca los de OM-495
+
   test('flujo lista de deseos: agregar a favoritos y ver lista', async ({ page }) => {
     await page.route('**/api/users/*/wishlists', async (route) => {
       if (route.request().method() === 'GET') {
