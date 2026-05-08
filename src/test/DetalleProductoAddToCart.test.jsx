@@ -18,6 +18,15 @@ vi.mock("axios", () => ({
   default: {
     get: vi.fn(),
     post: vi.fn(),
+    create: vi.fn(() => ({
+      get: vi.fn(),
+      post: vi.fn(),
+      patch: vi.fn(),
+      interceptors: {
+        request: { use: vi.fn() },
+        response: { use: vi.fn() },
+      },
+    })),
   },
 }));
 

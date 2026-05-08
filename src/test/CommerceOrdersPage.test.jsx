@@ -56,7 +56,7 @@ const mockPendingOrder = {
     total: 150000,
     notes: null,
     createdAt: new Date().toISOString(),
-    address: { city: 'Asunción', region: 'Central' },
+    address: null,
     items: [{ id: 1 }],
 }
 

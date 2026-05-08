@@ -1,0 +1,961 @@
+
+ RUN  v4.1.5 C:/Users/jose.diaz.ITAPUA/FrontendMarketplace
+      Coverage enabled with v8
+
+ ❯ src/test/DeliveryProfilePage.test.jsx (2 tests | 1 failed) 1225ms
+     × muestra el badge "Disponible" cuando el delivery está AVAILABLE 1184ms
+stderr | src/test/CommerceOrdersPage.test.jsx > CommerceOrdersPage > llama a updateOrderStatus con CANCELLED al rechazar un pedido
+Error verificando asignación de pedido 2: AxiosError: Network Error
+    at XMLHttpRequest.handleError (file:///C:/Users/jose.diaz.ITAPUA/FrontendMarketplace/node_modules/axios/lib/adapters/xhr.js:122:21)
+    at XMLHttpRequest.invokeTheCallbackFunction (C:\Users\jose.diaz.ITAPUA\FrontendMarketplace\node_modules\jsdom\lib\generated\idl\EventHandlerNonNull.js:14:28)
+    at XMLHttpRequest.<anonymous> (C:\Users\jose.diaz.ITAPUA\FrontendMarketplace\node_modules\jsdom\lib\jsdom\living\helpers\create-event-accessor.js:57:32)
+    at innerInvokeEventListeners (C:\Users\jose.diaz.ITAPUA\FrontendMarketplace\node_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:360:16)
+    at invokeEventListeners (C:\Users\jose.diaz.ITAPUA\FrontendMarketplace\node_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:296:3)
+    at XMLHttpRequestImpl._dispatch (C:\Users\jose.diaz.ITAPUA\FrontendMarketplace\node_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:243:9)
+    at fireAnEvent (C:\Users\jose.diaz.ITAPUA\FrontendMarketplace\node_modules\jsdom\lib\jsdom\living\helpers\events.js:18:36)
+    at requestErrorSteps (C:\Users\jose.diaz.ITAPUA\FrontendMarketplace\node_modules\jsdom\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:157:3)
+    at dispatchError (C:\Users\jose.diaz.ITAPUA\FrontendMarketplace\node_modules\jsdom\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:131:3)
+    at C:\Users\jose.diaz.ITAPUA\FrontendMarketplace\node_modules\jsdom\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:752:13
+    at Axios.request (file:///C:/Users/jose.diaz.ITAPUA/FrontendMarketplace/node_modules/axios/lib/core/Axios.js:46:41)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at checkOrderAssignment (C:/Users/jose.diaz.ITAPUA/FrontendMarketplace/src/features/commerces/services/deliveryAssignmentApi.js:34:17)
+    at C:/Users/jose.diaz.ITAPUA/FrontendMarketplace/src/features/commerces/pages/CommerceOrdersPage.jsx:450:24 {
+  isAxiosError: true,
+  code: 'ERR_NETWORK',
+  config: {
+    transitional: {
+      silentJSONParsing: true,
+      forcedJSONParsing: true,
+      clarifyTimeoutError: false,
+      legacyInterceptorReqResOrdering: true
+    },
+    adapter: [ 'xhr', 'http', 'fetch' ],
+    transformRequest: [ [Function: transformRequest] ],
+    transformResponse: [ [Function: transformResponse] ],
+    timeout: 0,
+    xsrfCookieName: 'XSRF-TOKEN',
+    xsrfHeaderName: 'X-XSRF-TOKEN',
+    maxContentLength: -1,
+    maxBodyLength: -1,
+    env: { FormData: [Function], Blob: [class Blob] },
+    validateStatus: [Function: validateStatus],
+    headers: Object [AxiosHeaders] {
+      Accept: 'application/json, text/plain, */*',
+      'Content-Type': undefined
+    },
+    baseURL: 'http://localhost:3000',
+    withCredentials: true,
+    method: 'get',
+    url: '/api/orders/2/assignment',
+    allowAbsoluteUrls: true,
+    data: undefined
+  },
+  request: XMLHttpRequest {},
+  event: ProgressEvent { isTrusted: [Getter] }
+}
+
+stderr | src/test/CommerceOrdersPage.test.jsx
+Error verificando asignación de pedido 1: AxiosError: Network Error
+    at XMLHttpRequest.handleError (file:///C:/Users/jose.diaz.ITAPUA/FrontendMarketplace/node_modules/axios/lib/adapters/xhr.js:122:21)
+    at XMLHttpRequest.invokeTheCallbackFunction (C:\Users\jose.diaz.ITAPUA\FrontendMarketplace\node_modules\jsdom\lib\generated\idl\EventHandlerNonNull.js:14:28)
+    at XMLHttpRequest.<anonymous> (C:\Users\jose.diaz.ITAPUA\FrontendMarketplace\node_modules\jsdom\lib\jsdom\living\helpers\create-event-accessor.js:57:32)
+    at innerInvokeEventListeners (C:\Users\jose.diaz.ITAPUA\FrontendMarketplace\node_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:360:16)
+    at invokeEventListeners (C:\Users\jose.diaz.ITAPUA\FrontendMarketplace\node_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:296:3)
+    at XMLHttpRequestImpl._dispatch (C:\Users\jose.diaz.ITAPUA\FrontendMarketplace\node_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:243:9)
+    at fireAnEvent (C:\Users\jose.diaz.ITAPUA\FrontendMarketplace\node_modules\jsdom\lib\jsdom\living\helpers\events.js:18:36)
+    at requestErrorSteps (C:\Users\jose.diaz.ITAPUA\FrontendMarketplace\node_modules\jsdom\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:157:3)
+    at dispatchError (C:\Users\jose.diaz.ITAPUA\FrontendMarketplace\node_modules\jsdom\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:131:3)
+    at C:\Users\jose.diaz.ITAPUA\FrontendMarketplace\node_modules\jsdom\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:752:13
+    at Axios.request (file:///C:/Users/jose.diaz.ITAPUA/FrontendMarketplace/node_modules/axios/lib/core/Axios.js:46:41)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at checkOrderAssignment (C:/Users/jose.diaz.ITAPUA/FrontendMarketplace/src/features/commerces/services/deliveryAssignmentApi.js:34:17)
+    at C:/Users/jose.diaz.ITAPUA/FrontendMarketplace/src/features/commerces/pages/CommerceOrdersPage.jsx:450:24 {
+  isAxiosError: true,
+  code: 'ERR_NETWORK',
+  config: {
+    transitional: {
+      silentJSONParsing: true,
+      forcedJSONParsing: true,
+      clarifyTimeoutError: false,
+      legacyInterceptorReqResOrdering: true
+    },
+    adapter: [ 'xhr', 'http', 'fetch' ],
+    transformRequest: [ [Function: transformRequest] ],
+    transformResponse: [ [Function: transformResponse] ],
+    timeout: 0,
+    xsrfCookieName: 'XSRF-TOKEN',
+    xsrfHeaderName: 'X-XSRF-TOKEN',
+    maxContentLength: -1,
+    maxBodyLength: -1,
+    env: { FormData: [Function], Blob: [class Blob] },
+    validateStatus: [Function: validateStatus],
+    headers: Object [AxiosHeaders] {
+      Accept: 'application/json, text/plain, */*',
+      'Content-Type': undefined
+    },
+    baseURL: 'http://localhost:3000',
+    withCredentials: true,
+    method: 'get',
+    url: '/api/orders/1/assignment',
+    allowAbsoluteUrls: true,
+    data: undefined
+  },
+  request: XMLHttpRequest {},
+  event: ProgressEvent { isTrusted: [Getter] }
+}
+
+ ❯ src/test/CommerceOrdersPage.test.jsx (7 tests | 2 failed) 1578ms
+     × llama a updateOrderStatus con PROCESSING al aceptar un pedido 138ms
+     × llama a updateOrderStatus con CANCELLED al rechazar un pedido 90ms
+ ❯ src/test/CommerceDeliveriesPage.test.jsx (21 tests | 1 failed) 5494ms
+       × muestra error si fetchStoreDeliveries falla 1048ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/test/CommerceDeliveriesPage.test.jsx > CommerceDeliveriesPage > Carga inicial > muestra error si fetchStoreDeliveries falla
+TestingLibraryElementError: Unable to find an element with the text: No se pudieron cargar los repartidores.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mstyle[39m=[32m"padding: 12px 16px; background-color: rgb(255, 241, 242); border: 1px solid rgb(254, 205, 211); border-radius: 10px; color: rgb(190, 18, 60); font-size: 14px;"[39m
+    [36m>[39m
+      [0mNo se pudo cargar la sesión.[0m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mstyle[39m=[32m"padding: 12px 16px; background-color: rgb(255, 241, 242); border: 1px solid rgb(254, 205, 211); border-radius: 10px; color: rgb(190, 18, 60); font-size: 14px;"[39m
+      [36m>[39m
+        [0mNo se pudo cargar la sesión.[0m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+ ❯ Proxy.waitFor node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ src/test/CommerceDeliveriesPage.test.jsx:126:19
+    124|             render(<CommerceDeliveriesPage />)
+    125|
+    126|             await waitFor(() => {
+       |                   ^
+    127|                 expect(screen.getByText('No se pudieron cargar los rep…
+    128|             })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/test/CommerceOrdersPage.test.jsx > CommerceOrdersPage > llama a updateOrderStatus con PROCESSING al aceptar un pedido
+TestingLibraryElementError: Unable to find an element with the text: Aceptar. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mstyle[39m=[32m"display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;"[39m
+    [36m>[39m
+      [36m<div>[39m
+        [36m<h4[39m
+          [33mstyle[39m=[32m"font-weight: 600; margin: 0px 0px 4px;"[39m
+        [36m>[39m
+          [0mPedidos Pendientes[0m
+        [36m</h4>[39m
+        [36m<p[39m
+          [33mstyle[39m=[32m"color: rgb(107, 114, 128); margin: 0px; font-size: 14px;"[39m
+        [36m>[39m
+          [0mAsigná un delivery a cada pedido entrante.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mstyle[39m=[32m"background-color: var(--primary-dark); color: white; border-radius: 12px; padding: 12px 20px; display: flex; align-items: center; gap: 12px;"[39m
+      [36m>[39m
+        [36m<svg[39m
+          [33maria-hidden[39m=[32m"true"[39m
+          [33mclass[39m=[32m"lucide lucide-shopping-bag"[39m
+          [33mfill[39m=[32m"none"[39m
+          [33mheight[39m=[32m"22"[39m
+          [33mstroke[39m=[32m"currentColor"[39m
+          [33mstroke-linecap[39m=[32m"round"[39m
+          [33mstroke-linejoin[39m=[32m"round"[39m
+          [33mstroke-width[39m=[32m"2"[39m
+          [33mviewBox[39m=[32m"0 0 24 24"[39m
+          [33mwidth[39m=[32m"22"[39m
+          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+        [36m>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M16 10a4 4 0 0 1-8 0"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M3.103 6.034h17.794"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z"[39m
+          [36m/>[39m
+        [36m</svg>[39m
+        [36m<div>[39m
+          [36m<p[39m
+            [33mstyle[39m=[32m"font-size: 11px; margin: 0px 0px 2px; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.05em;"[39m
+          [36m>[39m
+            [0mEsperando acción[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mstyle[39m=[32m"font-size: 22px; font-weight: 800; margin: 0px;"[39m
+          [36m>[39m
+            [0m1[0m
+            [0m Pedido[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+    [36m<div[39m
+      [33mstyle[39m=[32m"display: flex; gap: 8px; margin-bottom: 20px;"[39m
+    [36m>[39m
+      [36m<button[39m
+        [33mstyle[39m=[32m"padding: 8px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; border: medium; cursor: pointer; background-color: var(--primary-dark); color: white; box-shadow: none;"[39m
+        [33mtype[39m=[32m"button"[39m
+      [36m>[39m
+        [0mPendientes[0m
+        [36m<span[39m
+          [33mstyle[39m=[32m"margin-left: 8px; background-color: rgb(220, 38, 38); color: white; border-radius: 20px; padding: 1px 7px; font-size: 11px; font-weight: 700;"[39m
+        [36m>[39m
+          [0m1[0m
+        [36m</span>[39m
+      [36m</button>[39m
+      [36m<button[39m
+        [33mstyle[39m=[32m"padding: 8px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; border: medium; cursor: pointer; background-color: white; color: rgb(55, 65, 81); box-shadow: 0 1px 3px rgba(0,0,0,0.08);"[39m
+        [33mtype[39m=[32m"button"[39m
+      [36m>[39m
+        [0mSeguimiento[0m
+      [36m</button>[39m
+      [36m<button[39m
+        [33mstyle[39m=[32m"padding: 8px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; border: medium; cursor: pointer; background-color: white; color: rgb(55, 65, 81); box-shadow: 0 1px 3px rgba(0,0,0,0.08);"[39m
+        [33mtype[39m=[32m"button"[39m
+      [36m>[39m
+        [0mHistorial[0m
+      [36m</button>[39m
+    [36m</div>[39m
+    [36m<div[39m
+      [33mstyle[39m=[32m"background-color: white; border-radius: 14px; padding: 16px 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); margin-bottom: 12px; border-left: 3px solid var(--primary-dark);"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mstyle[39m=[32m"display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mstyle[39m=[32m"flex: 1 1 0%; min-width: 0px;"[39m
+        [36m>[39m
+          [36m<p[39m
+            [33mstyle[39m=[32m"font-size: 15px; font-weight: 700; color: rgb(17, 24, 39); margin: 0px 0px 8px;"[39m
+          [36m>[39m
+            [0m#ORD-[0m
+            [0m1[0m
+          [36m</p>[39m
+          [36m<div[39m
+            [33mstyle[39m=[32m"display: flex; align-items: center; gap: 16px; margin-bottom: 8px; flex-wrap: wrap;"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mstyle[39m=[32m"font-size: 12px; color: rgb(107, 114, 128); display: flex; align-items: center; gap: 4px;"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-map-pin"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"12"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"12"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"[39m
+                [36m/>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"10"[39m
+                  [33mr[39m=[32m"3"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0m [0m
+              [0mAsunción, Central[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mstyle[39m=[32m"font-size: 12px; color: rgb(107, 114, 128); display: flex; align-items: center; gap: 4px;"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-clock"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"12"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"12"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 6v6l4 2"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0m [0m
+              [0mhace unos segundos[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<p[39m
+            [33mstyle[39m=[32m"font-size: 12px; color: rgb(55, 65, 81); margin: 0px 0px 4px;"[39m
+          [36m>[39m
+            [0m1[0m
+            [0m ítem[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mstyle[39m=[32m"display: flex; flex-direction: column; align-items: flex-end; gap: 10px; flex-shrink: 0;"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mstyle[39m=[32m"text-align: right;"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mstyle[39m=[32m"font-size: 11px; color: rgb(107, 114, 128); margin: 0px 0px 2px; text-transform: uppercase; letter-spacing: 0.05em;"[39m
+            [36m>[39m
+              [0mTotal del pedido[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mstyle[39m=[32m"font-size: 18px; font-weight: 700; color: rgb(17, 24, 39); margin: 0px;"[39m
+            [36m>[39m
+              [0mGs. 150.000[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<button[39m
+            [33mstyle[39m=[32m"display: flex; align-items: center; gap: 5px; padding: 7px 14px; border-radius: 8px; background-color: var(--primary-dark); color: white; border: medium; font-size: 13px; font-weight: 600; cursor: pointer; opacity: 1;"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-truck"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"14"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"14"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M15 18H9"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"[39m
+              [36m/>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"17"[39m
+                [33mcy[39m=[32m"18"[39m
+                [33mr[39m=[32m"2"[39m
+              [36m/>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"7"[39m
+                [33mcy[39m=[32m"18"[39m
+                [33mr[39m=[32m"2"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0m [0m
+            [0mAsignar delivery[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ getByText node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/test/CommerceOrdersPage.test.jsx:157:38
+    155|
+    156|         // Hacer clic en Aceptar
+    157|         await userEvent.click(screen.getByText('Aceptar'))
+       |                                      ^
+    158|
+    159|         expect(updateOrderStatus).toHaveBeenCalledWith(1, 'PROCESSING')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/test/CommerceOrdersPage.test.jsx > CommerceOrdersPage > llama a updateOrderStatus con CANCELLED al rechazar un pedido
+TestingLibraryElementError: Unable to find an element with the text: Rechazar. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mstyle[39m=[32m"display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;"[39m
+    [36m>[39m
+      [36m<div>[39m
+        [36m<h4[39m
+          [33mstyle[39m=[32m"font-weight: 600; margin: 0px 0px 4px;"[39m
+        [36m>[39m
+          [0mPedidos Pendientes[0m
+        [36m</h4>[39m
+        [36m<p[39m
+          [33mstyle[39m=[32m"color: rgb(107, 114, 128); margin: 0px; font-size: 14px;"[39m
+        [36m>[39m
+          [0mAsigná un delivery a cada pedido entrante.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mstyle[39m=[32m"background-color: var(--primary-dark); color: white; border-radius: 12px; padding: 12px 20px; display: flex; align-items: center; gap: 12px;"[39m
+      [36m>[39m
+        [36m<svg[39m
+          [33maria-hidden[39m=[32m"true"[39m
+          [33mclass[39m=[32m"lucide lucide-shopping-bag"[39m
+          [33mfill[39m=[32m"none"[39m
+          [33mheight[39m=[32m"22"[39m
+          [33mstroke[39m=[32m"currentColor"[39m
+          [33mstroke-linecap[39m=[32m"round"[39m
+          [33mstroke-linejoin[39m=[32m"round"[39m
+          [33mstroke-width[39m=[32m"2"[39m
+          [33mviewBox[39m=[32m"0 0 24 24"[39m
+          [33mwidth[39m=[32m"22"[39m
+          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+        [36m>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M16 10a4 4 0 0 1-8 0"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M3.103 6.034h17.794"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z"[39m
+          [36m/>[39m
+        [36m</svg>[39m
+        [36m<div>[39m
+          [36m<p[39m
+            [33mstyle[39m=[32m"font-size: 11px; margin: 0px 0px 2px; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.05em;"[39m
+          [36m>[39m
+            [0mEsperando acción[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mstyle[39m=[32m"font-size: 22px; font-weight: 800; margin: 0px;"[39m
+          [36m>[39m
+            [0m1[0m
+            [0m Pedido[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+    [36m<div[39m
+      [33mstyle[39m=[32m"display: flex; gap: 8px; margin-bottom: 20px;"[39m
+    [36m>[39m
+      [36m<button[39m
+        [33mstyle[39m=[32m"padding: 8px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; border: medium; cursor: pointer; background-color: var(--primary-dark); color: white; box-shadow: none;"[39m
+        [33mtype[39m=[32m"button"[39m
+      [36m>[39m
+        [0mPendientes[0m
+        [36m<span[39m
+          [33mstyle[39m=[32m"margin-left: 8px; background-color: rgb(220, 38, 38); color: white; border-radius: 20px; padding: 1px 7px; font-size: 11px; font-weight: 700;"[39m
+        [36m>[39m
+          [0m1[0m
+        [36m</span>[39m
+      [36m</button>[39m
+      [36m<button[39m
+        [33mstyle[39m=[32m"padding: 8px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; border: medium; cursor: pointer; background-color: white; color: rgb(55, 65, 81); box-shadow: 0 1px 3px rgba(0,0,0,0.08);"[39m
+        [33mtype[39m=[32m"button"[39m
+      [36m>[39m
+        [0mSeguimiento[0m
+      [36m</button>[39m
+      [36m<button[39m
+        [33mstyle[39m=[32m"padding: 8px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; border: medium; cursor: pointer; background-color: white; color: rgb(55, 65, 81); box-shadow: 0 1px 3px rgba(0,0,0,0.08);"[39m
+        [33mtype[39m=[32m"button"[39m
+      [36m>[39m
+        [0mHistorial[0m
+      [36m</button>[39m
+    [36m</div>[39m
+    [36m<div[39m
+      [33mstyle[39m=[32m"background-color: white; border-radius: 14px; padding: 16px 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); margin-bottom: 12px; border-left: 3px solid var(--primary-dark);"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mstyle[39m=[32m"display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mstyle[39m=[32m"flex: 1 1 0%; min-width: 0px;"[39m
+        [36m>[39m
+          [36m<p[39m
+            [33mstyle[39m=[32m"font-size: 15px; font-weight: 700; color: rgb(17, 24, 39); margin: 0px 0px 8px;"[39m
+          [36m>[39m
+            [0m#ORD-[0m
+            [0m1[0m
+          [36m</p>[39m
+          [36m<div[39m
+            [33mstyle[39m=[32m"display: flex; align-items: center; gap: 16px; margin-bottom: 8px; flex-wrap: wrap;"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mstyle[39m=[32m"font-size: 12px; color: rgb(107, 114, 128); display: flex; align-items: center; gap: 4px;"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-map-pin"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"12"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"12"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"[39m
+                [36m/>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"10"[39m
+                  [33mr[39m=[32m"3"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0m [0m
+              [0mAsunción, Central[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mstyle[39m=[32m"font-size: 12px; color: rgb(107, 114, 128); display: flex; align-items: center; gap: 4px;"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-clock"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"12"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"12"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 6v6l4 2"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0m [0m
+              [0mhace unos segundos[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<p[39m
+            [33mstyle[39m=[32m"font-size: 12px; color: rgb(55, 65, 81); margin: 0px 0px 4px;"[39m
+          [36m>[39m
+            [0m1[0m
+            [0m ítem[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mstyle[39m=[32m"display: flex; flex-direction: column; align-items: flex-end; gap: 10px; flex-shrink: 0;"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mstyle[39m=[32m"text-align: right;"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mstyle[39m=[32m"font-size: 11px; color: rgb(107, 114, 128); margin: 0px 0px 2px; text-transform: uppercase; letter-spacing: 0.05em;"[39m
+            [36m>[39m
+              [0mTotal del pedido[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mstyle[39m=[32m"font-size: 18px; font-weight: 700; color: rgb(17, 24, 39); margin: 0px;"[39m
+            [36m>[39m
+              [0mGs. 150.000[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<button[39m
+            [33mstyle[39m=[32m"display: flex; align-items: center; gap: 5px; padding: 7px 14px; border-radius: 8px; background-color: var(--primary-dark); color: white; border: medium; font-size: 13px; font-weight: 600; cursor: pointer; opacity: 1;"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-truck"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"14"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"14"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M15 18H9"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"[39m
+              [36m/>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"17"[39m
+                [33mcy[39m=[32m"18"[39m
+                [33mr[39m=[32m"2"[39m
+              [36m/>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"7"[39m
+                [33mcy[39m=[32m"18"[39m
+                [33mr[39m=[32m"2"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0m [0m
+            [0mAsignar delivery[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ getByText node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/test/CommerceOrdersPage.test.jsx:174:38
+    172|         })
+    173|
+    174|         await userEvent.click(screen.getByText('Rechazar'))
+       |                                      ^
+    175|
+    176|         expect(updateOrderStatus).toHaveBeenCalledWith(1, 'CANCELLED')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/test/DeliveryProfilePage.test.jsx > DeliveryProfilePage > muestra el badge "Disponible" cuando el delivery está AVAILABLE
+TestingLibraryElementError: Unable to find an element with the text: Disponible. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mstyle[39m=[32m"display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; gap: 16px;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mstyle[39m=[32m"display: flex; align-items: center; gap: 12px; flex: 1 1 0%;"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h4[39m
+            [33mstyle[39m=[32m"font-weight: 600; margin: 0px 0px 4px;"[39m
+          [36m>[39m
+            [0mPerfil del Delivery[0m
+          [36m</h4>[39m
+          [36m<p[39m
+            [33mstyle[39m=[32m"color: rgb(107, 114, 128); margin: 0px; font-size: 14px;"[39m
+          [36m>[39m
+            [0mInformación general de tu cuenta de repartidor[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<span[39m
+          [33mstyle[39m=[32m"padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background-color: rgb(254, 243, 199); color: rgb(146, 64, 14); white-space: nowrap;"[39m
+        [36m>[39m
+          [0mInactivo[0m
+        [36m</span>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mstyle[39m=[32m"display: flex; gap: 8px;"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33mstyle[39m=[32m"display: flex; align-items: center; gap: 6px; background-color: rgb(22, 163, 74); color: white; border: medium; border-radius: 8px; padding: 8px 16px; font-size: 14px; font-weight: 500; cursor: pointer; opacity: 1; transition: all 0.2s ease;"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-power"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"14"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"14"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 2v10"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M18.4 6.6a9 9 0 1 1-12.77.04"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0mConectarme[0m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mstyle[39m=[32m"display: flex; align-items: center; gap: 6px; background-color: var(--primary-dark); color: white; border: medium; border-radius: 8px; padding: 8px 16px; font-size: 14px; font-weight: 500; cursor: pointer;"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-square-pen"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"14"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"14"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0m Editar[0m
+        [36m</button>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+    [36m<div[39m
+      [33mstyle[39m=[32m"display: grid; grid-template-columns: 1fr 280px; gap: 20px; align-items: start;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mstyle[39m=[32m"display: flex; flex-direction: column; gap: 16px;"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mstyle[39m=[32m"background-color: white; border-radius: 16px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.08);"[39m
+        [36m>[39m
+          [36m<h6[39m
+            [33mstyle[39m=[32m"font-weight: 700; font-size: 15px; margin: 0px 0px 16px; color: rgb(17, 24, 39);"[39m
+          [36m>[39m
+            [0mDatos Personales[0m
+          [36m</h6>[39m
+          [36m<p[39m
+            [33mstyle[39m=[32m"font-size: 12px; color: rgb(107, 114, 128); margin: 0px 0px 3px; font-weight: 500;"[39m
+          [36m>[39m
+            [0mNombre Completo[0m
+          [36m</p>[39m
+          [36m<div[39m
+            [33mstyle[39m=[32m"display: flex; align-items: center; gap: 8px; margin-bottom: 12px;"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-user"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"14"[39m
+              [33mstroke[39m=[32m"#6b9080"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mstyle[39m=[32m"flex-shrink: 0;"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"14"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"[39m
+              [36m/>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"12"[39m
+                [33mcy[39m=[32m"7"[39m
+                [33mr[39m=[32m"4"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [36m<span[39m
+              [33mstyle[39m=[32m"font-size: 14px; color: rgb(55, 65, 81);"[39m
+            [36m>[39m
+              [0mDelivery Guy[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<p[39m
+            [33mstyle[39m=[32m"font-size: 12px; color: rgb(107, 114, 128); margin: 0px 0px 3px; font-weight: 500;"[39m
+          [36m>[39m
+            [0mEmail[0m
+          [36m</p>[39m
+          [36m<div[39m
+            [33mstyle[39m=[32m"display: flex; align-items: center; gap: 8px; margin-bottom: 12px;"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-mail"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"14"[39m
+              [33mstroke[39m=[32m"#3b82f6"[39m
+             ...
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mstyle[39m=[32m"display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; gap: 16px;"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mstyle[39m=[32m"display: flex; align-items: center; gap: 12px; flex: 1 1 0%;"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<h4[39m
+              [33mstyle[39m=[32m"font-weight: 600; margin: 0px 0px 4px;"[39m
+            [36m>[39m
+              [0mPerfil del Delivery[0m
+            [36m</h4>[39m
+            [36m<p[39m
+              [33mstyle[39m=[32m"color: rgb(107, 114, 128); margin: 0px; font-size: 14px;"[39m
+            [36m>[39m
+              [0mInformación general de tu cuenta de repartidor[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<span[39m
+            [33mstyle[39m=[32m"padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background-color: rgb(254, 243, 199); color: rgb(146, 64, 14); white-space: nowrap;"[39m
+          [36m>[39m
+            [0mInactivo[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mstyle[39m=[32m"display: flex; gap: 8px;"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mstyle[39m=[32m"display: flex; align-items: center; gap: 6px; background-color: rgb(22, 163, 74); color: white; border: medium; border-radius: 8px; padding: 8px 16px; font-size: 14px; font-weight: 500; cursor: pointer; opacity: 1; transition: all 0.2s ease;"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-power"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"14"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"14"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 2v10"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M18.4 6.6a9 9 0 1 1-12.77.04"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mConectarme[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mstyle[39m=[32m"display: flex; align-items: center; gap: 6px; background-color: var(--primary-dark); color: white; border: medium; border-radius: 8px; padding: 8px 16px; font-size: 14px; font-weight: 500; cursor: pointer;"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-square-pen"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"14"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"14"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0m Editar[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mstyle[39m=[32m"display: grid; grid-template-columns: 1fr 280px; gap: 20px; align-items: start;"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mstyle[39m=[32m"display: flex; flex-direction: column; gap: 16px;"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mstyle[39m=[32m"background-color: white; border-radius: 16px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.08);"[39m
+          [36m>[39m
+            [36m<h6[39m
+              [33mstyle[39m=[32m"font-weight: 700; font-size: 15px; margin: 0px 0px 16px; color: rgb(17, 24, 39);"[39m
+            [36m>[39m
+              [0mDatos Personales[0m
+            [36m</h6>[39m
+            [36m<p[39m
+              [33mstyle[39m=[32m"font-size: 12px; color: rgb(107, 114, 128); margin: 0px 0px 3px; font-weight: 500;"[39m
+            [36m>[39m
+              [0mNombre Completo[0m
+            [36m</p>[39m
+            [36m<div[39m
+              [33mstyle[39m=[32m"display: flex; align-items: center; gap: 8px; margin-bottom: 12px;"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-user"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"14"[39m
+                [33mstroke[39m=[32m"#6b9080"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mstyle[39m=[32m"flex-shrink: 0;"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"14"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"[39m
+                [36m/>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"7"[39m
+                  [33mr[39m=[32m"4"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [36m<span[39m
+                [33mstyle[39m=[32m"font-size: 14px; color: rgb(55, 65, 81);"[39m
+              [36m>[39m
+                [0mDelivery Guy[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<p[39m
+              [33mstyle[39m=[32m"font-size: 12px; color: rgb(107, 114, 128); margin: 0px 0px 3px; font-weight: 500;"[39m
+            [36m>[39m
+              [0mEmail[0m
+            [36m</p>[39m
+            [36m<div[39m
+              [33mstyle[39m=[32m"display: flex; align-items: center; gap: 8px; margin-bottom: 12px;"[39m...
+ ❯ Proxy.waitFor node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ src/test/DeliveryProfilePage.test.jsx:53:15
+     51|         render(<DeliveryProfilePage />)
+     52|
+     53|         await waitFor(() => {
+       |               ^
+     54|             expect(screen.getByText('Disponible')).toBeInTheDocument()
+     55|         })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  3 failed | 15 passed (18)
+      Tests  4 failed | 130 passed (134)
+   Start at  11:17:24
+   Duration  13.76s (transform 3.40s, setup 5.85s, import 15.03s, tests 42.78s, environment 49.10s)
+

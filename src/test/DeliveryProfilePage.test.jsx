@@ -26,7 +26,7 @@ const mockUserSessionAndProfile = {
 
 const mockDeliveryProfile = {
     id_delivery: 5,
-    delivery_status: 'AVAILABLE',
+    delivery_status: 'ACTIVE',
     vehicle_type: 'CAR',
     coverage_city: 'Asunción',
     coverage_region: 'Central',

@@ -48,6 +48,27 @@ export default defineConfig({
       '**/tests/**',        // excluye la carpeta de Playwright
       '**/*.e2e.spec.*',   // excluye cualquier archivo e2e
     ],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html', 'lcov'],
+      reportsDirectory: './coverage',
+      include: ['src/**/*.{js,jsx,ts,tsx}'],
+      exclude: [
+        // Entry points y configuración — sin lógica de negocio
+        'src/main.tsx',
+        'src/App.tsx',
+        'src/App.css',
+        'src/index.css',
+        'src/vite-env.d.ts',
+        'src/**/*.d.ts',
+        // Archivos de test
+        'src/test/**',
+        // Layouts — sólo estructura visual, sin lógica
+        'src/layouts/**',
+        // Páginas de error estáticas
+        'src/pages/errors/**',
+      ],
+    },
   },
 
   preview: {
