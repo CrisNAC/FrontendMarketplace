@@ -114,13 +114,10 @@ describe('ClientOrdersPage', () => {
             expect(screen.getByText('1')).toBeInTheDocument()
         })
 
-        const cards = screen.getAllByRole('generic').filter(el =>
-            el.classList.contains('cursor-pointer')
-        )
-        if (cards.length > 0) {
-            await userEvent.click(cards[0])
-            expect(mockNavigate).toHaveBeenCalledWith('/pedidos/1')
-        }
+        const cards = document.querySelectorAll('[class*="cursor-pointer"]')
+        expect(cards.length).toBeGreaterThan(0)
+        await userEvent.click(cards[0])
+        expect(mockNavigate).toHaveBeenCalledWith('/pedidos/1')
     })
 
     it('muestra el título "Mis Pedidos"', async () => {

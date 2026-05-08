@@ -243,7 +243,7 @@ describe("DetalleProducto", () => {
 
     it("navega hacia atrás al hacer clic en la flecha", async () => {
         render(<DetalleProducto />);
-        await userEvent.click(screen.getByTestId("arrow-left"));
+        await userEvent.click(await screen.findByTestId("arrow-left"));
         expect(mockNavigate).toHaveBeenCalledWith(-1);
     });
 

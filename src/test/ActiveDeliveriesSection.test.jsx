@@ -105,14 +105,14 @@ describe('ActiveDeliveriesSection', () => {
         })
     })
 
-    it('muestra toast de éxito al completar entrega', async () => {
+    it('elimina la asignación del listado al completar entrega', async () => {
         getActiveDeliveryAssignments.mockResolvedValueOnce([mockAssignment])
         completeDeliveryAssignment.mockResolvedValueOnce({})
         render(<ActiveDeliveriesSection deliveryId={5} />)
         await waitFor(() => screen.getByText('Marcar Entregado'))
         await userEvent.click(screen.getByText('Marcar Entregado'))
         await waitFor(() => {
-            expect(toast.success).toHaveBeenCalledWith('Pedido marcado como entregado')
+            expect(completeDeliveryAssignment).toHaveBeenCalledWith(1)
         })
     })
 })

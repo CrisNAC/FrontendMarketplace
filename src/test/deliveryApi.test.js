@@ -124,7 +124,7 @@ describe('becomeDelivery', () => {
         apiClient.post.mockResolvedValueOnce({ data: {} })
         getSession.mockRejectedValueOnce(new Error('Sesión inválida'))
 
-        await expect(becomeDelivery('AUTOMOVIL', '0981111111')).resolves.not.toThrow()
+        await expect(becomeDelivery('AUTOMOVIL', '0981111111')).resolves.toBeDefined()
     })
 })
 

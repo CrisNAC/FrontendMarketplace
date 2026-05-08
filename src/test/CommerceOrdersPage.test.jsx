@@ -69,7 +69,7 @@ const mockPendingOrder = {
     total: 150000,
     notes: null,
     createdAt: new Date().toISOString(),
-    address: null,
+    address: { city: 'Asunción', region: 'Central' },
     items: [{ id: 1 }],
 }
 
@@ -156,32 +156,39 @@ describe('CommerceOrdersPage', () => {
 
     it('llama a updateOrderStatus con PROCESSING al aceptar un pedido', async () => {
         const { updateOrderStatus } = await import('../features/commerces/services/commerceOrdersApi')
+        const pickupOrder = { ...mockPendingOrder, address: null }
 
         apiClient.get.mockResolvedValue(mockSessionWithStore)
-        fetchStoreOrders.mockResolvedValue(mockOrdersResponse)
+        fetchStoreOrders.mockResolvedValue({ ...mockOrdersResponse, orders: [pickupOrder] })
 
         render(<CommerceOrdersPage />)
 
         await waitFor(() => {
             expect(screen.getByText('#ORD-1')).toBeInTheDocument()
         })
+        await waitFor(() => {
+            expect(screen.getByText('Aceptar')).toBeInTheDocument()
+        })
 
-        // Hacer clic en Aceptar
         await userEvent.click(screen.getByText('Aceptar'))
 
         expect(updateOrderStatus).toHaveBeenCalledWith(1, 'PROCESSING')
     })
-    
+
     it('llama a updateOrderStatus con CANCELLED al rechazar un pedido', async () => {
         const { updateOrderStatus } = await import('../features/commerces/services/commerceOrdersApi')
+        const pickupOrder = { ...mockPendingOrder, address: null }
 
         apiClient.get.mockResolvedValue(mockSessionWithStore)
-        fetchStoreOrders.mockResolvedValue(mockOrdersResponse)
+        fetchStoreOrders.mockResolvedValue({ ...mockOrdersResponse, orders: [pickupOrder] })
 
         render(<CommerceOrdersPage />)
 
         await waitFor(() => {
             expect(screen.getByText('#ORD-1')).toBeInTheDocument()
+        })
+        await waitFor(() => {
+            expect(screen.getByText('Rechazar')).toBeInTheDocument()
         })
 
         await userEvent.click(screen.getByText('Rechazar'))

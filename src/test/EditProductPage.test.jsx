@@ -261,7 +261,7 @@ describe('EditProductPage', () => {
         })
     })
 
-    it('muestra el modal de error con tipo success al cerrar redirige a productos', () => {
+    it('muestra el modal de resultado con variant success', () => {
         useEditProduct.mockReturnValue({
             ...baseHook,
             resultModal: { isOpen: true, variant: 'success', title: 'Éxito', message: 'Actualizado' },

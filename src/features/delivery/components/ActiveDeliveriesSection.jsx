@@ -84,7 +84,6 @@ export function ActiveDeliveriesSection({ deliveryId }) {
       await completeDeliveryAssignment(assignmentId);
       // Remover del listado local
       setAssignments(prev => prev.filter(a => a.id_delivery_assignment !== assignmentId));
-      toast.success('Pedido marcado como entregado');
     } catch (err) {
       console.error('Error completando entrega:', err);
       // El error ya se mostró via toast en el API

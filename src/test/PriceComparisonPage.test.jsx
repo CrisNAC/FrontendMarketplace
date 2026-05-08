@@ -1,6 +1,8 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+
+const originalFetch = global.fetch
 
 vi.mock('react-router-dom', () => ({
     useLocation: () => ({ search: '?search=Laptop' }),
@@ -40,6 +42,10 @@ const mockOffers = [
 describe('PriceComparisonPage', () => {
     beforeEach(() => {
         vi.clearAllMocks()
+    })
+
+    afterEach(() => {
+        global.fetch = originalFetch
     })
 
     it('muestra "Cargando ofertas..." durante la carga', () => {

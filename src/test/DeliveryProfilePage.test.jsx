@@ -44,9 +44,9 @@ describe('DeliveryProfilePage', () => {
         vi.clearAllMocks()
     })
 
-    it('muestra el badge "Disponible" cuando el delivery está AVAILABLE', async () => {
-        getCurrentUserForDeliveryForm.mockResolvedValueOnce(mockUserSessionAndProfile)
-        getDeliveryProfile.mockResolvedValueOnce(mockDeliveryProfile)
+    it('muestra el badge "Disponible" cuando el delivery está ACTIVE', async () => {
+        getCurrentUserForDeliveryForm.mockResolvedValue(mockUserSessionAndProfile)
+        getDeliveryProfile.mockResolvedValue(mockDeliveryProfile)
 
         render(<DeliveryProfilePage />)
 

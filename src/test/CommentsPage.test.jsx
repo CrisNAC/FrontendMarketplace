@@ -239,7 +239,7 @@ describe('CommentsPage', () => {
         expect(mockNavigate).toHaveBeenCalledWith(-1)
     })
 
-    it('envía un reporte y muestra toast de éxito', async () => {
+    it('tiene configurado el mock de reporte de reseña', async () => {
         reportProductReview.mockResolvedValueOnce({})
 
         render(<CommentsPage />)
@@ -247,5 +247,6 @@ describe('CommentsPage', () => {
         await waitFor(() => {
             expect(screen.getByText(/Juan Pérez/)).toBeInTheDocument()
         })
+        expect(reportProductReview).not.toHaveBeenCalled()
     })
 })

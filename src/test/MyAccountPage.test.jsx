@@ -48,9 +48,7 @@ describe('MyAccountPage', () => {
 
         render(<MyAccountPage />)
 
-        const { container } = render(<MyAccountPage />)
-        // Loading state has the Loader2 spinner
-        expect(container).toBeTruthy()
+        expect(document.querySelector('.animate-spin') ?? screen.queryByRole('status')).toBeTruthy()
     })
 
     it('renderiza el perfil del usuario cuando carga exitosamente', async () => {
@@ -89,6 +87,8 @@ describe('MyAccountPage', () => {
         })
 
         rerender(<MyAccountPage />)
-        expect(getSession).toHaveBeenCalledTimes(1)
+        await waitFor(() => {
+            expect(getSession).toHaveBeenCalledTimes(1)
+        })
     })
 })
