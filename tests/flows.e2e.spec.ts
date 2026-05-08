@@ -431,6 +431,7 @@ test.describe('Flujos E2E de usuario final', () => {
     await firstOrderCard.click();
 
     await expect(page).toHaveURL(/\/pedidos\/\d+$/);
+    await page.waitForLoadState('networkidle');
     await expect(page.getByText('Información de pedido')).toBeVisible();
     await expect(page.getByText('Dirección de envío')).toBeVisible();
   });
