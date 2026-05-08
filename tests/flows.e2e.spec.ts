@@ -519,23 +519,40 @@ test.describe('Flujos E2E de usuario final', () => {
   });
 
   test('flujo lista de deseos: agregar a favoritos y ver lista', async ({ page }) => {
-    // Mocks específicos del flujo wishlist
-    await page.route('**/api/users/*/wishlist/items', async (route) => {
+    await page.route('**/api/users/*/wishlists', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify([
+            { id: 1, name: 'Mi lista', itemCount: 1, createdAt: new Date().toISOString() },
+          ]),
+        });
+      }
       if (route.request().method() === 'POST') {
         await route.fulfill({
           status: 201,
           contentType: 'application/json',
-          body: JSON.stringify({ message: 'Producto agregado a la lista de deseos' }),
+          body: JSON.stringify({ id: 2, name: 'Nueva lista', itemCount: 0, createdAt: new Date().toISOString() }),
         });
       }
     });
 
-    await page.route('**/api/users/*/wishlist', async (route) => {
+    await page.route('**/api/users/*/wishlists/1/items', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({ message: 'Producto agregado a la lista' }),
+        });
+      }
       if (route.request().method() === 'GET') {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
           body: JSON.stringify({
+            id: 1,
+            name: 'Mi lista',
             items: [
               {
                 id: 1,
@@ -544,6 +561,9 @@ test.describe('Flujos E2E de usuario final', () => {
                   id: 101,
                   name: 'Apple iPhone 17 Pro A3256 Dual',
                   price: 13290000,
+                  originalPrice: 13290000,
+                  offerPrice: null,
+                  isOffer: false,
                 },
               },
             ],
@@ -559,15 +579,23 @@ test.describe('Flujos E2E de usuario final', () => {
     const addToCartBtn = page.getByRole('button', { name: 'Agregar al carrito' });
     await expect(addToCartBtn).toBeEnabled({ timeout: 10000 });
 
-    // Hacer clic en el botón de favoritos
+    // Hacer clic en el botón de favoritos (corazón)
     await page.getByRole('button', { name: 'Agregar a favoritos' }).click();
 
-    // Verificar el toast de confirmación
-    await expect(page.getByText('Producto agregado a la lista de deseos')).toBeVisible();
+    // Esperar que aparezca el modal de listas
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await expect(page.getByText('Agregar a lista de deseos')).toBeVisible();
+    await expect(page.getByText('Mi lista')).toBeVisible();
 
-    // Navegar a la página de favoritos
-    await page.goto('/favoritos');
-    await expect(page.getByRole('heading', { name: 'Lista de Favoritos' })).toBeVisible();
+    // Seleccionar la lista
+    await page.getByRole('button', { name: 'Mi lista' }).click();
+
+    // Verificar el toast de confirmación
+    await expect(page.getByText('Producto agregado a la lista')).toBeVisible();
+
+    // Navegar a la página de wishlist
+    await page.goto('/wishlist');
+    await expect(page.getByRole('heading', { name: 'Lista de deseos' })).toBeVisible();
     await expect(page.getByText('Apple iPhone 17 Pro A3256 Dual')).toBeVisible();
   });
 
