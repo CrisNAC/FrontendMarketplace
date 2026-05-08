@@ -72,8 +72,7 @@ import DeliveryProfilePage from './features/delivery/pages/DeliveryProfilePage';
 import { DeliveryEditProfilePage } from './features/delivery/pages/DeliveryEditProfilePage';
 import DeliveryOrdersPage from './features/delivery/pages/DeliveryOrdersPage';
 
-import Wishlist from "./features/clients/pages/Wishlist"
-import FavoritesPage from "./features/clients/pages/FavoritesPage";
+import Wishlist from "./features/clients/pages/Wishlist";
 
 import { CartPage } from "./features/clients/pages/CartPage";
 import OrdenesComprasPage from "./features/clients/pages/OrdenesComprasPage";
@@ -163,7 +162,6 @@ function App() {
         <Route path="/homepage" element={<HomePage />} />
         <Route path="/quiero-ser-delivery" element={<BecomeDeliveryPage />} />
         <Route path="/wishlist" element={<VistaComercioLayout><Wishlist/></VistaComercioLayout>}/>
-        <Route path="/favoritos" element={<VistaComercioLayout><FavoritesPage /></VistaComercioLayout>}/>
         <Route path="/carrito" element={
             <VistaComercioLayout>
               <OrdenesComprasPage />
