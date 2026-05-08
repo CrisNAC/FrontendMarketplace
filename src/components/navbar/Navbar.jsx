@@ -24,7 +24,6 @@ function sumServerCartQuantities(carts) {
 const PROFILE_LINKS = [
   { to: "/perfil", label: "Mi cuenta" },
   { to: "/pedidos", label: "Mis pedidos" },
-  { to: "/favoritos", label: "Mi lista de favoritos" },
   { to: "/wishlist", label: "Mi lista de deseos" },
   { to: "/direcciones", label: "Libreta de Direcciones" },
 ];
@@ -87,6 +86,14 @@ const Navbar = () => {
     };
     window.addEventListener("cartUpdated", onCartUpdated);
     return () => window.removeEventListener("cartUpdated", onCartUpdated);
+  }, [refreshCartAndSession]);
+
+  useEffect(() => {
+    const onDeliveryRegistered = () => {
+      refreshCartAndSession();
+    };
+    window.addEventListener("deliveryRegistered", onDeliveryRegistered);
+    return () => window.removeEventListener("deliveryRegistered", onDeliveryRegistered);
   }, [refreshCartAndSession]);
 
   useEffect(() => {

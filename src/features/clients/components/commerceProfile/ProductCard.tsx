@@ -14,6 +14,7 @@ export const ProductCard = ({ productId, name, price, imageUrl }: Props) => {
     const handleCategoryClick = () => {
         if (productId) {
             navigate(`/producto-detalle/${productId}`);
+            
             return;
         }
         navigate(`/producto-detalle`);

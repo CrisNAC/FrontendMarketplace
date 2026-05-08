@@ -11,8 +11,9 @@ function getPostLoginPath(role) {
       return "/admin/dashboard";
     case "SELLER":
       return "/comercio";
-    case "CUSTOMER":
     case "DELIVERY":
+      return "/delivery";
+    case "CUSTOMER":
     default:
       return "/homepage";
   }
