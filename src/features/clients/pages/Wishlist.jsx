@@ -83,7 +83,8 @@ export default function Wishlist() {
     }
   };
 
-  const handleDeleteList = async (wishlistId) => {
+  const handleDeleteList = async (wishlistId, wishlistName) => {
+    if (!window.confirm(`¿Eliminár la lista "${wishlistName}"? Esta acción no se puede deshacer.`)) return;
     try {
       await deleteWishlist(userId, wishlistId);
       setWishlists((prev) => prev.filter((w) => w.id !== wishlistId));
@@ -94,6 +95,7 @@ export default function Wishlist() {
   };
 
   const handleRemoveItem = async (wishlistId, item) => {
+    if (!item?.product?.id) return toast.error("Producto inválido");
     try {
       await removeWishlistItem(userId, wishlistId, item.product.id);
       setWishlists((prev) =>
@@ -110,6 +112,7 @@ export default function Wishlist() {
   };
 
   const handleAddToCart = async (wishlistId, item) => {
+    if (!item?.product?.id) return toast.error("Producto inválido");
     try {
       const cart = await addToCartApi(userId, {
         productId: item.product.id,
@@ -164,8 +167,14 @@ export default function Wishlist() {
         });
         mergeCartResponseFromApi(cart);
         await removeWishlistItem(userId, item.wishlistId, item.product.id);
+        setWishlists((prev) =>
+          prev.map((w) =>
+            w.id === item.wishlistId
+              ? { ...w, items: w.items.filter((i) => i.product.id !== item.product.id) }
+              : w
+          )
+        );
       }
-      setWishlists((prev) => prev.map((w) => ({ ...w, items: [] })));
       toast.success("Todos los productos agregados al carrito");
     } catch (e) {
       const code = e?.response?.status;
@@ -193,7 +202,7 @@ export default function Wishlist() {
                   value={newListName}
                   onChange={(e) => setNewListName(e.target.value)}
                   placeholder="Nombre de la lista"
-                  className="border border-[#C7D6CF] rounded-full px-4 py-2 text-[14px] bg-white focus:outline-none focus:ring-2 focus:ring-[#8BB2A1] w-128"
+                  className="border border-[#C7D6CF] rounded-full px-4 py-2 text-[14px] bg-white focus:outline-none focus:ring-2 focus:ring-[#8BB2A1] w-[32rem]"
                   maxLength={50}
                 />
                 <button
@@ -249,7 +258,7 @@ export default function Wishlist() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => handleDeleteList(wishlist.id)}
+                      onClick={() => handleDeleteList(wishlist.id, wishlist.name)}
                       className="px-4 py-1.5 rounded-full text-[12px] font-medium bg-red-500 text-white border border-red-200 hover:bg-red-50"
                     >
                       Eliminar lista

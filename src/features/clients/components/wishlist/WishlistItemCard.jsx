@@ -6,9 +6,9 @@ export default function WishlistItemCard({ item, onViewMore, onAddToCart, onRemo
   return (
     <article className="bg-[#F3F5F4] border border-[#C7D6CF] rounded-xl p-4 flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
       <div className="flex gap-4 items-start">
-        {product.image_url ? (
+        {(product.image_url ?? product.imageUrl) ? (
           <img
-            src={product.image_url}
+            src={product.image_url ?? product.imageUrl}
             alt={product.name}
             className="w-[110px] h-[90px] rounded-md object-cover"
             loading="lazy"
@@ -18,10 +18,10 @@ export default function WishlistItemCard({ item, onViewMore, onAddToCart, onRemo
         )}
         <div className="max-w-[520px]">
           <h3 className="text-[17px] font-semibold text-[#2f3e39]">{product.name}</h3>
-          {product.isOffer && product.offerPrice !== null ? (
+          {(product.isOffer ?? product.is_offer) && (product.offerPrice ?? product.offer_price) !== null ? (
             <div className="mt-2 flex items-center gap-2">
-              <p className="text-[18px] font-bold text-[#2f3e39]">{formatGuarani(product.offerPrice)}</p>
-              <p className="text-[13px] text-gray-400 line-through">{formatGuarani(product.originalPrice)}</p>
+              <p className="text-[18px] font-bold text-[#2f3e39]">{formatGuarani(product.offerPrice ?? product.offer_price)}</p>
+              <p className="text-[13px] text-gray-400 line-through">{formatGuarani(product.originalPrice ?? product.original_price)}</p>
             </div>
           ) : (
             <p className="text-[18px] font-bold text-[#2f3e39] mt-2">{formatGuarani(product.price)}</p>

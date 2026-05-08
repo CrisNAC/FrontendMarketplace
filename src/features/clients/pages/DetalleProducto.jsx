@@ -327,10 +327,16 @@ export default function DetalleProducto() {
     setCreatingList(true);
     try {
       const newList = await createWishlist(sessionUserId, name);
-      await addWishlistItem(sessionUserId, newList.id, productId, cantidad);
-      toast.success(`Producto agregado a "${name}"`);
-      setWishlistModalOpen(false);
-      setNewListName("");
+      try {
+        await addWishlistItem(sessionUserId, newList.id, productId, cantidad);
+        toast.success(`Producto agregado a "${name}"`);
+        setWishlistModalOpen(false);
+        setNewListName("");
+      } catch {
+        toast.error("No se pudo agregar el producto a la lista");
+        const lists = await getWishlists(sessionUserId);
+        setWishlists(lists);
+      }
     } catch {
       toast.error("No se pudo crear la lista");
     } finally {
