@@ -23,11 +23,22 @@ vi.mock('../components/SidebarClientProfile', () => ({
 }))
 
 vi.mock('../features/clients/components/Map', () => ({
-    default: ({ onLocationSelect }) => (
-        <button onClick={() => onLocationSelect && onLocationSelect({ lat: -25.3, lng: -57.6 })}>
+    default: ({ onPointChange }) => (
+        <button onClick={() => onPointChange && onPointChange({ lat: -25.3, lng: -57.6 })}>
             Seleccionar en mapa
         </button>
     ),
+}))
+
+vi.mock('lucide-react', () => ({
+    MapPin: () => null,
+    Plus: () => null,
+    Pencil: () => null,
+    Trash2: () => null,
+    X: () => <span>X</span>,
+    Loader2: () => null,
+    AlertCircle: () => null,
+    CheckCircle2: () => null,
 }))
 
 import axios from 'axios'
@@ -173,6 +184,125 @@ describe('AddressesPage', () => {
 
         await waitFor(() => {
             expect(baseHook.deleteAddress).toHaveBeenCalledWith(1)
+        })
+    })
+
+    it('muestra error cuando se envía el formulario sin seleccionar punto en el mapa', async () => {
+        render(<AddressesPage />)
+
+        await waitFor(() => screen.getByText('Agregar dirección'))
+        await userEvent.click(screen.getByText('Agregar dirección'))
+
+        await waitFor(() =>
+            screen.getByPlaceholderText('Ej: Av. República del Paraguay 1234')
+        )
+
+        await userEvent.type(
+            screen.getByPlaceholderText('Ej: Av. República del Paraguay 1234'),
+            'Av. Sin Coordenadas 1'
+        )
+
+        const submitBtns = screen.getAllByRole('button', { name: /Agregar dirección/i })
+        await userEvent.click(submitBtns[submitBtns.length - 1])
+
+        await waitFor(() => {
+            expect(screen.getByText('Debes seleccionar un punto en el mapa.')).toBeInTheDocument()
+        })
+    })
+
+    it('llama a createAddress al enviar el formulario con coordenadas', async () => {
+        baseHook.createAddress.mockResolvedValueOnce({})
+
+        render(<AddressesPage />)
+
+        await waitFor(() => screen.getByText('Agregar dirección'))
+        await userEvent.click(screen.getByText('Agregar dirección'))
+
+        await waitFor(() =>
+            screen.getByPlaceholderText('Ej: Av. República del Paraguay 1234')
+        )
+
+        await userEvent.type(
+            screen.getByPlaceholderText('Ej: Av. República del Paraguay 1234'),
+            'Av. Test 456'
+        )
+
+        await userEvent.click(screen.getByText('Seleccionar en mapa'))
+
+        const submitBtns = screen.getAllByRole('button', { name: /Agregar dirección/i })
+        await userEvent.click(submitBtns[submitBtns.length - 1])
+
+        await waitFor(() => {
+            expect(baseHook.createAddress).toHaveBeenCalledWith(
+                expect.objectContaining({ address: 'Av. Test 456', latitude: -25.3, longitude: -57.6 })
+            )
+        })
+    })
+
+    it('abre formulario de edición al hacer clic en Editar', async () => {
+        render(<AddressesPage />)
+
+        await waitFor(() => screen.getByText('Av. Test 123'))
+
+        const editBtns = screen.getAllByTitle('Editar')
+        await userEvent.click(editBtns[0])
+
+        await waitFor(() => {
+            expect(screen.getByText('Editar dirección')).toBeInTheDocument()
+        })
+    })
+
+    it('llama a updateAddress al guardar cambios en edición', async () => {
+        baseHook.updateAddress.mockResolvedValueOnce({})
+
+        render(<AddressesPage />)
+
+        await waitFor(() => screen.getByText('Av. Test 123'))
+
+        const editBtns = screen.getAllByTitle('Editar')
+        await userEvent.click(editBtns[0])
+
+        await waitFor(() => screen.getByText('Editar dirección'))
+
+        const submitBtn = screen.getByRole('button', { name: /Guardar cambios/i })
+        await userEvent.click(submitBtn)
+
+        await waitFor(() => {
+            expect(baseHook.updateAddress).toHaveBeenCalledWith(
+                1,
+                expect.objectContaining({ address: 'Av. Test 123' })
+            )
+        })
+    })
+
+    it('muestra skeleton cuando loading es true', async () => {
+        useAddresses.mockReturnValue({ ...baseHook, loading: true })
+
+        render(<AddressesPage />)
+
+        await waitFor(() => {
+            const pulseElements = document.querySelectorAll('.animate-pulse')
+            expect(pulseElements.length).toBeGreaterThan(0)
+        })
+    })
+
+    it('muestra error de carga de direcciones', async () => {
+        useAddresses.mockReturnValue({ ...baseHook, error: 'No se pudieron cargar las direcciones.' })
+
+        render(<AddressesPage />)
+
+        await waitFor(() => {
+            expect(screen.getByText('No se pudieron cargar las direcciones.')).toBeInTheDocument()
+        })
+    })
+
+    it('muestra pantalla de login cuando no hay sesión activa', async () => {
+        axios.get.mockResolvedValue({ data: { user: null } })
+
+        render(<AddressesPage />)
+
+        await waitFor(() => {
+            expect(screen.getByText('Inicia sesión para continuar')).toBeInTheDocument()
         })
     })
 })

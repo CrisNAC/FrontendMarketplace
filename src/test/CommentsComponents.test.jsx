@@ -9,6 +9,7 @@ vi.mock('../lib/formatGuarani', () => ({
 import { AddReviewModal } from '../features/clients/components/comments/AddReviewModal'
 import { CommentCard } from '../features/clients/components/comments/CommentCard'
 import { CommentForm } from '../features/clients/components/comments/CommentForm'
+import { CommentsList } from '../features/clients/components/comments/CommentsList'
 import { RatingsDistribution } from '../features/clients/components/comments/RatingsDistribution'
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -143,6 +144,67 @@ describe('CommentForm', () => {
             title: 'Muy buen producto',
             content: 'Descripción completa del producto',
         }))
+    })
+
+    it('muestra alerta cuando se envía sin título o contenido', async () => {
+        const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {})
+        render(<CommentForm />)
+
+        await userEvent.click(screen.getByText('Enviar mi opinión'))
+
+        expect(alertMock).toHaveBeenCalledWith('Por favor completa todos los campos')
+        alertMock.mockRestore()
+    })
+
+    it('cambia la calificación al hacer clic en una estrella', async () => {
+        render(<CommentForm />)
+
+        const stars = screen.getAllByRole('button', { name: /Calificar con/i })
+        await userEvent.click(stars[1])
+
+        expect(screen.getByText('2/5')).toBeInTheDocument()
+    })
+
+    it('muestra hover al pasar el mouse sobre una estrella', async () => {
+        render(<CommentForm />)
+
+        const stars = screen.getAllByRole('button', { name: /Calificar con/i })
+        await userEvent.hover(stars[2])
+        await userEvent.unhover(stars[2])
+    })
+})
+
+// ──────────────────────────────────────────────────────────────────────────────
+// CommentsList
+// ──────────────────────────────────────────────────────────────────────────────
+describe('CommentsList', () => {
+    const baseComment = {
+        id: 1,
+        author: 'María',
+        rating: 5,
+        title: 'Perfecto',
+        content: 'Muy bueno',
+        verified: true,
+        location: 'Asunción',
+        date: '2024-01-01',
+        reportedByViewer: false,
+    }
+
+    it('muestra "No hay comentarios" cuando la lista está vacía', () => {
+        render(<CommentsList comments={[]} onReport={() => {}} />)
+        expect(screen.getByText('No hay comentarios')).toBeInTheDocument()
+    })
+
+    it('renderiza los comentarios cuando hay elementos', () => {
+        render(<CommentsList comments={[baseComment]} onReport={() => {}} />)
+        expect(screen.getByText('María')).toBeInTheDocument()
+    })
+
+    it('llama onReport al reportar un comentario', async () => {
+        const onReport = vi.fn()
+        render(<CommentsList comments={[baseComment]} onReport={onReport} />)
+        await userEvent.click(screen.getByText('Reportar'))
+        expect(onReport).toHaveBeenCalledWith(baseComment)
     })
 })
 

@@ -2,16 +2,168 @@
  RUN  v4.1.5 C:/Users/jose.diaz.ITAPUA/FrontendMarketplace
       Coverage enabled with v8
 
- ❯ src/test/DeliveryProfilePage.test.jsx (2 tests | 1 failed) 1108ms
-     × muestra el badge "Disponible" cuando el delivery está AVAILABLE 1082ms
- ❯ src/test/CommerceOrdersPage.test.jsx (7 tests | 2 failed) 798ms
-     × llama a updateOrderStatus con PROCESSING al aceptar un pedido 46ms
-     × llama a updateOrderStatus con CANCELLED al rechazar un pedido 50ms
- ❯ src/test/CommerceDeliveriesPage.test.jsx (21 tests | 1 failed) 4875ms
-       × muestra error si fetchStoreDeliveries falla 1022ms
 
- Test Files  3 failed | 15 passed (18)
-      Tests  4 failed | 130 passed (134)
-   Start at  11:19:03
-   Duration  11.85s (transform 2.35s, setup 4.21s, import 11.15s, tests 32.52s, environment 38.38s)
+ Test Files  85 passed (85)
+      Tests  1086 passed (1086)
+     Errors  1 error
+   Start at  16:25:31
+   Duration  48.44s (transform 7.83s, setup 27.74s, import 46.29s, tests 135.75s, environment 239.46s)
 
+ % Coverage report from v8
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   71.54 |    63.57 |   64.91 |   73.97 |                   
+ components        |    10.2 |     4.08 |    9.52 |    10.2 |                   
+  SidebarAdmin.jsx |       0 |        0 |       0 |       0 | 17-78             
+  ...ntProfile.jsx |       0 |        0 |       0 |       0 | 3-18              
+  ...rDelivery.jsx |       0 |        0 |       0 |       0 | 14-74             
+  ...yCommerce.jsx |       0 |        0 |       0 |       0 | 18-83             
+ components/navbar |       0 |        0 |       0 |       0 |                   
+  ...goriesBar.jsx |       0 |      100 |       0 |       0 | 1-15              
+  ...aceNavbar.jsx |       0 |      100 |       0 |       0 | 3-4               
+  Navbar.jsx       |       0 |        0 |       0 |       0 | 10-293            
+ ...es/admin/pages |    74.3 |    65.96 |   65.12 |   80.79 |                   
+  ...oriesPage.jsx |   54.75 |    48.57 |   47.94 |   63.27 | ...51-765,785-815 
+  ...etailPage.jsx |   85.71 |     70.4 |   79.16 |    92.1 | ...71,151,307-312 
+  ...boardPage.jsx |    87.5 |    81.48 |   78.57 |   88.88 | 30-31,231,300,370 
+  ...olderPage.jsx |       0 |      100 |       0 |       0 | 1-2               
+  ...toresPage.jsx |   82.55 |    63.79 |   69.23 |   88.31 | ...92,259,273-292 
+  ...ductsPage.jsx |   87.06 |    84.21 |   81.57 |   92.15 | ...06,498,509-519 
+  ...UsersPage.jsx |   95.65 |    93.33 |   86.66 |   97.61 | 256               
+  Reclamos.jsx     |       0 |      100 |       0 |       0 | 4                 
+  ReclamosPage.jsx |       0 |        0 |       0 |       0 | 7-36              
+ ...admin/services |   91.56 |    65.88 |   97.22 |   94.85 |                   
+  ...shboardApi.js |    83.9 |    51.26 |   95.65 |   90.54 | 16,25,35-38,199   
+ ...nts/components |   62.96 |     64.6 |   50.94 |   64.42 |                   
+  ...veryModal.jsx |   85.71 |    71.62 |   78.57 |   87.95 | ...21,151,212-214 
+  ...ationForm.jsx |   71.96 |    82.89 |   66.66 |   72.11 | ...08-216,224,481 
+  Map.jsx          |       0 |        0 |       0 |       0 | 7-194             
+ ...ents/addresses |   67.88 |    56.33 |   54.54 |    69.3 |                   
+  ...essesPage.jsx |   67.88 |    56.33 |   54.54 |    69.3 | ...90-405,453,531 
+ ...nents/comments |   54.34 |    61.33 |   48.57 |   54.54 |                   
+  ...viewModal.jsx |   76.19 |       75 |   57.14 |      75 | 12-13,58-60       
+  CommentCard.jsx  |   81.81 |    88.88 |   66.66 |      90 | 63                
+  CommentForm.jsx  |   77.27 |    66.66 |   55.55 |   77.27 | 13-14,57-59       
+  CommentsList.jsx |       0 |        0 |       0 |       0 | 3-14              
+  ReportModal.jsx  |       0 |        0 |       0 |       0 | 3-85              
+ ...ommerceProfile |   74.32 |    77.21 |   73.33 |   78.26 |                   
+  ...erSidebar.tsx |   63.15 |    56.52 |   57.14 |   63.15 | ...24-125,128-129 
+  ...ileHeader.tsx |   70.37 |    86.48 |   63.63 |   79.16 | 197-227,250-272   
+  Pagination.tsx   |   81.25 |    86.66 |   85.71 |   85.71 | 18,41             
+  ProductCard.tsx  |   88.88 |       75 |     100 |   88.88 | 20                
+ ...omponents/home |   61.13 |    42.56 |      50 |   67.05 |                   
+  HeroCarousel.jsx |       0 |        0 |       0 |       0 | 4-93              
+  HomeSections.jsx |    68.2 |    43.75 |   66.66 |      75 | ...21-350,415-435 
+  SellerCTA.jsx    |       0 |      100 |       0 |       0 | 3-10              
+ ...ponents/orders |   84.21 |    93.75 |    62.5 |   83.33 |                   
+  ...omptModal.jsx |   84.21 |    93.75 |    62.5 |   83.33 | 71-73             
+ ...ponents/search |   55.95 |    59.09 |   57.14 |   54.43 |                   
+  ...rySidebar.jsx |    91.3 |       95 |   85.71 |   90.47 | 219-244           
+  Pagination.jsx   |   81.81 |    83.33 |   66.66 |   77.77 | 13,49             
+  ProductCard.jsx  |     100 |    66.66 |     100 |     100 | 27                
+  ...erSidebar.tsx |       0 |        0 |       0 |       0 | 15-178            
+  ...oductCard.tsx |      75 |    80.76 |      75 |      75 | 37-41,61          
+ ...nents/wishlist |     100 |    82.35 |     100 |     100 |                   
+  ...tItemCard.jsx |     100 |    82.35 |     100 |     100 | 9-11              
+ .../clients/mocks |       0 |      100 |     100 |       0 |                   
+  ...stMockData.js |       0 |      100 |     100 |       0 | 1                 
+ .../clients/pages |   72.86 |    67.19 |   73.08 |   75.66 |                   
+  ...iveryPage.jsx |       0 |      100 |       0 |       0 | 9-18              
+  BusquedaPage.tsx |   81.48 |    69.74 |   85.71 |   86.06 | ...42,196,296-311 
+  CartPage.tsx     |   94.93 |    79.66 |     100 |   95.89 | 59-61             
+  ...ePassword.jsx |    88.4 |    86.11 |   81.81 |    88.7 | ...02,125-133,191 
+  ...tailsPage.jsx |   81.57 |    51.16 |   94.11 |   85.48 | 33-38,41,132,231  
+  ...rdersPage.jsx |   96.42 |    83.33 |     100 |     100 | 20-66             
+  CommentsPage.jsx |   74.24 |    60.86 |   71.42 |    74.6 | ...07-124,189-190 
+  ...marPedido.tsx |      78 |    75.16 |   84.61 |   79.16 | ...61-362,477,620 
+  ...mercePage.jsx |       0 |      100 |       0 |       0 | 4-5               
+  ...eProducto.jsx |   66.54 |    63.72 |   73.58 |   68.92 | ...58,640-682,727 
+  ...erProfile.jsx |   76.31 |     67.5 |    62.5 |    82.6 | ...,94-95,117-119 
+  HomePage.jsx     |       0 |        0 |       0 |       0 | 15-73             
+  ...countPage.jsx |   68.62 |       75 |   55.55 |   71.73 | 78-90,141-181     
+  ...mprasPage.jsx |   77.58 |    72.09 |   56.25 |   78.57 | ...51-152,193-225 
+  ...rmadoPage.tsx |   95.83 |    94.44 |     100 |     100 | 46,60             
+  ...risonPage.jsx |   83.05 |    59.64 |   73.33 |   85.71 | ...39-141,168,197 
+  ...ercioPage.tsx |   63.43 |       50 |      70 |   70.17 | ...93-201,274-290 
+  Wishlist.jsx     |   53.65 |       46 |   51.42 |   56.75 | ...61-273,284-285 
+ ...ients/services |   48.59 |    28.07 |   17.24 |   54.44 |                   
+  deliveryApi.js   |   97.67 |       80 |     100 |     100 | 73-76             
+  ...tReportApi.js |    4.87 |        0 |       0 |    5.55 | 20-102            
+  ...istService.js |   34.78 |        0 |       0 |   53.33 | ...12,15,18,21,24 
+ ...ces/components |       0 |        0 |       0 |       0 |                   
+  ...veryModal.jsx |       0 |        0 |       0 |       0 | 9-103             
+ .../createProduct |   54.83 |    32.35 |      50 |   58.62 |                   
+  ...uestModal.jsx |       0 |        0 |       0 |       0 | 6-23              
+  ...sultModal.jsx |       0 |        0 |       0 |       0 | 3-25              
+  Toggle.jsx       |   89.47 |    68.75 |     100 |   94.44 | 25                
+ ...ents/dashboard |       0 |        0 |       0 |       0 |                   
+  ...edSection.jsx |       0 |      100 |       0 |       0 | 3-9               
+  ...ctionCard.jsx |       0 |        0 |       0 |       0 | 3-4               
+  ...nsSection.jsx |       0 |      100 |       0 |       0 | 3-9               
+  ...ldSection.jsx |       0 |        0 |       0 |       0 | 3-21              
+  ProductItem.jsx  |       0 |        0 |       0 |       0 | 1-2               
+  StatCard.jsx     |       0 |        0 |       0 |       0 | 1-2               
+  Topbar.jsx       |       0 |        0 |       0 |       0 | 4-22              
+ ...veryAssignment |    8.86 |        0 |       0 |    9.09 |                   
+  ...mentModal.jsx |    8.86 |        0 |       0 |    9.09 | ...06-139,162-284 
+ ...ommerces/hooks |   76.76 |    69.23 |   67.46 |   80.16 |                   
+  ...oryRequest.js |       0 |        0 |       0 |       0 | 8-70              
+  ...ateProduct.js |   91.86 |    81.48 |   89.65 |    91.3 | ...73,177,234,246 
+  ...itCommerce.js |   88.97 |    68.33 |   94.73 |   91.22 | ...52,57,62,74,78 
+  ...ditProduct.js |   67.24 |    63.38 |   44.44 |   76.28 | ...22,231-233,243 
+ ...ommerces/pages |   78.65 |    72.85 |   70.27 |   81.53 |                   
+  ...iveryPage.jsx |   90.26 |    69.23 |      96 |    96.8 | 35,217,236        
+  ...rceClaims.jsx |       0 |      100 |       0 |       0 | 4                 
+  ...eriesPage.jsx |   93.02 |    83.82 |   87.09 |   94.59 | 176-180,315-316   
+  ...viewsPage.jsx |   83.33 |    84.48 |   85.71 |   84.72 | ...35-137,193-206 
+  ...rdersPage.jsx |   58.94 |    52.09 |   58.82 |   62.06 | ...08,547-579,591 
+  ...ductsPage.jsx |   85.41 |    69.44 |   78.12 |   86.58 | ...60,381,402-403 
+  ...ofilePage.jsx |   90.47 |    81.57 |    82.6 |   91.89 | ...14,268-365,392 
+  ...oductPage.jsx |   46.15 |    68.75 |   27.77 |   51.42 | ...87,262,269-440 
+  ...mercePage.jsx |   81.25 |    84.05 |   71.42 |   84.61 | 208,367-403       
+  ...oductPage.jsx |   45.23 |    71.21 |      30 |   48.71 | ...33-447,499-517 
+  ...etailView.jsx |   91.26 |    79.52 |   77.77 |    91.3 | ...49,306-346,614 
+ ...erces/services |   80.52 |    63.66 |   83.56 |   80.99 |                   
+  ...RequestApi.js |     100 |    89.28 |     100 |     100 | 4-7,44            
+  ...eOrdersApi.js |   21.73 |        8 |       0 |   26.31 | 19-33,42-43,50-55 
+  ...eliveryApi.js |       0 |        0 |       0 |       0 | 7-77              
+  ...ProductApi.js |   89.77 |    76.74 |   93.75 |   91.46 | 37,68-80,134,161  
+  ...tEndpoints.js |     100 |       50 |     100 |     100 | 2-24              
+  ...ignmentApi.js |   27.77 |     8.33 |       0 |   27.77 | ...25,33-40,45-52 
+  ...ReviewsApi.js |     100 |    94.11 |     100 |     100 | 4                 
+  ...ommerceApi.js |      98 |    88.88 |     100 |   97.77 | 115               
+  ...eEndpoints.js |     100 |       50 |     100 |     100 | 3-18              
+  ...ProductApi.js |     100 |     92.1 |     100 |     100 | 8-12,99           
+  ...tEndpoints.js |     100 |       50 |     100 |     100 | 2-21              
+  ...ProfileApi.js |     100 |    85.71 |     100 |     100 | 3-6               
+  orderApi.js      |   81.25 |    56.25 |     100 |   84.61 | 61-63,66          
+  ...tDetailApi.js |     100 |       50 |     100 |     100 | 4                 
+  ...tReviewApi.js |     100 |       50 |     100 |     100 | 4                 
+ ...ommerces/utils |   95.23 |      100 |     100 |   93.33 |                   
+  ...LocalCache.js |   95.23 |      100 |     100 |   93.33 | 30                
+ ...ery/components |   91.83 |    80.76 |   71.42 |   91.11 |                   
+  ...esSection.jsx |   91.83 |    80.76 |   71.42 |   91.11 | 89,202-230        
+ ...delivery/pages |   77.11 |    64.23 |   74.07 |   81.48 |                   
+  ...ofilePage.jsx |   91.35 |    77.46 |    92.3 |   98.52 | 419               
+  ...storyPage.jsx |      80 |    80.23 |   67.85 |      87 | ...08-239,392-402 
+  ...derScreen.jsx |   62.06 |    54.08 |   70.58 |   67.53 | ...40-141,184,269 
+  ...rdersPage.jsx |    86.2 |     67.3 |   91.66 |   88.23 | 10-12,54,209-210  
+  ...ofilePage.jsx |   65.57 |    47.77 |   54.54 |   63.63 | ...17-137,196-213 
+ features/reports  |      75 |    68.29 |    62.5 |   76.97 |                   
+  ...aimsPanel.jsx |   69.04 |    70.23 |      56 |   70.51 | ...86,269,305-343 
+  ...ortsPanel.jsx |   81.25 |    66.25 |   69.56 |   83.78 | ...85,289,411-425 
+ hooks             |    97.4 |    82.05 |     100 |   96.77 |                   
+  useAddresses.js  |   95.74 |       65 |     100 |   94.87 | 67,79             
+ lib               |   84.31 |    71.13 |   84.21 |   86.36 |                   
+  apiClient.js     |   28.57 |    13.63 |       0 |   33.33 | 34,39,48-65       
+  cartApi.js       |     100 |    66.66 |     100 |     100 | 4,13-27           
+  ...calStorage.js |   97.22 |    82.35 |     100 |     100 | 8,31-33,68,80     
+-------------------|---------|----------|---------|---------|-------------------
+
+=============================== Coverage summary ===============================
+Statements   : 71.54% ( 4395/6143 )
+Branches     : 63.57% ( 3295/5183 )
+Functions    : 64.91% ( 975/1502 )
+Lines        : 73.97% ( 4023/5438 )
+================================================================================
