@@ -274,9 +274,10 @@ export const HomeSections = () => {
   }, [storesEndpoint]);
 
   const handleCategoryClick = (category) => {
-    if (!category?.id) return;
+    const id = category?.id_product_category ?? category?.id;
+    if (!id) return;
     navigate(
-      `/busqueda?categoryId=${category.id}&categoryName=${encodeURIComponent(
+      `/busqueda?categoryId=${id}&categoryName=${encodeURIComponent(
         category.name || ""
       )}`
     );
@@ -316,7 +317,7 @@ export const HomeSections = () => {
           <HorizontalScroller watchKey={`${categoriesStatus}-${categories.length}`}>
             {categories.map((cat) => (
               <div
-                key={cat.id}
+                key={cat.id_product_category ?? cat.id}
                 className="group flex w-[152px] flex-shrink-0 snap-start flex-col items-center gap-3 cursor-pointer"
                 onClick={() => handleCategoryClick(cat)}
               >

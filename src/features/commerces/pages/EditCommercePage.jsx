@@ -80,6 +80,108 @@ function CategoryChip({ name, onRemove, disabled }) {
     );
 }
 
+const MAX_CATEGORIES = 3;
+
+function CategorySelector({ categories, selectedIds, onChange, disabled, error }) {
+    const selectedValues = Array.isArray(selectedIds) ? selectedIds.map(String) : [];
+
+    return (
+        <div>
+            <div style={{ marginBottom: "8px", minHeight: "28px" }}>
+                {selectedValues.length > 0 ? (
+                    selectedValues.map((selectedId) => {
+                        const category = categories.find((item) => {
+                            const categoryId = item.id ?? item.id_category;
+                            return String(categoryId) === selectedId;
+                        });
+
+                        if (!category) {
+                            return null;
+                        }
+
+                        return (
+                            <CategoryChip
+                                key={category.id ?? category.id_category}
+                                name={category.name}
+                                disabled={disabled}
+                                onRemove={() => {
+                                    onChange({
+                                        target: {
+                                            name: "categoryIds",
+                                            value: selectedValues.filter((categoryId) => {
+                                                const categoryIdValue = category.id ?? category.id_category;
+                                                return categoryId !== String(categoryIdValue);
+                                            })
+                                        }
+                                    });
+                                }}
+                            />
+                        );
+                    })
+                ) : (
+                    <span style={{ fontSize: "12px", color: "#9ca3af" }}>Sin categorías seleccionadas</span>
+                )}
+            </div>
+
+            <div style={{
+                border: error ? "1px solid #f87171" : "1px solid #e5e7eb",
+                borderRadius: "8px",
+                backgroundColor: error ? "#fff7f7" : "#fff",
+                padding: "8px 12px",
+                maxHeight: "180px",
+                overflowY: "auto",
+            }}>
+                {categories.map((category) => {
+                    const categoryId = String(category.id ?? category.id_category);
+                    const isSelected = selectedValues.includes(categoryId);
+
+                    return (
+                        <label
+                            key={category.id ?? category.id_category}
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "10px",
+                                padding: "6px 0",
+                                cursor: disabled ? "not-allowed" : "pointer",
+                                opacity: disabled ? 0.6 : 1,
+                            }}
+                        >
+                            <input
+                                type="checkbox"
+                                checked={isSelected}
+                                disabled={disabled || (!isSelected && selectedValues.length >= MAX_CATEGORIES)}
+                                onChange={() => {
+                                    const nextValue = isSelected
+                                        ? selectedValues.filter((value) => value !== categoryId)
+                                        : [...selectedValues, categoryId];
+
+                                    onChange({
+                                        target: {
+                                            name: "categoryIds",
+                                            value: nextValue
+                                        }
+                                    });
+                                }}
+                                style={{ width: "16px", height: "16px" }}
+                            />
+                            <span style={{ fontSize: "14px", color: "#374151" }}>{category.name}</span>
+                        </label>
+                    );
+                })}
+            </div>
+
+            <p style={{ fontSize: "12px", color: "#6b7280", margin: "8px 0 0 0" }}>
+                Podés seleccionar hasta {MAX_CATEGORIES} categorías.
+                {selectedValues.length >= MAX_CATEGORIES && (
+                    <span style={{ marginLeft: "4px", fontWeight: "600", color: "#d97706" }}>Límite alcanzado.</span>
+                )}
+            </p>
+            {error && <p style={errorMsg}>{error}</p>}
+        </div>
+    );
+}
+
 function StatRow({ label, children }) {
     return (
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
@@ -122,10 +224,6 @@ export function EditCommercePage() {
         }}>
             {loadError}
         </div>
-    );
-
-    const selectedCategories = categories.filter((c) =>
-        Array.isArray(formData.categoryIds) && formData.categoryIds.includes(String(c.id))
     );
 
     return (
@@ -198,46 +296,17 @@ export function EditCommercePage() {
                             />
                         </Field>
 
-                        {/* Categorías como chips + selector múltiple */}
+                        {/* Categorías como chips + multicheckbox */}
                         <div style={{ marginBottom: "14px" }}>
                             <label style={labelStyle}>Categorías del Comercio *</label>
 
-                            <div style={{ marginBottom: "8px", minHeight: "28px" }}>
-                                {selectedCategories.length > 0 ? (
-                                    selectedCategories.map((category) => (
-                                        <CategoryChip
-                                            key={category.id}
-                                            name={category.name}
-                                            disabled={isFormDisabled}
-                                            onRemove={() => onFieldChange({
-                                                target: {
-                                                    name: "categoryIds",
-                                                    value: formData.categoryIds.filter((categoryId) => String(categoryId) !== String(category.id)),
-                                                }
-                                            })}
-                                        />
-                                    ))
-                                ) : (
-                                    <span style={{ fontSize: "12px", color: "#9ca3af" }}>Sin categorías seleccionadas</span>
-                                )}
-                            </div>
-
-                            <select
-                                multiple
-                                name="categoryIds"
-                                value={formData.categoryIds}
+                            <CategorySelector
+                                categories={categories}
+                                selectedIds={formData.categoryIds}
                                 onChange={onFieldChange}
                                 disabled={isFormDisabled}
-                                style={{ ...inputStyle, minHeight: "140px" }}
-                            >
-                                {categories.map((cat) => (
-                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                ))}
-                            </select>
-                            <p style={{ fontSize: "12px", color: "#6b7280", margin: "8px 0 0 0" }}>
-                                Mantené presionada la tecla Ctrl o Cmd para seleccionar varias categorías.
-                            </p>
-                            {validationErrors.categoryIds && <p style={errorMsg}>{validationErrors.categoryIds}</p>}
+                                error={validationErrors.categoryIds}
+                            />
                         </div>
                     </div>
 

@@ -423,9 +423,13 @@ export default function DetalleProducto() {
     return () => { isActive = false; controller.abort(); };
   }, [apiBase, productId]);
 
-  const titleText = product?.commerce?.name && product?.category?.name
-    ? `${product.commerce.name} / ${product.category.name}`
-    : product?.category?.name ?? "Detalle del producto";
+  const categoryNames = product?.categories?.length > 0
+    ? product.categories.map((c) => c.name).join(", ")
+    : product?.category?.name ?? null;
+
+  const titleText = product?.commerce?.name && categoryNames
+    ? `${product.commerce.name} / ${categoryNames}`
+    : categoryNames ?? "Detalle del producto";
 
   const productName = product?.name || "Producto";
   const productDescription = product?.description || "";

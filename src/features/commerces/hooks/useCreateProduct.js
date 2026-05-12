@@ -15,7 +15,7 @@ const INITIAL_FORM_STATE = {
   name: "",
   description: "",
   price: "",
-  categoryId: "",
+  categoryIds: [],
   quantity: "",
   imageUrl: "",
   isVisible: true,
@@ -41,8 +41,8 @@ const validateForm = (formData, selectedTags) => {
     }
   }
 
-  if (!formData.categoryId) {
-    errors.categoryId = "Selecciona una categoria.";
+  if (!Array.isArray(formData.categoryIds) || formData.categoryIds.length === 0) {
+    errors.categoryIds = "Selecciona al menos una categoria.";
   }
 
   if (formData.quantity === "" || formData.quantity === null) {
@@ -228,7 +228,7 @@ export const useCreateProduct = () => {
       name: formData.name.trim(),
       description: formData.description.trim(),
       price: Number(formData.price),
-      categoryId: Number(formData.categoryId),
+      categoryIds: formData.categoryIds.map((categoryId) => Number(categoryId)),
       quantity: Number(formData.quantity),
       visible: formData.isVisible,
       tags: selectedTags.map((tag) => tag.id),

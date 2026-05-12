@@ -368,9 +368,16 @@ export default function ProductDetailView() {
                                             </span>
                                         </div>
 
-                                        <div className="flex items-center justify-between">
-                                            <span className={SUBTLE}>Categoría:</span>
-                                            <Pill variant="indigo">{product.category?.name ?? "—"}</Pill>
+                                        <div className="flex items-start justify-between gap-2">
+                                            <span className={`pt-px ${SUBTLE}`}>Categoría:</span>
+                                            <div className="flex flex-wrap justify-end gap-1">
+                                                {product.categories?.length > 0
+                                                    ? product.categories.map((cat) => (
+                                                        <Pill key={cat.id} variant="indigo">{cat.name}</Pill>
+                                                    ))
+                                                    : <Pill variant="indigo">—</Pill>
+                                                }
+                                            </div>
                                         </div>
 
                                         <div className="flex items-center justify-between">

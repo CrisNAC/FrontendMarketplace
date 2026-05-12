@@ -21,6 +21,8 @@ const CategoryChip = ({ name, onRemove, disabled }) => (
     </span>
 )
 
+const MAX_CATEGORIES = 3;
+
 // Componente para selector de categorías con chips + dropdown
 const CategorySelector = ({ categories, selectedIds, onChange, disabled, error }) => {
     const [isOpen, setIsOpen] = useState(false)
@@ -41,7 +43,9 @@ const CategorySelector = ({ categories, selectedIds, onChange, disabled, error }
     )
 
     const handleToggle = (categoryId) => {
-        const newIds = selectedIds.includes(categoryId)
+        const isSelected = selectedIds.includes(categoryId)
+        if (!isSelected && selectedIds.length >= MAX_CATEGORIES) return
+        const newIds = isSelected
             ? selectedIds.filter((id) => id !== categoryId)
             : [...selectedIds, categoryId]
         onChange(newIds)
@@ -100,8 +104,9 @@ const CategorySelector = ({ categories, selectedIds, onChange, disabled, error }
                                 <input
                                     type="checkbox"
                                     checked={isSelected}
+                                    disabled={!isSelected && selectedIds.length >= MAX_CATEGORIES}
                                     onChange={() => handleToggle(catId)}
-                                    className="w-4 h-4 mr-2 shrink-0 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                                    className="w-4 h-4 mr-2 shrink-0 rounded border-gray-300 text-green-600 focus:ring-green-500 disabled:opacity-40"
                                 />
                                 <span className="ml-1 text-sm text-gray-700">{cat.name}</span>
                             </label>
@@ -110,6 +115,12 @@ const CategorySelector = ({ categories, selectedIds, onChange, disabled, error }
                 </div>
             )}
 
+            <p className="text-xs text-gray-500 mt-1">
+                Podés seleccionar hasta {MAX_CATEGORIES} categorías.
+                {selectedIds.length >= MAX_CATEGORIES && (
+                    <span className="ml-1 font-semibold text-amber-600">Límite alcanzado.</span>
+                )}
+            </p>
             {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
         </div>
     )
