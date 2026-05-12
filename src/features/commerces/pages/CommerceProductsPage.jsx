@@ -63,7 +63,6 @@ function ProductCard({ product, onView, onEdit, onDelete }) {
     const isVisible = isProductVisible(product);
     const productCategories = Array.isArray(product.categories) && product.categories.length > 0
         ? product.categories
-        : product.product_category ? [product.product_category]
         : product.category ? [product.category]
         : [];
     // el back ahora devuelve image_url directamente en el producto
@@ -119,7 +118,7 @@ function ProductCard({ product, onView, onEdit, onDelete }) {
                 {productCategories.length > 0 && (
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
                         {productCategories.map((cat, i) => (
-                            <CategoryPill key={cat.id_product_category ?? cat.id ?? i} name={cat.name} />
+                            <CategoryPill key={cat.id ?? i} name={cat.name} />
                         ))}
                     </div>
                 )}
@@ -266,7 +265,6 @@ export function CommerceProductsPage() {
         for (const p of products) {
             const cats = Array.isArray(p.categories) && p.categories.length > 0
                 ? p.categories
-                : p.product_category ? [p.product_category]
                 : p.category ? [p.category]
                 : [];
             for (const cat of cats) {
@@ -290,7 +288,6 @@ export function CommerceProductsPage() {
                 (filterStatus === "hidden" && !isVisible);
             const productCats = Array.isArray(p.categories) && p.categories.length > 0
                 ? p.categories
-                : p.product_category ? [p.product_category]
                 : p.category ? [p.category]
                 : [];
             const matchesCategory = filterCategory === "all" || productCats.some(cat => cat?.name === filterCategory);

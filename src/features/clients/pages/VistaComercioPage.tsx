@@ -57,7 +57,6 @@ type StoreProduct = {
     price: string | number;
     image_url?: string | null;
     visible?: boolean;
-    product_category?: { id_product_category: number; name: string };
 };
 
 type StoreProductsResponse =
