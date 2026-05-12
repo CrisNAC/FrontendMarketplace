@@ -189,10 +189,14 @@ export const useEditCommerce = () => {
                     phone: commerce.phone ?? "",
                     description: commerce.description ?? "",
                     categoryIds: Array.isArray(commerce.categories) && commerce.categories.length > 0
-                        ? commerce.categories.map((category) => String(category.id_category))
-                        : commerce.store_category?.id_store_category
-                            ? [String(commerce.store_category.id_store_category)]
-                            : [],
+                        ? commerce.categories
+                            .map((category) => Number(category.id_category))
+                            .filter((id) => Number.isInteger(id) && id > 0)
+                            .map(String)
+                        : (() => {
+                            const id = Number(commerce.store_category?.id_store_category);
+                            return Number.isInteger(id) && id > 0 ? [String(id)] : [];
+                        })(),
                     logoUrl: commerce.logo ?? "",
                     // Campos de Addresses (primer registro del comercio)
                     address: firstAddress.address ?? "",
@@ -301,7 +305,9 @@ export const useEditCommerce = () => {
             phone: formData.phone.trim(),
             description: formData.description.trim() || null,
             ...(formData.categoryIds.length > 0 && {
-                category_ids: formData.categoryIds.map((categoryId) => Number(categoryId)),
+                category_ids: formData.categoryIds
+                    .map((id) => Number(id))
+                    .filter((id) => Number.isInteger(id) && id > 0),
             }),
             // logo → string URL o null para borrar (solo si no se subió un archivo nuevo)
             logo: logoFile ? undefined : (formData.logoUrl.trim() || null),

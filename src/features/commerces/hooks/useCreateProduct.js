@@ -43,6 +43,13 @@ const validateForm = (formData, selectedTags) => {
 
   if (!Array.isArray(formData.categoryIds) || formData.categoryIds.length === 0) {
     errors.categoryIds = "Selecciona al menos una categoria.";
+  } else {
+    const validIds = formData.categoryIds
+      .map(Number)
+      .filter((id) => Number.isInteger(id) && id > 0);
+    if (validIds.length !== formData.categoryIds.length) {
+      errors.categoryIds = "Una o mas categorias seleccionadas no son validas.";
+    }
   }
 
   if (formData.quantity === "" || formData.quantity === null) {

@@ -427,9 +427,10 @@ export default function DetalleProducto() {
     ? product.categories.map((c) => c.name).join(", ")
     : product?.category?.name ?? null;
 
-  const titleText = product?.commerce?.name && categoryNames
-    ? `${product.commerce.name} / ${categoryNames}`
-    : categoryNames ?? "Detalle del producto";
+  const commerceName = product?.commerce?.name ?? null;
+  const titleText = commerceName && categoryNames
+    ? `${commerceName} / ${categoryNames}`
+    : commerceName ?? categoryNames ?? "Detalle del producto";
 
   const productName = product?.name || "Producto";
   const productDescription = product?.description || "";

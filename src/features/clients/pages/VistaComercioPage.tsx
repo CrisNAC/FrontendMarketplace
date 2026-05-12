@@ -208,9 +208,14 @@ export const VistaComercioPage = () => {
     }, [storeId, selectedCategoryId, priceRange.max, priceRange.min, appliedSearch]);
 
     const headerName = store?.name || storeName || "Comercio";
-    const headerCategory = Array.isArray(store?.categories) && store.categories.length > 0
-        ? store.categories.map((category) => category.name).join(" · ")
-        : store?.store_category?.name || "Comercio";
+    const headerCategory = (() => {
+        const names = Array.isArray(store?.categories)
+            ? store.categories.map((c) => c.name?.trim()).filter(Boolean)
+            : [];
+        if (names.length > 0) return names.join(" · ");
+        const fallback = store?.store_category?.name?.trim();
+        return fallback || "Comercio";
+    })();
     const mainAddress = store?.addresses?.[0];
     const addressText = [mainAddress?.address, mainAddress?.city, mainAddress?.region]
         .filter(Boolean)
