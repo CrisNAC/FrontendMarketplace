@@ -154,29 +154,30 @@ export function DeliveryProfilePage() {
     return (
         <>
             {/* ── Header con Toggle de Disponibilidad ─────────────────────── */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "24px", gap: "16px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "12px", flex: 1 }}>
-                    <div>
+            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+                    <div className="min-w-0 flex-1">
                         <h4 style={{ fontWeight: "600", margin: "0 0 4px 0" }}>Perfil del Delivery</h4>
                         <p style={{ color: "#6b7280", margin: 0, fontSize: "14px" }}>Información general de tu cuenta de repartidor</p>
                     </div>
-                    {/* Badge de estado del delivery */}
                     <span style={{
                         padding: "3px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: "700",
                         backgroundColor: isActive ? "#dcfce7" : "#fef3c7",
                         color: isActive ? "#15803d" : "#92400e",
                         whiteSpace: "nowrap",
+                        alignSelf: "flex-start",
                     }}>
                         {isActive ? "Disponible" : "Inactivo"}
                     </span>
                 </div>
-                
-                <div style={{ display: "flex", gap: "8px" }}>
+
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
                     {/* Botón de conectar/desconectar */}
                     <button
                         type="button"
                         onClick={handleToggleAvailability}
                         disabled={updatingStatus}
+                        className="w-full justify-center sm:w-auto"
                         style={{
                             display: "flex",
                             alignItems: "center",
@@ -211,6 +212,7 @@ export function DeliveryProfilePage() {
                     <button
                         type="button"
                         onClick={() => navigate("/delivery/perfil/editar")}
+                        className="w-full justify-center sm:w-auto"
                         style={{
                             display: "flex",
                             alignItems: "center",
@@ -231,7 +233,7 @@ export function DeliveryProfilePage() {
             </div>
 
             {/* ── Grid ──────────────────────────────────────────────────────── */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: "20px", alignItems: "start" }}>
+            <div className="grid grid-cols-1 items-start gap-5 md:grid-cols-[1fr_280px]">
 
                 {/* Columna izquierda */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>

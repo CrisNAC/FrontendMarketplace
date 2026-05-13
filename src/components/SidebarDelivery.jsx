@@ -11,7 +11,7 @@ import {
     HelpCircle,
 } from "lucide-react";
 
-export const SidebarDelivery = ({ collapsed, onToggle }) => {
+export const SidebarDelivery = ({ collapsed, onToggle, onNavigate }) => {
     const navigate = useNavigate();
     const location = useLocation();
     const logout = useLogout();
@@ -71,7 +71,14 @@ export const SidebarDelivery = ({ collapsed, onToggle }) => {
                     return (
                         <div
                             key={label}
-                            onClick={() => onClick ? onClick() : navigate(route)}
+                            onClick={() => {
+                                if (onClick) {
+                                    onClick();
+                                } else {
+                                    navigate(route);
+                                }
+                                onNavigate?.();
+                            }}
                             title={collapsed ? label : undefined}
                             style={{
                                 display: "flex",
