@@ -412,9 +412,14 @@ export default function DetalleProducto() {
     return () => { isActive = false; };
   }, [productId]); // ← Sacá apiBase
 
-  const titleText = product?.commerce?.name && product?.category?.name
-    ? `${product.commerce.name} / ${product.category.name}`
-    : product?.category?.name ?? "Detalle del producto";
+  const categoryNames = product?.categories?.length > 0
+    ? product.categories.map((c) => c.name).join(", ")
+    : null;
+
+  const commerceName = product?.commerce?.name ?? null;
+  const titleText = commerceName && categoryNames
+    ? `${commerceName} / ${categoryNames}`
+    : commerceName ?? categoryNames ?? "Detalle del producto";
 
   const productName = product?.name || "Producto";
   const productDescription = product?.description || "";

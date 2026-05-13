@@ -6,6 +6,7 @@ import { CreationResultModal } from "../components/createProduct/CreationResultM
 import { CategoryRequestModal } from "../components/createProduct/CategoryRequestModal";
 import Toggle from "../components/createProduct/Toggle";
 import { useCategoryRequest } from "../hooks/useCategoryRequest";
+import { ProductCategorySelector } from "../components/createProduct/ProductCategorySelector";
 
 // ─── Clases reutilizadas de CreateProductPage (misma apariencia) ──────────────
 const inputClassName =
@@ -67,7 +68,7 @@ export default function EditProductPage() {
     const handleCategoryRequestSuccess = () => {
         if (categoryRequestResultModal.variant === "success") {
             // En EditProduct no tenemos setFormData, usamos onFieldChange
-            onFieldChange({ target: { name: "categoryId", value: "", type: "text" } });
+            onFieldChange({ target: { name: "categoryIds", value: [], type: "text" } });
             setIsCategoryModalOpen(false);
             resetCategoryRequestForm();
         }
@@ -176,42 +177,23 @@ export default function EditProductPage() {
                         </div>
 
                         <div>
-                            <label className={labelClassName} htmlFor="categoryId">
-                                Categoría *
-                            </label>
-                            <div className="flex flex-col gap-1.5">
-                                <select
-                                    id="categoryId"
-                                    name="categoryId"
-                                    value={formData.categoryId}
-                                    onChange={onFieldChange}
-                                    className={inputClassName}
-                                    disabled={isFormDisabled}
-                                >
-                                    <option value="">
-                                        {isLoadingInitialData
-                                            ? "Cargando categorías..."
-                                            : "Seleccioná una categoría"}
-                                    </option>
-                                    {categories.map((cat) => (
-                                        <option key={cat.id} value={cat.id}>
-                                            {cat.name}
-                                        </option>
-                                    ))}
-                                </select>
-                                {/* ── Solicitar nueva categoría ── */}
-                                <button
-                                    type="button"
-                                    onClick={() => setIsCategoryModalOpen(true)}
-                                    disabled={isFormDisabled}
-                                    className="self-start text-xs font-semibold text-[#2f63f2] hover:underline disabled:cursor-not-allowed disabled:opacity-60"
-                                >
-                                    ¿No encontrás tu categoría? Solicitala
-                                </button>
-                            </div>
-                            {validationErrors.categoryId && (
-                                <p className={errorClassName}>{validationErrors.categoryId}</p>
-                            )}
+                            <ProductCategorySelector
+                                categories={categories}
+                                selectedIds={formData.categoryIds}
+                                onChange={onFieldChange}
+                                disabled={isFormDisabled}
+                                error={validationErrors.categoryIds}
+                                label="Categorías *"
+                            />
+                            {/* ── Solicitar nueva categoría ── */}
+                            <button
+                                type="button"
+                                onClick={() => setIsCategoryModalOpen(true)}
+                                disabled={isFormDisabled}
+                                className="mt-1 self-start text-xs font-semibold text-[#2f63f2] hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                ¿No encontrás tu categoría? Solicitala
+                            </button>
                         </div>
                     </div>
 

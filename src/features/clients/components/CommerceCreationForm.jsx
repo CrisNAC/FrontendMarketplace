@@ -1,8 +1,130 @@
 import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
-import { X } from "lucide-react"
+import { X, ChevronDown } from "lucide-react"
 import { Spinner } from "../../../components/Spinner"
 import MapView from "./Map"
+
+// Componente para mostrar categoría como chip
+const CategoryChip = ({ name, onRemove, disabled }) => (
+    <span className="inline-flex items-center gap-2 bg-purple-100 text-purple-700 rounded-full px-3 py-1 text-sm font-medium mr-2 mb-2">
+        {name}
+        {!disabled && (
+            <button
+                type="button"
+                onClick={onRemove}
+                className="text-purple-700 hover:text-purple-900 font-bold"
+                aria-label={`Remover ${name}`}
+            >
+                ×
+            </button>
+        )}
+    </span>
+)
+
+const MAX_CATEGORIES = 3;
+
+// Componente para selector de categorías con chips + dropdown
+const CategorySelector = ({ categories, selectedIds, onChange, disabled, error }) => {
+    const [isOpen, setIsOpen] = useState(false)
+    const dropdownRef = useRef(null)
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+                setIsOpen(false)
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside)
+        return () => document.removeEventListener("mousedown", handleClickOutside)
+    }, [])
+
+    const selectedCategories = categories.filter((c) =>
+        selectedIds.includes(c.id)
+    )
+
+    const handleToggle = (categoryId) => {
+        const isSelected = selectedIds.includes(categoryId)
+        if (!isSelected && selectedIds.length >= MAX_CATEGORIES) return
+        const newIds = isSelected
+            ? selectedIds.filter((id) => id !== categoryId)
+            : [...selectedIds, categoryId]
+        onChange(newIds)
+    }
+
+    return (
+        <div className="relative" ref={dropdownRef}>
+            {/* Chips de categorías seleccionadas */}
+            <div className="mb-2 min-h-8 flex flex-wrap items-center gap-1">
+                {selectedCategories.length > 0 ? (
+                    selectedCategories.map((cat) => (
+                        <CategoryChip
+                            key={cat.id}
+                            name={cat.name}
+                            disabled={disabled}
+                            onRemove={() =>
+                                handleToggle(cat.id)
+                            }
+                        />
+                    ))
+                ) : (
+                    <span className="text-sm text-gray-400">
+                        Sin categorías seleccionadas
+                    </span>
+                )}
+            </div>
+
+            {/* Botón dropdown */}
+            <button
+                type="button"
+                onClick={() => !disabled && setIsOpen(!isOpen)}
+                disabled={disabled}
+                className={`w-full px-3 py-2 border rounded-md bg-white text-left flex items-center justify-between ${
+                    error ? "border-red-300 bg-red-50" : "border-green-100 bg-green-50/30"
+                } ${disabled ? "cursor-not-allowed opacity-60" : "hover:border-green-300"}`}
+            >
+                <span className={selectedCategories.length === 0 ? "text-gray-400" : "text-gray-700"}>
+                    {selectedCategories.length === 0
+                        ? "Selecciona categorías"
+                        : `${selectedCategories.length} seleccionada${selectedCategories.length > 1 ? "s" : ""}`}
+                </span>
+                <ChevronDown size={16} className={`transition-transform ${isOpen ? "rotate-180" : ""}`} />
+            </button>
+
+            {/* Dropdown con checkboxes */}
+            {isOpen && !disabled && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-md shadow-lg z-10 max-h-64 overflow-y-auto">
+                    {categories.map((cat) => {
+                        const catId = cat.id
+                        const isSelected = selectedIds.includes(catId)
+                        return (
+                            <label
+                                key={catId}
+                                className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 cursor-pointer"
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    disabled={!isSelected && selectedIds.length >= MAX_CATEGORIES}
+                                    onChange={() => handleToggle(catId)}
+                                    className="w-4 h-4 mr-2 shrink-0 rounded border-gray-300 text-green-600 focus:ring-green-500 disabled:opacity-40"
+                                />
+                                <span className="ml-1 text-sm text-gray-700">{cat.name}</span>
+                            </label>
+                        )
+                    })}
+                </div>
+            )}
+
+            <p className="text-xs text-gray-500 mt-1">
+                Podés seleccionar hasta {MAX_CATEGORIES} categorías.
+                {selectedIds.length >= MAX_CATEGORIES && (
+                    <span className="ml-1 font-semibold text-amber-600">Límite alcanzado.</span>
+                )}
+            </p>
+            {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
+        </div>
+    )
+}
 
 const inputCls = "w-full px-3 py-2 border border-green-100 rounded-md bg-green-50/30 focus:outline-none focus:ring-1 focus:ring-[#5B7B6D] focus:border-[#5B7B6D] disabled:cursor-not-allowed disabled:opacity-60"
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:3000").trim()
@@ -31,7 +153,7 @@ export const CommerceCreationForm = () => {
         address: "",
         latitude: null,
         longitude: null,
-        categoryId: "",
+        categoryIds: [],
         description: "",
         websiteUrl: "",
         instagramUrl: "",
@@ -68,7 +190,11 @@ export const CommerceCreationForm = () => {
     }, [])
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value })
+        const { name, value, selectedOptions } = e.target
+        const nextValue = selectedOptions
+            ? Array.from(selectedOptions).map((option) => option.value)
+            : value
+        setFormData({ ...formData, [name]: nextValue })
         setError("")
     }
 
@@ -106,6 +232,7 @@ export const CommerceCreationForm = () => {
             !formData.phone ||
             !formData.address ||
             !formData.description ||
+            !formData.categoryIds.length ||
             formData.basePrice === "" ||
             formData.distancePrice === ""
         ) {
@@ -172,7 +299,7 @@ export const CommerceCreationForm = () => {
         try {
             const payload = {
                 fk_user: userId,
-                fk_store_category: Number(formData.categoryId) || 1,
+                category_ids: formData.categoryIds.map((categoryId) => Number(categoryId)),
                 name: formData.name,
                 email: formData.email,
                 phone: formData.phone,
@@ -328,23 +455,18 @@ export const CommerceCreationForm = () => {
                 </div>
             </div>
 
-            {/* Categoría Principal */}
+            {/* Categorías */}
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Categoría Principal *</label>
-                <select
-                    name="categoryId"
-                    value={formData.categoryId}
-                    onChange={handleChange}
+                <label className="block text-sm font-medium text-gray-700 mb-1">Categorías del Comercio *</label>
+                <CategorySelector
+                    categories={categories}
+                    selectedIds={formData.categoryIds}
+                    onChange={(newIds) =>
+                        setFormData({ ...formData, categoryIds: newIds })
+                    }
                     disabled={loading}
-                    className={`${inputCls} select-category`}
-                >
-                    <option value="">Selecciona una categoría</option>
-                    {categories.map((cat) => (
-                        <option key={cat.id} value={cat.id}>
-                            {cat.name}
-                        </option>
-                    ))}
-                </select>
+                    error={!formData.categoryIds.length && error ? "Debes seleccionar al menos una categoría" : ""}
+                />
             </div>
 
             {/* Descripción */}
@@ -480,7 +602,7 @@ export const CommerceCreationForm = () => {
                     type="button"
                     onClick={() => navigate("/homepage")}
                     disabled={loading}
-                    className="bg-white text-gray-800 px-4 py-2 rounded border border-gray-800 hover:!bg-green-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="bg-white text-gray-800 px-4 py-2 rounded border border-gray-800 hover:bg-green-100! disabled:cursor-not-allowed disabled:opacity-60"
                 >
                     Cancelar
                 </button>
