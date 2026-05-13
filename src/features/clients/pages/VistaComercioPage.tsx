@@ -19,7 +19,7 @@ type Store = {
     total_reviews?: number | null;
     open_time?: string | null;
     close_time?: string | null;
-    categories?: Array<{ id_category?: number; name: string }>;
+    categories?: Array<{ id?: number; name: string }>;
     store_category?: { id_store_category: number; name: string };
     status?: boolean;
     addresses?: Array<{

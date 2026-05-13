@@ -26,7 +26,7 @@ export const apiClient = axios.create({
  *   website_url, instagram_url, tiktok_url,
  *   status, created_at, updated_at,
  *   user: { id_user, name, email, role, status },
- *   categories: [{ id_category, name, status }],
+ *   categories: [{ id, name, status }],
  *   store_category: { id_store_category, name },
  *   products: [...],
  *   addresses: [{ id_address, address, city, region, postal_code, ... }]

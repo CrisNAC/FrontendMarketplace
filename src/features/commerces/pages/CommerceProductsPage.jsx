@@ -61,10 +61,7 @@ function Stars({ rating }) {
 function ProductCard({ product, onView, onEdit, onDelete }) {
     const [imgError, setImgError] = useState(false);
     const isVisible = isProductVisible(product);
-    const productCategories = Array.isArray(product.categories) && product.categories.length > 0
-        ? product.categories
-        : product.category ? [product.category]
-        : [];
+    const productCategories = Array.isArray(product.categories) ? product.categories : [];
     // el back ahora devuelve image_url directamente en el producto
     const imageUrl = product.image_url ?? product.imageUrl ?? null;
 
@@ -263,10 +260,7 @@ export function CommerceProductsPage() {
         const seen = new Set();
         const result = [];
         for (const p of products) {
-            const cats = Array.isArray(p.categories) && p.categories.length > 0
-                ? p.categories
-                : p.category ? [p.category]
-                : [];
+            const cats = Array.isArray(p.categories) ? p.categories : [];
             for (const cat of cats) {
                 if (cat?.name && !seen.has(cat.name)) {
                     seen.add(cat.name);
@@ -286,10 +280,7 @@ export function CommerceProductsPage() {
                 filterStatus === "all" ||
                 (filterStatus === "active" && isVisible) ||
                 (filterStatus === "hidden" && !isVisible);
-            const productCats = Array.isArray(p.categories) && p.categories.length > 0
-                ? p.categories
-                : p.category ? [p.category]
-                : [];
+            const productCats = Array.isArray(p.categories) ? p.categories : [];
             const matchesCategory = filterCategory === "all" || productCats.some(cat => cat?.name === filterCategory);
             return matchesSearch && matchesStatus && matchesCategory;
         });

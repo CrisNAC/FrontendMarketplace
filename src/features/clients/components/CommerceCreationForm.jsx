@@ -39,7 +39,7 @@ const CategorySelector = ({ categories, selectedIds, onChange, disabled, error }
     }, [])
 
     const selectedCategories = categories.filter((c) =>
-        selectedIds.includes(c.id || c.id_category)
+        selectedIds.includes(c.id)
     )
 
     const handleToggle = (categoryId) => {
@@ -58,11 +58,11 @@ const CategorySelector = ({ categories, selectedIds, onChange, disabled, error }
                 {selectedCategories.length > 0 ? (
                     selectedCategories.map((cat) => (
                         <CategoryChip
-                            key={cat.id || cat.id_category}
+                            key={cat.id}
                             name={cat.name}
                             disabled={disabled}
                             onRemove={() =>
-                                handleToggle(cat.id || cat.id_category)
+                                handleToggle(cat.id)
                             }
                         />
                     ))
@@ -94,7 +94,7 @@ const CategorySelector = ({ categories, selectedIds, onChange, disabled, error }
             {isOpen && !disabled && (
                 <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-md shadow-lg z-10 max-h-64 overflow-y-auto">
                     {categories.map((cat) => {
-                        const catId = cat.id || cat.id_category
+                        const catId = cat.id
                         const isSelected = selectedIds.includes(catId)
                         return (
                             <label

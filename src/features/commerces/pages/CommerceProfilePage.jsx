@@ -307,7 +307,7 @@ export function CommerceProfilePage() {
                         {commerceCategories.length > 0
                             ? commerceCategories.map((category, index) => (
                                 <CategoryChip
-                                    key={`${category.id_category ?? category.id_store_category ?? index}`}
+                                    key={`${category.id ?? category.id_store_category ?? index}`}
                                     name={category.name}
                                 />
                             ))
