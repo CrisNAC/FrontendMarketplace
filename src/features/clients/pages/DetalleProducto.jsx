@@ -425,7 +425,7 @@ export default function DetalleProducto() {
 
   const categoryNames = product?.categories?.length > 0
     ? product.categories.map((c) => c.name).join(", ")
-    : product?.category?.name ?? null;
+    : null;
 
   const commerceName = product?.commerce?.name ?? null;
   const titleText = commerceName && categoryNames

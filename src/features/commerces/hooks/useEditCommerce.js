@@ -190,7 +190,7 @@ export const useEditCommerce = () => {
                     description: commerce.description ?? "",
                     categoryIds: Array.isArray(commerce.categories) && commerce.categories.length > 0
                         ? commerce.categories
-                            .map((category) => Number(category.id_category))
+                            .map((category) => Number(category.id))
                             .filter((id) => Number.isInteger(id) && id > 0)
                             .map(String)
                         : (() => {

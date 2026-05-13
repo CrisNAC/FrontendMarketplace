@@ -119,7 +119,7 @@ export const useEditProduct = (productId) => {
                     description: product.description ?? "",
                     price: product.price ?? "",
                     categoryIds: Array.isArray(product.categories) && product.categories.length > 0
-                        ? product.categories.map((category) => String(category.id ?? category.id_category))
+                        ? product.categories.map((category) => String(category.id))
                         : product.categoryId
                             ? [String(product.categoryId)]
                             : [],

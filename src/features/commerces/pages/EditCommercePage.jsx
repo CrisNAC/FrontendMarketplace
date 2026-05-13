@@ -91,7 +91,7 @@ function CategorySelector({ categories, selectedIds, onChange, disabled, error }
                 {selectedValues.length > 0 ? (
                     selectedValues.map((selectedId) => {
                         const category = categories.find((item) => {
-                            const categoryId = item.id ?? item.id_category;
+                            const categoryId = item.id;
                             return String(categoryId) === selectedId;
                         });
 
@@ -101,7 +101,7 @@ function CategorySelector({ categories, selectedIds, onChange, disabled, error }
 
                         return (
                             <CategoryChip
-                                key={category.id ?? category.id_category}
+                                key={category.id}
                                 name={category.name}
                                 disabled={disabled}
                                 onRemove={() => {
@@ -109,7 +109,7 @@ function CategorySelector({ categories, selectedIds, onChange, disabled, error }
                                         target: {
                                             name: "categoryIds",
                                             value: selectedValues.filter((categoryId) => {
-                                                const categoryIdValue = category.id ?? category.id_category;
+                                                const categoryIdValue = category.id;
                                                 return categoryId !== String(categoryIdValue);
                                             })
                                         }
@@ -132,12 +132,12 @@ function CategorySelector({ categories, selectedIds, onChange, disabled, error }
                 overflowY: "auto",
             }}>
                 {categories.map((category) => {
-                    const categoryId = String(category.id ?? category.id_category);
+                    const categoryId = String(category.id);
                     const isSelected = selectedValues.includes(categoryId);
 
                     return (
                         <label
-                            key={category.id ?? category.id_category}
+                            key={category.id}
                             style={{
                                 display: "flex",
                                 alignItems: "center",

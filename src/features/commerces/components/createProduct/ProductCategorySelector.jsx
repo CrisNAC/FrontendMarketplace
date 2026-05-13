@@ -33,7 +33,7 @@ export function ProductCategorySelector({
     [selectedIds]
   );
 
-  const getCategoryId = (category) => category.id ?? category.id_category;
+  const getCategoryId = (category) => category.id;
 
   return (
     <div>

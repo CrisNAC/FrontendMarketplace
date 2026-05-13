@@ -93,7 +93,7 @@ const ProductDetailModal = ({ isOpen, product, onClose, onApprove, onReject, isS
                             {cat.name}
                           </span>
                         ))
-                      : <span style={{ fontSize: "14px", fontWeight: "500", color: "#111827" }}>{product.category?.name ?? "—"}</span>
+                      : <span style={{ fontSize: "14px", fontWeight: "500", color: "#111827" }}>—</span>
                     }
                   </div>
                 </div>
