@@ -61,7 +61,10 @@ function Stars({ rating }) {
 function ProductCard({ product, onView, onEdit, onDelete }) {
     const [imgError, setImgError] = useState(false);
     const isVisible = isProductVisible(product);
-    const categoryName = product.product_category?.name ?? product.category?.name ?? null;
+    const productCategories = Array.isArray(product.categories) && product.categories.length > 0
+        ? product.categories
+        : product.category ? [product.category]
+        : [];
     // el back ahora devuelve image_url directamente en el producto
     const imageUrl = product.image_url ?? product.imageUrl ?? null;
 
@@ -112,7 +115,13 @@ function ProductCard({ product, onView, onEdit, onDelete }) {
                         ({product.total_reviews ?? 0} reseñas)
                     </span>
                 </div>
-                {categoryName && <CategoryPill name={categoryName} />}
+                {productCategories.length > 0 && (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
+                        {productCategories.map((cat, i) => (
+                            <CategoryPill key={cat.id ?? i} name={cat.name} />
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* Botones */}
@@ -249,12 +258,23 @@ export function CommerceProductsPage() {
         return () => { active = false; };
     }, []);
 
-    // Categorías únicas para el filtro
+    // Categorías únicas para el filtro (de todos los productos, no solo la primera)
     const categories = useMemo(() => {
         const seen = new Set();
-        return products
-            .map(p => p.product_category?.name ?? p.category?.name ?? null)
-            .filter(name => name && !seen.has(name) && seen.add(name));
+        const result = [];
+        for (const p of products) {
+            const cats = Array.isArray(p.categories) && p.categories.length > 0
+                ? p.categories
+                : p.category ? [p.category]
+                : [];
+            for (const cat of cats) {
+                if (cat?.name && !seen.has(cat.name)) {
+                    seen.add(cat.name);
+                    result.push(cat.name);
+                }
+            }
+        }
+        return result;
     }, [products]);
 
     // Productos filtrados
@@ -266,8 +286,11 @@ export function CommerceProductsPage() {
                 filterStatus === "all" ||
                 (filterStatus === "active" && isVisible) ||
                 (filterStatus === "hidden" && !isVisible);
-            const catName = p.product_category?.name ?? p.category?.name ?? "";
-            const matchesCategory = filterCategory === "all" || catName === filterCategory;
+            const productCats = Array.isArray(p.categories) && p.categories.length > 0
+                ? p.categories
+                : p.category ? [p.category]
+                : [];
+            const matchesCategory = filterCategory === "all" || productCats.some(cat => cat?.name === filterCategory);
             return matchesSearch && matchesStatus && matchesCategory;
         });
     }, [products, search, filterStatus, filterCategory]);

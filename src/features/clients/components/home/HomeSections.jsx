@@ -274,9 +274,10 @@ export const HomeSections = () => {
   }, [storesEndpoint]);
 
   const handleCategoryClick = (category) => {
-    if (!category?.id) return;
+    const id = category?.id;
+    if (!id) return;
     navigate(
-      `/busqueda?categoryId=${category.id}&categoryName=${encodeURIComponent(
+      `/busqueda?categoryId=${id}&categoryName=${encodeURIComponent(
         category.name || ""
       )}`
     );

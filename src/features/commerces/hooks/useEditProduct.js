@@ -32,8 +32,8 @@ const validateForm = (formData, selectedTags) => {
         }
     }
 
-    if (!formData.categoryId) {
-        errors.categoryId = "Seleccioná una categoría.";
+    if (!Array.isArray(formData.categoryIds) || formData.categoryIds.length === 0) {
+        errors.categoryIds = "Seleccioná al menos una categoría.";
     }
 
     if (selectedTags.length > MAX_TAGS) {
@@ -72,7 +72,7 @@ export const useEditProduct = (productId) => {
         name: "",
         description: "",
         price: "",
-        categoryId: "",
+        categoryIds: [],
         imageUrl: "",
         isVisible: true,
         isOffer: false,
@@ -118,7 +118,11 @@ export const useEditProduct = (productId) => {
                     name: product.name ?? "",
                     description: product.description ?? "",
                     price: product.price ?? "",
-                    categoryId: product.categoryId ? String(product.categoryId) : "",
+                    categoryIds: Array.isArray(product.categories) && product.categories.length > 0
+                        ? product.categories.map((category) => String(category.id ?? category.id_category))
+                        : product.categoryId
+                            ? [String(product.categoryId)]
+                            : [],
                     // el back puede devolver image_url o imageUrl según el endpoint
                     imageUrl: product.imageUrl ?? product.image_url ?? "",
                     isVisible: product.visible ?? true,
@@ -214,7 +218,7 @@ export const useEditProduct = (productId) => {
             name: formData.name.trim(),
             description: formData.description.trim(),
             price: Number(formData.price),
-            categoryId: Number(formData.categoryId),
+            categoryIds: formData.categoryIds.map((categoryId) => Number(categoryId)),
             visible: formData.isVisible,
             isOffer: formData.isOffer,
             offerPrice: formData.isOffer ? Number(formData.offerPrice) : null,

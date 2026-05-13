@@ -54,7 +54,7 @@ const normalizeId = (item, fallbacks = []) => {
 
 const normalizeProductCategory = (category) => ({
   ...category,
-  id: normalizeId(category, ["id_product_category"]),
+  id: category?.id ?? null,
   name: category?.name ?? "",
 });
 

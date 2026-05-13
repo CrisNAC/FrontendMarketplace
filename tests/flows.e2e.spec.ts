@@ -393,7 +393,7 @@ test.describe('Flujos E2E de usuario final', () => {
     await page.getByLabel('Descripcion *').fill('Mouse vertical para oficina con conexión inalámbrica.');
     await page.getByLabel('Precio *').fill('12000');
     await page.getByLabel('Stock Disponible *').fill('15');
-    await page.getByLabel('Categoria *').selectOption({ label: 'Celulares' });
+    await page.getByRole('checkbox', { name: 'Celulares' }).click();
 
     await page.getByRole('button', { name: 'oferta' }).click();
     await page.getByRole('button', { name: 'Crear Producto' }).click();
