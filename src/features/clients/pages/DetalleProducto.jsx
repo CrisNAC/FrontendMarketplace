@@ -1,9 +1,11 @@
+//DetalleProducto.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { ArrowLeft, MoreVertical } from "lucide-react";
 import axios from "axios";
 import apiClient from "../../../lib/apiClient";
+import RelatedProducts from "../components/products/RelatedProducts.jsx";
 import {
   getWishlists,
   createWishlist,
@@ -82,10 +84,6 @@ export default function DetalleProducto() {
   const { id } = useParams();
   const productId = id ? Number(id) : null;
 
-  const apiBase = useMemo(() => {
-    return (import.meta.env.VITE_API_URL || "").trim().replace(/\/$/, "");
-  }, []);
-
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
   const [product, setProduct] = useState(null);
@@ -117,9 +115,8 @@ export default function DetalleProducto() {
 
   useEffect(() => {
     let active = true;
-    const base = apiBase || "http://localhost:3000";
     axios
-      .get(`${base}/api/session/user-session`, { withCredentials: true })
+      .get(`/api/session/user-session`, { withCredentials: true })
       .then((res) => {
         if (!active) return;
         setSessionUserId(res.data?.user?.id_user ?? null);
@@ -137,7 +134,7 @@ export default function DetalleProducto() {
     return () => {
       active = false;
     };
-  }, [apiBase]);
+  }, []);
 
   useEffect(() => {
     if (!sessionChecked || sessionRole !== "CUSTOMER") return;
@@ -354,7 +351,7 @@ export default function DetalleProducto() {
     try {
       setAddingToCart(true);
       const sessionRes = await axios.get(
-        `${apiBase || "http://localhost:3000"}/api/session/user-session`,
+        `/api/session/user-session`,
         { withCredentials: true }
       );
       const userId = sessionRes.data?.user?.id_user;
@@ -384,7 +381,6 @@ export default function DetalleProducto() {
 
   useEffect(() => {
     let isActive = true;
-    const controller = new AbortController();
 
     const load = async () => {
       if (!productId || !Number.isFinite(productId)) {
@@ -398,20 +394,13 @@ export default function DetalleProducto() {
         setStatus("loading");
         setError("");
 
-        const url = `${apiBase || "http://localhost:3000"}/products/${productId}`;
-        const res = await fetch(url, {
-          signal: controller.signal,
-          headers: { Accept: "application/json" },
-        });
+        // ✅ CAMBIO: Usar apiClient en lugar de fetch
+        const response = await apiClient.get(`/products/${productId}`);
 
-        if (!res.ok) throw new Error(`Error HTTP ${res.status}`);
-
-        const data = await res.json();
         if (!isActive) return;
-        setProduct(data);
+        setProduct(response.data);
         setStatus("success");
       } catch (e) {
-        if (e?.name === "AbortError") return;
         if (!isActive) return;
         setProduct(null);
         setStatus("error");
@@ -420,8 +409,8 @@ export default function DetalleProducto() {
     };
 
     load();
-    return () => { isActive = false; controller.abort(); };
-  }, [apiBase, productId]);
+    return () => { isActive = false; };
+  }, [productId]); // ← Sacá apiBase
 
   const titleText = product?.commerce?.name && product?.category?.name
     ? `${product.commerce.name} / ${product.category.name}`
@@ -584,6 +573,11 @@ export default function DetalleProducto() {
               </button>
             </div>
           </div>
+
+          {/* ✅ AGREGAR: Componente RelatedProducts aquí */}
+          {status === "success" && productId && (
+            <RelatedProducts productId={productId} limit={8} />
+          )}
         </div>
 
         {reportModalOpen && (
