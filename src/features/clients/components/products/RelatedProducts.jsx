@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import apiClient from "../../../../lib/apiClient";
 import { formatGuarani } from "../../../../lib/formatGuarani";
- 
+
 /**
  * Componente de carrusel de productos relacionados.
  * Muestra productos de la misma categoría, excluyendo el actual.
@@ -21,7 +21,7 @@ function RelatedProducts({ productId, limit = 8 }) {
   const [loading, setLoading] = useState(true);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
- 
+
   // Cargar productos relacionados
   useEffect(() => {
     if (!productId || !Number.isFinite(productId)) {
@@ -29,18 +29,18 @@ function RelatedProducts({ productId, limit = 8 }) {
       setLoading(false);
       return;
     }
- 
+
     let isActive = true;
- 
+
     const fetchRelated = async () => {
       setLoading(true);
       try {
         const response = await apiClient.get(`/products/${productId}/related`, {
           params: { limit },
         });
- 
+
         if (!isActive) return;
- 
+
         setRelatedProducts(response.data || []);
       } catch (err) {
         if (!isActive) return;
@@ -51,13 +51,13 @@ function RelatedProducts({ productId, limit = 8 }) {
         if (isActive) setLoading(false);
       }
     };
- 
+
     fetchRelated();
     return () => {
       isActive = false;
     };
   }, [productId, limit]);
- 
+
   // Detectar si se puede hacer scroll
   const checkScroll = () => {
     const container = scrollContainerRef.current;
@@ -68,24 +68,24 @@ function RelatedProducts({ productId, limit = 8 }) {
       );
     }
   };
- 
+
   useEffect(() => {
     checkScroll();
     const container = scrollContainerRef.current;
     if (!container) return undefined;
- 
+
     const handleScroll = () => checkScroll();
     const handleResize = () => checkScroll();
- 
+
     container.addEventListener("scroll", handleScroll);
     window.addEventListener("resize", handleResize);
- 
+
     return () => {
       container.removeEventListener("scroll", handleScroll);
       window.removeEventListener("resize", handleResize);
     };
   }, [relatedProducts]);
- 
+
   const scroll = (direction) => {
     const container = scrollContainerRef.current;
     if (container) {
@@ -96,19 +96,19 @@ function RelatedProducts({ productId, limit = 8 }) {
       });
     }
   };
- 
+
   // No renderizar si no hay productos o está cargando
   if (loading || relatedProducts.length === 0) {
     return null;
   }
- 
+
   return (
     <section className="mt-12 pt-8 border-t border-[#d0d7d2]">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-[20px] font-semibold text-[#2f3e39]">
-          Inspirado en tu historial
+          Productos relacionados
         </h2>
- 
+
         {/* Botones de scroll - solo visibles si hay suficientes productos */}
         {relatedProducts.length > 3 && (
           <div className="flex gap-2">
@@ -133,7 +133,7 @@ function RelatedProducts({ productId, limit = 8 }) {
           </div>
         )}
       </div>
- 
+
       {/* Carrusel */}
       <div
         ref={scrollContainerRef}
@@ -142,7 +142,7 @@ function RelatedProducts({ productId, limit = 8 }) {
         {relatedProducts.map((product) => (
           <button
             key={product.id}
-            onClick={() => navigate(`/productos/${product.id}`)}
+            onClick={() => navigate(`/producto-detalle/${product.id}`)}
             className="flex-shrink-0 w-[280px] rounded-lg overflow-hidden border border-[#d8dfdb] bg-white hover:shadow-md transition-shadow cursor-pointer"
             type="button"
           >
@@ -154,15 +154,24 @@ function RelatedProducts({ productId, limit = 8 }) {
                   alt={product.name}
                   className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                   onError={(e) => {
+                    // Reemplazar imagen rota con fallback
                     e.currentTarget.style.display = "none";
+                    const fallback = e.currentTarget.nextElementSibling;
+                    if (fallback) {
+                      fallback.style.display = "flex";
+                    }
                   }}
                 />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-[#9ca3af] text-[12px]">
-                  Sin imagen
-                </div>
-              )}
- 
+              ) : null}
+
+              {/* Fallback: mostrar cuando no hay imagen o falla la carga */}
+              <div
+                className="absolute inset-0 w-full h-full flex items-center justify-center text-[#9ca3af] text-[12px] bg-[#f0f2f1]"
+                style={{ display: product.imageUrl ? "none" : "flex" }}
+              >
+                Sin imagen
+              </div>
+
               {/* Badge "Oferta" */}
               {product.isOffer && (
                 <div className="absolute top-3 right-3 bg-amber-500 text-white text-[11px] font-semibold px-2 py-1 rounded-full">
@@ -170,21 +179,21 @@ function RelatedProducts({ productId, limit = 8 }) {
                 </div>
               )}
             </div>
- 
+
             {/* Contenido */}
             <div className="p-3">
               {/* Nombre */}
               <h3 className="text-[13px] font-semibold text-[#1f2e27] line-clamp-2 mb-1">
                 {product.name}
               </h3>
- 
+
               {/* Categoría */}
               {product.categories && product.categories.length > 0 && (
                 <p className="text-[11px] text-[#6b7280] mb-2">
                   {product.categories[0].name}
                 </p>
               )}
- 
+
               {/* Precio */}
               <div className="mb-2">
                 {product.isOffer ? (
@@ -202,7 +211,7 @@ function RelatedProducts({ productId, limit = 8 }) {
                   </span>
                 )}
               </div>
- 
+
               {/* Rating */}
               {product.averageRating !== undefined && product.averageRating !== null && (
                 <div className="flex items-center gap-1">
@@ -220,7 +229,7 @@ function RelatedProducts({ productId, limit = 8 }) {
           </button>
         ))}
       </div>
- 
+
       <style>{`
         .scrollbar-hide {
           -ms-overflow-style: none;
@@ -233,14 +242,10 @@ function RelatedProducts({ productId, limit = 8 }) {
     </section>
   );
 }
- 
+
 RelatedProducts.propTypes = {
   productId: PropTypes.number.isRequired,
   limit: PropTypes.number,
 };
- 
-RelatedProducts.defaultProps = {
-  limit: 8,
-};
- 
+
 export default RelatedProducts;
