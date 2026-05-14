@@ -1,9 +1,11 @@
+//RelatedProducts.jsx
+import PropTypes from "prop-types";
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import apiClient from "../../../../lib/apiClient";
 import { formatGuarani } from "../../../../lib/formatGuarani";
-
+ 
 /**
  * Componente de carrusel de productos relacionados.
  * Muestra productos de la misma categoría, excluyendo el actual.
@@ -12,15 +14,14 @@ import { formatGuarani } from "../../../../lib/formatGuarani";
  *   - productId: número del producto actual
  *   - limit: número máximo de productos (default: 8)
  */
-export default function RelatedProducts({ productId, limit = 8 }) {
+function RelatedProducts({ productId, limit = 8 }) {
   const navigate = useNavigate();
   const scrollContainerRef = useRef(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
-
+ 
   // Cargar productos relacionados
   useEffect(() => {
     if (!productId || !Number.isFinite(productId)) {
@@ -28,19 +29,18 @@ export default function RelatedProducts({ productId, limit = 8 }) {
       setLoading(false);
       return;
     }
-
+ 
     let isActive = true;
-
+ 
     const fetchRelated = async () => {
       setLoading(true);
-      setError("");
       try {
         const response = await apiClient.get(`/products/${productId}/related`, {
           params: { limit },
         });
-
+ 
         if (!isActive) return;
-
+ 
         setRelatedProducts(response.data || []);
       } catch (err) {
         if (!isActive) return;
@@ -51,13 +51,13 @@ export default function RelatedProducts({ productId, limit = 8 }) {
         if (isActive) setLoading(false);
       }
     };
-
+ 
     fetchRelated();
     return () => {
       isActive = false;
     };
   }, [productId, limit]);
-
+ 
   // Detectar si se puede hacer scroll
   const checkScroll = () => {
     const container = scrollContainerRef.current;
@@ -68,20 +68,24 @@ export default function RelatedProducts({ productId, limit = 8 }) {
       );
     }
   };
-
+ 
   useEffect(() => {
     checkScroll();
     const container = scrollContainerRef.current;
-    if (container) {
-      container.addEventListener("scroll", checkScroll);
-      window.addEventListener("resize", checkScroll);
-      return () => {
-        container.removeEventListener("scroll", checkScroll);
-        window.removeEventListener("resize", checkScroll);
-      };
-    }
+    if (!container) return undefined;
+ 
+    const handleScroll = () => checkScroll();
+    const handleResize = () => checkScroll();
+ 
+    container.addEventListener("scroll", handleScroll);
+    window.addEventListener("resize", handleResize);
+ 
+    return () => {
+      container.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleResize);
+    };
   }, [relatedProducts]);
-
+ 
   const scroll = (direction) => {
     const container = scrollContainerRef.current;
     if (container) {
@@ -92,23 +96,19 @@ export default function RelatedProducts({ productId, limit = 8 }) {
       });
     }
   };
-
+ 
   // No renderizar si no hay productos o está cargando
   if (loading || relatedProducts.length === 0) {
     return null;
   }
-
-  if (error) {
-    return null;
-  }
-
+ 
   return (
     <section className="mt-12 pt-8 border-t border-[#d0d7d2]">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-[20px] font-semibold text-[#2f3e39]">
           Inspirado en tu historial
         </h2>
-
+ 
         {/* Botones de scroll - solo visibles si hay suficientes productos */}
         {relatedProducts.length > 3 && (
           <div className="flex gap-2">
@@ -133,7 +133,7 @@ export default function RelatedProducts({ productId, limit = 8 }) {
           </div>
         )}
       </div>
-
+ 
       {/* Carrusel */}
       <div
         ref={scrollContainerRef}
@@ -162,7 +162,7 @@ export default function RelatedProducts({ productId, limit = 8 }) {
                   Sin imagen
                 </div>
               )}
-
+ 
               {/* Badge "Oferta" */}
               {product.isOffer && (
                 <div className="absolute top-3 right-3 bg-amber-500 text-white text-[11px] font-semibold px-2 py-1 rounded-full">
@@ -170,21 +170,21 @@ export default function RelatedProducts({ productId, limit = 8 }) {
                 </div>
               )}
             </div>
-
+ 
             {/* Contenido */}
             <div className="p-3">
               {/* Nombre */}
               <h3 className="text-[13px] font-semibold text-[#1f2e27] line-clamp-2 mb-1">
                 {product.name}
               </h3>
-
+ 
               {/* Categoría */}
               {product.categories && product.categories.length > 0 && (
                 <p className="text-[11px] text-[#6b7280] mb-2">
                   {product.categories[0].name}
                 </p>
               )}
-
+ 
               {/* Precio */}
               <div className="mb-2">
                 {product.isOffer ? (
@@ -202,7 +202,7 @@ export default function RelatedProducts({ productId, limit = 8 }) {
                   </span>
                 )}
               </div>
-
+ 
               {/* Rating */}
               {product.averageRating !== undefined && product.averageRating !== null && (
                 <div className="flex items-center gap-1">
@@ -220,7 +220,7 @@ export default function RelatedProducts({ productId, limit = 8 }) {
           </button>
         ))}
       </div>
-
+ 
       <style>{`
         .scrollbar-hide {
           -ms-overflow-style: none;
@@ -233,3 +233,14 @@ export default function RelatedProducts({ productId, limit = 8 }) {
     </section>
   );
 }
+ 
+RelatedProducts.propTypes = {
+  productId: PropTypes.number.isRequired,
+  limit: PropTypes.number,
+};
+ 
+RelatedProducts.defaultProps = {
+  limit: 8,
+};
+ 
+export default RelatedProducts;

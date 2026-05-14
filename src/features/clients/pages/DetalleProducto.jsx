@@ -1,5 +1,5 @@
 //DetalleProducto.jsx
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { ArrowLeft, MoreVertical } from "lucide-react";
@@ -99,7 +99,6 @@ export default function DetalleProducto() {
   const [sessionUserId, setSessionUserId] = useState(null);
   const [sessionRole, setSessionRole] = useState(null);
   const [sessionChecked, setSessionChecked] = useState(false);
-  /** true hasta saber si el usuario ya tiene reporte pendiente (evita mostrar ⋯ antes de tiempo). */
   const [checkingReport, setCheckingReport] = useState(true);
   const [hasPendingReport, setHasPendingReport] = useState(false);
 
@@ -113,6 +112,7 @@ export default function DetalleProducto() {
   const [submittingReport, setSubmittingReport] = useState(false);
   const [reportReasonOptions, setReportReasonOptions] = useState(REPORT_REASON_LABELS);
 
+  // Cargar sesión del usuario
   useEffect(() => {
     let active = true;
     axios
@@ -131,25 +131,31 @@ export default function DetalleProducto() {
       .finally(() => {
         if (active) setSessionChecked(true);
       });
+
     return () => {
       active = false;
     };
   }, []);
 
+  // Cargar razones de reporte
   useEffect(() => {
     if (!sessionChecked || sessionRole !== "CUSTOMER") return;
+
     let cancelled = false;
+
     (async () => {
       const list = await fetchProductReportReasons();
       if (!cancelled && list && list.length > 0) {
         setReportReasonOptions(list);
       }
     })();
+
     return () => {
       cancelled = true;
     };
   }, [sessionChecked, sessionRole]);
 
+  // Verificar si hay reporte pendiente
   useEffect(() => {
     if (!sessionChecked) return;
 
@@ -166,6 +172,7 @@ export default function DetalleProducto() {
     }
 
     let cancelled = false;
+
     (async () => {
       setCheckingReport(true);
       try {
@@ -190,35 +197,77 @@ export default function DetalleProducto() {
     };
   }, [sessionChecked, sessionUserId, sessionRole, productId]);
 
+  // Cerrar menú al hacer click fuera
   useEffect(() => {
     if (!menuOpen) return undefined;
+
     const onDown = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
         setMenuOpen(false);
       }
     };
+
     document.addEventListener("mousedown", onDown);
     return () => document.removeEventListener("mousedown", onDown);
   }, [menuOpen]);
 
+  // Cerrar modal de reporte con Escape
   useEffect(() => {
     if (!reportModalOpen) return undefined;
+
     const onKey = (e) => {
       if (e.key === "Escape" && !submittingReport) {
         setReportModalOpen(false);
         setReportModalError("");
       }
     };
+
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [reportModalOpen, submittingReport]);
 
-  const showReportMenu =
-    sessionChecked
-    && sessionUserId
-    && sessionRole === "CUSTOMER"
-    && !checkingReport
-    && status === "success";
+  // Cargar producto por ID
+  useEffect(() => {
+    let isActive = true;
+
+    const load = async () => {
+      if (!productId || !Number.isFinite(productId)) {
+        setProduct(null);
+        setStatus("idle");
+        setError("");
+        return;
+      }
+
+      try {
+        setStatus("loading");
+        setError("");
+
+        const response = await apiClient.get(`/products/${productId}`);
+
+        if (!isActive) return;
+        setProduct(response.data);
+        setStatus("success");
+      } catch (e) {
+        if (!isActive) return;
+        setProduct(null);
+        setStatus("error");
+        setError(e instanceof Error ? e.message : "No se pudo cargar el producto.");
+      }
+    };
+
+    load();
+    return () => {
+      isActive = false;
+    };
+  }, [productId]);
+
+  const showReportMenu = Boolean(
+    sessionChecked &&
+    sessionUserId &&
+    sessionRole === "CUSTOMER" &&
+    !checkingReport &&
+    status === "success"
+  );
 
   const openReportModal = () => {
     setReportReason("");
@@ -238,9 +287,12 @@ export default function DetalleProducto() {
       setReportModalError("Ya enviaste un reporte para este producto.");
       return;
     }
+
     if (!reportReason || !productId || !sessionUserId) return;
+
     setSubmittingReport(true);
     setReportModalError("");
+
     try {
       const res = await submitProductReport({
         productId,
@@ -256,14 +308,7 @@ export default function DetalleProducto() {
         return;
       }
 
-      if (res.status === 400) {
-        setReportModalError(
-          apiErrorMessage(res.data) || "Ya enviaste un reporte para este producto."
-        );
-        return;
-      }
-
-      if (res.status === 409) {
+      if (res.status === 400 || res.status === 409) {
         setReportModalError(
           apiErrorMessage(res.data) || "Ya enviaste un reporte para este producto."
         );
@@ -275,10 +320,12 @@ export default function DetalleProducto() {
     } catch (e) {
       const code = e?.response?.status;
       const msg = apiErrorMessage(e?.response?.data);
+
       if (code === 400 || code === 409) {
         setReportModalError(msg || "Ya enviaste un reporte para este producto.");
         return;
       }
+
       toast.error(msg ? String(msg) : "No se pudo enviar el reporte");
     } finally {
       setSubmittingReport(false);
@@ -287,16 +334,20 @@ export default function DetalleProducto() {
 
   const openWishlistModal = async () => {
     if (!productId) return;
+
     setWishlistModalOpen(true);
     setLoadingWishlists(true);
+
     try {
       const sessionRes = await apiClient.get("/api/session/user-session");
       const uid = sessionRes.data?.user?.id_user;
+
       if (!uid) {
         toast.error("Iniciá sesión para agregar a tu lista de deseos");
         setWishlistModalOpen(false);
         return;
       }
+
       setSessionUserId(uid);
       const lists = await getWishlists(uid);
       setWishlists(lists);
@@ -320,10 +371,17 @@ export default function DetalleProducto() {
 
   const handleCreateAndAdd = async () => {
     const name = newListName.trim();
-    if (!name) return toast.error("Ingresá un nombre para la lista");
+
+    if (!name) {
+      toast.error("Ingresá un nombre para la lista");
+      return;
+    }
+
     setCreatingList(true);
+
     try {
       const newList = await createWishlist(sessionUserId, name);
+
       try {
         await addWishlistItem(sessionUserId, newList.id, productId, cantidad);
         toast.success(`Producto agregado a "${name}"`);
@@ -343,6 +401,7 @@ export default function DetalleProducto() {
 
   const agregarAlCarrito = async () => {
     if (addingToCart || !productId) return;
+
     if (product?.quantity != null && Number(product.quantity) <= 0) {
       toast.error("Este producto no tiene stock disponible");
       return;
@@ -367,6 +426,7 @@ export default function DetalleProducto() {
     } catch (e) {
       const code = e?.response?.status;
       const msg = e?.response?.data?.message;
+
       if (code === 401) {
         toast.error("Iniciá sesión para agregar al carrito");
       } else if (msg) {
@@ -378,39 +438,6 @@ export default function DetalleProducto() {
       setAddingToCart(false);
     }
   };
-
-  useEffect(() => {
-    let isActive = true;
-
-    const load = async () => {
-      if (!productId || !Number.isFinite(productId)) {
-        setProduct(null);
-        setStatus("idle");
-        setError("");
-        return;
-      }
-
-      try {
-        setStatus("loading");
-        setError("");
-
-        // ✅ CAMBIO: Usar apiClient en lugar de fetch
-        const response = await apiClient.get(`/products/${productId}`);
-
-        if (!isActive) return;
-        setProduct(response.data);
-        setStatus("success");
-      } catch (e) {
-        if (!isActive) return;
-        setProduct(null);
-        setStatus("error");
-        setError(e instanceof Error ? e.message : "No se pudo cargar el producto.");
-      }
-    };
-
-    load();
-    return () => { isActive = false; };
-  }, [productId]); // ← Sacá apiBase
 
   const categoryNames = product?.categories?.length > 0
     ? product.categories.map((c) => c.name).join(", ")
@@ -434,6 +461,7 @@ export default function DetalleProducto() {
               <ArrowLeft className="w-6 h-6 shrink-0 cursor-pointer" onClick={() => navigate(-1)} />
               <h1 className="text-2xl font-bold truncate">{titleText}</h1>
             </div>
+
             {showReportMenu && (
               <div className="relative shrink-0" ref={menuRef}>
                 <button
@@ -446,6 +474,7 @@ export default function DetalleProducto() {
                 >
                   <MoreVertical className="w-6 h-6" strokeWidth={2} />
                 </button>
+
                 {menuOpen && (
                   <div
                     role="menu"
@@ -469,7 +498,6 @@ export default function DetalleProducto() {
           </div>
 
           <div className="grid grid-cols-2 gap-16 items-start">
-
             {/* Imagen del producto */}
             <div className="flex justify-center">
               {product?.imageUrl ? (
@@ -534,11 +562,19 @@ export default function DetalleProducto() {
               <div className="mt-6">
                 <h3 className="text-[13px] font-semibold mb-2 text-black">Cantidad</h3>
                 <div className="inline-flex border border-gray-300 rounded-md overflow-hidden">
-                  <button type="button" onClick={() => setCantidad((v) => (v > 1 ? v - 1 : 1))} className="w-9 h-9 flex items-center justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setCantidad((v) => (v > 1 ? v - 1 : 1))}
+                    className="w-9 h-9 flex items-center justify-center"
+                  >
                     <SvgIcon className="w-4 h-4 text-gray-600">{I.minus}</SvgIcon>
                   </button>
                   <div className="w-10 h-9 flex items-center justify-center text-[12px] text-black">{cantidad}</div>
-                  <button type="button" onClick={() => setCantidad((v) => v + 1)} className="w-9 h-9 flex items-center justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setCantidad((v) => v + 1)}
+                    className="w-9 h-9 flex items-center justify-center"
+                  >
                     <SvgIcon className="w-4 h-4 text-gray-600">{I.plus}</SvgIcon>
                   </button>
                 </div>
@@ -579,8 +615,8 @@ export default function DetalleProducto() {
             </div>
           </div>
 
-          {/* ✅ AGREGAR: Componente RelatedProducts aquí */}
-          {status === "success" && productId && (
+          {/* ✅ RelatedProducts: render condicional booleano explícito */}
+          {status === "success" && Boolean(productId) && (
             <RelatedProducts productId={productId} limit={8} />
           )}
         </div>
@@ -673,6 +709,7 @@ export default function DetalleProducto() {
           </div>
         )}
       </div>
+
       {wishlistModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/45"
