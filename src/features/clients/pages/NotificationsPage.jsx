@@ -18,20 +18,21 @@ const NotificationsPage = () => {
     };
 
     const handleClick = async (notification) => {
-        try {
-            if (!notification.read) {
+        if (!notification.read) {
+            try {
                 await apiClient.patch(`/api/notifications/${notification.id}/read`);
                 setNotifications((prev) =>
                     prev.map((n) =>
                         n.id === notification.id ? { ...n, read: true } : n
                     )
                 );
+            } catch {
+                // el interceptor de apiClient maneja errores globales
             }
-            if (notification.reference_id) {
-                navigate(`/pedidos/${notification.reference_id}`);
-            }
-        } catch {
-            // el interceptor de apiClient maneja errores globales
+        }
+
+        if (notification.reference_id) {
+            navigate(`/pedidos/${notification.reference_id}`);
         }
     };
 
