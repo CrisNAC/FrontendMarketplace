@@ -80,7 +80,7 @@ import ConfirmarPedido from './features/clients/pages/ConfirmarPedido';
 import PedidoConfirmadoPage from './features/clients/pages/PedidoConfirmadoPage';
 import DeliveryOrderScreen from "./features/delivery/pages/DeliveryOrderScreen";
 import DeliveryHistoryPage from './features/delivery/pages/DeliveryHistoryPage';
-//import Map from "./features/clients/components/Map";
+import NotificationsPage from './features/clients/pages/NotificationsPage';
 
 /**
  * Inyecta el navigate de React Router en el apiClient centralizado.
@@ -135,12 +135,18 @@ function App() {
         <Route path="/mi-perfil" element={<EditClientProfile />} />
         <Route path="/cambiar-contrasena" element={<ChangePassword />} />
 
+        <Route path="/notificaciones" element={
+          <VistaComercioLayout>
+            <NotificationsPage />
+          </VistaComercioLayout>
+        } />
+
         <Route path='/direcciones' element={<AddressesPage />} />
 
         <Route path="/comparar" element={<PriceComparisonPage />} />
 
-        <Route path="/carrito/:cartId" element={<CartPage />} />   
-        <Route path="/pedido-confirmado" element={<PedidoConfirmadoPage />} />     
+        <Route path="/carrito/:cartId" element={<CartPage />} />
+        <Route path="/pedido-confirmado" element={<PedidoConfirmadoPage />} />
 
         <Route
           path="/producto-detalle/:id"
@@ -161,12 +167,12 @@ function App() {
         <Route path="/pedidos/:orderId" element={<ClientOrderDetailsPage />} />
         <Route path="/homepage" element={<HomePage />} />
         <Route path="/quiero-ser-delivery" element={<BecomeDeliveryPage />} />
-        <Route path="/wishlist" element={<VistaComercioLayout><Wishlist/></VistaComercioLayout>}/>
+        <Route path="/wishlist" element={<VistaComercioLayout><Wishlist /></VistaComercioLayout>} />
         <Route path="/carrito" element={
-            <VistaComercioLayout>
-              <OrdenesComprasPage />
-            </VistaComercioLayout>
-          }
+          <VistaComercioLayout>
+            <OrdenesComprasPage />
+          </VistaComercioLayout>
+        }
         />
         <Route
           path="/confirmar-pedido/:cartId"
@@ -217,7 +223,7 @@ function App() {
         } />
         <Route path="/comercio/deliveries/resenas" element={
           <MyCommerceLayout><CommerceDeliveryReviewsPage /></MyCommerceLayout>
-        } />    
+        } />
         <Route path="/comercio/delivery" element={
           <MyCommerceLayout><CommerceDeliveriesPage /></MyCommerceLayout>
         } />
@@ -237,7 +243,7 @@ function App() {
           <MyCommerceLayout><EditProductPage /></MyCommerceLayout>
         } />
         <Route path="/comercio/claims" element={
-          <MyCommerceLayout><CommerceClaims/></MyCommerceLayout>
+          <MyCommerceLayout><CommerceClaims /></MyCommerceLayout>
         } />
 
         {/* ── Área de delivery (con sidebar) ───────────────────────────── */}
@@ -295,7 +301,7 @@ function App() {
           <AdminLayout><AdminCategoryDetailPage /></AdminLayout>
         } />
         <Route path="/admin/claims" element={
-          <AdminLayout><Reclamos/></AdminLayout>
+          <AdminLayout><Reclamos /></AdminLayout>
         } />
         <Route path="/admin/reviews" element={
           <AdminLayout><ReclamosPage /></AdminLayout>
