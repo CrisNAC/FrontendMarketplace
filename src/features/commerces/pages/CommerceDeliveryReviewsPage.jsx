@@ -1,6 +1,6 @@
 // src/features/commerces/pages/CommerceDeliveryReviewsPage.jsx
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Star, MessageSquare, Truck, TrendingUp, Phone, Mail, Search, Filter, Loader2 } from "lucide-react";
 import { apiClient as commerceApiClient } from "../services/editCommerceApi";
 import { getDeliveryReviewsErrorMessage, getStoreDeliveryReviews } from "../services/deliveryReviewsApi";
@@ -77,7 +77,8 @@ export function CommerceDeliveryReviewsPage() {
     const location  = useLocation();
 
     // Datos del delivery pasados por state desde la lista
-    const deliveryId   = location.state?.deliveryId   ?? null;
+    const [searchParams] = useSearchParams();
+    const deliveryId   = searchParams.get("deliveryId") ? Number(searchParams.get("deliveryId")) : null;
     const deliveryData = location.state?.deliveryData ?? null;
 
     const [storeId, setStoreId]           = useState(null);

@@ -283,6 +283,10 @@ export function CommerceDeliveriesPage() {
     const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
     const paginated  = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
+    useEffect(() => {
+        if (page > totalPages) setPage(totalPages);
+    }, [totalPages, page]);
+
     // Resetear página al cambiar filtros
     const handleSearch = (val) => { setSearch(val); setPage(1); };
     const handleStatus = (val) => { setStatusFilter(val); setPage(1); };
@@ -303,8 +307,8 @@ export function CommerceDeliveriesPage() {
     };
 
     // Navegar a reseñas pasando los datos del delivery para evitar un fetch extra
-    const goToReviews = (d) => navigate("/comercio/deliveries/resenas", {
-        state: { deliveryId: d.id, deliveryData: d },
+    const goToReviews = (d) => navigate(`/comercio/deliveries/resenas?deliveryId=${d.id}`, {
+        state: { deliveryData: d },
     });
 
     const { stats } = data ?? { stats: null };
