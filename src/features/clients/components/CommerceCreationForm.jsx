@@ -1,8 +1,35 @@
 import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import { X, ChevronDown } from "lucide-react"
+import { z } from "zod"
 import { Spinner } from "../../../components/Spinner"
 import MapView from "./Map"
+
+// ─── Esquema de validación ──────────────────────────────────────────────────
+const commerceSchema = z.object({
+  name: z.string().min(1, "El nombre es obligatorio").max(100, "El nombre no puede superar 100 caracteres"),
+  email: z.string().email("Ingresá un correo válido"),
+  phone: z.string().regex(/^\+595\d{9}$/, "El teléfono debe tener el formato +595XXXXXXXXX"),
+  address: z.string().min(1, "La dirección es obligatoria"),
+  description: z.string().min(1, "La descripción es obligatoria"),
+  categoryIds: z.array(z.number()).min(1, "Debes seleccionar al menos una categoría"),
+  latitude: z.number().nullable().refine((val) => val !== null, { message: "Selecciona un punto en el mapa" }),
+  longitude: z.number().nullable().refine((val) => val !== null, { message: "Selecciona un punto en el mapa" }),
+  basePrice: z.coerce.number().min(0, "El precio base debe ser mayor o igual a 0"),
+  distancePrice: z.coerce.number().min(0, "El precio de distancia debe ser mayor o igual a 0"),
+  websiteUrl: z.string().refine((val) => {
+    const trimmed = val.trim();
+    return !trimmed || /^https?:\/\//.test(trimmed);
+  }, "El sitio web debe iniciar con http:// o https://"),
+  instagramUrl: z.string().refine((val) => {
+    const trimmed = val.trim();
+    return !trimmed || /^https?:\/\//.test(trimmed);
+  }, "Instagram debe iniciar con http:// o https://"),
+  tiktokUrl: z.string().refine((val) => {
+    const trimmed = val.trim();
+    return !trimmed || /^https?:\/\//.test(trimmed);
+  }, "TikTok debe iniciar con http:// o https://"),
+});
 
 // Componente para mostrar categoría como chip
 const CategoryChip = ({ name, onRemove, disabled }) => (
@@ -134,6 +161,7 @@ export const CommerceCreationForm = () => {
     const navigate = useNavigate()
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState("")
+    const [fieldErrors, setFieldErrors] = useState({})
     const errorRef = useRef(null)
 
     // ── ID del usuario logueado (obtenido de la sesión) ───────────────────────
@@ -196,6 +224,7 @@ export const CommerceCreationForm = () => {
             : value
         setFormData({ ...formData, [name]: nextValue })
         setError("")
+        setFieldErrors({})
     }
 
     const handleMapPointChange = (point) => {
@@ -205,6 +234,7 @@ export const CommerceCreationForm = () => {
             longitude: point?.lng ?? null,
         }))
         setError("")
+        setFieldErrors({})
     }
 
     // manejo del archivo de logo — preview local y guardado del File
@@ -224,76 +254,33 @@ export const CommerceCreationForm = () => {
         e.preventDefault()
         setLoading(true)
         setError("")
+        setFieldErrors({})
 
-        // Validación de campos obligatorios
-        if (
-            !formData.name ||
-            !formData.email ||
-            !formData.phone ||
-            !formData.address ||
-            !formData.description ||
-            !formData.categoryIds.length ||
-            formData.basePrice === "" ||
-            formData.distancePrice === ""
-        ) {
-            setError("Por favor completá todos los campos obligatorios.")
-            setLoading(false)
-            errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
-            return
-        }
+        // Validar con Zod
+        const parsed = commerceSchema.safeParse({
+          ...formData,
+          categoryIds: formData.categoryIds.map(id => Number(id)),
+          basePrice: formData.basePrice ? Number(formData.basePrice) : 0,
+          distancePrice: formData.distancePrice ? Number(formData.distancePrice) : 0,
+        })
 
-        const parsedBasePrice = Number(formData.basePrice)
-        const parsedDistancePrice = Number(formData.distancePrice)
-
-        if (!Number.isFinite(parsedBasePrice) || parsedBasePrice < 0) {
-            setError("El precio base por km debe ser un número válido mayor o igual a 0.")
-            setLoading(false)
-            errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
-            return
-        }
-
-        if (!Number.isFinite(parsedDistancePrice) || parsedDistancePrice < 0) {
-            setError("El precio por km para larga distancia debe ser un número válido mayor o igual a 0.")
-            setLoading(false)
-            errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
-            return
-        }
-
-        if (formData.latitude === null || formData.longitude === null) {
-            setError("Seleccioná un punto en el mapa para la ubicación del comercio.")
-            setLoading(false)
-            errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
-            return
-        }
-
-        const phoneRegex = /^\+595\d{9}$/
-        if (!phoneRegex.test(formData.phone)) {
-            setError("El número de teléfono debe tener el formato +595XXXXXXXXX.")
-            setLoading(false)
-            errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
-            return
+        if (!parsed.success) {
+          const errors = {}
+          for (const issue of parsed.error.issues) {
+            const key = issue.path[0]
+            if (key && !errors[key]) errors[key] = issue.message
+          }
+          setFieldErrors(errors)
+          setError("Revisá los datos del formulario.")
+          setLoading(false)
+          errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+          return
         }
 
         if (!userId) {
             setError("No se pudo obtener el usuario de la sesión. Iniciá sesión nuevamente.")
             setLoading(false)
             return
-        }
-
-        const socialUrlFields = [
-            { label: "Sitio web", value: formData.websiteUrl },
-            { label: "Instagram", value: formData.instagramUrl },
-            { label: "TikTok", value: formData.tiktokUrl },
-        ]
-
-        for (const field of socialUrlFields) {
-            const trimmedValue = field.value.trim()
-            if (trimmedValue && !HTTP_URL_REGEX.test(trimmedValue)) {
-                setError(`${field.label} debe iniciar con http:// o https://`)
-                setLoading(false)
-                errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
-                return
-            }
         }
 
         try {
@@ -310,8 +297,8 @@ export const CommerceCreationForm = () => {
                 website_url: formData.websiteUrl.trim() || null,
                 instagram_url: formData.instagramUrl.trim() || null,
                 tiktok_url: formData.tiktokUrl.trim() || null,
-                base_price: parsedBasePrice,
-                distance_price: parsedDistancePrice,
+                base_price: Number(formData.basePrice),
+                distance_price: Number(formData.distancePrice),
             }
 
             const response = await fetch(`${API_BASE_URL}/api/commerces`, {
@@ -326,6 +313,7 @@ export const CommerceCreationForm = () => {
             if (!response.ok) {
                 setError(data.message || "Error al crear el comercio")
                 console.error("Error al crear el comercio:", data)
+                setLoading(false)
                 return
             }
 

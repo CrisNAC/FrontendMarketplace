@@ -1,8 +1,25 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Mail, Lock, User } from "lucide-react";
+import { z } from "zod";
 import apiClient from "../../../lib/apiClient";
 import logo from "/src/assets/feather.png";
+
+// ─── Esquemas de validación ─────────────────────────────────────────────────
+const loginSchema = z.object({
+  email: z.string().email("Ingresá un correo válido"),
+  password: z.string().min(1, "La contraseña es obligatoria"),
+});
+
+const registerSchema = z.object({
+  name: z.string().min(1, "El nombre es obligatorio").max(100, "El nombre no puede superar 100 caracteres"),
+  email: z.string().email("Ingresá un correo válido"),
+  password: z.string().min(8, "La contraseña debe tener mínimo 8 caracteres"),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Las contraseñas no coinciden",
+  path: ["confirmPassword"],
+});
 
 /** Ruta tras login según rol del backend (ADMIN | CUSTOMER | SELLER | DELIVERY). */
 function getPostLoginPath(role) {
@@ -25,6 +42,7 @@ export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const [form, setForm] = useState({
     name: "",
@@ -36,14 +54,26 @@ export default function AuthPage() {
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
     setError(null);
+    setFieldErrors({});
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+    setFieldErrors({});
 
-    if (!isLogin && form.password !== form.confirmPassword) {
-      setError("Las contraseñas no coinciden");
+    // Validar con Zod
+    const schema = isLogin ? loginSchema : registerSchema;
+    const parsed = schema.safeParse(form);
+
+    if (!parsed.success) {
+      const errors = {};
+      for (const issue of parsed.error.issues) {
+        const key = issue.path[0];
+        if (key && !errors[key]) errors[key] = issue.message;
+      }
+      setFieldErrors(errors);
+      setError(isLogin ? "Revisá los datos de login" : "Revisá los datos del formulario");
       return;
     }
 
@@ -153,7 +183,9 @@ export default function AuthPage() {
                 <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-slate-500">
                   Nombre completo
                 </label>
-                <div className="flex items-center rounded-xl border border-slate-200/90 bg-slate-50 px-3 py-2.5 transition focus-within:border-[#769482]/50 focus-within:ring-2 focus-within:ring-[#769482]/20">
+                <div className={`flex items-center rounded-xl border px-3 py-2.5 transition focus-within:border-[#769482]/50 focus-within:ring-2 focus-within:ring-[#769482]/20 ${
+                  fieldErrors.name ? "border-red-300 bg-red-50" : "border-slate-200/90 bg-slate-50"
+                }`}>
                   <User size={18} className="mr-2.5 shrink-0 text-[#769482]" />
                   <input
                     type="text"
@@ -165,6 +197,7 @@ export default function AuthPage() {
                     required
                   />
                 </div>
+                {fieldErrors.name && <p className="mt-1 text-xs text-red-600">{fieldErrors.name}</p>}
               </div>
             )}
 
@@ -172,7 +205,9 @@ export default function AuthPage() {
               <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-slate-500">
                 Correo electrónico
               </label>
-              <div className="flex items-center rounded-xl border border-slate-200/90 bg-slate-50 px-3 py-2.5 transition focus-within:border-[#769482]/50 focus-within:ring-2 focus-within:ring-[#769482]/20">
+              <div className={`flex items-center rounded-xl border px-3 py-2.5 transition focus-within:border-[#769482]/50 focus-within:ring-2 focus-within:ring-[#769482]/20 ${
+                fieldErrors.email ? "border-red-300 bg-red-50" : "border-slate-200/90 bg-slate-50"
+              }`}>
                 <Mail size={18} className="mr-2.5 shrink-0 text-[#769482]" />
                 <input
                   type="email"
@@ -184,13 +219,16 @@ export default function AuthPage() {
                   required
                 />
               </div>
+              {fieldErrors.email && <p className="mt-1 text-xs text-red-600">{fieldErrors.email}</p>}
             </div>
 
             <div>
               <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-slate-500">
                 Contraseña
               </label>
-              <div className="flex items-center rounded-xl border border-slate-200/90 bg-slate-50 px-3 py-2.5 transition focus-within:border-[#769482]/50 focus-within:ring-2 focus-within:ring-[#769482]/20">
+              <div className={`flex items-center rounded-xl border px-3 py-2.5 transition focus-within:border-[#769482]/50 focus-within:ring-2 focus-within:ring-[#769482]/20 ${
+                fieldErrors.password ? "border-red-300 bg-red-50" : "border-slate-200/90 bg-slate-50"
+              }`}>
                 <Lock size={18} className="mr-2.5 shrink-0 text-[#769482]" />
                 <input
                   type="password"
@@ -202,6 +240,7 @@ export default function AuthPage() {
                   required
                 />
               </div>
+              {fieldErrors.password && <p className="mt-1 text-xs text-red-600">{fieldErrors.password}</p>}
             </div>
 
             {!isLogin && (
@@ -209,7 +248,9 @@ export default function AuthPage() {
                 <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-slate-500">
                   Confirmar contraseña
                 </label>
-                <div className="flex items-center rounded-xl border border-slate-200/90 bg-slate-50 px-3 py-2.5 transition focus-within:border-[#769482]/50 focus-within:ring-2 focus-within:ring-[#769482]/20">
+                <div className={`flex items-center rounded-xl border px-3 py-2.5 transition focus-within:border-[#769482]/50 focus-within:ring-2 focus-within:ring-[#769482]/20 ${
+                  fieldErrors.confirmPassword ? "border-red-300 bg-red-50" : "border-slate-200/90 bg-slate-50"
+                }`}>
                   <Lock size={18} className="mr-2.5 shrink-0 text-[#769482]" />
                   <input
                     type="password"
@@ -221,6 +262,7 @@ export default function AuthPage() {
                     required
                   />
                 </div>
+                {fieldErrors.confirmPassword && <p className="mt-1 text-xs text-red-600">{fieldErrors.confirmPassword}</p>}
               </div>
             )}
 

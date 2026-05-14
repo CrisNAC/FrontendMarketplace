@@ -1,11 +1,19 @@
 import { useState, useEffect} from "react";
 import { MapPin, Plus, Pencil, Trash2, X, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { z } from "zod";
 import Navbar from "../../../../components/navbar/Navbar";
 import { SidebarClientProfile } from "../../../../components/SidebarClientProfile";
 import { useAddresses } from "../../../../hooks/useAddresses";
 import MapView from "../Map";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+
+// ─── Esquema de validación ──────────────────────────────────────────────────
+const addressSchema = z.object({
+  address: z.string().min(1, "La dirección es obligatoria"),
+  latitude: z.number().nullable().refine((val) => val !== null, { message: "Debes seleccionar un punto en el mapa" }),
+  longitude: z.number().nullable().refine((val) => val !== null, { message: "Debes seleccionar un punto en el mapa" }),
+});
 
 const API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:3000").trim();
 
@@ -113,9 +121,16 @@ const AddressFormModal = ({ open, onClose, onSubmit, initialData, loading }) => 
         e.preventDefault();
         setFormError(null);
 
-        if (form.latitude === null || form.longitude === null) {
-            setFormError("Debes seleccionar un punto en el mapa.");
-            return;
+        const parsed = addressSchema.safeParse(form);
+        
+        if (!parsed.success) {
+          const errors = {};
+          for (const issue of parsed.error.issues) {
+            const key = issue.path[0];
+            if (key && !errors[key]) errors[key] = issue.message;
+          }
+          setFormError(errors[Object.keys(errors)[0]]);
+          return;
         }
 
         try {

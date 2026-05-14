@@ -1,5 +1,6 @@
 //useCreateProduct.js
 import { useEffect, useMemo, useState } from "react";
+import { z } from "zod";
 import {
   createProduct,
   fetchProductCategories,
@@ -21,47 +22,30 @@ const INITIAL_FORM_STATE = {
   isVisible: true,
 };
 
+// ─── Esquema de validación con Zod ──────────────────────────────────────────
+const productSchema = z.object({
+  name: z.string().min(1, "El nombre del producto es obligatorio."),
+  description: z.string().min(1, "La descripcion es obligatoria."),
+  price: z.coerce.number().min(0.01, "El precio debe ser mayor a 0."),
+  categoryIds: z.array(z.coerce.number().int().positive()).min(1, "Selecciona al menos una categoria."),
+  quantity: z.coerce.number().int().min(0, "El stock debe ser un numero entero mayor o igual a 0."),
+});
+
 const validateForm = (formData, selectedTags) => {
+  const parsed = productSchema.safeParse({
+    name: formData.name.trim(),
+    description: formData.description.trim(),
+    price: formData.price,
+    categoryIds: formData.categoryIds,
+    quantity: formData.quantity,
+  });
+
   const errors = {};
 
-  if (!formData.name.trim()) {
-    errors.name = "El nombre del producto es obligatorio.";
-  }
-
-  if (!formData.description.trim()) {
-    errors.description = "La descripcion es obligatoria.";
-  }
-
-  if (formData.price === "" || formData.price === null) {
-    errors.price = "El precio es obligatorio.";
-  } else {
-    const numericPrice = Number(formData.price);
-    if (!Number.isFinite(numericPrice) || numericPrice <= 0) {
-      errors.price = "El precio debe ser mayor a 0.";
-    }
-  }
-
-  if (!Array.isArray(formData.categoryIds) || formData.categoryIds.length === 0) {
-    errors.categoryIds = "Selecciona al menos una categoria.";
-  } else {
-    const validIds = formData.categoryIds
-      .map(Number)
-      .filter((id) => Number.isInteger(id) && id > 0);
-    if (validIds.length !== formData.categoryIds.length) {
-      errors.categoryIds = "Una o mas categorias seleccionadas no son validas.";
-    }
-  }
-
-  if (formData.quantity === "" || formData.quantity === null) {
-    errors.quantity = "El stock disponible es obligatorio.";
-  } else {
-    const numericQuantity = Number(formData.quantity);
-    if (
-      !Number.isInteger(numericQuantity) ||
-      Number.isNaN(numericQuantity) ||
-      numericQuantity < 0
-    ) {
-      errors.quantity = "El stock debe ser un numero entero mayor o igual a 0.";
+  if (!parsed.success) {
+    for (const issue of parsed.error.issues) {
+      const key = issue.path[0];
+      if (key && !errors[key]) errors[key] = issue.message;
     }
   }
 
