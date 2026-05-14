@@ -1,20 +1,24 @@
-import { useState, useEffect, useCallback } from "react";
+// src/features/commerces/pages/CommerceDeliveriesPage.jsx
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
     Truck, Plus, Phone, Mail, Eye, Trash2, AlertTriangle,
     CheckCircle2, Clock, Users, Star, LayoutGrid, Table2,
-    TrendingUp, Loader2,
+    TrendingUp, Loader2, Search, ChevronLeft, ChevronRight,
 } from "lucide-react";
 import apiClient from '../../../lib/apiClient';
 import { fetchStoreDeliveries, deleteStoreDelivery, getDeliveryErrorMessage } from "../services/commerceDeliveryApi";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Constantes ───────────────────────────────────────────────────────────────
+const ITEMS_PER_PAGE = 8;
+
 const STATUS_CFG = {
-    AVAILABLE: { label: "Disponible", bg: "#dcfce7", color: "#15803d" },
-    IN_DELIVERY: { label: "En entrega", bg: "#dbeafe", color: "#1e40af" },
+    AVAILABLE:   { label: "Disponible",    bg: "#dcfce7", color: "#15803d" },
+    IN_DELIVERY: { label: "En entrega",    bg: "#dbeafe", color: "#1e40af" },
     UNAVAILABLE: { label: "No disponible", bg: "#f3f4f6", color: "#4b5563" },
 };
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 function StatusBadge({ status }) {
     const cfg = STATUS_CFG[status] ?? { label: status, bg: "#f3f4f6", color: "#374151" };
     return (
@@ -58,6 +62,36 @@ function EmptyState({ onAdd }) {
             <button type="button" onClick={onAdd}
                 style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "10px 18px", borderRadius: "10px", border: "none", background: "var(--primary-dark)", color: "white", fontWeight: "600", fontSize: "14px", cursor: "pointer" }}>
                 <Plus size={18} /> Agregar delivery
+            </button>
+        </div>
+    );
+}
+
+function NoResults() {
+    return (
+        <div style={{ backgroundColor: "white", borderRadius: "16px", padding: "48px 20px", textAlign: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
+            <Search size={36} color="#d1d5db" style={{ marginBottom: "12px" }} />
+            <p style={{ fontSize: "15px", fontWeight: "600", color: "#374151", margin: 0 }}>No se encontraron repartidores.</p>
+            <p style={{ fontSize: "13px", color: "#9ca3af", margin: "4px 0 0 0" }}>Intentá con otros filtros.</p>
+        </div>
+    );
+}
+
+// ─── Paginación ───────────────────────────────────────────────────────────────
+function Pagination({ page, totalPages, onPageChange }) {
+    if (totalPages <= 1) return null;
+    return (
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "8px", marginTop: "20px" }}>
+            <button type="button" onClick={() => onPageChange(page - 1)} disabled={page === 1}
+                style={{ display: "flex", alignItems: "center", gap: "4px", padding: "6px 12px", borderRadius: "8px", border: "1px solid #e5e7eb", backgroundColor: "white", fontSize: "13px", fontWeight: "600", color: page === 1 ? "#d1d5db" : "#374151", cursor: page === 1 ? "not-allowed" : "pointer" }}>
+                <ChevronLeft size={14} /> Anterior
+            </button>
+            <span style={{ fontSize: "13px", color: "#6b7280", padding: "6px 12px" }}>
+                {page} / {totalPages}
+            </span>
+            <button type="button" onClick={() => onPageChange(page + 1)} disabled={page === totalPages}
+                style={{ display: "flex", alignItems: "center", gap: "4px", padding: "6px 12px", borderRadius: "8px", border: "1px solid #e5e7eb", backgroundColor: "white", fontSize: "13px", fontWeight: "600", color: page === totalPages ? "#d1d5db" : "#374151", cursor: page === totalPages ? "not-allowed" : "pointer" }}>
+                Siguiente <ChevronRight size={14} />
             </button>
         </div>
     );
@@ -191,14 +225,19 @@ function TableView({ deliveries, onReviews, onDelete }) {
 // ─── Página principal ─────────────────────────────────────────────────────────
 export function CommerceDeliveriesPage() {
     const navigate = useNavigate();
-    const [storeId, setStoreId] = useState(null);
-    const [data, setData] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
-    const [view, setView] = useState("cards");
-    const [toDelete, setToDelete] = useState(null);
-    const [isDeleting, setIsDeleting] = useState(false);
+    const [storeId, setStoreId]         = useState(null);
+    const [data, setData]               = useState(null);
+    const [loading, setLoading]         = useState(true);
+    const [error, setError]             = useState("");
+    const [view, setView]               = useState("cards");
+    const [toDelete, setToDelete]       = useState(null);
+    const [isDeleting, setIsDeleting]   = useState(false);
     const [deleteError, setDeleteError] = useState("");
+
+    // Filtros
+    const [search, setSearch]           = useState("");
+    const [statusFilter, setStatusFilter] = useState("all");
+    const [page, setPage]               = useState(1);
 
     const load = useCallback(async (sid) => {
         try {
@@ -227,6 +266,27 @@ export function CommerceDeliveriesPage() {
         init();
     }, [load]);
 
+    // Filtrado client-side
+    const filtered = useMemo(() => {
+        const all = data?.deliveries ?? [];
+        return all.filter(d => {
+            const matchStatus = statusFilter === "all" || d.status === statusFilter;
+            const q = search.trim().toLowerCase();
+            const matchSearch = !q
+                || d.user.name.toLowerCase().includes(q)
+                || d.user.email.toLowerCase().includes(q)
+                || (d.user.phone ?? "").toLowerCase().includes(q);
+            return matchStatus && matchSearch;
+        });
+    }, [data, search, statusFilter]);
+
+    const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+    const paginated  = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+
+    // Resetear página al cambiar filtros
+    const handleSearch = (val) => { setSearch(val); setPage(1); };
+    const handleStatus = (val) => { setStatusFilter(val); setPage(1); };
+
     const handleDeleteConfirm = async () => {
         if (!toDelete) return;
         setIsDeleting(true);
@@ -242,7 +302,12 @@ export function CommerceDeliveriesPage() {
         }
     };
 
-    const { stats, deliveries } = data ?? { stats: null, deliveries: [] };
+    // Navegar a reseñas pasando los datos del delivery para evitar un fetch extra
+    const goToReviews = (d) => navigate("/comercio/deliveries/resenas", {
+        state: { deliveryId: d.id, deliveryData: d },
+    });
+
+    const { stats } = data ?? { stats: null };
 
     const tabBtn = (v, label, Icon) => (
         <button type="button" onClick={() => setView(v)}
@@ -275,16 +340,45 @@ export function CommerceDeliveriesPage() {
             {/* Stats */}
             {stats && (
                 <div style={{ display: "flex", gap: "14px", marginBottom: "24px", flexWrap: "wrap" }}>
-                    <StatCard label="Disponibles" value={stats.available} icon={CheckCircle2} iconColor="#16a34a" />
-                    <StatCard label="En Entrega" value={stats.inDelivery} icon={Clock} iconColor="#3b82f6" />
-                    <StatCard label="Total Repartidores" value={stats.total} icon={Users} iconColor="#6b9080" />
-                    <StatCard label="Rating Promedio" value={stats.avgRating ?? "—"} icon={Star} iconColor="#f59e0b" />
+                    <StatCard label="Disponibles"        value={stats.available}        icon={CheckCircle2} iconColor="#16a34a" />
+                    <StatCard label="En Entrega"         value={stats.inDelivery}       icon={Clock}        iconColor="#3b82f6" />
+                    <StatCard label="Total Repartidores" value={stats.total}            icon={Users}        iconColor="#6b9080" />
+                    <StatCard label="Rating Promedio"    value={stats.avgRating ?? "—"} icon={Star}         iconColor="#f59e0b" />
                 </div>
             )}
 
-            {/* Toolbar */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
-                <p style={{ fontSize: "15px", fontWeight: "700", color: "#111827", margin: 0 }}>Repartidores Vinculados</p>
+            {/* Toolbar: filtros + vistas + agregar */}
+            <div style={{ backgroundColor: "white", borderRadius: "12px", padding: "12px 16px", boxShadow: "0 1px 4px rgba(0,0,0,0.07)", marginBottom: "16px", display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between" }}>
+                {/* Filtros izquierda */}
+                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
+                    {/* Búsqueda */}
+                    <div style={{ position: "relative" }}>
+                        <Search size={13} color="#9ca3af" style={{ position: "absolute", left: "9px", top: "50%", transform: "translateY(-50%)" }} />
+                        <input
+                            type="text"
+                            placeholder="Buscar por nombre, correo o teléfono"
+                            value={search}
+                            onChange={e => handleSearch(e.target.value)}
+                            style={{ padding: "7px 10px 7px 28px", borderRadius: "8px", border: "1px solid #e5e7eb", fontSize: "13px", color: "#111827", backgroundColor: "white", outline: "none", width: "260px" }}
+                        />
+                    </div>
+                    {/* Estado */}
+                    <select value={statusFilter} onChange={e => handleStatus(e.target.value)}
+                        style={{ padding: "7px 10px", borderRadius: "8px", border: "1px solid #e5e7eb", fontSize: "13px", color: "#374151", backgroundColor: "white", outline: "none", cursor: "pointer" }}>
+                        <option value="all">Todos los estados</option>
+                        <option value="AVAILABLE">Disponible</option>
+                        <option value="IN_DELIVERY">En entrega</option>
+                        <option value="UNAVAILABLE">No disponible</option>
+                    </select>
+                    {/* Contador de resultados */}
+                    {(search || statusFilter !== "all") && (
+                        <span style={{ fontSize: "12px", color: "#6b7280" }}>
+                            {filtered.length} resultado{filtered.length !== 1 ? "s" : ""}
+                        </span>
+                    )}
+                </div>
+
+                {/* Vistas + agregar */}
                 <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                     {tabBtn("cards", "Cards", LayoutGrid)}
                     {tabBtn("table", "Tabla", Table2)}
@@ -296,27 +390,30 @@ export function CommerceDeliveriesPage() {
             </div>
 
             {/* Contenido */}
-            {(() => {
-                if (deliveries.length === 0) {
-                    return <EmptyState onAdd={() => navigate("/comercio/delivery/agregar")} />;
-                }
+            {(data?.deliveries ?? []).length === 0 ? (
+                <EmptyState onAdd={() => navigate("/comercio/delivery/agregar")} />
+            ) : filtered.length === 0 ? (
+                <NoResults />
+            ) : (() => {
                 if (view === "cards") {
                     return (
                         <CardView
-                            deliveries={deliveries}
-                            onReviews={d => navigate("/comercio/deliveries/resenas", { state: { deliveryId: d.id } })}
+                            deliveries={paginated}
+                            onReviews={goToReviews}
                             onDelete={d => { setToDelete(d); setDeleteError(""); }}
                         />
                     );
                 }
                 return (
                     <TableView
-                        deliveries={deliveries}
-                        onReviews={d => navigate("/comercio/deliveries/resenas", { state: { deliveryId: d.id } })}
+                        deliveries={paginated}
+                        onReviews={goToReviews}
                         onDelete={d => { setToDelete(d); setDeleteError(""); }}
                     />
                 );
             })()}
+
+            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
             {toDelete && (
                 <DeleteModal
