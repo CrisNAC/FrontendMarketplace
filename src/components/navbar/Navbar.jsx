@@ -62,7 +62,9 @@ const Navbar = () => {
         setCartCount(sumServerCartQuantities(carts));
         try {
           const { data } = await axios.get(`${apiBase}/api/notifications`, { withCredentials: true });
-          setUnreadCount(data.unreadCount ?? 0);
+          setUnreadCount(
+            data.unreadCount ?? data.notifications?.filter((n) => !n.read).length ?? 0
+          );
         } catch {
           setUnreadCount(0);
         }
@@ -249,7 +251,7 @@ const Navbar = () => {
         <div className="flex gap-[15px] items-center">
           <Link
             to="/notificaciones"
-            className="flex items-center gap-0.5 rounded-full p-1.5 text-[#333] hover:bg-black/10 hover:text-[#2e6b4f] transition-colors"
+            className="relative flex items-center gap-0.5 rounded-full p-1.5 text-[#333] hover:bg-black/10 hover:text-[#2e6b4f] transition-colors"
             aria-label="Notificaciones"
           >
             <Bell size={25} className="text-[#2f3e39] hover:text-[#2e6b4f] transition-colors" />
@@ -261,7 +263,7 @@ const Navbar = () => {
           </Link>
           <Link
             to="/carrito"
-            className="flex items-center gap-0.5 rounded-full p-1.5 text-[#333] hover:bg-black/10 hover:text-[#2e6b4f] transition-colors"
+            className="relative flex items-center gap-0.5 rounded-full p-1.5 text-[#333] hover:bg-black/10 hover:text-[#2e6b4f] transition-colors"
             aria-label="Carrito de compras"
           >
             <ShoppingCart size={25} className="text-[#2f3e39] hover:text-[#2e6b4f] transition-colors" />

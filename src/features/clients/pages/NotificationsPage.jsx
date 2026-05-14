@@ -11,7 +11,7 @@ const NotificationsPage = () => {
     const fetchNotifications = async () => {
         try {
             const { data } = await apiClient.get("/api/notifications");
-            setNotifications(data.notifications);
+            setNotifications(data.notifications ?? []);
         } finally {
             setLoading(false);
         }
@@ -60,24 +60,28 @@ const NotificationsPage = () => {
                 ) : (
                     <ul className="flex flex-col gap-2">
                         {notifications.map((n) => (
-                            <li
-                                key={n.id}
-                                onClick={() => handleClick(n)}
-                                className={`p-4 rounded-lg border cursor-pointer transition-colors ${n.read
+                            <li key={n.id}>
+                                <button
+                                    type="button"
+                                    aria-pressed={n.read}
+                                    aria-label={n.title}
+                                    onClick={() => handleClick(n)}
+                                    className={`w-full text-left p-4 rounded-lg border transition-colors ${n.read
                                         ? "bg-white border-gray-200 text-gray-500"
                                         : "bg-[#eaf1ec] border-[#a8c5ae] text-[#2d4030] font-medium"
-                                    } ${n.reference_id ? "hover:bg-[#d6e8da]" : "hover:bg-gray-50"}`}
-                            >
-                                <p className="text-sm font-semibold">{n.title}</p>
-                                {n.message && (
-                                    <p className="text-sm mt-0.5">{n.message}</p>
-                                )}
-                                <p className="text-xs mt-1 text-gray-400">
-                                    {new Date(n.createdAt).toLocaleString("es-PY", {
-                                        dateStyle: "medium",
-                                        timeStyle: "short",
-                                    })}
-                                </p>
+                                        } ${n.reference_id ? "hover:bg-[#d6e8da] cursor-pointer" : "hover:bg-gray-50"}`}
+                                >
+                                    <p className="text-sm font-semibold">{n.title}</p>
+                                    {n.message && (
+                                        <p className="text-sm mt-0.5">{n.message}</p>
+                                    )}
+                                    <p className="text-xs mt-1 text-gray-400">
+                                        {new Date(n.createdAt).toLocaleString("es-PY", {
+                                            dateStyle: "medium",
+                                            timeStyle: "short",
+                                        })}
+                                    </p>
+                                </button>
                             </li>
                         ))}
                     </ul>
