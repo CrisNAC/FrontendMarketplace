@@ -1,6 +1,7 @@
+//OrdenesComprasPage.jsx
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { fetchCartsApi, getApiBase } from "../../../lib/cartApi";
@@ -19,6 +20,9 @@ export default function OrdenesComprasPage() {
 
   const [status, setStatus] = useState("loading");
   const [carts, setCarts] = useState([]);
+  const [userId, setUserId] = useState(null);
+  const [loadingDeleteAll, setLoadingDeleteAll] = useState(false);
+  const [loadingDeleteCart, setLoadingDeleteCart] = useState(null);
 
   const loadCarts = useCallback(async () => {
     try {
@@ -26,19 +30,22 @@ export default function OrdenesComprasPage() {
       const sessionRes = await axios.get(`${apiBase}/api/session/user-session`, {
         withCredentials: true,
       });
-      const userId = sessionRes.data?.user?.id_user;
-      if (!userId) {
+      const uid = sessionRes.data?.user?.id_user;
+      if (!uid) {
         setCarts([]);
+        setUserId(null);
         setStatus("unauthorized");
         return;
       }
-      const list = await fetchCartsApi(userId);
+      setUserId(uid);
+      const list = await fetchCartsApi(uid);
       setCarts(Array.isArray(list) ? list : []);
       setStatus("ready");
     } catch (e) {
       const code = e?.response?.status;
       if (code === 401) {
         setCarts([]);
+        setUserId(null);
         setStatus("unauthorized");
         toast.error("Iniciá sesión para ver tu carrito");
         navigate("/login");
@@ -61,23 +68,83 @@ export default function OrdenesComprasPage() {
     return () => window.removeEventListener("cartUpdated", onCartUpdated);
   }, [loadCarts]);
 
+  const handleDeleteCart = async (cartId) => {
+    if (!window.confirm("¿Estás seguro de que deseas eliminar esta orden?")) {
+      return;
+    }
+
+    try {
+      setLoadingDeleteCart(cartId);
+      await axios.delete(
+        `${apiBase}/api/users/${userId}/cart/${cartId}`,
+        { withCredentials: true }
+      );
+      toast.success("Orden eliminada correctamente");
+      await loadCarts();
+    } catch (error) {
+      console.error("Error eliminando carrito:", error);
+      toast.error(
+        error?.response?.data?.message || "No se pudo eliminar la orden"
+      );
+    } finally {
+      setLoadingDeleteCart(null);
+    }
+  };
+
+  const handleDeleteAllCarts = async () => {
+    if (!window.confirm("¿Estás seguro de que deseas eliminar TODAS las órdenes de compra?")) {
+      return;
+    }
+
+    try {
+      setLoadingDeleteAll(true);
+      await axios.delete(
+        `${apiBase}/api/users/${userId}/carts`,
+        { withCredentials: true }
+      );
+      toast.success("Todas las órdenes fueron eliminadas correctamente");
+      await loadCarts();
+    } catch (error) {
+      console.error("Error eliminando carritos:", error);
+      toast.error(
+        error?.response?.data?.message || "No se pudo eliminar las órdenes"
+      );
+    } finally {
+      setLoadingDeleteAll(false);
+    }
+  };
+
   const empty = status === "ready" && (!carts || carts.length === 0);
 
   return (
     <div className="min-h-screen bg-[#F3F3F3] pb-8">
       <div className="max-w-6xl mx-auto px-6 pt-6 pb-6">
-        <div className="flex items-center gap-2 mb-6">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="p-1 rounded hover:bg-black/5 text-[#2f3e39]"
-            aria-label="Volver"
-          >
-            <ArrowLeft className="w-6 h-6" />
-          </button>
-          <h1 className="text-2xl font-bold text-[#1a1a1a] tracking-tight">
-            Ordenes de Compras
-          </h1>
+        <div className="flex items-center justify-between gap-2 mb-6">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="p-1 rounded hover:bg-black/5 text-[#2f3e39]"
+              aria-label="Volver"
+            >
+              <ArrowLeft className="w-6 h-6" />
+            </button>
+            <h1 className="text-2xl font-bold text-[#1a1a1a] tracking-tight">
+              Ordenes de Compras
+            </h1>
+          </div>
+          
+          {status === "ready" && carts.length > 0 && (
+            <button
+              type="button"
+              onClick={handleDeleteAllCarts}
+              disabled={loadingDeleteAll}
+              className="px-4 py-2 rounded-md text-white text-sm font-medium bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              <Trash2 className="w-4 h-4" />
+              {loadingDeleteAll ? "Eliminando..." : "Eliminar todas"}
+            </button>
+          )}
         </div>
 
         {status === "loading" && (
@@ -134,6 +201,7 @@ export default function OrdenesComprasPage() {
                 (acc, row) => acc + itemSubtotal(row.product?.price, row.quantity),
                 0
               );
+              const isDeleting = loadingDeleteCart === cart.id;
 
               return (
                 <div
@@ -219,11 +287,21 @@ export default function OrdenesComprasPage() {
                     })}
                   </div>
 
-                  <div className="flex justify-center">
+                  <div className="flex gap-2 justify-center">
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteCart(cart.id)}
+                      disabled={isDeleting}
+                      className="px-3 py-1.5 rounded-md text-white text-[11px] font-medium bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      {isDeleting ? "..." : "Eliminar"}
+                    </button>
                     <button
                       type="button"
                       onClick={() => navigate(`/carrito/${cart.id}`)}
-                      className="px-6 py-1.5 rounded-md text-white text-[11px] font-medium bg-[#6B9080] border border-[#658D7B] hover:opacity-95"
+                      disabled={isDeleting}
+                      className="px-6 py-1.5 rounded-md text-white text-[11px] font-medium bg-[#6B9080] border border-[#658D7B] hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Ver detalles
                     </button>
