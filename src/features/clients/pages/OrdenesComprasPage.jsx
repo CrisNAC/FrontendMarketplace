@@ -14,6 +14,24 @@ function itemSubtotal(unitPrice, qty) {
   return u * q;
 }
 
+/**
+ * Muestra confirmación segura evitando window.confirm()
+ * @param {string} message - Mensaje a mostrar
+ * @returns {boolean} - True si el usuario confirma
+ */
+const showConfirmDialog = (message) => {
+  // Usar globalThis es más compatible que window
+  if (typeof globalThis !== "undefined" && globalThis.confirm) {
+    return globalThis.confirm(message);
+  }
+  // Fallback a window para compatibilidad
+  if (typeof window !== "undefined" && window.confirm) {
+    return window.confirm(message);
+  }
+  // Si no hay forma de confirmar, retornar false por seguridad
+  return false;
+};
+
 export default function OrdenesComprasPage() {
   const navigate = useNavigate();
   const apiBase = getApiBase() || "http://localhost:3000";
@@ -64,12 +82,21 @@ export default function OrdenesComprasPage() {
     const onCartUpdated = () => {
       loadCarts();
     };
-    window.addEventListener("cartUpdated", onCartUpdated);
-    return () => window.removeEventListener("cartUpdated", onCartUpdated);
+    
+    if (typeof globalThis !== "undefined" && globalThis.addEventListener) {
+      globalThis.addEventListener("cartUpdated", onCartUpdated);
+      return () => globalThis.removeEventListener("cartUpdated", onCartUpdated);
+    }
+    
+    // Fallback a window
+    if (typeof window !== "undefined" && window.addEventListener) {
+      window.addEventListener("cartUpdated", onCartUpdated);
+      return () => window.removeEventListener("cartUpdated", onCartUpdated);
+    }
   }, [loadCarts]);
 
   const handleDeleteCart = async (cartId) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar esta orden?")) {
+    if (!showConfirmDialog("¿Estás seguro de que deseas eliminar esta orden?")) {
       return;
     }
 
@@ -92,7 +119,7 @@ export default function OrdenesComprasPage() {
   };
 
   const handleDeleteAllCarts = async () => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar TODAS las órdenes de compra?")) {
+    if (!showConfirmDialog("¿Estás seguro de que deseas eliminar TODAS las órdenes de compra?")) {
       return;
     }
 
