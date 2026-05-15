@@ -141,7 +141,10 @@ describe('CommerceOrdersPage', () => {
         expect(screen.getByText('Marcar como Enviado')).toBeInTheDocument()
     })
 
-    it('llama a updateOrderStatus con PROCESSING al aceptar un pedido', async () => {
+    it.each([
+        { buttonText: 'Aceptar',  expectedStatus: 'PROCESSING' },
+        { buttonText: 'Rechazar', expectedStatus: 'CANCELLED'  },
+    ])('llama a updateOrderStatus con $expectedStatus al hacer clic en $buttonText', async ({ buttonText, expectedStatus }) => {
         const { updateOrderStatus } = await import('../features/commerces/services/commerceOrdersApi')
 
         const mockPickupOrder = { ...mockPendingOrder, address: null }
@@ -158,32 +161,9 @@ describe('CommerceOrdersPage', () => {
             expect(screen.getByText('#ORD-1')).toBeInTheDocument()
         })
 
-        // Hacer clic en Aceptar
-        await userEvent.click(screen.getByText('Aceptar'))
+        await userEvent.click(screen.getByText(buttonText))
 
-        expect(updateOrderStatus).toHaveBeenCalledWith(1, 'PROCESSING')
-    })
-    
-    it('llama a updateOrderStatus con CANCELLED al rechazar un pedido', async () => {
-        const { updateOrderStatus } = await import('../features/commerces/services/commerceOrdersApi')
-
-        const mockPickupOrder = { ...mockPendingOrder, address: null }
-
-        apiClient.get.mockResolvedValue(mockSessionWithStore)
-        fetchStoreOrders.mockResolvedValue({
-            ...mockOrdersResponse,
-            orders: [mockPickupOrder],
-        })
-
-        render(<CommerceOrdersPage />)
-
-        await waitFor(() => {
-            expect(screen.getByText('#ORD-1')).toBeInTheDocument()
-        })
-
-        await userEvent.click(screen.getByText('Rechazar'))
-
-        expect(updateOrderStatus).toHaveBeenCalledWith(1, 'CANCELLED')
+        expect(updateOrderStatus).toHaveBeenCalledWith(1, expectedStatus)
     })
 
     it('muestra mensaje vacío cuando no hay pedidos pendientes', async () => {

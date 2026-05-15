@@ -89,6 +89,7 @@ async function setupCommonApiMocks(page: Page) {
       body: JSON.stringify({
         id_store: 1,
         name: 'Nissei',
+        store_status: 'ACTIVE',
         store_category: { id_store_category: 1, name: 'Tecnología' },
         products: mockProducts.map((product) => ({
           id_product: product.id_product,
