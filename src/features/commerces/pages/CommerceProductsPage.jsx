@@ -225,6 +225,7 @@ function DeleteModal({ product, isDeleting, onConfirm, onCancel, deleteError }) 
 export function CommerceProductsPage() {
     const navigate = useNavigate();
     const [products, setProducts] = useState([]);
+    const [store, setStore] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [search, setSearch] = useState("");
@@ -244,7 +245,10 @@ export function CommerceProductsPage() {
                 const res = await commerceApiClient.get(`/api/commerces/${idStore}`);
                 const loadedProducts = res.data?.products ?? [];
                 console.log("Primer producto del comercio:", JSON.stringify(loadedProducts[0], null, 2));
-                if (active) setProducts(loadedProducts);
+                if (active) {
+                    setProducts(loadedProducts);
+                    setStore(res.data);
+                }
             } catch (err) {
                 if (active) setError(err.response?.data?.message || err.message || "No se pudieron cargar los productos.");
             } finally {
@@ -305,6 +309,8 @@ export function CommerceProductsPage() {
 
     if (loading) return <p style={{ color: "#6b7280", padding: "16px" }}>Cargando...</p>;
 
+    const isStoreActive = store?.store_status === 'ACTIVE';
+
     const selectStyle = {
         padding: "6px 10px", borderRadius: "8px", fontSize: "12px", fontWeight: "500",
         border: "1px solid #e5e7eb", backgroundColor: "white", color: "#374151",
@@ -321,14 +327,16 @@ export function CommerceProductsPage() {
                         Administrá tu catálogo de productos de forma sencilla
                     </p>
                 </div>
-                <button type="button" onClick={() => navigate("/comercio/productos/nuevo")} style={{
-                    display: "flex", alignItems: "center", gap: "6px",
-                    backgroundColor: "var(--primary-dark)", color: "white",
-                    border: "none", borderRadius: "8px", padding: "8px 16px",
-                    fontSize: "13px", fontWeight: "500", cursor: "pointer",
-                }}>
-                    <Plus size={14} /> Nuevo Producto
-                </button>
+                {isStoreActive && (
+                    <button type="button" onClick={() => navigate("/comercio/productos/nuevo")} style={{
+                        display: "flex", alignItems: "center", gap: "6px",
+                        backgroundColor: "var(--primary-dark)", color: "white",
+                        border: "none", borderRadius: "8px", padding: "8px 16px",
+                        fontSize: "13px", fontWeight: "500", cursor: "pointer",
+                    }}>
+                        <Plus size={14} /> Nuevo Producto
+                    </button>
+                )}
             </div>
 
             {error && (
@@ -391,7 +399,7 @@ export function CommerceProductsPage() {
                             ? "No se encontraron productos con esos filtros."
                             : "Aún no tenés productos."}
                     </p>
-                    {!search && filterStatus === "all" && filterCategory === "all" && (
+                    {!search && filterStatus === "all" && filterCategory === "all" && isStoreActive && (
                         <button type="button" onClick={() => navigate("/comercio/productos/nuevo")} style={{
                             marginTop: "12px", padding: "8px 16px",
                             backgroundColor: "var(--primary-dark)", color: "white",

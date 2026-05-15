@@ -144,8 +144,13 @@ describe('CommerceOrdersPage', () => {
     it('llama a updateOrderStatus con PROCESSING al aceptar un pedido', async () => {
         const { updateOrderStatus } = await import('../features/commerces/services/commerceOrdersApi')
 
+        const mockPickupOrder = { ...mockPendingOrder, address: null }
+
         apiClient.get.mockResolvedValue(mockSessionWithStore)
-        fetchStoreOrders.mockResolvedValue(mockOrdersResponse)
+        fetchStoreOrders.mockResolvedValue({
+            ...mockOrdersResponse,
+            orders: [mockPickupOrder],
+        })
 
         render(<CommerceOrdersPage />)
 
@@ -162,8 +167,13 @@ describe('CommerceOrdersPage', () => {
     it('llama a updateOrderStatus con CANCELLED al rechazar un pedido', async () => {
         const { updateOrderStatus } = await import('../features/commerces/services/commerceOrdersApi')
 
+        const mockPickupOrder = { ...mockPendingOrder, address: null }
+
         apiClient.get.mockResolvedValue(mockSessionWithStore)
-        fetchStoreOrders.mockResolvedValue(mockOrdersResponse)
+        fetchStoreOrders.mockResolvedValue({
+            ...mockOrdersResponse,
+            orders: [mockPickupOrder],
+        })
 
         render(<CommerceOrdersPage />)
 

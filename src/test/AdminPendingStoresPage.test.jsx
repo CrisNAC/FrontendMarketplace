@@ -31,7 +31,7 @@ const mockStores = [
     user: { name: 'Juan Perez' },
     store_category: { name: 'Electronica' },
     description: 'Venta de electronica',
-    logo: ''
+    logo: '/uploads/stores/1/logo.png'
   },
   {
     id_store: 2,
@@ -102,6 +102,25 @@ describe('AdminPendingStoresPage', () => {
       // Debería mostrar la descripción en el modal 
       expect(screen.getByText('Detalles del Comercio')).toBeInTheDocument();
       expect(screen.getByText('Venta de electronica')).toBeInTheDocument();
+    });
+  });
+
+  it('muestra el logo del comercio en listado y detalles', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Tienda 1')).toBeInTheDocument();
+    });
+
+    const listLogo = screen.getByRole('img', { name: 'Logo de Tienda 1' });
+    expect(listLogo).toHaveAttribute('src', 'http://localhost:3000/uploads/stores/1/logo.png');
+
+    const evalButtons = screen.getAllByTitle('Ver y Evaluar');
+    await user.click(evalButtons[0]);
+
+    await waitFor(() => {
+      expect(screen.getAllByRole('img', { name: 'Logo de Tienda 1' })).toHaveLength(2);
     });
   });
 

@@ -1,7 +1,7 @@
 // src/features/commerces/hooks/useEditCommerce.js
 import { useState, useEffect, useRef } from "react";
 import {
-    fetchCommerceById,
+    fetchMyCommerce,
     fetchCommerceCategories,
     updateCommerce,
     uploadStoreImage,
@@ -173,7 +173,7 @@ export const useEditCommerce = () => {
 
                 // 2. Comercio y categorías en paralelo para minimizar tiempo de carga
                 const [commerce, categoriesData] = await Promise.all([
-                    fetchCommerceById(sessionIdStore),
+                    fetchMyCommerce(sessionIdStore),
                     fetchCommerceCategories(),
                 ]);
 

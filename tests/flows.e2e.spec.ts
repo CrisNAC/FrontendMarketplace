@@ -1132,6 +1132,7 @@ test.describe('Flujos E2E de usuario final', () => {
             email: 'ana@demo.com',
             phone: '0981000000',
             description: 'Comercio de prueba',
+            logo: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==',
             created_at: '2026-03-22T10:00:00.000Z',
           },
         ],
@@ -1144,9 +1145,11 @@ test.describe('Flujos E2E de usuario final', () => {
     await page.goto('/admin/comercios-pendientes');
 
     await expect(page.getByRole('heading', { name: 'Comercios por Aprobar' })).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Logo de Tienda Demo' })).toBeVisible();
     await page.getByRole('button', { name: 'Evaluar' }).first().click();
     await expect(page.getByText('Detalles del Comercio')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Tienda Demo' })).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Logo de Tienda Demo' }).last()).toBeVisible();
   });
 
   test('flujo comercio: moderar reclamo de producto', async ({ page }) => {
