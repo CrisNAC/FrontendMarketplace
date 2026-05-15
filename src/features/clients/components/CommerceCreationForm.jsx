@@ -600,7 +600,7 @@ export const CommerceCreationForm = () => {
             <div className="grid grid-cols-2 gap-4">
                 <button
                     type="button"
-                    onClick={() => navigate("/homepage")}
+                    onClick={() => navigate("/")}
                     disabled={loading}
                     className="bg-white text-gray-800 px-4 py-2 rounded border border-gray-800 hover:bg-green-100! disabled:cursor-not-allowed disabled:opacity-60"
                 >

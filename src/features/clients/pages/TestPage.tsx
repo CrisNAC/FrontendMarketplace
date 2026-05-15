@@ -11,7 +11,7 @@ const TestPage = () => (
     <p className="mt-4">Navega a <a href="/comercio/productos/1" className="text-blue-500 underline">Ver Producto Comercio (ID 1)</a></p>
     <p className="mt-4">Navega a <a href="/comercio/productos/nuevo" className="text-blue-500 underline">Crear Producto Comercio</a></p>
     <p className="mt-4">Navega a <a href="/pedidos" className="text-blue-500 underline">Ver pedidos</a></p>
-    <p className="mt-4">Navega a <a href="/homepage" className="text-blue-500 underline">Homepage</a></p>
+    <p className="mt-4">Navega a <a href="/" className="text-blue-500 underline">Homepage</a></p>
     <p className="mt-4">Navega a <a href="/busqueda" className="text-blue-500 underline">Busqueda</a></p>
     <p className="mt-4">Navega a <a href="/comentarios" className="text-blue-500 underline">Comentarios</a></p>
     <p className="mt-4">Navega a <a href="/crear-comercio" className="text-blue-500 underline">Crear Comercio</a></p>

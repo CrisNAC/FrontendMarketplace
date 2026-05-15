@@ -15,7 +15,7 @@ function getPostLoginPath(role) {
       return "/delivery";
     case "CUSTOMER":
     default:
-      return "/homepage";
+      return "/";
   }
 }
 
