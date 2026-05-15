@@ -343,7 +343,7 @@ export const CommerceCreationForm = () => {
     }
 
     return (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-4">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-4" noValidate>
 
             {error && (
                 <div ref={errorRef} className="bg-red-50 text-red-600 p-3 rounded border border-red-200 text-sm">

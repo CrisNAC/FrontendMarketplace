@@ -70,7 +70,7 @@ export const CommentForm = ({ onSubmit = () => {} }) => {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
         {/* Calificación */}
         <div className="flex flex-col gap-2">
           <label htmlFor="rating" className="text-sm font-semibold text-gray-800">

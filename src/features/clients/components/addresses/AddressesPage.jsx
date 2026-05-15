@@ -161,7 +161,7 @@ const AddressFormModal = ({ open, onClose, onSubmit, initialData, loading }) => 
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+                <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4" noValidate>
                     {formError && (
                         <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2 rounded-md">
                             <AlertCircle size={14} />

@@ -70,7 +70,7 @@ export const AddReviewModal = ({ isOpen, onClose, onSubmit }) => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
           {/* Valoración */}
           <div className="flex flex-col gap-2">
             <label className="text-sm font-semibold text-gray-800">

@@ -177,7 +177,7 @@ export default function AuthPage() {
             </div>
           )}
 
-          <form className="space-y-4" onSubmit={handleSubmit}>
+          <form className="space-y-4" onSubmit={handleSubmit} noValidate>
             {!isLogin && (
               <div>
                 <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-slate-500">
