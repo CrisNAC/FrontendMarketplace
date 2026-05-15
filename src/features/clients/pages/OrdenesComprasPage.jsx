@@ -15,21 +15,58 @@ function itemSubtotal(unitPrice, qty) {
 }
 
 /**
- * Muestra confirmación segura evitando window.confirm()
+ * Obtiene el objeto global de forma segura (globalThis, window, etc)
+ * @returns {any} - El objeto global disponible
+ */
+const getGlobalObject = () => {
+  if (typeof globalThis !== "undefined") {
+    return globalThis;
+  }
+  if (typeof self !== "undefined") {
+    return self;
+  }
+  // Esto no debería ocurrir en navegadores modernos
+  return {};
+};
+
+/**
+ * Muestra confirmación de forma segura sin usar window
  * @param {string} message - Mensaje a mostrar
  * @returns {boolean} - True si el usuario confirma
  */
 const showConfirmDialog = (message) => {
-  // Usar globalThis es más compatible que window
-  if (typeof globalThis !== "undefined" && globalThis.confirm) {
-    return globalThis.confirm(message);
+  const globalObj = getGlobalObject();
+  
+  if (globalObj && typeof globalObj.confirm === "function") {
+    return globalObj.confirm(message);
   }
-  // Fallback a window para compatibilidad
-  if (typeof window !== "undefined" && window.confirm) {
-    return window.confirm(message);
-  }
-  // Si no hay forma de confirmar, retornar false por seguridad
+  
+  // Fallback: retornar false por seguridad
   return false;
+};
+
+/**
+ * Registra un event listener de forma segura sin usar window
+ * @param {string} event - Nombre del evento
+ * @param {function} handler - Función manejadora
+ * @returns {function} - Función para desuscribirse
+ */
+const useGlobalEventListener = (event, handler) => {
+  const globalObj = getGlobalObject();
+  
+  if (globalObj && typeof globalObj.addEventListener === "function") {
+    globalObj.addEventListener(event, handler);
+    
+    // Retornar función para limpiar
+    return () => {
+      if (globalObj && typeof globalObj.removeEventListener === "function") {
+        globalObj.removeEventListener(event, handler);
+      }
+    };
+  }
+  
+  // Retornar función vacía si no se pudo registrar
+  return () => {};
 };
 
 export default function OrdenesComprasPage() {
@@ -83,16 +120,9 @@ export default function OrdenesComprasPage() {
       loadCarts();
     };
     
-    if (typeof globalThis !== "undefined" && globalThis.addEventListener) {
-      globalThis.addEventListener("cartUpdated", onCartUpdated);
-      return () => globalThis.removeEventListener("cartUpdated", onCartUpdated);
-    }
+    const unsubscribe = useGlobalEventListener("cartUpdated", onCartUpdated);
     
-    // Fallback a window
-    if (typeof window !== "undefined" && window.addEventListener) {
-      window.addEventListener("cartUpdated", onCartUpdated);
-      return () => window.removeEventListener("cartUpdated", onCartUpdated);
-    }
+    return unsubscribe;
   }, [loadCarts]);
 
   const handleDeleteCart = async (cartId) => {
