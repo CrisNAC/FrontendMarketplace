@@ -32,6 +32,11 @@ const validateForm = (formData, selectedTags) => {
         }
     }
 
+    const numericQuantity = Number(formData.quantity);
+    if (!Number.isInteger(numericQuantity) || numericQuantity < 0) {
+        errors.quantity = "El stock debe ser un número entero mayor o igual a 0.";
+    }
+
     if (!Array.isArray(formData.categoryIds) || formData.categoryIds.length === 0) {
         errors.categoryIds = "Seleccioná al menos una categoría.";
     }
@@ -77,6 +82,7 @@ export const useEditProduct = (productId) => {
         isVisible: true,
         isOffer: false,
         offerPrice: "",
+        quantity: 0,
     });
     const [selectedTags, setSelectedTags] = useState([]);
     const [validationErrors, setValidationErrors] = useState({});
@@ -128,6 +134,7 @@ export const useEditProduct = (productId) => {
                     isVisible: product.visible ?? true,
                     isOffer: Boolean(product.isOffer),
                     offerPrice: product.offerPrice ?? "",
+                    quantity: product.quantity ?? 0,
                 });
 
                 setSelectedTags(product.tags ?? []);
@@ -224,6 +231,7 @@ export const useEditProduct = (productId) => {
             offerPrice: formData.isOffer ? Number(formData.offerPrice) : null,
             imageUrl: formData.imageUrl.trim() || null,
             tags: selectedTags.map((tag) => tag.id),
+            quantity: Number(formData.quantity),
         };
 
         setIsSubmitting(true);

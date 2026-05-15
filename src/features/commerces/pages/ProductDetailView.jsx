@@ -226,7 +226,7 @@ export default function ProductDetailView() {
     const hasOfferChanges =
         offerForm.isOffer !== isOffer ||
         String(offerForm.offerPrice ?? "").trim() !==
-            String(product.offerPrice ?? "").trim();
+        String(product.offerPrice ?? "").trim();
 
     const handleOfferToggle = (nextValue) => {
         setOfferForm((prev) => ({
@@ -387,6 +387,14 @@ export default function ProductDetailView() {
                                             </Pill>
                                         </div>
 
+                                        <div className="flex items-center justify-between">
+                                            <span className={SUBTLE}>Stock:</span>
+                                            <span className={`font-semibold ${product.quantity === 0 ? "text-red-600" : "text-emerald-700"
+                                                }`}>
+                                                {product.quantity === 0 ? "Sin stock" : `${product.quantity} unidades`}
+                                            </span>
+                                        </div>
+
                                         {isOffer && offerPrice !== null && (
                                             <div className="flex items-center justify-between">
                                                 <span className={SUBTLE}>Precio de oferta:</span>
@@ -529,9 +537,8 @@ export default function ProductDetailView() {
                                             Estado de oferta
                                         </div>
                                         <div
-                                            className={`mt-0.5 text-[11px] font-semibold ${
-                                                offerForm.isOffer ? "text-amber-700" : "text-slate-600"
-                                            }`}
+                                            className={`mt-0.5 text-[11px] font-semibold ${offerForm.isOffer ? "text-amber-700" : "text-slate-600"
+                                                }`}
                                         >
                                             {offerForm.isOffer ? "Activa" : "Desactivada"}
                                         </div>
@@ -576,11 +583,10 @@ export default function ProductDetailView() {
 
                                 {offerFeedback.message && (
                                     <div
-                                        className={`rounded-xl px-3 py-2 text-[11px] font-medium ${
-                                            offerFeedback.type === "success"
+                                        className={`rounded-xl px-3 py-2 text-[11px] font-medium ${offerFeedback.type === "success"
                                                 ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100"
                                                 : "bg-red-50 text-red-700 ring-1 ring-red-100"
-                                        }`}
+                                            }`}
                                     >
                                         {offerFeedback.message}
                                     </div>
