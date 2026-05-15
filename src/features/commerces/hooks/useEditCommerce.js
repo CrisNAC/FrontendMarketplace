@@ -21,8 +21,12 @@ const commerceEditSchema = z.object({
     latitude: z.number().nullable().refine((val) => val !== null, { message: "Selecciona un punto en el mapa" }),
     longitude: z.number().nullable().refine((val) => val !== null, { message: "Selecciona un punto en el mapa" }),
     logoUrl: z.string().max(500, "La URL del logo no puede superar 500 caracteres").optional(),
-    basePrice: z.coerce.number().min(0, "Ingresá un precio base válido mayor o igual a 0"),
-    distancePrice: z.coerce.number().min(0, "Ingresá un precio para larga distancia válido mayor o igual a 0"),
+    basePrice: z.preprocess(
+        (val) => (val === "" || val === null || val === undefined ? undefined : Number(val)),
+        z.number().min(0, "Ingresá un precio base válido mayor o igual a 0")),
+    distancePrice: z.preprocess(
+        (val) => (val === "" || val === null || val === undefined ? undefined : Number(val)),
+        z.number().min(0, "Ingresá un precio para larga distancia válido mayor o igual a 0")),
     websiteUrl: z.string().refine((val) => {
         const trimmed = val.trim();
         return !trimmed || /^https?:\/\//.test(trimmed);

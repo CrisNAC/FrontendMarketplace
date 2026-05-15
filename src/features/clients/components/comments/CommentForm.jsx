@@ -4,8 +4,8 @@ import { z } from 'zod';
 // ─── Esquema de validación ──────────────────────────────────────────────────
 const commentSchema = z.object({
   rating: z.number().min(1, "Debes seleccionar una calificación").max(5, "Calificación inválida"),
-  title: z.string().min(1, "El título es obligatorio").max(100, "El título no puede superar 100 caracteres"),
-  content: z.string().min(1, "El contenido es obligatorio").max(1000, "El contenido no puede superar 1000 caracteres"),
+  title: z.string().trim().min(1, "El título es obligatorio").max(100, "El título no puede superar 100 caracteres"),
+  content: z.string().trim().min(1, "El contenido es obligatorio").max(1000, "El contenido no puede superar 1000 caracteres"),
 });
 
 export const CommentForm = ({ onSubmit = () => {} }) => {

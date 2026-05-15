@@ -4,7 +4,7 @@ import { z } from 'zod';
 // ─── Esquema de validación ──────────────────────────────────────────────────
 const reviewSchema = z.object({
   rating: z.number().min(1, "Debes seleccionar una calificación").max(5, "Calificación inválida"),
-  comment: z.string().min(1, "El comentario es obligatorio").max(1000, "El comentario no puede superar 1000 caracteres"),
+  comment: z.string().trim().min(1, "El comentario es obligatorio").max(1000, "El comentario no puede superar 1000 caracteres"),
 });
 
 export const AddReviewModal = ({ isOpen, onClose, onSubmit }) => {

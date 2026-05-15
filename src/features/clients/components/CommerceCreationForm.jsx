@@ -260,8 +260,8 @@ export const CommerceCreationForm = () => {
         const parsed = commerceSchema.safeParse({
           ...formData,
           categoryIds: formData.categoryIds.map(id => Number(id)),
-          basePrice: formData.basePrice ? Number(formData.basePrice) : 0,
-          distancePrice: formData.distancePrice ? Number(formData.distancePrice) : 0,
+          basePrice: formData.basePrice,
+          distancePrice: formData.distancePrice,
         })
 
         if (!parsed.success) {
@@ -363,6 +363,7 @@ export const CommerceCreationForm = () => {
                     disabled={loading}
                     className={inputCls}
                 />
+                {fieldErrors.name && <p className="text-xs text-red-600 mt-1">{fieldErrors.name}</p>}
             </div>
 
             {/* Email de Contacto */}
@@ -376,6 +377,7 @@ export const CommerceCreationForm = () => {
                     disabled={loading}
                     className={inputCls}
                 />
+                {fieldErrors.email && <p className="text-xs text-red-600 mt-1">{fieldErrors.email}</p>}
             </div>
 
             {/* Teléfono */}
@@ -390,6 +392,7 @@ export const CommerceCreationForm = () => {
                     disabled={loading}
                     className={inputCls}
                 />
+                {fieldErrors.phone && <p className="text-xs text-red-600 mt-1">{fieldErrors.phone}</p>}
             </div>
 
             {/* Dirección */}
@@ -403,6 +406,7 @@ export const CommerceCreationForm = () => {
                     disabled={loading}
                     className={inputCls}
                 />
+                {fieldErrors.address && <p className="text-xs text-red-600 mt-1">{fieldErrors.address}</p>}
             </div>
 
             {/* Mapa */}
@@ -423,6 +427,9 @@ export const CommerceCreationForm = () => {
                     />
                 </div>
 
+                {(fieldErrors.latitude || fieldErrors.longitude) && (
+                    <p className="text-xs text-red-600 mt-1">{fieldErrors.latitude || fieldErrors.longitude}</p>
+                )}
                 <div className="mt-2 flex items-center justify-between gap-2">
                     <p className="text-xs text-gray-500">
                         {formData.latitude !== null && formData.longitude !== null
@@ -453,7 +460,7 @@ export const CommerceCreationForm = () => {
                         setFormData({ ...formData, categoryIds: newIds })
                     }
                     disabled={loading}
-                    error={!formData.categoryIds.length && error ? "Debes seleccionar al menos una categoría" : ""}
+                    error={fieldErrors.categoryIds}
                 />
             </div>
 
@@ -469,6 +476,7 @@ export const CommerceCreationForm = () => {
                     disabled={loading}
                     className={inputCls}
                 />
+                {fieldErrors.description && <p className="text-xs text-red-600 mt-1">{fieldErrors.description}</p>}
                 <p className="text-xs text-gray-500 mt-1">Máximo 500 caracteres</p>
             </div>
 
@@ -486,6 +494,7 @@ export const CommerceCreationForm = () => {
                     disabled={loading}
                     className={inputCls}
                 />
+                {fieldErrors.basePrice && <p className="text-xs text-red-600 mt-1">{fieldErrors.basePrice}</p>}
                 <p className="text-xs text-gray-500 mt-1">Se aplica hasta 2 km de distancia.</p>
             </div>
 
@@ -502,6 +511,7 @@ export const CommerceCreationForm = () => {
                     disabled={loading}
                     className={inputCls}
                 />
+                {fieldErrors.distancePrice && <p className="text-xs text-red-600 mt-1">{fieldErrors.distancePrice}</p>}
                 <p className="text-xs text-gray-500 mt-1">Se aplica cuando la distancia supera los 2 km.</p>
             </div>
 
@@ -517,6 +527,7 @@ export const CommerceCreationForm = () => {
                     disabled={loading}
                     className={inputCls}
                 />
+                {fieldErrors.websiteUrl && <p className="text-xs text-red-600 mt-1">{fieldErrors.websiteUrl}</p>}
             </div>
 
             <div>
@@ -530,6 +541,7 @@ export const CommerceCreationForm = () => {
                     disabled={loading}
                     className={inputCls}
                 />
+                {fieldErrors.instagramUrl && <p className="text-xs text-red-600 mt-1">{fieldErrors.instagramUrl}</p>}
             </div>
 
             <div>
@@ -543,6 +555,7 @@ export const CommerceCreationForm = () => {
                     disabled={loading}
                     className={inputCls}
                 />
+                {fieldErrors.tiktokUrl && <p className="text-xs text-red-600 mt-1">{fieldErrors.tiktokUrl}</p>}
             </div>
 
             {/* Logo */}

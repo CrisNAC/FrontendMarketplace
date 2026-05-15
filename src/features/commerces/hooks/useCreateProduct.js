@@ -28,7 +28,9 @@ const productSchema = z.object({
   description: z.string().min(1, "La descripcion es obligatoria."),
   price: z.coerce.number().min(0.01, "El precio debe ser mayor a 0."),
   categoryIds: z.array(z.coerce.number().int().positive()).min(1, "Selecciona al menos una categoria."),
-  quantity: z.coerce.number().int().min(0, "El stock debe ser un numero entero mayor o igual a 0."),
+  quantity: z.preprocess(
+    (val) => (val === "" || val === null || val === undefined ? undefined : Number(val)),
+    z.number().int().min(0, "El stock debe ser un número entero mayor o igual a 0.")),
 });
 
 const validateForm = (formData, selectedTags) => {
