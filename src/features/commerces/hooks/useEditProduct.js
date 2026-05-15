@@ -32,9 +32,13 @@ const validateForm = (formData, selectedTags) => {
         }
     }
 
-    const numericQuantity = Number(formData.quantity);
-    if (!Number.isInteger(numericQuantity) || numericQuantity < 0) {
-        errors.quantity = "El stock debe ser un número entero mayor o igual a 0.";
+    if (formData.quantity === "" || formData.quantity === null || formData.quantity === undefined) {
+        errors.quantity = "El stock es obligatorio.";
+    } else {
+        const numericQuantity = Number(formData.quantity);
+        if (!Number.isInteger(numericQuantity) || numericQuantity < 0) {
+            errors.quantity = "El stock debe ser un número entero mayor o igual a 0.";
+        }
     }
 
     if (!Array.isArray(formData.categoryIds) || formData.categoryIds.length === 0) {

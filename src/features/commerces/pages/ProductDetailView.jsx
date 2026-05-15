@@ -294,6 +294,8 @@ export default function ProductDetailView() {
         }
     };
 
+    const qty = product.quantity ?? 0;
+
     return (
         <div className="min-h-screen bg-[#ECF7F0]">
             <main className="px-3 py-3 max-w-[1080px]">
@@ -389,9 +391,8 @@ export default function ProductDetailView() {
 
                                         <div className="flex items-center justify-between">
                                             <span className={SUBTLE}>Stock:</span>
-                                            <span className={`font-semibold ${product.quantity === 0 ? "text-red-600" : "text-emerald-700"
-                                                }`}>
-                                                {product.quantity === 0 ? "Sin stock" : `${product.quantity} unidades`}
+                                            <span className={`font-semibold ${qty === 0 ? "text-red-600" : "text-emerald-700"}`}>
+                                                {qty === 0 ? "Sin stock" : `${qty} unidades`}
                                             </span>
                                         </div>
 
@@ -584,8 +585,8 @@ export default function ProductDetailView() {
                                 {offerFeedback.message && (
                                     <div
                                         className={`rounded-xl px-3 py-2 text-[11px] font-medium ${offerFeedback.type === "success"
-                                                ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100"
-                                                : "bg-red-50 text-red-700 ring-1 ring-red-100"
+                                            ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100"
+                                            : "bg-red-50 text-red-700 ring-1 ring-red-100"
                                             }`}
                                     >
                                         {offerFeedback.message}
