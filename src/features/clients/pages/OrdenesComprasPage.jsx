@@ -14,61 +14,6 @@ function itemSubtotal(unitPrice, qty) {
   return u * q;
 }
 
-/**
- * Obtiene el objeto global de forma segura (globalThis, window, etc)
- * @returns {any} - El objeto global disponible
- */
-const getGlobalObject = () => {
-  if (typeof globalThis !== "undefined") {
-    return globalThis;
-  }
-  if (typeof self !== "undefined") {
-    return self;
-  }
-  // Esto no debería ocurrir en navegadores modernos
-  return {};
-};
-
-/**
- * Muestra confirmación de forma segura sin usar window
- * @param {string} message - Mensaje a mostrar
- * @returns {boolean} - True si el usuario confirma
- */
-const showConfirmDialog = (message) => {
-  const globalObj = getGlobalObject();
-  
-  if (globalObj && typeof globalObj.confirm === "function") {
-    return globalObj.confirm(message);
-  }
-  
-  // Fallback: retornar false por seguridad
-  return false;
-};
-
-/**
- * Registra un event listener de forma segura sin usar window
- * @param {string} event - Nombre del evento
- * @param {function} handler - Función manejadora
- * @returns {function} - Función para desuscribirse
- */
-const useGlobalEventListener = (event, handler) => {
-  const globalObj = getGlobalObject();
-  
-  if (globalObj && typeof globalObj.addEventListener === "function") {
-    globalObj.addEventListener(event, handler);
-    
-    // Retornar función para limpiar
-    return () => {
-      if (globalObj && typeof globalObj.removeEventListener === "function") {
-        globalObj.removeEventListener(event, handler);
-      }
-    };
-  }
-  
-  // Retornar función vacía si no se pudo registrar
-  return () => {};
-};
-
 export default function OrdenesComprasPage() {
   const navigate = useNavigate();
   const apiBase = getApiBase() || "http://localhost:3000";
@@ -119,14 +64,12 @@ export default function OrdenesComprasPage() {
     const onCartUpdated = () => {
       loadCarts();
     };
-    
-    const unsubscribe = useGlobalEventListener("cartUpdated", onCartUpdated);
-    
-    return unsubscribe;
+    window.addEventListener("cartUpdated", onCartUpdated);
+    return () => window.removeEventListener("cartUpdated", onCartUpdated);
   }, [loadCarts]);
 
   const handleDeleteCart = async (cartId) => {
-    if (!showConfirmDialog("¿Estás seguro de que deseas eliminar esta orden?")) {
+    if (!window.confirm("¿Estás seguro de que deseas eliminar esta orden?")) {
       return;
     }
 
@@ -149,7 +92,7 @@ export default function OrdenesComprasPage() {
   };
 
   const handleDeleteAllCarts = async () => {
-    if (!showConfirmDialog("¿Estás seguro de que deseas eliminar TODAS las órdenes de compra?")) {
+    if (!window.confirm("¿Estás seguro de que deseas eliminar TODAS las órdenes de compra?")) {
       return;
     }
 
