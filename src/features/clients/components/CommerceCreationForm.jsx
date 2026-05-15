@@ -129,6 +129,7 @@ const CategorySelector = ({ categories, selectedIds, onChange, disabled, error }
 const inputCls = "w-full px-3 py-2 border border-green-100 rounded-md bg-green-50/30 focus:outline-none focus:ring-1 focus:ring-[#5B7B6D] focus:border-[#5B7B6D] disabled:cursor-not-allowed disabled:opacity-60"
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:3000").trim()
 const HTTP_URL_REGEX = /^https?:\/\//i
+const PHONE_REGEX = /^\+595\d{9}$/
 
 export const CommerceCreationForm = () => {
     const navigate = useNavigate()
@@ -220,12 +221,8 @@ export const CommerceCreationForm = () => {
         setLogoPreview(null)
     }
 
-    const handleSubmit = async (e) => {
-        e.preventDefault()
-        setLoading(true)
-        setError("")
-
-        // Validación de campos obligatorios
+    // Valida el formulario y retorna el primer mensaje de error, o null si todo está bien
+    const validateForm = (parsedBasePrice, parsedDistancePrice) => {
         if (
             !formData.name ||
             !formData.email ||
@@ -236,48 +233,27 @@ export const CommerceCreationForm = () => {
             formData.basePrice === "" ||
             formData.distancePrice === ""
         ) {
-            setError("Por favor completá todos los campos obligatorios.")
-            setLoading(false)
-            errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
-            return
+            return "Por favor completá todos los campos obligatorios."
         }
 
-        const parsedBasePrice = Number(formData.basePrice)
-        const parsedDistancePrice = Number(formData.distancePrice)
-
         if (!Number.isFinite(parsedBasePrice) || parsedBasePrice < 0) {
-            setError("El precio base por km debe ser un número válido mayor o igual a 0.")
-            setLoading(false)
-            errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
-            return
+            return "El precio base por km debe ser un número válido mayor o igual a 0."
         }
 
         if (!Number.isFinite(parsedDistancePrice) || parsedDistancePrice < 0) {
-            setError("El precio por km para larga distancia debe ser un número válido mayor o igual a 0.")
-            setLoading(false)
-            errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
-            return
+            return "El precio por km para larga distancia debe ser un número válido mayor o igual a 0."
         }
 
         if (formData.latitude === null || formData.longitude === null) {
-            setError("Seleccioná un punto en el mapa para la ubicación del comercio.")
-            setLoading(false)
-            errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
-            return
+            return "Seleccioná un punto en el mapa para la ubicación del comercio."
         }
 
-        const phoneRegex = /^\+595\d{9}$/
-        if (!phoneRegex.test(formData.phone)) {
-            setError("El número de teléfono debe tener el formato +595XXXXXXXXX.")
-            setLoading(false)
-            errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
-            return
+        if (!PHONE_REGEX.test(formData.phone)) {
+            return "El número de teléfono debe tener el formato +595XXXXXXXXX."
         }
 
         if (!userId) {
-            setError("No se pudo obtener el usuario de la sesión. Iniciá sesión nuevamente.")
-            setLoading(false)
-            return
+            return "No se pudo obtener el usuario de la sesión. Iniciá sesión nuevamente."
         }
 
         const socialUrlFields = [
@@ -289,11 +265,27 @@ export const CommerceCreationForm = () => {
         for (const field of socialUrlFields) {
             const trimmedValue = field.value.trim()
             if (trimmedValue && !HTTP_URL_REGEX.test(trimmedValue)) {
-                setError(`${field.label} debe iniciar con http:// o https://`)
-                setLoading(false)
-                errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
-                return
+                return `${field.label} debe iniciar con http:// o https://`
             }
+        }
+
+        return null
+    }
+
+    const handleSubmit = async (e) => {
+        e.preventDefault()
+        setLoading(true)
+        setError("")
+
+        const parsedBasePrice = Number(formData.basePrice)
+        const parsedDistancePrice = Number(formData.distancePrice)
+
+        const validationError = validateForm(parsedBasePrice, parsedDistancePrice)
+        if (validationError) {
+            setError(validationError)
+            setLoading(false)
+            errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+            return
         }
 
         try {
