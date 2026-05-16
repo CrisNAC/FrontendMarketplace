@@ -226,7 +226,7 @@ export default function ProductDetailView() {
     const hasOfferChanges =
         offerForm.isOffer !== isOffer ||
         String(offerForm.offerPrice ?? "").trim() !==
-            String(product.offerPrice ?? "").trim();
+        String(product.offerPrice ?? "").trim();
 
     const handleOfferToggle = (nextValue) => {
         setOfferForm((prev) => ({
@@ -293,6 +293,8 @@ export default function ProductDetailView() {
             setOfferSaving(false);
         }
     };
+
+    const qty = product.quantity ?? 0;
 
     return (
         <div className="min-h-screen bg-[#ECF7F0]">
@@ -385,6 +387,13 @@ export default function ProductDetailView() {
                                             <Pill variant={isVisible ? "green" : "gray"}>
                                                 {isVisible ? "Activo" : "Oculto"}
                                             </Pill>
+                                        </div>
+
+                                        <div className="flex items-center justify-between">
+                                            <span className={SUBTLE}>Stock:</span>
+                                            <span className={`font-semibold ${qty === 0 ? "text-red-600" : "text-emerald-700"}`}>
+                                                {qty === 0 ? "Sin stock" : `${qty} unidades`}
+                                            </span>
                                         </div>
 
                                         {isOffer && offerPrice !== null && (
@@ -529,9 +538,8 @@ export default function ProductDetailView() {
                                             Estado de oferta
                                         </div>
                                         <div
-                                            className={`mt-0.5 text-[11px] font-semibold ${
-                                                offerForm.isOffer ? "text-amber-700" : "text-slate-600"
-                                            }`}
+                                            className={`mt-0.5 text-[11px] font-semibold ${offerForm.isOffer ? "text-amber-700" : "text-slate-600"
+                                                }`}
                                         >
                                             {offerForm.isOffer ? "Activa" : "Desactivada"}
                                         </div>
@@ -576,11 +584,10 @@ export default function ProductDetailView() {
 
                                 {offerFeedback.message && (
                                     <div
-                                        className={`rounded-xl px-3 py-2 text-[11px] font-medium ${
-                                            offerFeedback.type === "success"
-                                                ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100"
-                                                : "bg-red-50 text-red-700 ring-1 ring-red-100"
-                                        }`}
+                                        className={`rounded-xl px-3 py-2 text-[11px] font-medium ${offerFeedback.type === "success"
+                                            ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100"
+                                            : "bg-red-50 text-red-700 ring-1 ring-red-100"
+                                            }`}
                                     >
                                         {offerFeedback.message}
                                     </div>
