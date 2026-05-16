@@ -3019,300 +3019,369 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-491
   test('flujo comercio: visualizar reseñas de un delivery', async ({ page }) => {
-    const mockReviews = [
-      {
-        id: 1,
-        customerName: 'Cliente Uno',
-        orderId: 1001,
-        rating: 5,
-        comment: 'Excelente entrega, llegó rápido',
-        createdAt: '2026-05-01T10:00:00.000Z',
-      },
-      {
-        id: 2,
-        customerName: 'Cliente Dos',
-        orderId: 1002,
-        rating: 4,
-        comment: 'Muy bueno, sin problemas',
-        createdAt: '2026-05-02T10:00:00.000Z',
-      },
-      {
-        id: 3,
-        customerName: 'Cliente Tres',
-        orderId: 1003,
-        rating: 5,
-        comment: 'Perfecto, excelente servicio',
-        createdAt: '2026-05-03T10:00:00.000Z',
-      },
-    ];
-
-    await installDeliveryReviewsMock(page, {
-      reviews: mockReviews,
-      total: mockReviews.length,
+    // Mock sesión
+    await page.route('**/api/session/user-session', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      });
     });
 
-    await page.goto('/comercio/deliveries/resenas');
+    // Mock listado de deliveries (pagina /comercio/delivery)
+    await page.route('**/api/stores/1/deliveries', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          stats: { total: 1, available: 1, inDelivery: 0, avgRating: 4.8 },
+          deliveries: [
+            {
+              id: 5,
+              user: { id: 5, name: 'Repartidor X', email: 'rx@test.com', phone: '098100000' },
+              status: 'AVAILABLE',
+              completedDeliveries: 10,
+              successRate: 90,
+              avgRating: 4.8,
+              reviewCount: 2,
+            },
+          ],
+        }),
+      });
+    });
 
-    await expect(page.getByRole('heading', { name: 'Reseñas de Repartidores' })).toBeVisible();
+    // Capturar y mockear la petición de reseñas específica del delivery
+    let requestedDeliveryId: number | null = null;
+    await page.route(/\/api\/stores\/\d+\/deliveries\/\d+\/reviews/, async route => {
+      const m = route.request().url().match(/\/deliveries\/(\d+)\/reviews/);
+      requestedDeliveryId = m ? Number(m[1]) : null;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          reviews: [
+            { id: 1, customerName: 'Cliente A', orderId: 1001, rating: 5, comment: 'Excelente', createdAt: '2026-05-01T10:00:00.000Z' },
+            { id: 2, customerName: 'Cliente B', orderId: 1002, rating: 4, comment: 'Bien', createdAt: '2026-05-02T10:00:00.000Z' },
+          ],
+          total: 2,
+        }),
+      });
+    });
 
-    // Ingresar ID del repartidor
-    await page.locator('input[placeholder="Ej: 12"]').fill('5');
+    await page.goto('/comercio/delivery');
 
-    // Aplicar filtros (sin búsqueda específica)
-    await page.getByRole('button', { name: 'Aplicar filtros' }).click();
+    await expect(page.getByRole('heading', { name: 'Gestión de Repartidores' })).toBeVisible();
 
-    // Verificar que se cargaron las reseñas
-    await expect(page.getByText('Cliente Uno')).toBeVisible();
-    await expect(page.getByText('Cliente Dos')).toBeVisible();
-    await expect(page.getByText('Cliente Tres')).toBeVisible();
+    await page.getByRole('button', { name: 'Ver reseñas' }).first().click();
 
-    // Verificar que muestra la calificación promedio
-    await expect(page.getByText('Calificación Promedio')).toBeVisible();
-    await expect(page.getByText('4.7')).toBeVisible();
-
-    // Verificar que muestra el total de reseñas
-    await expect(page.getByText('Total Reseñas')).toBeVisible();
+    // Aserciones: URL, título con el nombre del delivery, reseñas visibles, y request contra el delivery correcto
+    await expect(page).toHaveURL(/\/comercio\/deliveries\/resenas\?deliveryId=5/);
+    await expect(page.getByRole('heading', { name: 'Reseñas de Repartidor X' })).toBeVisible();
+    await expect(page.getByText('Cliente A')).toBeVisible();
+    await expect(page.getByText('Cliente B')).toBeVisible();
+    expect(requestedDeliveryId).toBe(5);
   });
 
   // OM-491
   test('flujo comercio: buscar reseñas por código de pedido', async ({ page }) => {
-    const mockReviews = [
-      {
-        id: 1,
-        customerName: 'Cliente A',
-        orderId: 2001,
-        rating: 5,
-        comment: 'Entrega perfecta',
-        createdAt: '2026-05-01T10:00:00.000Z',
-      },
-      {
-        id: 2,
-        customerName: 'Cliente B',
-        orderId: 2002,
-        rating: 4,
-        comment: 'Buena entrega',
-        createdAt: '2026-05-02T10:00:00.000Z',
-      },
-      {
-        id: 3,
-        customerName: 'Cliente C',
-        orderId: 2003,
-        rating: 3,
-        comment: 'Aceptable',
-        createdAt: '2026-05-03T10:00:00.000Z',
-      },
-    ];
-
-    await installDeliveryReviewsMock(page, {
-      reviews: mockReviews,
-      total: mockReviews.length,
+    //mock de sesion
+    await page.route('**/api/session/user-session', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      });
     });
 
-    await page.goto('/comercio/deliveries/resenas');
+    // Mock listado de deliveries
+    await page.route('**/api/stores/1/deliveries', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          stats: { total: 1, available: 1, inDelivery: 0, avgRating: 4.8 },
+          deliveries: [
+            {
+              id: 5,
+              user: { id: 5, name: 'Repartidor X', email: 'rx@test.com', phone: '098100000' },
+              status: 'AVAILABLE',
+              completedDeliveries: 10,
+              successRate: 90,
+              avgRating: 4.8,
+              reviewCount: 3,
+            },
+          ],
+        }),
+      });
+    });
 
-    // Ingresar ID del repartidor
-    await page.locator('input[placeholder="Ej: 12"]').fill('1');
+    // Mock reviews endpoint y capturar parámetro de búsqueda
+    let requestedSearch: string | null = null;
+    await page.route(/\/api\/stores\/\d+\/deliveries\/\d+\/reviews/, async route => {
+      const url = new URL(route.request().url());
+      requestedSearch = url.searchParams.get('search');
+      const all = [
+        { id: 1, customerName: 'Cliente A', orderId: 1001, rating: 5, comment: 'Excelente', createdAt: '2026-05-01T10:00:00.000Z' },
+        { id: 2, customerName: 'Cliente B', orderId: 1002, rating: 4, comment: 'Bien', createdAt: '2026-05-02T10:00:00.000Z' },
+        { id: 3, customerName: 'Cliente C', orderId: 1003, rating: 5, comment: 'Perfecto', createdAt: '2026-05-03T10:00:00.000Z' },
+      ];
+      const filtered = requestedSearch ? all.filter(r => String(r.orderId) === requestedSearch) : all;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ reviews: filtered, total: filtered.length }),
+      });
+    });
 
-    // Ingresar código de pedido
-    await page.locator('input[placeholder="Código de pedido"]').fill('2001');
+    await page.goto('/comercio/delivery');
+    await page.getByRole('button', { name: 'Ver reseñas' }).first().click();
+
+    await expect(page).toHaveURL(/\/comercio\/deliveries\/resenas\?deliveryId=5/);
+    await expect(page.getByRole('heading', { name: /Reseñas de Repartidor X/ })).toBeVisible();
+
+    // buscar por código de pedido 1002
+    await page.getByPlaceholder(/N.*de pedido/i).fill('1002');
 
     // Aplicar filtros
     await page.getByRole('button', { name: 'Aplicar filtros' }).click();
 
-    // Debe mostrar solo la reseña del pedido 2001
-    await expect(page.getByText('Cliente A')).toBeVisible();
-    await expect(page.getByText('Entrega perfecta')).toBeVisible();
-
-    // No debe mostrar las otras reseñas
-    await expect(page.getByText('Cliente B')).not.toBeVisible();
+    // Debe mostrar solo la reseña del pedido 1002 y la petición incluyó el parámetro de búsqueda correcto
+    await expect(page.getByText('Cliente B')).toBeVisible();
+    await expect(page.getByText('Cliente A')).not.toBeVisible();
     await expect(page.getByText('Cliente C')).not.toBeVisible();
-
-    // Verificar que el total es 1
-    // Buscar dentro del contexto "Total Reseñas"
-    const totalReviewsDiv = page.getByText('Total Reseñas').locator('..');
-    await expect(totalReviewsDiv.locator('p').nth(1)).toContainText('1');
+    expect(requestedSearch).toBe('1002');
   });
 
   // OM-491
   test('flujo comercio: filtrar reseñas por estrellas', async ({ page }) => {
-    const mockReviews = [
-      {
-        id: 1,
-        customerName: 'Usuario 1',
-        orderId: 3001,
-        rating: 5,
-        comment: 'Excelente',
-        createdAt: '2026-05-01T10:00:00.000Z',
-      },
-      {
-        id: 2,
-        customerName: 'Usuario 2',
-        orderId: 3002,
-        rating: 4,
-        comment: 'Muy bueno',
-        createdAt: '2026-05-02T10:00:00.000Z',
-      },
-      {
-        id: 3,
-        customerName: 'Usuario 3',
-        orderId: 3003,
-        rating: 5,
-        comment: 'Perfecto',
-        createdAt: '2026-05-03T10:00:00.000Z',
-      },
-      {
-        id: 4,
-        customerName: 'Usuario 4',
-        orderId: 3004,
-        rating: 3,
-        comment: 'Regular',
-        createdAt: '2026-05-04T10:00:00.000Z',
-      },
-    ];
-
-    await installDeliveryReviewsMock(page, {
-      reviews: mockReviews,
-      total: mockReviews.length,
+    await page.route('**/api/session/user-session', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      });
     });
 
-    await page.goto('/comercio/deliveries/resenas');
+    // Mock listado de deliveries
+    await page.route('**/api/stores/1/deliveries', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          stats: { total: 1, available: 1, inDelivery: 0, avgRating: 4.8 },
+          deliveries: [
+            {
+              id: 5,
+              user: { id: 5, name: 'Repartidor X', email: 'rx@test.com', phone: '098100000' },
+              status: 'AVAILABLE',
+              completedDeliveries: 10,
+              successRate: 90,
+              avgRating: 4.8,
+              reviewCount: 3,
+            },
+          ],
+        }),
+      });
+    });
 
-    // Ingresar ID del repartidor
-    await page.locator('input[placeholder="Ej: 12"]').fill('1');
+    // Mock reviews endpoint y capturar min/max rating
+    let requestedMin: string | null = null;
+    let requestedMax: string | null = null;
+    await page.route(/\/api\/stores\/\d+\/deliveries\/\d+\/reviews/, async route => {
+      const url = new URL(route.request().url());
+      requestedMin = url.searchParams.get('minRating');
+      requestedMax = url.searchParams.get('maxRating');
 
-    // Seleccionar filtro de 5 estrellas
-    await page.locator('select').selectOption('5');
+      const all = [
+        { id: 1, customerName: 'Cliente 5A', orderId: 1101, rating: 5, comment: 'Excelente', createdAt: '2026-05-01T10:00:00.000Z' },
+        { id: 2, customerName: 'Cliente 4', orderId: 1102, rating: 4, comment: 'Bien', createdAt: '2026-05-02T10:00:00.000Z' },
+        { id: 3, customerName: 'Cliente 5B', orderId: 1103, rating: 5, comment: 'Perfecto', createdAt: '2026-05-03T10:00:00.000Z' },
+      ];
 
-    // Aplicar filtros
+      const filtered = (requestedMin && requestedMax)
+        ? all.filter(r => r.rating >= Number(requestedMin) && r.rating <= Number(requestedMax))
+        : all;
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ reviews: filtered, total: filtered.length }),
+      });
+    });
+
+    // Navegar desde la lista y abrir reseñas
+    await page.goto('/comercio/delivery');
+    await page.getByRole('button', { name: 'Ver Reseñas' }).first().click();
+
+    await expect(page).toHaveURL(/\/comercio\/deliveries\/resenas\?deliveryId=5/);
+    await expect(page.getByRole('heading', { name: /Reseñas de Repartidor X/ })).toBeVisible();
+
+    // Seleccionar filtro de 5 estrellas y aplicar
+    await page.selectOption('select', '5');
     await page.getByRole('button', { name: 'Aplicar filtros' }).click();
 
-    // Debe mostrar solo las reseñas de 5 estrellas
-    await expect(page.getByText('Usuario 1')).toBeVisible();
-    await expect(page.getByText('Excelente')).toBeVisible();
-    await expect(page.getByText('Usuario 3')).toBeVisible();
-    await expect(page.getByText('Perfecto')).toBeVisible();
-
-    // No debe mostrar reseñas de otras calificaciones
-    await expect(page.getByText('Usuario 2')).not.toBeVisible();
-    await expect(page.getByText('Usuario 4')).not.toBeVisible();
+    // Aserciones: solo aparecen reseñas con 5 estrellas y la petición incluyó min/max = 5
+    await expect(page.getByText('Cliente 5A')).toBeVisible();
+    await expect(page.getByText('Cliente 5B')).toBeVisible();
+    await expect(page.getByText('Cliente 4')).not.toBeVisible();
+    expect(requestedMin).toBe('5');
+    expect(requestedMax).toBe('5');
   });
 
   // OM-491
   test('flujo comercio: buscar y filtrar reseñas simultáneamente', async ({ page }) => {
-    const mockReviews = [
-      {
-        id: 1,
-        customerName: 'User Alfa',
-        orderId: 4001,
-        rating: 5,
-        comment: 'Excelente servicio',
-        createdAt: '2026-05-01T10:00:00.000Z',
-      },
-      {
-        id: 2,
-        customerName: 'User Beta',
-        orderId: 4002,
-        rating: 5,
-        comment: 'Muy satisfecho',
-        createdAt: '2026-05-02T10:00:00.000Z',
-      },
-      {
-        id: 3,
-        customerName: 'User Gamma',
-        orderId: 4001,
-        rating: 4,
-        comment: 'Buena entrega',
-        createdAt: '2026-05-03T10:00:00.000Z',
-      },
-      {
-        id: 4,
-        customerName: 'User Delta',
-        orderId: 4003,
-        rating: 5,
-        comment: 'Perfecto',
-        createdAt: '2026-05-04T10:00:00.000Z',
-      },
-    ];
-
-    await installDeliveryReviewsMock(page, {
-      reviews: mockReviews,
-      total: mockReviews.length,
+    await page.route('**/api/session/user-session', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      });
     });
 
-    await page.goto('/comercio/deliveries/resenas');
+    // Mock listado de deliveries
+    await page.route('**/api/stores/1/deliveries', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          stats: { total: 1, available: 1, inDelivery: 0, avgRating: 4.8 },
+          deliveries: [
+            {
+              id: 5,
+              user: { id: 5, name: 'Repartidor X', email: 'rx@test.com', phone: '098100000' },
+              status: 'AVAILABLE',
+              completedDeliveries: 10,
+              successRate: 90,
+              avgRating: 4.8,
+              reviewCount: 3,
+            },
+          ],
+        }),
+      });
+    });
 
-    // Ingresar ID del repartidor
-    await page.locator('input[placeholder="Ej: 12"]').fill('1');
+    // Mock reviews endpoint y capturar parámetros
+    let requestedSearch: string | null = null;
+    let requestedMin: string | null = null;
+    let requestedMax: string | null = null;
+    await page.route(/\/api\/stores\/\d+\/deliveries\/\d+\/reviews/, async route => {
+      const url = new URL(route.request().url());
+      requestedSearch = url.searchParams.get('search');
+      requestedMin = url.searchParams.get('minRating');
+      requestedMax = url.searchParams.get('maxRating');
 
-    // Ingresar código de pedido
-    await page.locator('input[placeholder="Código de pedido"]').fill('4001');
+      const all = [
+        { id: 1, customerName: 'Cliente 5A', orderId: 1101, rating: 5, comment: 'Excelente', createdAt: '2026-05-01T10:00:00.000Z' },
+        { id: 2, customerName: 'Cliente 4', orderId: 1102, rating: 4, comment: 'Bien', createdAt: '2026-05-02T10:00:00.000Z' },
+        { id: 3, customerName: 'Cliente 5B', orderId: 1103, rating: 5, comment: 'Perfecto', createdAt: '2026-05-03T10:00:00.000Z' },
+      ];
 
-    // Seleccionar filtro de 5 estrellas
-    await page.locator('select').selectOption('5');
+      const filtered = all
+        .filter(r => !requestedSearch || String(r.orderId) === requestedSearch)
+        .filter(r => !(requestedMin && requestedMax) || (r.rating >= Number(requestedMin) && r.rating <= Number(requestedMax)));
 
-    // Aplicar filtros
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ reviews: filtered, total: filtered.length }),
+      });
+    });
+
+    // Navegar desde la lista y abrir reseñas
+    await page.goto('/comercio/delivery');
+    await page.getByRole('button', { name: 'Ver Reseñas' }).first().click();
+
+    await expect(page).toHaveURL(/\/comercio\/deliveries\/resenas\?deliveryId=5/);
+    await expect(page.getByRole('heading', { name: /Reseñas de Repartidor X/ })).toBeVisible();
+
+    // Aplicar búsqueda por código y filtro de 5 estrellas
+    await page.getByPlaceholder(/N.*de pedido/i).fill('1103');
+    await page.selectOption('select', '5');
     await page.getByRole('button', { name: 'Aplicar filtros' }).click();
 
-    // Debe mostrar solo la reseña que coincide con ambos filtros (pedido 4001 + 5 estrellas)
-    await expect(page.getByText('User Alfa')).toBeVisible();
-    await expect(page.getByText('Excelente servicio')).toBeVisible();
-
-    // No debe mostrar otras reseñas
-    await expect(page.getByText('User Beta')).not.toBeVisible();
-    await expect(page.getByText('User Gamma')).not.toBeVisible();
-    await expect(page.getByText('User Delta')).not.toBeVisible();
-
-    // Verificar que el total es 1
-    const totalReviewsDiv = page.getByText('Total Reseñas').locator('..');
-    await expect(totalReviewsDiv.locator('p').nth(1)).toContainText('1');
+    // Aserciones
+    await expect(page.getByText('Cliente 5B')).toBeVisible();
+    await expect(page.getByText('Cliente 5A')).not.toBeVisible();
+    await expect(page.getByText('Cliente 4')).not.toBeVisible();
+    expect(requestedSearch).toBe('1103');
+    expect(requestedMin).toBe('5');
+    expect(requestedMax).toBe('5');
   });
 
   // OM-491
   test('flujo comercio: mostrar estado vacío cuando no hay resultados', async ({ page }) => {
-    const mockReviews = [
-      {
-        id: 1,
-        customerName: 'Reviewer One',
-        orderId: 5001,
-        rating: 4,
-        comment: 'Bueno',
-        createdAt: '2026-05-01T10:00:00.000Z',
-      },
-      {
-        id: 2,
-        customerName: 'Reviewer Two',
-        orderId: 5002,
-        rating: 3,
-        comment: 'Regular',
-        createdAt: '2026-05-02T10:00:00.000Z',
-      },
-    ];
-
-    await installDeliveryReviewsMock(page, {
-      reviews: mockReviews,
-      total: mockReviews.length,
+    await page.route('**/api/session/user-session', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      });
     });
 
-    await page.goto('/comercio/deliveries/resenas');
+    // Mock listado de deliveries
+    await page.route('**/api/stores/1/deliveries', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          stats: { total: 1, available: 1, inDelivery: 0, avgRating: 4.8 },
+          deliveries: [
+            {
+              id: 5,
+              user: { id: 5, name: 'Repartidor X', email: 'rx@test.com', phone: '098100000' },
+              status: 'AVAILABLE',
+              completedDeliveries: 10,
+              successRate: 90,
+              avgRating: 4.8,
+              reviewCount: 3,
+            },
+          ],
+        }),
+      });
+    });
 
-    // Ingresar ID del repartidor
-    await page.locator('input[placeholder="Ej: 12"]').fill('5');
+    // Mock reviews endpoint con filtros que devuelven vacío
+    await page.route(/\/api\/stores\/\d+\/deliveries\/\d+\/reviews/, async route => {
+      const url = new URL(route.request().url());
+      const search = url.searchParams.get('search');
+      const minRating = url.searchParams.get('minRating');
 
-    // Buscar un pedido que no existe
-    await page.locator('input[placeholder="Código de pedido"]').fill('9999');
+      // Si hay búsqueda o filtro muy restrictivo, devolver vacío
+      if (search === '9999' || minRating === '1') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ reviews: [], total: 0 }),
+        });
+        return;
+      }
 
-    // Aplicar filtros
+      // Caso por defecto: devolver reseñas
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          reviews: [
+            { id: 1, customerName: 'Cliente A', orderId: 1101, rating: 5, comment: 'Excelente', createdAt: '2026-05-01T10:00:00.000Z' },
+          ],
+          total: 1,
+        }),
+      });
+    });
+
+    // Navegar desde la lista y abrir reseñas
+    await page.goto('/comercio/delivery');
+    await page.getByRole('button', { name: 'Ver Reseñas' }).first().click();
+
+    await expect(page).toHaveURL(/\/comercio\/deliveries\/resenas\?deliveryId=5/);
+
+    // Aplicar búsqueda con código inexistente para generar estado vacío
+    await page.getByPlaceholder(/N.* de pedido/i).fill('9999');
     await page.getByRole('button', { name: 'Aplicar filtros' }).click();
 
-    // Debe mostrar el estado vacío
+    //se muestra el estado vacío
     await expect(page.getByText('No hay reseñas para los filtros aplicados.')).toBeVisible();
-
-    // Verificar que el total es 0
-    await expect(page.locator('p', { hasText: /^0$/ })).toBeVisible();
-
-    // No debe mostrar ninguna reseña
-    await expect(page.getByText('Reviewer One')).not.toBeVisible();
-    await expect(page.getByText('Reviewer Two')).not.toBeVisible();
+    await expect(page.getByRole('heading', { name: /Reseñas/ })).toBeVisible();
   });
   // OM-488: Historial de delivery
 
@@ -3622,7 +3691,6 @@ test.describe('Flujos E2E de usuario final', () => {
     await page.goto('/comercio/delivery');
 
     await expect(page.getByRole('heading', { name: 'Gestión de Repartidores' })).toBeVisible();
-    await expect(page.getByText('Repartidores Vinculados', { exact: true })).toBeVisible();
 
     // Stats superiores
     await expect(page.getByText('Disponibles')).toBeVisible();
@@ -3647,7 +3715,7 @@ test.describe('Flujos E2E de usuario final', () => {
 
     // Headers de la tabla
     await expect(page.getByText('Nombre Completo')).toBeVisible();
-    await expect(page.getByText('Estado')).toBeVisible();
+    await expect(page.getByText('Estado').nth(1)).toBeVisible();
     await expect(page.getByText('Teléfono')).toBeVisible();
     await expect(page.getByText('Correo')).toBeVisible();
     await expect(page.getByText('Entregas')).toBeVisible();
@@ -3659,17 +3727,7 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page.getByText('Juan Pérez')).toBeVisible();
   });
 
-  // OM-321
-  test('flujo comercio: navegar a reseñas desde botón Ver Reseñas', async ({ page }) => {
-    await installCommerceDeliveriesMock(page);
-
-    await page.goto('/comercio/delivery');
-
-    await page.getByRole('button', { name: 'Ver Reseñas' }).first().click();
-
-    await expect(page).toHaveURL('/comercio/deliveries/resenas');
-    await expect(page.getByRole('heading', { name: 'Reseñas de Repartidores' })).toBeVisible();
-  });
+  
 
   // OM-321
   test('flujo comercio: abrir y cerrar modal de desvinculación', async ({ page }) => {
