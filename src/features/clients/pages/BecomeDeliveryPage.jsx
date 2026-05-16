@@ -14,7 +14,7 @@ export const BecomeDeliveryPage = () => {
       <Navbar />
       <BecomeDeliveryModal
         open
-        onClose={() => navigate("/homepage", { replace: true })}
+        onClose={() => navigate("/", { replace: true })}
         onSuccess={() => navigate("/delivery", { replace: true })}
       />
     </div>

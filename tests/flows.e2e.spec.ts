@@ -353,7 +353,7 @@ test.describe('Flujos E2E de usuario final', () => {
     // Los campos ya vienen prellenados, solo hacer click
     await page.locator('form button[type="submit"]').click();
 
-    await expect(page).toHaveURL('/homepage');
+    await expect(page).toHaveURL('/');
     await expect(page.getByRole('heading', { name: 'Comercios' })).toBeVisible();
 
     await page.goto('/perfil-comercio?storeId=1&storeName=Nissei');
@@ -376,7 +376,7 @@ test.describe('Flujos E2E de usuario final', () => {
     await page.locator('input[name="password"]').fill('12345678');
     await page.locator('form button[type="submit"]').click();
 
-    await expect(page).toHaveURL('/homepage');
+    await expect(page).toHaveURL('/');
 
     await page.goto('/comercio');
     await expect(page.getByText('Dashboard').first()).toBeVisible();
@@ -403,7 +403,7 @@ test.describe('Flujos E2E de usuario final', () => {
   });
 
   test('flujo descubrimiento: homepage, busqueda, comparar precios y abrir detalle', async ({ page }) => {
-    await page.goto('/homepage');
+    await page.goto('/');
 
     const categoriasSection = page.locator('section').filter({ hasText: 'Compra por categorías' });
     await categoriasSection.getByText('Celulares').first().click();
@@ -1637,7 +1637,7 @@ test.describe('Flujos E2E de usuario final', () => {
     await page.locator('input[name="password"]').fill('12345678');
     await page.locator('form button[type="submit"]').click();
 
-    await expect(page).toHaveURL('/homepage');
+    await expect(page).toHaveURL('/');
 
     await expect(page.getByRole('heading', { name: 'Califica al delivery' })).toBeVisible();
     await expect(page.getByText('Pedido #123 de Nissei')).toBeVisible();
@@ -1820,7 +1820,7 @@ test.describe('Flujos E2E de usuario final', () => {
     await page.getByRole('button', { name: 'Confirmar' }).click();
 
     // El modal cierra y redirige a homepage (comportamiento actual)
-    await expect(page).toHaveURL('/homepage');
+    await expect(page).toHaveURL('/');
 
     await page.route('**/api/deliveries/5', async (route) => {
       if (route.request().method() === 'GET') {
@@ -1921,7 +1921,7 @@ test.describe('Flujos E2E de usuario final', () => {
       });
     });
 
-    await page.goto('/homepage');
+    await page.goto('/');
 
     await expect(page.getByRole('link', { name: 'Quiero ser delivery' })).toBeVisible();
     await page.getByRole('link', { name: 'Quiero ser delivery' }).click();
@@ -2019,7 +2019,7 @@ test.describe('Flujos E2E de usuario final', () => {
     await page.locator('#delivery-vehicle').selectOption('AUTOMOVIL');
     await page.getByRole('button', { name: 'Confirmar' }).click();
 
-    await expect(page).toHaveURL('/homepage');
+    await expect(page).toHaveURL('/');
 
     await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {

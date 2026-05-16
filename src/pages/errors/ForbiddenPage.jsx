@@ -17,7 +17,7 @@ export const ForbiddenPage = () => {
           <button onClick={() => navigate(-1)} className="btn btn-secondary">
             Volver atrás
           </button>
-          <button onClick={() => navigate('/homepage')} className="btn btn-primary">
+          <button onClick={() => navigate('/')} className="btn btn-primary">
             Ir al inicio
           </button>
         </div>
