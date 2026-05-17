@@ -3727,7 +3727,7 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page.getByText('Juan Pérez')).toBeVisible();
   });
 
-  
+
 
   // OM-321
   test('flujo comercio: abrir y cerrar modal de desvinculación', async ({ page }) => {
@@ -4297,4 +4297,333 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page.getByText('Entrega finalizada correctamente')).toBeVisible();
     await expect(page.getByText('¡No tienes pedidos activos! Buen trabajo completando entregas.')).toBeVisible();
   });
+
+  // OM-514 - Gestión de stock de productos
+
+  test('flujo comercio: Editar stock disponible de un producto', async ({ page }) => {
+    const productId = 101;
+
+
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      });
+    });
+
+
+    await page.unroute('**/products/101');
+
+    const baseProduct = {
+      id_product: productId,
+      name: 'Producto prueba',
+      description: 'Desc prueba',
+      price: 100,
+      quantity: 5,
+      visible: true,
+      isOffer: false,
+      offerPrice: null,
+      images: [],
+      categoryId: 1,
+      categories: [{ id: 1, name: 'Cat' }],
+      store: { id_store: 1, name: 'Comercio' },
+      product_tag_relations: [],
+      tags: [],
+    };
+
+    let putBody: any = null;
+    let updatedProduct = { ...baseProduct };
+
+    const handler = async (route: any) => {
+      const req = route.request();
+      if (req.method() === 'PUT') {
+        const bodyText = await req.postData();
+        putBody = bodyText ? JSON.parse(bodyText) : {};
+        updatedProduct = {
+          ...updatedProduct,
+          quantity: putBody.quantity ?? updatedProduct.quantity,
+          categoryId: putBody.categoryIds?.[0] ?? updatedProduct.categoryId,
+          categories: putBody.categoryIds?.length
+            ? putBody.categoryIds.map((id: number) => ({ id, name: `Cat ${id}` }))
+            : updatedProduct.categories,
+        };
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(updatedProduct) });
+      } else {
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(updatedProduct) });
+      }
+    };
+
+    await page.route(`**/products/${productId}`, handler);
+    await page.route(`**/api/products/${productId}`, handler);
+
+    await page.goto(`/comercio/productos/${productId}/editar`);
+
+    // Esperar que el componente termina de cargar
+    await expect(page.getByLabel('Stock Disponible *')).not.toBeDisabled({ timeout: 10000 });
+    await expect(page.getByLabel('Stock Disponible *')).toHaveValue('5');
+
+    await page.getByLabel('Stock Disponible *').fill('8');
+    await page.getByRole('button', { name: /Actualizar/i }).click();
+
+    expect(putBody).not.toBeNull();
+    expect(putBody.quantity).toBe(8);
+
+    await page.goto(`/producto-detalle/${productId}`);
+    await expect(page.getByText('En stock')).toBeVisible();
+  });
+
+  test('flujo comercio: Validar stock inválido en edición', async ({ page }) => {
+    const productId = 101;
+
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      });
+    });
+
+    await page.unroute('**/products/101');
+
+    const baseProduct = {
+      id_product: productId,
+      name: 'Producto prueba',
+      description: 'Desc prueba',
+      price: 100,
+      quantity: 5,
+      visible: true,
+      isOffer: false,
+      offerPrice: null,
+      images: [],
+      categoryId: 1,
+      categories: [{ id: 1, name: 'Cat' }],
+      store: { id_store: 1, name: 'Comercio' },
+      product_tag_relations: [],
+      tags: [],
+    };
+
+    let putRequestCount = 0;
+
+    const handler = async (route: any) => {
+      const req = route.request();
+      if (req.method() === 'PUT') {
+        putRequestCount += 1;
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(baseProduct) });
+        return;
+      }
+
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(baseProduct) });
+    };
+
+    await page.route(`**/products/${productId}`, handler);
+    await page.route(`**/api/products/${productId}`, handler);
+
+    await page.goto(`/comercio/productos/${productId}/editar`);
+
+    const stockInput = page.getByLabel('Stock Disponible *');
+    await expect(stockInput).not.toBeDisabled({ timeout: 10000 });
+    await expect(stockInput).toHaveValue('5');
+
+    await stockInput.fill('-1');
+    await page.getByRole('button', { name: /Actualizar/i }).click();
+
+    await expect(page.getByText('El stock debe ser un número entero mayor o igual a 0.')).toBeVisible();
+    expect(putRequestCount).toBe(0);
+
+    // Validar stock negativo
+    await stockInput.fill('-1');
+    await page.getByRole('button', { name: /Actualizar/i }).click();
+    await expect(page.getByText('El stock debe ser un número entero mayor o igual a 0.')).toBeVisible();
+    expect(putRequestCount).toBe(0);
+
+    // Validar stock decimal
+    await stockInput.fill('3.5');
+    await page.getByRole('button', { name: /Actualizar/i }).click();
+    await expect(page.getByText('El stock debe ser un número entero mayor o igual a 0.')).toBeVisible();
+    expect(putRequestCount).toBe(0);
+  });
+
+  //OM-514
+  test('flujo carrito: mostrar sin stock y bloquear compra', async ({ page }) => {
+    let cartPostCalls = 0;
+
+    // Mock del producto sin stock (sobrescribe el mock común)
+    await page.route('**/products/101', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id_product: 101,
+          name: 'Apple iPhone 17 Pro A3256 Dual',
+          description: 'Smartphone premium',
+          price: 13290000,
+          quantity: 0,
+          averageRating: 4.7,
+          reviewCount: 542,
+          category: { name: 'Celulares' },
+          commerce: { name: 'Nissei' },
+          tags: [{ id: 1, name: 'OLED' }],
+        }),
+      });
+    });
+
+    // Contador de intentos de compra
+    await page.route('**/api/users/*/cart/items', async (route) => {
+      if (route.request().method() === 'POST') {
+        cartPostCalls += 1;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ id: 1, items: [] }),
+        });
+        return;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ id: 1, items: [] }),
+      });
+    });
+
+    await page.goto('/producto-detalle/101');
+
+    await expect(page.getByText('Sin stock')).toBeVisible();
+
+    const addToCartBtn = page.getByRole('button', { name: /agregar al carrito/i });
+    await expect(addToCartBtn).toBeVisible();
+    await addToCartBtn.click();
+
+    await expect(page.getByText('Este producto no tiene stock disponible')).toBeVisible();
+    await expect.poll(() => cartPostCalls).toBe(0);
+  });
+
+  //OM-514
+  test('flujo cliente: descontar stock al confirmar compra', async ({ page }) => {
+    let currentStock = 1;
+    let orderPostCalls = 0;
+
+    await page.unroute('**/products/101');
+
+    const buildProduct = () => ({
+      id_product: 101,
+      name: 'Apple iPhone 17 Pro A3256 Dual',
+      description: 'Smartphone premium',
+      price: 13290000,
+      quantity: currentStock,
+      averageRating: 4.7,
+      reviewCount: 542,
+      category: { name: 'Celulares' },
+      commerce: { name: 'Nissei' },
+      tags: [{ id: 1, name: 'OLED' }],
+    });
+
+    const productHandler = async (route: any) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(buildProduct()),
+      });
+    };
+
+    await page.route('**/products/101', productHandler);
+    await page.route('**/api/products/101', productHandler);
+
+    await page.route('**/api/users/*/carts', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            carts: [
+              {
+                id: 1,
+                storeId: 1,
+                commerce: { id: 1, name: 'Nissei' },
+                status: 'ACTIVE',
+                items: [
+                  {
+                    id: 1,
+                    quantity: 1,
+                    product: {
+                      id: 101,
+                      name: 'Apple iPhone 17 Pro A3256 Dual',
+                      price: 13290000,
+                      originalPrice: 13290000,
+                      isOffer: false,
+                    },
+                  },
+                ],
+              },
+            ],
+          }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    await page.route('**/api/users/*/addresses', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ data: [] }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    await page.route('**/api/orders', async (route) => {
+      if (route.request().method() === 'POST') {
+        orderPostCalls += 1;
+        currentStock = Math.max(0, currentStock - 1);
+
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id: 556,
+            status: 'PENDING',
+            total: 13290000,
+            notes: null,
+            address: null,
+            items: [
+              {
+                id: 1,
+                name: 'Apple iPhone 17 Pro A3256 Dual',
+                quantity: 1,
+                price: 13290000,
+                originalPrice: 13290000,
+                isOfferApplied: false,
+                subtotal: 13290000,
+              },
+            ],
+            createdAt: '2026-03-20T10:00:00.000Z',
+            updatedAt: '2026-03-20T10:00:00.000Z',
+          }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    await page.goto('/producto-detalle/101');
+    await expect(page.getByText('En stock')).toBeVisible();
+
+    await page.goto('/confirmar-pedido/1');
+    await expect(page.getByRole('heading', { name: 'Confirmar Pedido' })).toBeVisible();
+    await page.getByRole('button', { name: 'Confirmar Pedido' }).click();
+
+    await expect(page).toHaveURL('/pedido-confirmado');
+    await expect.poll(() => orderPostCalls).toBe(1);
+
+    await page.goto('/producto-detalle/101');
+    await expect(page.getByText('Sin stock')).toBeVisible();
+  });
+
 });
