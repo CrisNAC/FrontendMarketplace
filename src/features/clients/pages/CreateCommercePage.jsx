@@ -17,7 +17,11 @@ export const CreateCommercePage = () => {
             }
         };
 
-        checkRole().catch(() => {});
+        checkRole().catch((error) => {
+            // apiClient ya maneja errores HTTP
+            // Solo se redirige a /error/500 si es un error sin respuesta del servidor
+            if (!error?.response) navigate("/error/500", { replace: true });
+        });
     }, [navigate]);
 
     return (
