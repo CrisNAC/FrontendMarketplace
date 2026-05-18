@@ -67,18 +67,24 @@ export default function OrdenesComprasPage() {
       loadCarts();
     };
 
-    const globalObj = typeof globalThis !== "undefined" ? globalThis : null;
-
-    if (globalObj && typeof globalObj.addEventListener === "function") {
-      globalObj.addEventListener("cartUpdated", onCartUpdated);
-      return () => {
-        if (globalObj && typeof globalObj.removeEventListener === "function") {
-          globalObj.removeEventListener("cartUpdated", onCartUpdated);
-        }
-      };
+    const hasGlobalThis = typeof globalThis !== "undefined";
+    if (!hasGlobalThis) {
+      return undefined;
     }
 
-    return undefined;
+    const hasListener = typeof globalThis.addEventListener === "function";
+    if (!hasListener) {
+      return undefined;
+    }
+
+    globalThis.addEventListener("cartUpdated", onCartUpdated);
+
+    return () => {
+      const hasRemover = typeof globalThis.removeEventListener === "function";
+      if (hasRemover) {
+        globalThis.removeEventListener("cartUpdated", onCartUpdated);
+      }
+    };
   }, [loadCarts]);
 
   const handleDeleteCartClick = (cartId, storeName, itemCount) => {
