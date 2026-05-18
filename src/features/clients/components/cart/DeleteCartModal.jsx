@@ -64,8 +64,6 @@ export function DeleteCartModal({ cartId, userId, storeName, itemCount, onClose,
     }
   };
 
-  // ─── Estilos ────────────────────────────────────────────────────────────
-
   const header = {
     padding: "20px 24px 16px",
     borderBottom: "1px solid #f3f4f6",
@@ -125,8 +123,6 @@ export function DeleteCartModal({ cartId, userId, storeName, itemCount, onClose,
     ? <><Loader size={14} /> Eliminando...</>
     : <><Trash2 size={14} /> Eliminar orden</>;
 
-  // ─── Render ──────────────────────────────────────────────────────────────
-
   return (
     <>
       <style>{`
@@ -150,12 +146,8 @@ export function DeleteCartModal({ cartId, userId, storeName, itemCount, onClose,
           animation: spin 1s linear infinite; 
         }
       `}</style>
-      <dialog
-        ref={dialogRef}
-        aria-labelledby="delete-modal-title"
-      >
+      <dialog ref={dialogRef} aria-labelledby="delete-modal-title">
         <div>
-          {/* Header */}
           <div style={header}>
             <div>
               <p
@@ -187,7 +179,6 @@ export function DeleteCartModal({ cartId, userId, storeName, itemCount, onClose,
             </button>
           </div>
 
-          {/* Body */}
           <div style={body}>
             {error && (
               <div
@@ -220,22 +211,10 @@ export function DeleteCartModal({ cartId, userId, storeName, itemCount, onClose,
               <p style={{ fontSize: "14px", color: "#7f1d1d", margin: 0, lineHeight: "1.5" }}>
                 ¿Estás seguro de que deseas eliminar esta orden de compra?
               </p>
-              <p
-                style={{
-                  fontSize: "13px",
-                  color: "#b91c1c",
-                  margin: "8px 0 0 0",
-                }}
-              >
+              <p style={{ fontSize: "13px", color: "#b91c1c", margin: "8px 0 0 0" }}>
                 • Contiene {itemCount} {itemCount === 1 ? "producto" : "productos"}
               </p>
-              <p
-                style={{
-                  fontSize: "13px",
-                  color: "#b91c1c",
-                  margin: "4px 0 0 0",
-                }}
-              >
+              <p style={{ fontSize: "13px", color: "#b91c1c", margin: "4px 0 0 0" }}>
                 • Esta acción no se puede deshacer
               </p>
             </div>
@@ -245,22 +224,11 @@ export function DeleteCartModal({ cartId, userId, storeName, itemCount, onClose,
             </p>
           </div>
 
-          {/* Footer */}
           <div style={footer}>
-            <button
-              type="button"
-              style={btnSecondary}
-              onClick={handleClose}
-              disabled={deleting}
-            >
+            <button type="button" style={btnSecondary} onClick={handleClose} disabled={deleting}>
               Cancelar
             </button>
-            <button
-              type="button"
-              style={btnPrimary}
-              onClick={handleDelete}
-              disabled={deleting}
-            >
+            <button type="button" style={btnPrimary} onClick={handleDelete} disabled={deleting}>
               {deleteButtonContent}
             </button>
           </div>

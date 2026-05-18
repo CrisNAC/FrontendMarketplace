@@ -6,7 +6,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { fetchCartsApi, getApiBase } from "../../../lib/cartApi";
 import { formatGuarani } from "../../../lib/formatGuarani.js";
-import { DeleteCartModal} from "../components/cart/DeleteCartModal.jsx";
+import { DeleteCartModal } from "../components/cart/DeleteCartModal.jsx";
 import { DeleteAllCartsModal } from "../components/cart/DeleteAllCartsModal.jsx";
 
 function itemSubtotal(unitPrice, qty) {
@@ -23,9 +23,7 @@ export default function OrdenesComprasPage() {
   const [status, setStatus] = useState("loading");
   const [carts, setCarts] = useState([]);
   const [userId, setUserId] = useState(null);
-  
-  // Estado para modales de eliminación
-  const [deleteCartModal, setDeleteCartModal] = useState(null); // { cartId, storeName, itemCount }
+  const [deleteCartModal, setDeleteCartModal] = useState(null);
   const [deleteAllCartsModal, setDeleteAllCartsModal] = useState(false);
 
   const loadCarts = useCallback(async () => {
@@ -68,8 +66,9 @@ export default function OrdenesComprasPage() {
     const onCartUpdated = () => {
       loadCarts();
     };
+
     const globalObj = typeof globalThis !== "undefined" ? globalThis : null;
-    
+
     if (globalObj && typeof globalObj.addEventListener === "function") {
       globalObj.addEventListener("cartUpdated", onCartUpdated);
       return () => {
@@ -78,6 +77,8 @@ export default function OrdenesComprasPage() {
         }
       };
     }
+
+    return undefined;
   }, [loadCarts]);
 
   const handleDeleteCartClick = (cartId, storeName, itemCount) => {
@@ -118,7 +119,7 @@ export default function OrdenesComprasPage() {
               Ordenes de Compras
             </h1>
           </div>
-          
+
           {status === "ready" && carts.length > 0 && (
             <button
               type="button"
@@ -239,7 +240,9 @@ export default function OrdenesComprasPage() {
                                   src={imageUrl}
                                   alt={name}
                                   className="w-full h-full object-cover"
-                                  onError={(e) => { e.currentTarget.style.display = "none"; }}
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = "none";
+                                  }}
                                 />
                               ) : (
                                 <div className="w-full h-full bg-gray-200" />
@@ -292,7 +295,6 @@ export default function OrdenesComprasPage() {
         )}
       </div>
 
-      {/* Modal para eliminar un carrito específico */}
       {deleteCartModal && userId && (
         <DeleteCartModal
           cartId={deleteCartModal.cartId}
@@ -304,7 +306,6 @@ export default function OrdenesComprasPage() {
         />
       )}
 
-      {/* Modal para eliminar todos los carritos */}
       {deleteAllCartsModal && userId && (
         <DeleteAllCartsModal
           userId={userId}
