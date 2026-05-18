@@ -138,7 +138,7 @@ export const updateStoreStatus = async (commerceId, store_status) => {
 
 // Misma respuesta que GET público; el backend solo expone GET /api/commerces/:id (no existe /my/:id).
 export const fetchMyCommerce = async (commerceId) => {
-    const response = await apiClient.get(`/api/commerces/${commerceId}`);
+    const response = await apiClient.get(`/api/commerces/my/${commerceId}`);
     return response.data;
 };
 
