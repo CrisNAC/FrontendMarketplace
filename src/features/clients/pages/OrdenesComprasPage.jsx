@@ -1,4 +1,4 @@
-//OrdenesComprasPage.jsx
+// src/features/clients/pages/OrdenesComprasPage.jsx
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Trash2 } from "lucide-react";
@@ -6,6 +6,8 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { fetchCartsApi, getApiBase } from "../../../lib/cartApi";
 import { formatGuarani } from "../../../lib/formatGuarani.js";
+import { DeleteCartModal } from "../components/cart/DeleteCartModal.jsx";
+import { DeleteAllCartsModal } from "../components/cart/DeleteAllCartsModal.jsx";
 
 function itemSubtotal(unitPrice, qty) {
   const u = Number(unitPrice);
@@ -21,8 +23,8 @@ export default function OrdenesComprasPage() {
   const [status, setStatus] = useState("loading");
   const [carts, setCarts] = useState([]);
   const [userId, setUserId] = useState(null);
-  const [loadingDeleteAll, setLoadingDeleteAll] = useState(false);
-  const [loadingDeleteCart, setLoadingDeleteCart] = useState(null);
+  const [deleteCartModal, setDeleteCartModal] = useState(null);
+  const [deleteAllCartsModal, setDeleteAllCartsModal] = useState(false);
 
   const loadCarts = useCallback(async () => {
     try {
@@ -64,57 +66,47 @@ export default function OrdenesComprasPage() {
     const onCartUpdated = () => {
       loadCarts();
     };
-    window.addEventListener("cartUpdated", onCartUpdated);
-    return () => window.removeEventListener("cartUpdated", onCartUpdated);
+
+    const hasGlobalThis = typeof globalThis !== "undefined";
+    if (!hasGlobalThis) {
+      return undefined;
+    }
+
+    const hasListener = typeof globalThis.addEventListener === "function";
+    if (!hasListener) {
+      return undefined;
+    }
+
+    globalThis.addEventListener("cartUpdated", onCartUpdated);
+
+    return () => {
+      const hasRemover = typeof globalThis.removeEventListener === "function";
+      if (hasRemover) {
+        globalThis.removeEventListener("cartUpdated", onCartUpdated);
+      }
+    };
   }, [loadCarts]);
 
-  const handleDeleteCart = async (cartId) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar esta orden?")) {
-      return;
-    }
-
-    try {
-      setLoadingDeleteCart(cartId);
-      await axios.delete(
-        `${apiBase}/api/users/${userId}/cart/${cartId}`,
-        { withCredentials: true }
-      );
-      toast.success("Orden eliminada correctamente");
-      await loadCarts();
-    } catch (error) {
-      console.error("Error eliminando carrito:", error);
-      toast.error(
-        error?.response?.data?.message || "No se pudo eliminar la orden"
-      );
-    } finally {
-      setLoadingDeleteCart(null);
-    }
+  const handleDeleteCartClick = (cartId, storeName, itemCount) => {
+    setDeleteCartModal({ cartId, storeName, itemCount });
   };
 
-  const handleDeleteAllCarts = async () => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar TODAS las órdenes de compra?")) {
-      return;
-    }
+  const handleDeleteAllCartsClick = () => {
+    setDeleteAllCartsModal(true);
+  };
 
-    try {
-      setLoadingDeleteAll(true);
-      await axios.delete(
-        `${apiBase}/api/users/${userId}/carts`,
-        { withCredentials: true }
-      );
-      toast.success("Todas las órdenes fueron eliminadas correctamente");
-      await loadCarts();
-    } catch (error) {
-      console.error("Error eliminando carritos:", error);
-      toast.error(
-        error?.response?.data?.message || "No se pudo eliminar las órdenes"
-      );
-    } finally {
-      setLoadingDeleteAll(false);
-    }
+  const handleDeleteCartSuccess = () => {
+    setDeleteCartModal(null);
+    loadCarts();
+  };
+
+  const handleDeleteAllCartsSuccess = () => {
+    setDeleteAllCartsModal(false);
+    loadCarts();
   };
 
   const empty = status === "ready" && (!carts || carts.length === 0);
+  const totalItems = carts.reduce((acc, cart) => acc + (cart.items?.length || 0), 0);
 
   return (
     <div className="min-h-screen bg-[#F3F3F3] pb-8">
@@ -133,16 +125,15 @@ export default function OrdenesComprasPage() {
               Ordenes de Compras
             </h1>
           </div>
-          
+
           {status === "ready" && carts.length > 0 && (
             <button
               type="button"
-              onClick={handleDeleteAllCarts}
-              disabled={loadingDeleteAll}
+              onClick={handleDeleteAllCartsClick}
               className="px-4 py-2 rounded-md text-white text-sm font-medium bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               <Trash2 className="w-4 h-4" />
-              {loadingDeleteAll ? "Eliminando..." : "Eliminar todas"}
+              Eliminar todas
             </button>
           )}
         </div>
@@ -201,7 +192,6 @@ export default function OrdenesComprasPage() {
                 (acc, row) => acc + itemSubtotal(row.product?.price, row.quantity),
                 0
               );
-              const isDeleting = loadingDeleteCart === cart.id;
 
               return (
                 <div
@@ -242,7 +232,6 @@ export default function OrdenesComprasPage() {
                       const sub = itemSubtotal(row.product?.price, row.quantity);
                       const name = row.product?.name || "Producto";
                       const unit = row.product?.price;
-                      // imagen del producto
                       const imageUrl = row.product?.imageUrl ?? row.product?.image_url ?? null;
 
                       return (
@@ -251,14 +240,15 @@ export default function OrdenesComprasPage() {
                           className="bg-white rounded-lg border border-[#e5e7eb] px-2.5 py-2 flex justify-between gap-2 items-start"
                         >
                           <div className="flex items-start gap-2 min-w-0">
-                            {/* imagen del producto */}
                             <div className="w-10 h-10 rounded-md overflow-hidden bg-gray-100 shrink-0">
                               {imageUrl ? (
                                 <img
                                   src={imageUrl}
                                   alt={name}
                                   className="w-full h-full object-cover"
-                                  onError={(e) => { e.currentTarget.style.display = "none"; }}
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = "none";
+                                  }}
                                 />
                               ) : (
                                 <div className="w-full h-full bg-gray-200" />
@@ -290,17 +280,15 @@ export default function OrdenesComprasPage() {
                   <div className="flex gap-2 justify-center">
                     <button
                       type="button"
-                      onClick={() => handleDeleteCart(cart.id)}
-                      disabled={isDeleting}
+                      onClick={() => handleDeleteCartClick(cart.id, storeName, productCount)}
                       className="px-3 py-1.5 rounded-md text-white text-[11px] font-medium bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                     >
                       <Trash2 className="w-3 h-3" />
-                      {isDeleting ? "..." : "Eliminar"}
+                      Eliminar
                     </button>
                     <button
                       type="button"
                       onClick={() => navigate(`/carrito/${cart.id}`)}
-                      disabled={isDeleting}
                       className="px-6 py-1.5 rounded-md text-white text-[11px] font-medium bg-[#6B9080] border border-[#658D7B] hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Ver detalles
@@ -312,6 +300,27 @@ export default function OrdenesComprasPage() {
           </div>
         )}
       </div>
+
+      {deleteCartModal && userId && (
+        <DeleteCartModal
+          cartId={deleteCartModal.cartId}
+          userId={userId}
+          storeName={deleteCartModal.storeName}
+          itemCount={deleteCartModal.itemCount}
+          onClose={() => setDeleteCartModal(null)}
+          onSuccess={handleDeleteCartSuccess}
+        />
+      )}
+
+      {deleteAllCartsModal && userId && (
+        <DeleteAllCartsModal
+          userId={userId}
+          totalCarts={carts.length}
+          totalItems={totalItems}
+          onClose={() => setDeleteAllCartsModal(false)}
+          onSuccess={handleDeleteAllCartsSuccess}
+        />
+      )}
     </div>
   );
 }
