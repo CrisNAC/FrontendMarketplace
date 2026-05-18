@@ -279,7 +279,9 @@ export const CommerceCreationForm = () => {
         }
 
         if (!userId) {
-            return "No se pudo obtener el usuario de la sesión. Iniciá sesión nuevamente."
+            setError("No se pudo obtener el usuario de la sesión. Iniciá sesión nuevamente.")
+            setLoading(false)
+            return
         }
 
         try {

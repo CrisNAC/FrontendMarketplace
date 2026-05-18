@@ -31,17 +31,18 @@ const NotificationsPage = () => {
             }
         }
 
+        const title = notification.title?.toLowerCase() ?? "";
+        const isCommerceNotification =
+            title === "comercio aprobado" ||
+            title === "solicitud de comercio rechazada";
+
+        if (isCommerceNotification) {
+            navigate("/comercio");
+            return;
+        }
+
         const referenceId = notification.referenceId ?? notification.reference_id;
         if (referenceId) {
-            const title = notification.title?.toLowerCase() ?? "";
-            const isCommerceNotification =
-                title === "comercio aprobado" ||
-                title === "solicitud de comercio rechazada";
-
-            if (isCommerceNotification) {
-                navigate("/comercio");
-                return;
-            }
             navigate(`/pedidos/${referenceId}`);
         }
     };
@@ -80,7 +81,7 @@ const NotificationsPage = () => {
                                     className={`w-full text-left p-4 rounded-lg border transition-colors ${n.read
                                         ? "bg-white border-gray-200 text-gray-500"
                                         : "bg-[#eaf1ec] border-[#a8c5ae] text-[#2d4030] font-medium"
-                                        } ${(n.referenceId ?? n.reference_id) ? "hover:bg-[#d6e8da] cursor-pointer" : "hover:bg-gray-50"}`}
+                                        } ${((n.referenceId ?? n.reference_id) || n.title?.toLowerCase() === "comercio aprobado" || n.title?.toLowerCase() === "solicitud de comercio rechazada") ? "hover:bg-[#d6e8da] cursor-pointer" : "hover:bg-gray-50"}`}
                                 >
                                     <p className="text-sm font-semibold">{n.title}</p>
                                     {n.message && (

@@ -23,6 +23,11 @@ const resolveStoreLogoUrl = (logo) => {
 const StoreLogoPreview = ({ logo, name, size = 48, iconSize = 20, radius = "8px" }) => {
   const [hasImageError, setHasImageError] = useState(false);
   const logoUrl = resolveStoreLogoUrl(logo);
+
+  useEffect(() => {
+    setHasImageError(false);
+  }, [logoUrl]);
+
   const showImage = Boolean(logoUrl) && !hasImageError;
 
   return (

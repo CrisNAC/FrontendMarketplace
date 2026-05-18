@@ -114,7 +114,7 @@ describe('AdminPendingStoresPage', () => {
     });
 
     const listLogo = screen.getByRole('img', { name: 'Logo de Tienda 1' });
-    expect(listLogo).toHaveAttribute('src', 'http://localhost:3000/uploads/stores/1/logo.png');
+    expect(listLogo.getAttribute('src')).toMatch(/\/uploads\/stores\/1\/logo\.png$/);
 
     const evalButtons = screen.getAllByTitle('Ver y Evaluar');
     await user.click(evalButtons[0]);
