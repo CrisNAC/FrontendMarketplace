@@ -5239,26 +5239,25 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page.getByText('TechPoint')).toBeVisible();
     await expect(page.getByText('DigiStore')).toBeVisible();
 
-    // 1) Cancelar eliminación de Nissei
-    page.once('dialog', async (dialog) => {
-      expect(dialog.message()).toMatch(/¿Estás seguro/);
-      await dialog.dismiss();
-    });
+    
     await page.locator('div.rounded-2xl').filter({ has: page.locator('h2', { hasText: 'Nissei' }) })
       .getByRole('button', { name: 'Eliminar' }).click();
+
+    await expect(page.getByText('¿Estás seguro de que deseas eliminar esta orden de compra?')).toBeVisible();
+    await page.getByRole('button', { name: 'Cancelar' }).click();
 
     await expect(page.getByText('Nissei')).toBeVisible();
     await expect(page.getByText('TechPoint')).toBeVisible();
     await expect(page.getByText('DigiStore')).toBeVisible();
     await expect(page.locator('text=Orden eliminada correctamente')).toHaveCount(0);
 
-    // 2) Aceptar eliminación de Nissei
-    page.once('dialog', async (dialog) => {
-      expect(dialog.message()).toMatch(/¿Estás seguro/);
-      await dialog.accept();
-    });
+    // Aceptar eliminación de Nissei
+    
     await page.locator('div.rounded-2xl').filter({ has: page.locator('h2', { hasText: 'Nissei' }) })
       .getByRole('button', { name: 'Eliminar' }).click();
+
+    await expect(page.getByText('¿Estás seguro de que deseas eliminar esta orden de compra?')).toBeVisible();
+    await page.getByRole('button', { name: 'Eliminar orden' }).click();
 
     await expect(page.getByText('Orden eliminada correctamente')).toBeVisible();
     await expect(page.getByText('Nissei')).not.toBeVisible();
@@ -5352,24 +5351,20 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page.getByText('DigiStore')).toBeVisible();
 
     //Cancelar eliminación de todas las órdenes
-    page.once('dialog', async (dialog) => {
-      expect(dialog.message()).toMatch(/¿Estás seguro/);
-      await dialog.dismiss();
-    });
     await page.getByRole('button', { name: 'Eliminar todas' }).click();
+
+    await expect(page.getByText('¿Estás seguro de que deseas eliminar TODAS tus órdenes de compra?')).toBeVisible();
+    await page.getByRole('button', { name: 'Cancelar' }).click();
 
     // Las tres órdenes deben seguir visibles
     await expect(page.getByText('Nissei')).toBeVisible();
     await expect(page.getByText('TechPoint')).toBeVisible();
     await expect(page.getByText('DigiStore')).toBeVisible();
-    await expect(page.locator('text=Todas las órdenes fueron eliminadas correctamente')).toHaveCount(0);
 
     // Aceptar eliminación de todas las órdenes
-    page.once('dialog', async (dialog) => {
-      expect(dialog.message()).toMatch(/¿Estás seguro/);
-      await dialog.accept();
-    });
     await page.getByRole('button', { name: 'Eliminar todas' }).click();
+    await expect(page.getByText('¿Estás seguro de que deseas eliminar TODAS tus órdenes de compra?')).toBeVisible();
+    await page.getByRole('button', { name: 'Eliminar todas' }).nth(1).click();
 
     // Todas las órdenes deben desaparecer y mostrarse el toast de éxito
     await expect(page.getByText('Todas las órdenes fueron eliminadas correctamente')).toBeVisible();
