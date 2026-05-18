@@ -5147,4 +5147,238 @@ test.describe('Flujos E2E de usuario final', () => {
     expect(postCalled).toBe(false);
   });
 
+  //OM-511 -  Eliminar una o todas las ordenes de compra
+  test('flujo cliente: eliminar orden individual (cancelar y aceptar)', async ({ page }) => {
+    let carts = [
+      {
+        id: 1,
+        storeId: 1,
+        commerce: { id: 1, name: 'Nissei' },
+        status: 'ACTIVE',
+        items: [
+          {
+            id: 1,
+            quantity: 1,
+            product: {
+              id: 101,
+              name: 'Apple iPhone 17 Pro A3256 Dual',
+              price: 13290000,
+            },
+          },
+        ],
+      },
+      {
+        id: 2,
+        storeId: 2,
+        commerce: { id: 2, name: 'TechPoint' },
+        status: 'ACTIVE',
+        items: [
+          {
+            id: 2,
+            quantity: 2,
+            product: {
+              id: 102,
+              name: 'Samsung Galaxy S24 Ultra',
+              price: 8999000,
+            },
+          },
+        ],
+      },
+      {
+        id: 3,
+        storeId: 3,
+        commerce: { id: 3, name: 'DigiStore' },
+        status: 'ACTIVE',
+        items: [
+          {
+            id: 3,
+            quantity: 1,
+            product: {
+              id: 103,
+              name: 'MacBook Air M3',
+              price: 25990000,
+            },
+          },
+        ],
+      },
+    ];
+
+    await page.route('**/api/users/*/carts', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ carts }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    await page.route('**/api/users/*/cart/*', async (route) => {
+      if (route.request().method() === 'DELETE') {
+        const url = new URL(route.request().url());
+        const parts = url.pathname.split('/');
+        const cartId = Number(parts[parts.length - 1]);
+        carts = carts.filter((c) => c.id !== cartId);
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ message: 'Orden eliminada correctamente' }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    await page.goto('/carrito');
+    await expect(page.getByRole('heading', { name: 'Ordenes de Compras' })).toBeVisible();
+
+    // Verificar que las tres tiendas están visibles
+    await expect(page.getByText('Nissei')).toBeVisible();
+    await expect(page.getByText('TechPoint')).toBeVisible();
+    await expect(page.getByText('DigiStore')).toBeVisible();
+
+    // 1) Cancelar eliminación de Nissei
+    page.once('dialog', async (dialog) => {
+      expect(dialog.message()).toMatch(/¿Estás seguro/);
+      await dialog.dismiss();
+    });
+    await page.locator('div.rounded-2xl').filter({ has: page.locator('h2', { hasText: 'Nissei' }) })
+      .getByRole('button', { name: 'Eliminar' }).click();
+
+    await expect(page.getByText('Nissei')).toBeVisible();
+    await expect(page.getByText('TechPoint')).toBeVisible();
+    await expect(page.getByText('DigiStore')).toBeVisible();
+    await expect(page.locator('text=Orden eliminada correctamente')).toHaveCount(0);
+
+    // 2) Aceptar eliminación de Nissei
+    page.once('dialog', async (dialog) => {
+      expect(dialog.message()).toMatch(/¿Estás seguro/);
+      await dialog.accept();
+    });
+    await page.locator('div.rounded-2xl').filter({ has: page.locator('h2', { hasText: 'Nissei' }) })
+      .getByRole('button', { name: 'Eliminar' }).click();
+
+    await expect(page.getByText('Orden eliminada correctamente')).toBeVisible();
+    await expect(page.getByText('Nissei')).not.toBeVisible();
+    await expect(page.getByText('TechPoint')).toBeVisible();
+    await expect(page.getByText('DigiStore')).toBeVisible();
+  });
+
+  //OM-511
+  test('flujo cliente: eliminar todas las órdenes (cancelar y aceptar)', async ({ page }) => {
+    let carts = [
+      {
+        id: 1,
+        storeId: 1,
+        commerce: { id: 1, name: 'Nissei' },
+        status: 'ACTIVE',
+        items: [
+          {
+            id: 1,
+            quantity: 1,
+            product: {
+              id: 101,
+              name: 'Apple iPhone 17 Pro A3256 Dual',
+              price: 13290000,
+            },
+          },
+        ],
+      },
+      {
+        id: 2,
+        storeId: 2,
+        commerce: { id: 2, name: 'TechPoint' },
+        status: 'ACTIVE',
+        items: [
+          {
+            id: 2,
+            quantity: 2,
+            product: {
+              id: 102,
+              name: 'Samsung Galaxy S24 Ultra',
+              price: 8999000,
+            },
+          },
+        ],
+      },
+      {
+        id: 3,
+        storeId: 3,
+        commerce: { id: 3, name: 'DigiStore' },
+        status: 'ACTIVE',
+        items: [
+          {
+            id: 3,
+            quantity: 1,
+            product: {
+              id: 103,
+              name: 'MacBook Air M3',
+              price: 25990000,
+            },
+          },
+        ],
+      },
+    ];
+
+    await page.route('**/api/users/*/carts', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ carts }),
+        });
+        return;
+      }
+      if (route.request().method() === 'DELETE') {
+        carts = [];
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ message: 'Todas las órdenes fueron eliminadas correctamente' }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    await page.goto('/carrito');
+    await expect(page.getByRole('heading', { name: 'Ordenes de Compras' })).toBeVisible();
+
+    // Verificar que las tres tiendas están visibles
+    await expect(page.getByText('Nissei')).toBeVisible();
+    await expect(page.getByText('TechPoint')).toBeVisible();
+    await expect(page.getByText('DigiStore')).toBeVisible();
+
+    //Cancelar eliminación de todas las órdenes
+    page.once('dialog', async (dialog) => {
+      expect(dialog.message()).toMatch(/¿Estás seguro/);
+      await dialog.dismiss();
+    });
+    await page.getByRole('button', { name: 'Eliminar todas' }).click();
+
+    // Las tres órdenes deben seguir visibles
+    await expect(page.getByText('Nissei')).toBeVisible();
+    await expect(page.getByText('TechPoint')).toBeVisible();
+    await expect(page.getByText('DigiStore')).toBeVisible();
+    await expect(page.locator('text=Todas las órdenes fueron eliminadas correctamente')).toHaveCount(0);
+
+    // Aceptar eliminación de todas las órdenes
+    page.once('dialog', async (dialog) => {
+      expect(dialog.message()).toMatch(/¿Estás seguro/);
+      await dialog.accept();
+    });
+    await page.getByRole('button', { name: 'Eliminar todas' }).click();
+
+    // Todas las órdenes deben desaparecer y mostrarse el toast de éxito
+    await expect(page.getByText('Todas las órdenes fueron eliminadas correctamente')).toBeVisible();
+    await expect(page.getByText('Nissei')).not.toBeVisible();
+    await expect(page.getByText('TechPoint')).not.toBeVisible();
+    await expect(page.getByText('DigiStore')).not.toBeVisible();
+
+    // Debe mostrarse el estado vacío
+    await expect(page.getByText('Tu carrito está vacío')).toBeVisible();
+  });
+
 });
