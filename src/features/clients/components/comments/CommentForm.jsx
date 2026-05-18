@@ -1,16 +1,40 @@
 import { useState } from 'react';
+import { z } from 'zod';
+
+// ─── Esquema de validación ──────────────────────────────────────────────────
+const commentSchema = z.object({
+  rating: z.number().min(1, "Debes seleccionar una calificación").max(5, "Calificación inválida"),
+  title: z.string().trim().min(1, "El título es obligatorio").max(100, "El título no puede superar 100 caracteres"),
+  content: z.string().trim().min(1, "El contenido es obligatorio").max(1000, "El contenido no puede superar 1000 caracteres"),
+});
 
 export const CommentForm = ({ onSubmit = () => {} }) => {
   const [rating, setRating] = useState(5);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [hoveredRating, setHoveredRating] = useState(0);
+  const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setError('');
+    setFieldErrors({});
     
-    if (!title.trim() || !content.trim()) {
-      alert('Por favor completa todos los campos');
+    const parsed = commentSchema.safeParse({
+      rating,
+      title,
+      content,
+    });
+
+    if (!parsed.success) {
+      const errors = {};
+      for (const issue of parsed.error.issues) {
+        const key = issue.path[0];
+        if (key && !errors[key]) errors[key] = issue.message;
+      }
+      setFieldErrors(errors);
+      setError('Revisá los datos del formulario');
       return;
     }
 
@@ -28,6 +52,7 @@ export const CommentForm = ({ onSubmit = () => {} }) => {
     setRating(5);
     setTitle('');
     setContent('');
+    setFieldErrors({});
   };
 
   return (
@@ -39,7 +64,13 @@ export const CommentForm = ({ onSubmit = () => {} }) => {
         Comparte tu opinión con otros clientes
       </p>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+      {error && (
+        <div className="mb-4 bg-red-50 text-red-600 p-3 rounded border border-red-200 text-sm">
+          {error}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
         {/* Calificación */}
         <div className="flex flex-col gap-2">
           <label htmlFor="rating" className="text-sm font-semibold text-gray-800">
@@ -77,12 +108,19 @@ export const CommentForm = ({ onSubmit = () => {} }) => {
           <input
             id="title"
             type="text"
-            className="w-full px-3 py-2 border border-gray-300 rounded text-sm text-gray-800 transition-colors focus:outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100 placeholder:text-gray-500"
+            className={`w-full px-3 py-2 border rounded text-sm text-gray-800 transition-colors focus:outline-none focus:ring-2 placeholder:text-gray-500 ${
+              fieldErrors.title ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-100' : 'border-gray-300 focus:border-teal-600 focus:ring-teal-100'
+            }`}
             placeholder="Ej: Excelente producto, muy recomendado"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              setError('');
+              setFieldErrors({});
+            }}
             maxLength={100}
           />
+          {fieldErrors.title && <p className="text-xs text-red-600">{fieldErrors.title}</p>}
           <span className="text-xs text-gray-500 text-right">
             {title.length}/100
           </span>
@@ -95,13 +133,20 @@ export const CommentForm = ({ onSubmit = () => {} }) => {
           </label>
           <textarea
             id="content"
-            className="w-full px-3 py-2 border border-gray-300 rounded text-sm text-gray-800 resize-vertical transition-colors focus:outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100 placeholder:text-gray-500"
+            className={`w-full px-3 py-2 border rounded text-sm text-gray-800 resize-vertical transition-colors focus:outline-none focus:ring-2 placeholder:text-gray-500 ${
+              fieldErrors.content ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-100' : 'border-gray-300 focus:border-teal-600 focus:ring-teal-100'
+            }`}
             placeholder="Describe tu experiencia con este producto..."
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={(e) => {
+              setContent(e.target.value);
+              setError('');
+              setFieldErrors({});
+            }}
             maxLength={1000}
             rows={6}
           />
+          {fieldErrors.content && <p className="text-xs text-red-600">{fieldErrors.content}</p>}
           <span className="text-xs text-gray-500 text-right">
             {content.length}/1000
           </span>

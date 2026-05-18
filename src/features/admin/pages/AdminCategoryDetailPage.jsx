@@ -1,7 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { z } from "zod";
 import { ArrowLeft, Tag, Package, Eye, EyeOff, Pencil, X } from "lucide-react";
 import { fetchAdminCategoryById, fetchCategoriesWithProducts, updateAdminCategory } from "../services/adminCategoriesApi";
+
+// ─── Esquema de validación ──────────────────────────────────────────────────
+const categorySchema = z.object({
+  name: z.string().min(1, "El nombre es requerido.").max(100, "El nombre no puede superar 100 caracteres."),
+  visible: z.boolean(),
+});
 
 const cardStyle = {
     backgroundColor: "var(--background-white)",
@@ -18,12 +25,23 @@ function EditModal({ category, onSave, onCancel }) {
     const [error, setError]     = useState("");
 
     const handleSubmit = async () => {
-        const trimmed = name.trim();
-        if (!trimmed) { setError("El nombre es requerido."); return; }
-        if (trimmed.length > 100) { setError("El nombre no puede superar 100 caracteres."); return; }
+        const parsed = categorySchema.safeParse({
+            name: name.trim(),
+            visible,
+        });
+
+        if (!parsed.success) {
+            const errors = {};
+            for (const issue of parsed.error.issues) {
+                const key = issue.path[0];
+                if (key && !errors[key]) errors[key] = issue.message;
+            }
+            setError(Object.values(errors)[0] || "Error en el formulario.");
+            return;
+        }
 
         const payload = {};
-        if (trimmed !== category.name) payload.name = trimmed;
+        if (name.trim() !== category.name) payload.name = name.trim();
         if (visible !== category.visible) payload.visible = visible;
         if (Object.keys(payload).length === 0) { onCancel(); return; }
 

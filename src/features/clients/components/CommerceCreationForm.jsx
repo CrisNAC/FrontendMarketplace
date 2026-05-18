@@ -1,8 +1,35 @@
 import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import { X, ChevronDown } from "lucide-react"
+import { z } from "zod"
 import { Spinner } from "../../../components/Spinner"
 import MapView from "./Map"
+
+// ─── Esquema de validación ──────────────────────────────────────────────────
+const commerceSchema = z.object({
+  name: z.string().min(1, "El nombre es obligatorio").max(100, "El nombre no puede superar 100 caracteres"),
+  email: z.string().email("Ingresá un correo válido"),
+  phone: z.string().regex(/^\+595\d{9}$/, "El teléfono debe tener el formato +595XXXXXXXXX"),
+  address: z.string().min(1, "La dirección es obligatoria"),
+  description: z.string().min(1, "La descripción es obligatoria"),
+  categoryIds: z.array(z.number()).min(1, "Debes seleccionar al menos una categoría"),
+  latitude: z.number().nullable().refine((val) => val !== null, { message: "Selecciona un punto en el mapa" }),
+  longitude: z.number().nullable().refine((val) => val !== null, { message: "Selecciona un punto en el mapa" }),
+  basePrice: z.coerce.number().min(0, "El precio base debe ser mayor o igual a 0"),
+  distancePrice: z.coerce.number().min(0, "El precio de distancia debe ser mayor o igual a 0"),
+  websiteUrl: z.string().refine((val) => {
+    const trimmed = val.trim();
+    return !trimmed || /^https?:\/\//.test(trimmed);
+  }, "El sitio web debe iniciar con http:// o https://"),
+  instagramUrl: z.string().refine((val) => {
+    const trimmed = val.trim();
+    return !trimmed || /^https?:\/\//.test(trimmed);
+  }, "Instagram debe iniciar con http:// o https://"),
+  tiktokUrl: z.string().refine((val) => {
+    const trimmed = val.trim();
+    return !trimmed || /^https?:\/\//.test(trimmed);
+  }, "TikTok debe iniciar con http:// o https://"),
+});
 
 // Componente para mostrar categoría como chip
 const CategoryChip = ({ name, onRemove, disabled }) => (
@@ -135,6 +162,7 @@ export const CommerceCreationForm = () => {
     const navigate = useNavigate()
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState("")
+    const [fieldErrors, setFieldErrors] = useState({})
     const errorRef = useRef(null)
 
     // ── ID del usuario logueado (obtenido de la sesión) ───────────────────────
@@ -197,6 +225,7 @@ export const CommerceCreationForm = () => {
             : value
         setFormData({ ...formData, [name]: nextValue })
         setError("")
+        setFieldErrors({})
     }
 
     const handleMapPointChange = (point) => {
@@ -206,6 +235,7 @@ export const CommerceCreationForm = () => {
             longitude: point?.lng ?? null,
         }))
         setError("")
+        setFieldErrors({})
     }
 
     // manejo del archivo de logo — preview local y guardado del File
@@ -221,71 +251,35 @@ export const CommerceCreationForm = () => {
         setLogoPreview(null)
     }
 
-    // Valida el formulario y retorna el primer mensaje de error, o null si todo está bien
-    const validateForm = (parsedBasePrice, parsedDistancePrice) => {
-        if (
-            !formData.name ||
-            !formData.email ||
-            !formData.phone ||
-            !formData.address ||
-            !formData.description ||
-            !formData.categoryIds.length ||
-            formData.basePrice === "" ||
-            formData.distancePrice === ""
-        ) {
-            return "Por favor completá todos los campos obligatorios."
-        }
-
-        if (!Number.isFinite(parsedBasePrice) || parsedBasePrice < 0) {
-            return "El precio base por km debe ser un número válido mayor o igual a 0."
-        }
-
-        if (!Number.isFinite(parsedDistancePrice) || parsedDistancePrice < 0) {
-            return "El precio por km para larga distancia debe ser un número válido mayor o igual a 0."
-        }
-
-        if (formData.latitude === null || formData.longitude === null) {
-            return "Seleccioná un punto en el mapa para la ubicación del comercio."
-        }
-
-        if (!PHONE_REGEX.test(formData.phone)) {
-            return "El número de teléfono debe tener el formato +595XXXXXXXXX."
-        }
-
-        if (!userId) {
-            return "No se pudo obtener el usuario de la sesión. Iniciá sesión nuevamente."
-        }
-
-        const socialUrlFields = [
-            { label: "Sitio web", value: formData.websiteUrl },
-            { label: "Instagram", value: formData.instagramUrl },
-            { label: "TikTok", value: formData.tiktokUrl },
-        ]
-
-        for (const field of socialUrlFields) {
-            const trimmedValue = field.value.trim()
-            if (trimmedValue && !HTTP_URL_REGEX.test(trimmedValue)) {
-                return `${field.label} debe iniciar con http:// o https://`
-            }
-        }
-
-        return null
-    }
-
     const handleSubmit = async (e) => {
         e.preventDefault()
         setLoading(true)
         setError("")
+        setFieldErrors({})
 
-        const parsedBasePrice = Number(formData.basePrice)
-        const parsedDistancePrice = Number(formData.distancePrice)
+        // Validar con Zod
+        const parsed = commerceSchema.safeParse({
+          ...formData,
+          categoryIds: formData.categoryIds.map(id => Number(id)),
+          basePrice: formData.basePrice,
+          distancePrice: formData.distancePrice,
+        })
 
-        const validationError = validateForm(parsedBasePrice, parsedDistancePrice)
-        if (validationError) {
-            setError(validationError)
-            setLoading(false)
-            errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
-            return
+        if (!parsed.success) {
+          const errors = {}
+          for (const issue of parsed.error.issues) {
+            const key = issue.path[0]
+            if (key && !errors[key]) errors[key] = issue.message
+          }
+          setFieldErrors(errors)
+          setError("Revisá los datos del formulario.")
+          setLoading(false)
+          errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+          return
+        }
+
+        if (!userId) {
+            return "No se pudo obtener el usuario de la sesión. Iniciá sesión nuevamente."
         }
 
         try {
@@ -302,8 +296,8 @@ export const CommerceCreationForm = () => {
                 website_url: formData.websiteUrl.trim() || null,
                 instagram_url: formData.instagramUrl.trim() || null,
                 tiktok_url: formData.tiktokUrl.trim() || null,
-                base_price: parsedBasePrice,
-                distance_price: parsedDistancePrice,
+                base_price: Number(formData.basePrice),
+                distance_price: Number(formData.distancePrice),
             }
 
             const response = await fetch(`${API_BASE_URL}/api/commerces`, {
@@ -318,6 +312,7 @@ export const CommerceCreationForm = () => {
             if (!response.ok) {
                 setError(data.message || "Error al crear el comercio")
                 console.error("Error al crear el comercio:", data)
+                setLoading(false)
                 return
             }
 
@@ -353,7 +348,7 @@ export const CommerceCreationForm = () => {
     }
 
     return (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-4">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-4" noValidate>
 
             {error && (
                 <div ref={errorRef} className="bg-red-50 text-red-600 p-3 rounded border border-red-200 text-sm">
@@ -373,6 +368,7 @@ export const CommerceCreationForm = () => {
                     disabled={loading}
                     className={inputCls}
                 />
+                {fieldErrors.name && <p className="text-xs text-red-600 mt-1">{fieldErrors.name}</p>}
             </div>
 
             {/* Email de Contacto */}
@@ -386,6 +382,7 @@ export const CommerceCreationForm = () => {
                     disabled={loading}
                     className={inputCls}
                 />
+                {fieldErrors.email && <p className="text-xs text-red-600 mt-1">{fieldErrors.email}</p>}
             </div>
 
             {/* Teléfono */}
@@ -400,6 +397,7 @@ export const CommerceCreationForm = () => {
                     disabled={loading}
                     className={inputCls}
                 />
+                {fieldErrors.phone && <p className="text-xs text-red-600 mt-1">{fieldErrors.phone}</p>}
             </div>
 
             {/* Dirección */}
@@ -413,6 +411,7 @@ export const CommerceCreationForm = () => {
                     disabled={loading}
                     className={inputCls}
                 />
+                {fieldErrors.address && <p className="text-xs text-red-600 mt-1">{fieldErrors.address}</p>}
             </div>
 
             {/* Mapa */}
@@ -433,6 +432,9 @@ export const CommerceCreationForm = () => {
                     />
                 </div>
 
+                {(fieldErrors.latitude || fieldErrors.longitude) && (
+                    <p className="text-xs text-red-600 mt-1">{fieldErrors.latitude || fieldErrors.longitude}</p>
+                )}
                 <div className="mt-2 flex items-center justify-between gap-2">
                     <p className="text-xs text-gray-500">
                         {formData.latitude !== null && formData.longitude !== null
@@ -463,7 +465,7 @@ export const CommerceCreationForm = () => {
                         setFormData({ ...formData, categoryIds: newIds })
                     }
                     disabled={loading}
-                    error={!formData.categoryIds.length && error ? "Debes seleccionar al menos una categoría" : ""}
+                    error={fieldErrors.categoryIds}
                 />
             </div>
 
@@ -479,6 +481,7 @@ export const CommerceCreationForm = () => {
                     disabled={loading}
                     className={inputCls}
                 />
+                {fieldErrors.description && <p className="text-xs text-red-600 mt-1">{fieldErrors.description}</p>}
                 <p className="text-xs text-gray-500 mt-1">Máximo 500 caracteres</p>
             </div>
 
@@ -496,6 +499,7 @@ export const CommerceCreationForm = () => {
                     disabled={loading}
                     className={inputCls}
                 />
+                {fieldErrors.basePrice && <p className="text-xs text-red-600 mt-1">{fieldErrors.basePrice}</p>}
                 <p className="text-xs text-gray-500 mt-1">Se aplica hasta 2 km de distancia.</p>
             </div>
 
@@ -512,6 +516,7 @@ export const CommerceCreationForm = () => {
                     disabled={loading}
                     className={inputCls}
                 />
+                {fieldErrors.distancePrice && <p className="text-xs text-red-600 mt-1">{fieldErrors.distancePrice}</p>}
                 <p className="text-xs text-gray-500 mt-1">Se aplica cuando la distancia supera los 2 km.</p>
             </div>
 
@@ -527,6 +532,7 @@ export const CommerceCreationForm = () => {
                     disabled={loading}
                     className={inputCls}
                 />
+                {fieldErrors.websiteUrl && <p className="text-xs text-red-600 mt-1">{fieldErrors.websiteUrl}</p>}
             </div>
 
             <div>
@@ -540,6 +546,7 @@ export const CommerceCreationForm = () => {
                     disabled={loading}
                     className={inputCls}
                 />
+                {fieldErrors.instagramUrl && <p className="text-xs text-red-600 mt-1">{fieldErrors.instagramUrl}</p>}
             </div>
 
             <div>
@@ -553,6 +560,7 @@ export const CommerceCreationForm = () => {
                     disabled={loading}
                     className={inputCls}
                 />
+                {fieldErrors.tiktokUrl && <p className="text-xs text-red-600 mt-1">{fieldErrors.tiktokUrl}</p>}
             </div>
 
             {/* Logo */}
@@ -598,7 +606,7 @@ export const CommerceCreationForm = () => {
             <div className="grid grid-cols-2 gap-4">
                 <button
                     type="button"
-                    onClick={() => navigate("/homepage")}
+                    onClick={() => navigate("/")}
                     disabled={loading}
                     className="bg-white text-gray-800 px-4 py-2 rounded border border-gray-800 hover:bg-green-100! disabled:cursor-not-allowed disabled:opacity-60"
                 >

@@ -1,15 +1,37 @@
 import { useState } from 'react';
+import { z } from 'zod';
+
+// ─── Esquema de validación ──────────────────────────────────────────────────
+const reviewSchema = z.object({
+  rating: z.number().min(1, "Debes seleccionar una calificación").max(5, "Calificación inválida"),
+  comment: z.string().trim().min(1, "El comentario es obligatorio").max(1000, "El comentario no puede superar 1000 caracteres"),
+});
 
 export const AddReviewModal = ({ isOpen, onClose, onSubmit }) => {
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [hoveredRating, setHoveredRating] = useState(0);
+  const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setError('');
+    setFieldErrors({});
     
-    if (!comment.trim()) {
-      alert('Por favor escribe un comentario');
+    const parsed = reviewSchema.safeParse({
+      rating,
+      comment,
+    });
+
+    if (!parsed.success) {
+      const errors = {};
+      for (const issue of parsed.error.issues) {
+        const key = issue.path[0];
+        if (key && !errors[key]) errors[key] = issue.message;
+      }
+      setFieldErrors(errors);
+      setError('Revisá los datos del formulario');
       return;
     }
 
@@ -22,6 +44,7 @@ export const AddReviewModal = ({ isOpen, onClose, onSubmit }) => {
     // Reset form
     setRating(5);
     setComment('');
+    setFieldErrors({});
     onClose();
   };
 
@@ -41,7 +64,13 @@ export const AddReviewModal = ({ isOpen, onClose, onSubmit }) => {
           Agregar una reseña
         </h2>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        {error && (
+          <div className="mb-4 bg-red-50 text-red-600 p-3 rounded border border-red-200 text-sm">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
           {/* Valoración */}
           <div className="flex flex-col gap-2">
             <label className="text-sm font-semibold text-gray-800">
@@ -72,13 +101,20 @@ export const AddReviewModal = ({ isOpen, onClose, onSubmit }) => {
               Comentario
             </label>
             <textarea
-              className="w-full p-3 border border-gray-300 rounded text-sm text-gray-800 resize-vertical transition-colors focus:outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100 placeholder:text-gray-500"
+              className={`w-full p-3 border rounded text-sm text-gray-800 resize-vertical transition-colors focus:outline-none focus:ring-2 placeholder:text-gray-500 ${
+                fieldErrors.comment ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-100' : 'border-gray-300 focus:border-teal-600 focus:ring-teal-100'
+              }`}
               placeholder="Tu comentario"
               value={comment}
-              onChange={(e) => setComment(e.target.value)}
+              onChange={(e) => {
+                setComment(e.target.value);
+                setError('');
+                setFieldErrors({});
+              }}
               maxLength={1000}
               rows={6}
             />
+            {fieldErrors.comment && <p className="text-xs text-red-600">{fieldErrors.comment}</p>}
           </div>
 
           {/* Botón guardar */}

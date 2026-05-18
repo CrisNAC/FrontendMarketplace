@@ -147,7 +147,7 @@ const Navbar = () => {
       setUnreadCount(0);
       window.dispatchEvent(new Event("cartUpdated"));
       toast.success("Sesión cerrada");
-      navigate("/homepage");
+      navigate("/");
     } catch {
       toast.error("No se pudo cerrar sesión. Intentá de nuevo.");
     } finally {
@@ -162,7 +162,7 @@ const Navbar = () => {
       <div className="bg-[#A4C3B2] flex items-center justify-between px-[30px] py-[10px]">
 
         {/* Logo */}
-        <Link to="/homepage" className="flex items-center gap-[6px] !no-underline">
+        <Link to="/" className="flex items-center gap-[6px] !no-underline">
           <span>
             <img src={logo} alt="Logo" className="w-[30px] h-auto" />
           </span>
@@ -174,7 +174,7 @@ const Navbar = () => {
         {/* Main links */}
         <nav className="flex gap-[20px] font-normal text-[14px]">
           <Link
-            to="/homepage"
+            to="/"
             className="!no-underline !text-[#485B53] hover:!text-[#2e6b4f] transition-colors"
           >
             Inicio

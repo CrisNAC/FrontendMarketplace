@@ -208,7 +208,7 @@ export function CommerceProfilePage() {
         try {
             await apiClient.delete(`/api/commerces/${commerce.id_store}`);
             setShowDeleteModal(false);
-            navigate("/homepage");
+            navigate("/");
         } catch (err) {
             setDeleteError(getBackendErrorMessage(err, "No se pudo eliminar el comercio. Intentá nuevamente."));
             setIsDeleting(false);
