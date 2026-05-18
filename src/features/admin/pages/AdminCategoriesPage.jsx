@@ -1,7 +1,7 @@
 // src/features/admin/pages/AdminCategoriesPage.jsx
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import * as LucideIcons from "lucide-react";
+import { CategoryIcon, IconPicker } from "../components/CategoryIconPicker";
 import {
     Search, Trash2, Eye, AlertTriangle, Tag, Package,
     Pencil, X, Plus, CheckCircle, XCircle, Clock,
@@ -14,97 +14,6 @@ import {
     fetchCategoriesWithProducts, updateAdminCategory,
     deleteAdminCategory, createAdminCategory,
 } from "../services/adminCategoriesApi";
-
-// ─── Íconos disponibles para categorías ──────────────────────────────────────
-const ICON_OPTIONS = [
-    { name: "Tag",              Icon: Tag },
-    { name: "Laptop",           Icon: Laptop },
-    { name: "Smartphone",       Icon: Smartphone },
-    { name: "Tv",               Icon: Tv },
-    { name: "Watch",            Icon: Watch },
-    { name: "Shirt",            Icon: Shirt },
-    { name: "Gem",              Icon: Gem },
-    { name: "ShoppingBag",      Icon: ShoppingBag },
-    { name: "Palette",          Icon: Palette },
-    { name: "Camera",           Icon: Camera },
-    { name: "Music",            Icon: Music },
-    { name: "BookOpen",         Icon: BookOpen },
-    { name: "Home",             Icon: Home },
-    { name: "Coffee",           Icon: Coffee },
-    { name: "UtensilsCrossed",  Icon: UtensilsCrossed },
-    { name: "Heart",            Icon: Heart },
-    { name: "Gamepad2",         Icon: Gamepad2 },
-    { name: "Dumbbell",         Icon: Dumbbell },
-    { name: "Bike",             Icon: Bike },
-    { name: "Car",              Icon: Car },
-    { name: "Baby",             Icon: Baby },
-    { name: "Dog",              Icon: Dog },
-    { name: "Leaf",             Icon: Leaf },
-    { name: "Globe",            Icon: Globe },
-    { name: "Wrench",           Icon: Wrench },
-];
-
-// ─── Helper: renderiza ícono dinámico por nombre ──────────────────────────────
-function CategoryIcon({ name, size = 18, color = "var(--primary-dark)" }) {
-    const Icon = (name && LucideIcons[name]) ? LucideIcons[name] : LucideIcons.Tag;
-    return <Icon size={size} color={color} />;
-}
-
-// ─── Picker de íconos ─────────────────────────────────────────────────────────
-function IconPicker({ value, onChange, disabled }) {
-    return (
-        <div>
-            <p style={{ fontSize: "13px", fontWeight: "600", color: "#374151", margin: "0 0 8px 0" }}>
-                Ícono
-            </p>
-            <div style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(5, 1fr)",
-                gap: "6px",
-                maxHeight: "180px",
-                overflowY: "auto",
-                padding: "4px",
-            }}>
-                {ICON_OPTIONS.map(({ name, Icon }) => {
-                    const selected = value === name;
-                    return (
-                        <button
-                            key={name}
-                            type="button"
-                            onClick={() => !disabled && onChange(name)}
-                            title={name}
-                            disabled={disabled}
-                            style={{
-                                padding: "10px 6px",
-                                borderRadius: "8px",
-                                border: `2px solid ${selected ? "var(--primary-dark)" : "#e5e7eb"}`,
-                                backgroundColor: selected ? "#f0fdf4" : "white",
-                                cursor: disabled ? "default" : "pointer",
-                                display: "flex",
-                                flexDirection: "column",
-                                alignItems: "center",
-                                gap: "4px",
-                                transition: "border-color 0.15s, background-color 0.15s",
-                            }}
-                        >
-                            <Icon size={18} color={selected ? "var(--primary-dark)" : "#9ca3af"} />
-                            <span style={{
-                                fontSize: "9px",
-                                color: selected ? "var(--primary-dark)" : "#9ca3af",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                                maxWidth: "100%",
-                            }}>
-                                {name}
-                            </span>
-                        </button>
-                    );
-                })}
-            </div>
-        </div>
-    );
-}
 
 const cardStyle = {
     backgroundColor: "var(--background-white)",
