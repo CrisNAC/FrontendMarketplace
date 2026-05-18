@@ -1,14 +1,10 @@
-// src/features/admin/pages/AdminCategoriesPage.jsx
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import PropTypes from "prop-types";
 import { CategoryIcon, IconPicker } from "../components/CategoryIconPicker";
 import {
     Search, Trash2, Eye, AlertTriangle, Tag, Package,
     Pencil, X, Plus, CheckCircle, XCircle, Clock,
-    Laptop, Shirt, Palette, Home, Heart, Gamepad2,
-    Dumbbell, Wrench, BookOpen, Car, UtensilsCrossed,
-    Music, Camera, Baby, Dog, Leaf, Gem, Bike,
-    Tv, Smartphone, Watch, Coffee, Globe, ShoppingBag,
 } from "lucide-react";
 import {
     fetchCategoriesWithProducts, updateAdminCategory,
@@ -44,26 +40,41 @@ function CreateModal({ onSave, onCancel }) {
         }
     };
 
+    const handleOverlayKeyDown = (e) => {
+        if (e.key === 'Escape' && !isSubmitting) {
+            onCancel();
+        }
+    };
+
     return (
-        <div style={{ position: "fixed", inset: 0, zIndex: 50, backgroundColor: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
-            onClick={isSubmitting ? undefined : onCancel}>
+        <div 
+            role="dialog"
+            aria-modal="true"
+            aria-label="Crear nueva categoría"
+            style={{ position: "fixed", inset: 0, zIndex: 50, backgroundColor: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
+            onClick={isSubmitting ? undefined : onCancel}
+            onKeyDown={handleOverlayKeyDown}
+        >
             <div style={{ backgroundColor: "white", borderRadius: "16px", padding: "24px", maxWidth: "480px", width: "100%", boxShadow: "0 20px 40px rgba(0,0,0,0.15)" }}
                 onClick={e => e.stopPropagation()}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
                     <h3 style={{ fontSize: "18px", fontWeight: "700", margin: 0 }}>Nueva Categoría</h3>
-                    <button type="button" onClick={isSubmitting ? undefined : onCancel} disabled={isSubmitting}
+                    <button 
+                        type="button" 
+                        onClick={isSubmitting ? undefined : onCancel} 
+                        disabled={isSubmitting}
+                        aria-label="Cerrar"
                         style={{ background: "none", border: "none", cursor: isSubmitting ? "not-allowed" : "pointer", color: "#6b7280", opacity: isSubmitting ? 0.4 : 1 }}>
                         <X size={20} />
                     </button>
                 </div>
 
                 {error && (
-                    <div style={{ backgroundColor: "#fff1f2", border: "1px solid #fecdd3", borderRadius: "8px", padding: "10px 12px", color: "#be123c", fontSize: "13px", marginBottom: "16px" }}>
+                    <div role="alert" style={{ backgroundColor: "#fff1f2", border: "1px solid #fecdd3", borderRadius: "8px", padding: "10px 12px", color: "#be123c", fontSize: "13px", marginBottom: "16px" }}>
                         {error}
                     </div>
                 )}
 
-                {/* Preview del ícono seleccionado */}
                 <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px", padding: "12px", backgroundColor: "#f9fafb", borderRadius: "10px" }}>
                     <div style={{ width: "42px", height: "42px", borderRadius: "10px", backgroundColor: "var(--background-soft)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                         <CategoryIcon name={icon} size={22} />
@@ -75,10 +86,11 @@ function CreateModal({ onSave, onCancel }) {
                 </div>
 
                 <div style={{ marginBottom: "16px" }}>
-                    <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#374151", marginBottom: "6px" }}>
+                    <label htmlFor="category-name" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#374151", marginBottom: "6px" }}>
                         Nombre <span style={{ color: "#dc2626" }}>*</span>
                     </label>
                     <input
+                        id="category-name"
                         value={name}
                         onChange={e => setName(e.target.value)}
                         disabled={isSubmitting}
@@ -111,6 +123,11 @@ function CreateModal({ onSave, onCancel }) {
     );
 }
 
+CreateModal.propTypes = {
+    onSave: PropTypes.func.isRequired,
+    onCancel: PropTypes.func.isRequired,
+};
+
 // ─── Modal: Editar categoría ──────────────────────────────────────────────────
 function EditModal({ category, onSave, onCancel }) {
     const [name, setName]       = useState(category.name);
@@ -140,26 +157,37 @@ function EditModal({ category, onSave, onCancel }) {
         }
     };
 
+    const handleOverlayKeyDown = (e) => {
+        if (e.key === 'Escape') {
+            onCancel();
+        }
+    };
+
     return (
-        <div style={{ position: "fixed", inset: 0, zIndex: 50, backgroundColor: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
-            onClick={onCancel}>
+        <div 
+            role="dialog"
+            aria-modal="true"
+            aria-label="Editar categoría"
+            style={{ position: "fixed", inset: 0, zIndex: 50, backgroundColor: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
+            onClick={onCancel}
+            onKeyDown={handleOverlayKeyDown}
+        >
             <div style={{ backgroundColor: "white", borderRadius: "16px", padding: "24px", maxWidth: "480px", width: "100%", boxShadow: "0 20px 40px rgba(0,0,0,0.15)" }}
                 onClick={e => e.stopPropagation()}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
                     <h3 style={{ fontSize: "18px", fontWeight: "700", margin: 0 }}>Editar Categoría</h3>
-                    <button type="button" onClick={onCancel}
+                    <button type="button" onClick={onCancel} aria-label="Cerrar"
                         style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280" }}>
                         <X size={20} />
                     </button>
                 </div>
 
                 {error && (
-                    <div style={{ backgroundColor: "#fff1f2", border: "1px solid #fecdd3", borderRadius: "8px", padding: "10px 12px", color: "#be123c", fontSize: "13px", marginBottom: "16px" }}>
+                    <div role="alert" style={{ backgroundColor: "#fff1f2", border: "1px solid #fecdd3", borderRadius: "8px", padding: "10px 12px", color: "#be123c", fontSize: "13px", marginBottom: "16px" }}>
                         {error}
                     </div>
                 )}
 
-                {/* Preview */}
                 <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px", padding: "12px", backgroundColor: "#f9fafb", borderRadius: "10px" }}>
                     <div style={{ width: "42px", height: "42px", borderRadius: "10px", backgroundColor: "var(--background-soft)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                         <CategoryIcon name={icon} size={22} />
@@ -171,10 +199,10 @@ function EditModal({ category, onSave, onCancel }) {
                 </div>
 
                 <div style={{ marginBottom: "16px" }}>
-                    <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#374151", marginBottom: "6px" }}>
+                    <label htmlFor="edit-category-name" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#374151", marginBottom: "6px" }}>
                         Nombre <span style={{ color: "#dc2626" }}>*</span>
                     </label>
-                    <input value={name} onChange={e => setName(e.target.value)} disabled={isSubmitting} maxLength={100}
+                    <input id="edit-category-name" value={name} onChange={e => setName(e.target.value)} disabled={isSubmitting} maxLength={100}
                         style={{ width: "100%", padding: "8px 12px", border: "1px solid #e5e7eb", borderRadius: "8px", fontSize: "14px", outline: "none", boxSizing: "border-box" }} />
                 </div>
 
@@ -184,7 +212,7 @@ function EditModal({ category, onSave, onCancel }) {
 
                 <div style={{ marginBottom: "20px" }}>
                     <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#374151", marginBottom: "10px" }}>Visibilidad</label>
-                    <div style={{ display: "flex", gap: "10px" }}>
+                    <div style={{ display: "flex", gap: "10px" }} role="group" aria-label="Opciones de visibilidad">
                         {[
                             { value: true,  label: "Visible", color: "#15803d", bg: "#dcfce7", border: "#bbf7d0" },
                             { value: false, label: "Oculta",  color: "#475569", bg: "#f1f5f9", border: "#cbd5e1" },
@@ -215,12 +243,36 @@ function EditModal({ category, onSave, onCancel }) {
     );
 }
 
+EditModal.propTypes = {
+    category: PropTypes.shape({
+        id: PropTypes.number.isRequired,
+        name: PropTypes.string.isRequired,
+        icon: PropTypes.string,
+        visible: PropTypes.bool.isRequired,
+    }).isRequired,
+    onSave: PropTypes.func.isRequired,
+    onCancel: PropTypes.func.isRequired,
+};
+
 // ─── Modal: Confirmar borrado ─────────────────────────────────────────────────
 function DeleteModal({ category, isDeleting, onConfirm, onCancel, deleteError }) {
     if (!category) return null;
+
+    const handleOverlayKeyDown = (e) => {
+        if (e.key === 'Escape' && !isDeleting) {
+            onCancel();
+        }
+    };
+
     return (
-        <div style={{ position: "fixed", inset: 0, zIndex: 50, backgroundColor: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
-            onClick={onCancel}>
+        <div 
+            role="dialog"
+            aria-modal="true"
+            aria-label="Confirmar eliminación"
+            style={{ position: "fixed", inset: 0, zIndex: 50, backgroundColor: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
+            onClick={!isDeleting ? onCancel : undefined}
+            onKeyDown={handleOverlayKeyDown}
+        >
             <div style={{ backgroundColor: "white", borderRadius: "16px", padding: "24px", maxWidth: "420px", width: "100%", boxShadow: "0 20px 40px rgba(0,0,0,0.15)" }}
                 onClick={e => e.stopPropagation()}>
                 <div style={{ width: "48px", height: "48px", borderRadius: "50%", backgroundColor: "#fff1f2", border: "1px solid #fecdd3", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "16px" }}>
@@ -234,7 +286,7 @@ function DeleteModal({ category, isDeleting, onConfirm, onCancel, deleteError })
                     Los productos asociados serán reasignados a la categoría por defecto. Esta acción no se puede deshacer.
                 </p>
                 {deleteError && (
-                    <div style={{ backgroundColor: "#fff1f2", border: "1px solid #fecdd3", borderRadius: "8px", padding: "10px 12px", color: "#be123c", fontSize: "13px", marginBottom: "16px" }}>
+                    <div role="alert" style={{ backgroundColor: "#fff1f2", border: "1px solid #fecdd3", borderRadius: "8px", padding: "10px 12px", color: "#be123c", fontSize: "13px", marginBottom: "16px" }}>
                         {deleteError}
                     </div>
                 )}
@@ -253,12 +305,36 @@ function DeleteModal({ category, isDeleting, onConfirm, onCancel, deleteError })
     );
 }
 
+DeleteModal.propTypes = {
+    category: PropTypes.shape({
+        id: PropTypes.number.isRequired,
+        name: PropTypes.string.isRequired,
+    }),
+    isDeleting: PropTypes.bool,
+    onConfirm: PropTypes.func.isRequired,
+    onCancel: PropTypes.func.isRequired,
+    deleteError: PropTypes.string,
+};
+
 // ─── Modal: Aprobar solicitud ─────────────────────────────────────────────────
 function ApproveModal({ request, isSubmitting, onConfirm, onCancel, actionError }) {
     if (!request) return null;
+
+    const handleOverlayKeyDown = (e) => {
+        if (e.key === 'Escape' && !isSubmitting) {
+            onCancel();
+        }
+    };
+
     return (
-        <div style={{ position: "fixed", inset: 0, zIndex: 50, backgroundColor: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
-            onClick={isSubmitting ? undefined : onCancel}>
+        <div 
+            role="dialog"
+            aria-modal="true"
+            aria-label="Aprobar solicitud"
+            style={{ position: "fixed", inset: 0, zIndex: 50, backgroundColor: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
+            onClick={!isSubmitting ? onCancel : undefined}
+            onKeyDown={handleOverlayKeyDown}
+        >
             <div style={{ backgroundColor: "white", borderRadius: "16px", padding: "24px", maxWidth: "420px", width: "100%", boxShadow: "0 20px 40px rgba(0,0,0,0.15)" }}
                 onClick={e => e.stopPropagation()}>
                 <div style={{ width: "48px", height: "48px", borderRadius: "50%", backgroundColor: "#dcfce7", border: "1px solid #bbf7d0", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "16px" }}>
@@ -272,7 +348,7 @@ function ApproveModal({ request, isSubmitting, onConfirm, onCancel, actionError 
                     La categoría quedará visible y disponible para todos los comercios.
                 </p>
                 {actionError && (
-                    <div style={{ backgroundColor: "#fff1f2", border: "1px solid #fecdd3", borderRadius: "8px", padding: "10px 12px", color: "#be123c", fontSize: "13px", marginBottom: "16px" }}>
+                    <div role="alert" style={{ backgroundColor: "#fff1f2", border: "1px solid #fecdd3", borderRadius: "8px", padding: "10px 12px", color: "#be123c", fontSize: "13px", marginBottom: "16px" }}>
                         {actionError}
                     </div>
                 )}
@@ -291,12 +367,36 @@ function ApproveModal({ request, isSubmitting, onConfirm, onCancel, actionError 
     );
 }
 
+ApproveModal.propTypes = {
+    request: PropTypes.shape({
+        id: PropTypes.number.isRequired,
+        name: PropTypes.string.isRequired,
+    }),
+    isSubmitting: PropTypes.bool,
+    onConfirm: PropTypes.func.isRequired,
+    onCancel: PropTypes.func.isRequired,
+    actionError: PropTypes.string,
+};
+
 // ─── Modal: Rechazar solicitud ────────────────────────────────────────────────
 function RejectModal({ request, isSubmitting, onConfirm, onCancel, actionError }) {
     if (!request) return null;
+
+    const handleOverlayKeyDown = (e) => {
+        if (e.key === 'Escape' && !isSubmitting) {
+            onCancel();
+        }
+    };
+
     return (
-        <div style={{ position: "fixed", inset: 0, zIndex: 50, backgroundColor: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
-            onClick={isSubmitting ? undefined : onCancel}>
+        <div 
+            role="dialog"
+            aria-modal="true"
+            aria-label="Rechazar solicitud"
+            style={{ position: "fixed", inset: 0, zIndex: 50, backgroundColor: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
+            onClick={!isSubmitting ? onCancel : undefined}
+            onKeyDown={handleOverlayKeyDown}
+        >
             <div style={{ backgroundColor: "white", borderRadius: "16px", padding: "24px", maxWidth: "420px", width: "100%", boxShadow: "0 20px 40px rgba(0,0,0,0.15)" }}
                 onClick={e => e.stopPropagation()}>
                 <div style={{ width: "48px", height: "48px", borderRadius: "50%", backgroundColor: "#fee2e2", border: "1px solid #fecaca", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "16px" }}>
@@ -310,7 +410,7 @@ function RejectModal({ request, isSubmitting, onConfirm, onCancel, actionError }
                     Los productos asociados a esta solicitud serán reasignados a la categoría por defecto. Esta acción no se puede deshacer.
                 </p>
                 {actionError && (
-                    <div style={{ backgroundColor: "#fff1f2", border: "1px solid #fecdd3", borderRadius: "8px", padding: "10px 12px", color: "#be123c", fontSize: "13px", marginBottom: "16px" }}>
+                    <div role="alert" style={{ backgroundColor: "#fff1f2", border: "1px solid #fecdd3", borderRadius: "8px", padding: "10px 12px", color: "#be123c", fontSize: "13px", marginBottom: "16px" }}>
                         {actionError}
                     </div>
                 )}
@@ -329,12 +429,30 @@ function RejectModal({ request, isSubmitting, onConfirm, onCancel, actionError }
     );
 }
 
+RejectModal.propTypes = {
+    request: PropTypes.shape({
+        id: PropTypes.number.isRequired,
+        name: PropTypes.string.isRequired,
+    }),
+    isSubmitting: PropTypes.bool,
+    onConfirm: PropTypes.func.isRequired,
+    onCancel: PropTypes.func.isRequired,
+    actionError: PropTypes.string,
+};
+
 // ─── Fila de categoría ────────────────────────────────────────────────────────
 function CategoryRow({ cat, onEdit, onDelete }) {
     const navigate = useNavigate();
+
+    const handleKeyDown = (e, action) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            action();
+        }
+    };
+
     return (
         <div style={{ display: "flex", alignItems: "center", gap: "14px", padding: "14px 8px", borderBottom: "1px solid #f3f4f6", flexWrap: "wrap" }}>
-            {/* Ícono dinámico de la categoría */}
             <div style={{ width: "36px", height: "36px", borderRadius: "8px", backgroundColor: "var(--background-soft)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <CategoryIcon name={cat.icon} size={18} />
             </div>
@@ -354,15 +472,30 @@ function CategoryRow({ cat, onEdit, onDelete }) {
             </span>
 
             <div style={{ display: "flex", gap: "6px" }}>
-                <button type="button" onClick={() => navigate(`/admin/categorias/${cat.id}`)} title="Ver detalle"
+                <button 
+                    type="button" 
+                    onClick={() => navigate(`/admin/categorias/${cat.id}`)} 
+                    onKeyDown={(e) => handleKeyDown(e, () => navigate(`/admin/categorias/${cat.id}`))}
+                    aria-label={`Ver detalle de ${cat.name}`}
+                    title="Ver detalle"
                     style={{ background: "none", border: "1px solid #bfdbfe", borderRadius: "6px", padding: "5px 8px", cursor: "pointer", color: "#2563eb", display: "flex", alignItems: "center" }}>
                     <Eye size={15} />
                 </button>
-                <button type="button" onClick={() => onEdit(cat)} title="Editar categoría"
+                <button 
+                    type="button" 
+                    onClick={() => onEdit(cat)} 
+                    onKeyDown={(e) => handleKeyDown(e, () => onEdit(cat))}
+                    aria-label={`Editar ${cat.name}`}
+                    title="Editar categoría"
                     style={{ background: "none", border: "1px solid #d1fae5", borderRadius: "6px", padding: "5px 8px", cursor: "pointer", color: "#15803d", display: "flex", alignItems: "center" }}>
                     <Pencil size={15} />
                 </button>
-                <button type="button" onClick={() => onDelete(cat)} title="Eliminar categoría"
+                <button 
+                    type="button" 
+                    onClick={() => onDelete(cat)} 
+                    onKeyDown={(e) => handleKeyDown(e, () => onDelete(cat))}
+                    aria-label={`Eliminar ${cat.name}`}
+                    title="Eliminar categoría"
                     style={{ background: "none", border: "1px solid #fecdd3", borderRadius: "6px", padding: "5px 8px", cursor: "pointer", color: "#dc2626", display: "flex", alignItems: "center" }}>
                     <Trash2 size={15} />
                 </button>
@@ -371,8 +504,28 @@ function CategoryRow({ cat, onEdit, onDelete }) {
     );
 }
 
+CategoryRow.propTypes = {
+    cat: PropTypes.shape({
+        id: PropTypes.number.isRequired,
+        name: PropTypes.string.isRequired,
+        icon: PropTypes.string,
+        productCount: PropTypes.number,
+        visible: PropTypes.bool,
+        status: PropTypes.bool,
+    }).isRequired,
+    onEdit: PropTypes.func.isRequired,
+    onDelete: PropTypes.func.isRequired,
+};
+
 // ─── Fila de solicitud pendiente ──────────────────────────────────────────────
 function RequestRow({ request, onApprove, onReject }) {
+    const handleKeyDown = (e, action) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            action();
+        }
+    };
+
     return (
         <div style={{ display: "flex", alignItems: "center", gap: "14px", padding: "14px 8px", borderBottom: "1px solid #f3f4f6", flexWrap: "wrap" }}>
             <div style={{ width: "36px", height: "36px", borderRadius: "8px", backgroundColor: "#fef3c7", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -388,11 +541,21 @@ function RequestRow({ request, onApprove, onReject }) {
                 Pendiente
             </span>
             <div style={{ display: "flex", gap: "6px" }}>
-                <button type="button" onClick={() => onApprove(request)} title="Aprobar solicitud"
+                <button 
+                    type="button" 
+                    onClick={() => onApprove(request)} 
+                    onKeyDown={(e) => handleKeyDown(e, () => onApprove(request))}
+                    aria-label={`Aprobar solicitud de ${request.name}`}
+                    title="Aprobar solicitud"
                     style={{ display: "flex", alignItems: "center", gap: "4px", padding: "5px 12px", borderRadius: "6px", border: "1px solid #bbf7d0", backgroundColor: "white", color: "#15803d", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}>
                     <CheckCircle size={13} /> Aprobar
                 </button>
-                <button type="button" onClick={() => onReject(request)} title="Rechazar solicitud"
+                <button 
+                    type="button" 
+                    onClick={() => onReject(request)} 
+                    onKeyDown={(e) => handleKeyDown(e, () => onReject(request))}
+                    aria-label={`Rechazar solicitud de ${request.name}`}
+                    title="Rechazar solicitud"
                     style={{ display: "flex", alignItems: "center", gap: "4px", padding: "5px 12px", borderRadius: "6px", border: "1px solid #fecaca", backgroundColor: "white", color: "#dc2626", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}>
                     <XCircle size={13} /> Rechazar
                 </button>
@@ -401,11 +564,20 @@ function RequestRow({ request, onApprove, onReject }) {
     );
 }
 
+RequestRow.propTypes = {
+    request: PropTypes.shape({
+        id: PropTypes.number.isRequired,
+        name: PropTypes.string.isRequired,
+        createdAt: PropTypes.string,
+    }).isRequired,
+    onApprove: PropTypes.func.isRequired,
+    onReject: PropTypes.func.isRequired,
+};
+
 // ─── Página principal ─────────────────────────────────────────────────────────
 export const AdminCategoriesPage = () => {
     const [activeTab, setActiveTab] = useState("categories");
 
-    // Categorías
     const [categories, setCategories]       = useState([]);
     const [pagination, setPagination]       = useState({ categoryTotal: 0, categoryPage: 1, categoryLimit: 20, categoryTotalPages: 1 });
     const [loading, setLoading]             = useState(true);
@@ -420,7 +592,6 @@ export const AdminCategoriesPage = () => {
     const [isDeleting, setIsDeleting]             = useState(false);
     const [deleteError, setDeleteError]           = useState("");
 
-    // Solicitudes pendientes
     const [requests, setRequests]                       = useState([]);
     const [requestsLoading, setRequestsLoading]         = useState(false);
     const [requestsError, setRequestsError]             = useState(null);
@@ -461,7 +632,7 @@ export const AdminCategoriesPage = () => {
         setRequestsError(null);
         try {
             const result = await fetchCategoriesWithProducts({
-                visible: "false",
+                visible: false,
                 categoryPage: currentPage,
                 categoryLimit: 20,
                 productLimit: 0,
@@ -498,10 +669,10 @@ export const AdminCategoriesPage = () => {
         setDeleteError("");
         try {
             await deleteAdminCategory(categoryToDelete.id);
-            const nextPage = categories.length === 1 && page > 1 ? page - 1 : page;
+            const shouldGoToPrevPage = categories.length === 1 && page > 1;
             setCategoryToDelete(null);
             setDeleteError("");
-            if (nextPage !== page) setPage(nextPage);
+            if (shouldGoToPrevPage) setPage(page - 1);
             else load(page);
         } catch (err) {
             setDeleteError(err?.response?.data?.message || "No se pudo eliminar la categoría.");
@@ -545,6 +716,8 @@ export const AdminCategoriesPage = () => {
 
     const selectStyle = { padding: "8px 12px", border: "1px solid #e5e7eb", borderRadius: "8px", fontSize: "13px", color: "#374151", background: "white", cursor: "pointer" };
 
+    const hiddenCategoriesCount = categories.filter(c => !c.visible).length;
+
     return (
         <div style={{ maxWidth: "1100px" }}>
             <div style={{ marginBottom: "24px" }}>
@@ -555,14 +728,19 @@ export const AdminCategoriesPage = () => {
             </div>
 
             {/* Tabs */}
-            <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }}>
+            <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }} role="tablist" aria-label="Secciones de gestión">
                 {[
                     { key: "categories", label: "Categorías" },
                     { key: "requests",   label: "Solicitudes pendientes", badge: requestPagination.categoryTotal || null },
                 ].map(tab => {
                     const isActive = activeTab === tab.key;
                     return (
-                        <button key={tab.key} type="button" onClick={() => setActiveTab(tab.key)}
+                        <button 
+                            key={tab.key} 
+                            type="button" 
+                            onClick={() => setActiveTab(tab.key)}
+                            role="tab"
+                            aria-selected={isActive}
                             style={{ display: "flex", alignItems: "center", gap: "7px", padding: "8px 18px", border: isActive ? "1px solid var(--primary-dark)" : "1px solid #e5e7eb", borderRadius: "8px", cursor: "pointer", fontSize: "13px", fontWeight: "600", backgroundColor: isActive ? "var(--primary-dark)" : "var(--background-white)", color: isActive ? "white" : "#6b7280", transition: "all 0.15s" }}>
                             {tab.label}
                             {tab.badge > 0 && (
@@ -594,7 +772,7 @@ export const AdminCategoriesPage = () => {
                         {[
                             { label: "Total de Categorías", value: pagination.categoryTotal },
                             { label: "Categorías Visibles", value: categories.filter(c => c.visible).length },
-                            { label: "Categorías Ocultas",  value: categories.filter(c => !c.visible).length },
+                            { label: "Categorías Ocultas",  value: hiddenCategoriesCount },
                         ].map(({ label, value }) => (
                             <div key={label} style={{ ...cardStyle, textAlign: "center" }}>
                                 <p style={{ margin: "0 0 4px", fontSize: "13px", color: "#6b7280" }}>{label}</p>
@@ -609,11 +787,15 @@ export const AdminCategoriesPage = () => {
                         <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
                             <div style={{ position: "relative", flex: 1, minWidth: "200px" }}>
                                 <Search size={15} style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#9ca3af" }} />
-                                <input type="text" placeholder="Buscar por nombre..." value={search}
+                                <input 
+                                    type="text" 
+                                    placeholder="Buscar por nombre..." 
+                                    value={search}
                                     onChange={e => setSearch(e.target.value)}
+                                    aria-label="Buscar categorías por nombre"
                                     style={{ width: "100%", paddingLeft: "32px", paddingRight: "12px", paddingTop: "8px", paddingBottom: "8px", border: "1px solid #e5e7eb", borderRadius: "8px", fontSize: "13px", outline: "none", boxSizing: "border-box" }} />
                             </div>
-                            <select value={filterVisible} onChange={e => setFilterVisible(e.target.value)} style={selectStyle}>
+                            <select value={filterVisible} onChange={e => setFilterVisible(e.target.value)} style={selectStyle} aria-label="Filtrar por visibilidad">
                                 <option value="all">Todos los estados</option>
                                 <option value="true">Visible</option>
                                 <option value="false">Oculta</option>
@@ -627,7 +809,7 @@ export const AdminCategoriesPage = () => {
                         <p style={{ margin: "0 0 16px", fontSize: "13px", color: "#6b7280" }}>Lista de todas las categorías disponibles en la plataforma</p>
 
                         {error && (
-                            <div style={{ padding: "12px", backgroundColor: "#fee2e2", borderRadius: "8px", color: "#dc2626", fontSize: "13px", marginBottom: "16px" }}>{error}</div>
+                            <div role="alert" style={{ padding: "12px", backgroundColor: "#fee2e2", borderRadius: "8px", color: "#dc2626", fontSize: "13px", marginBottom: "16px" }}>{error}</div>
                         )}
 
                         {loading ? (
@@ -659,9 +841,9 @@ export const AdminCategoriesPage = () => {
                             </div>
                         )}
 
-                        {categories.filter(c => !c.visible).length > 0 && (
+                        {hiddenCategoriesCount > 0 && (
                             <p style={{ fontSize: "12px", color: "#6b7280", marginTop: "16px", borderTop: "1px solid #f3f4f6", paddingTop: "12px" }}>
-                                👁 Tenés {categories.filter(c => !c.visible).length} categoría{categories.filter(c => !c.visible).length !== 1 ? "s" : ""} oculta{categories.filter(c => !c.visible).length !== 1 ? "s" : ""} que no son visibles para los usuarios.
+                                👁 Tenés {hiddenCategoriesCount} categoría{hiddenCategoriesCount !== 1 ? "s" : ""} oculta{hiddenCategoriesCount !== 1 ? "s" : ""} que no son visibles para los usuarios.
                             </p>
                         )}
                     </div>
@@ -675,7 +857,7 @@ export const AdminCategoriesPage = () => {
                     <p style={{ margin: "0 0 16px", fontSize: "13px", color: "#6b7280" }}>Categorías solicitadas por comercios que esperan tu aprobación</p>
 
                     {requestsError && (
-                        <div style={{ padding: "12px", backgroundColor: "#fee2e2", borderRadius: "8px", color: "#dc2626", fontSize: "13px", marginBottom: "16px" }}>{requestsError}</div>
+                        <div role="alert" style={{ padding: "12px", backgroundColor: "#fee2e2", borderRadius: "8px", color: "#dc2626", fontSize: "13px", marginBottom: "16px" }}>{requestsError}</div>
                     )}
 
                     {requestsLoading ? (
@@ -712,7 +894,7 @@ export const AdminCategoriesPage = () => {
                 </div>
             )}
 
-            {/* Modales: Categorías */}
+            {/* Modales */}
             {showCreateModal && <CreateModal onSave={handleCreate} onCancel={() => setShowCreateModal(false)} />}
             {categoryToEdit && <EditModal category={categoryToEdit} onSave={handleSaveEdit} onCancel={() => setCategoryToEdit(null)} />}
             {categoryToDelete && (
@@ -721,7 +903,6 @@ export const AdminCategoriesPage = () => {
                     deleteError={deleteError} />
             )}
 
-            {/* Modales: Solicitudes */}
             <ApproveModal request={requestToApprove} isSubmitting={isActioning} onConfirm={handleApproveConfirm}
                 onCancel={() => { if (!isActioning) { setRequestToApprove(null); setActionError(""); } }}
                 actionError={actionError} />
