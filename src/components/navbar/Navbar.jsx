@@ -186,7 +186,7 @@ const Navbar = () => {
             Productos
           </Link>
           <Link
-            to="/comercio"
+            to={isCustomer ? "/crear-comercio" : "/comercio"}
             className="!no-underline !text-[#485B53] hover:!text-[#2e6b4f] transition-colors"
           >
             Comercio
