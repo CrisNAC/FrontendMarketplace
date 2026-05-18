@@ -17,6 +17,7 @@ type CartItem = {
   isOffer: boolean;
   quantity: number;
   image: string;
+  stock: number;
 };
 
 type BackendCart = {
@@ -38,6 +39,7 @@ type BackendCart = {
       offerPrice?: number | null;
       isOffer: boolean;
       imageUrl?: string | null;
+      stock?: number;
     };
   }>;
 };
@@ -107,6 +109,7 @@ export const CartPage = () => {
         isOffer: Boolean(item.product?.isOffer),
         quantity: Number(item.quantity ?? 1),
         image: item.product?.imageUrl ?? "",
+        stock: Number(item.product?.stock ?? 0),
       }));
 
       setCartItems(mappedItems);
@@ -134,6 +137,11 @@ export const CartPage = () => {
     setCartItems((prev) =>
       prev.map((item) => {
         if (item.id !== id) return item;
+
+        if (type === "inc" && item.quantity >= item.stock) {
+          toast.error(`Solo hay ${item.stock} unidades disponibles de ${item.name}`);
+          return item;
+        }
 
         const newQuantity =
           type === "inc" ? item.quantity + 1 : Math.max(1, item.quantity - 1);
@@ -249,6 +257,11 @@ export const CartPage = () => {
                               <h2 className="pr-8 text-lg font-bold leading-tight text-[#344d45]">
                                 {item.name}
                               </h2>
+                              {item.quantity > item.stock && (
+                                <p className="mt-1 text-sm font-semibold text-red-600">
+                                  ⚠️ Stock insuficiente (Disponible: {item.stock})
+                                </p>
+                              )}
                             </div>
 
                             <div className="mt-1">
@@ -341,7 +354,8 @@ export const CartPage = () => {
                 <button
                     type="button"
                     onClick={() => navigate(`/confirmar-pedido/${cartId}`)}
-                    className="mt-4 w-full rounded-lg bg-[#5B7B6D] py-2 text-sm font-medium text-white shadow-sm transition-all duration-150 hover:bg-[#4e6a5e] active:scale-[0.98]"
+                    disabled={cartItems.some(item => item.quantity > item.stock)}
+                    className="mt-4 w-full rounded-lg bg-[#5B7B6D] py-2 text-sm font-medium text-white shadow-sm transition-all duration-150 hover:bg-[#4e6a5e] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                     Ir a Confirmar Pedido
                 </button>
