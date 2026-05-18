@@ -26,7 +26,7 @@ const mockUserSessionAndProfile = {
 
 const mockDeliveryProfile = {
     id_delivery: 5,
-    delivery_status: 'AVAILABLE',
+    delivery_status: 'ACTIVE',
     vehicle_type: 'CAR',
     coverage_city: 'Asunción',
     coverage_region: 'Central',
@@ -44,7 +44,7 @@ describe('DeliveryProfilePage', () => {
         vi.clearAllMocks()
     })
 
-    it('muestra el badge "Disponible" cuando el delivery está AVAILABLE', async () => {
+    it('muestra el badge "Disponible" cuando el delivery está ACTIVE', async () => {
         getCurrentUserForDeliveryForm.mockResolvedValueOnce(mockUserSessionAndProfile)
         getDeliveryProfile.mockResolvedValueOnce(mockDeliveryProfile)
 

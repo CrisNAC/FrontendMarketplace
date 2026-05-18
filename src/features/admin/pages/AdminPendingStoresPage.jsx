@@ -10,6 +10,42 @@ const cardStyle = {
   boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
 };
 
+const resolveStoreLogoUrl = (logo) => {
+  if (!logo || typeof logo !== "string" || !logo.trim()) return "";
+
+  const value = logo.trim();
+  if (/^(https?:|data:|blob:)/i.test(value)) return value;
+
+  const apiBase = (import.meta.env.VITE_API_URL || "http://localhost:3000").trim().replace(/\/$/, "");
+  return `${apiBase}${value.startsWith("/") ? "" : "/"}${value}`;
+};
+
+const StoreLogoPreview = ({ logo, name, size = 48, iconSize = 20, radius = "8px" }) => {
+  const [hasImageError, setHasImageError] = useState(false);
+  const logoUrl = resolveStoreLogoUrl(logo);
+
+  useEffect(() => {
+    setHasImageError(false);
+  }, [logoUrl]);
+
+  const showImage = Boolean(logoUrl) && !hasImageError;
+
+  return (
+    <div style={{ width: `${size}px`, height: `${size}px`, borderRadius: radius, overflow: "hidden", border: "1px solid #e5e7eb", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#f3f4f6" }}>
+      {showImage ? (
+        <img
+          src={logoUrl}
+          alt={`Logo de ${name || "comercio"}`}
+          onError={() => setHasImageError(true)}
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        />
+      ) : (
+        <Store size={iconSize} color="#9ca3af" />
+      )}
+    </div>
+  );
+};
+
 const getStoreCategories = (store) => {
   if (Array.isArray(store?.categories) && store.categories.length > 0) {
     return store.categories;
@@ -80,13 +116,7 @@ const StoreDetailsModal = ({ isOpen, store, onClose, onApprove, onReject, isSubm
 
         <div style={{ overflowY: "auto", paddingRight: "8px" }}>
           <div style={{ display: "flex", gap: "16px", marginBottom: "24px" }}>
-            {store.logo ? (
-              <img src={store.logo} alt={store.name} style={{ width: "80px", height: "80px", borderRadius: "12px", objectFit: "cover", border: "1px solid #e5e7eb", flexShrink: 0 }} />
-            ) : (
-              <div style={{ width: "80px", height: "80px", borderRadius: "12px", backgroundColor: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #e5e7eb", flexShrink: 0 }}>
-                <Store size={32} color="#9ca3af" />
-              </div>
-            )}
+            <StoreLogoPreview logo={store.logo} name={store.name} size={96} iconSize={34} radius="12px" />
             <div>
               <h4 style={{ margin: "0 0 4px 0", fontSize: "18px", fontWeight: "600", color: "#111827" }}>{store.name}</h4>
               <p style={{ margin: "0 0 4px 0", fontSize: "14px", color: "#6b7280" }}>
@@ -249,9 +279,7 @@ export const AdminPendingStoresPage = () => {
           <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
             {pendingStores.map((store) => (
               <div key={store.id_store} style={{ display: "flex", alignItems: "center", gap: "14px", padding: "16px 8px", borderBottom: "1px solid #f3f4f6", flexWrap: "wrap", transition: "background-color 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f9fafb"} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}>
-                <div style={{ width: "45px", height: "45px", borderRadius: "8px", overflow: "hidden", border: "1px solid #e5e7eb", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#f3f4f6" }}>
-                  {store.logo ? <img src={store.logo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Store size={20} color="#9ca3af" />}
-                </div>
+                <StoreLogoPreview logo={store.logo} name={store.name} size={45} iconSize={20} />
                 <div style={{ flex: "1.5", minWidth: "150px" }}>
                   <p style={{ margin: 0, fontWeight: "600", fontSize: "14px" }}>{store.name}</p>
                   <p style={{ margin: 0, fontSize: "12px", color: "#6b7280" }}>
