@@ -1,7 +1,110 @@
+// src/features/admin/pages/AdminCategoriesPage.jsx
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Trash2, Eye, AlertTriangle, Tag, Package, Pencil, X, Plus, CheckCircle, XCircle, Clock } from "lucide-react";
-import { fetchCategoriesWithProducts, updateAdminCategory, deleteAdminCategory, createAdminCategory } from "../services/adminCategoriesApi";
+import * as LucideIcons from "lucide-react";
+import {
+    Search, Trash2, Eye, AlertTriangle, Tag, Package,
+    Pencil, X, Plus, CheckCircle, XCircle, Clock,
+    Laptop, Shirt, Palette, Home, Heart, Gamepad2,
+    Dumbbell, Wrench, BookOpen, Car, UtensilsCrossed,
+    Music, Camera, Baby, Dog, Leaf, Gem, Bike,
+    Tv, Smartphone, Watch, Coffee, Globe, ShoppingBag,
+} from "lucide-react";
+import {
+    fetchCategoriesWithProducts, updateAdminCategory,
+    deleteAdminCategory, createAdminCategory,
+} from "../services/adminCategoriesApi";
+
+// ─── Íconos disponibles para categorías ──────────────────────────────────────
+const ICON_OPTIONS = [
+    { name: "Tag",              Icon: Tag },
+    { name: "Laptop",           Icon: Laptop },
+    { name: "Smartphone",       Icon: Smartphone },
+    { name: "Tv",               Icon: Tv },
+    { name: "Watch",            Icon: Watch },
+    { name: "Shirt",            Icon: Shirt },
+    { name: "Gem",              Icon: Gem },
+    { name: "ShoppingBag",      Icon: ShoppingBag },
+    { name: "Palette",          Icon: Palette },
+    { name: "Camera",           Icon: Camera },
+    { name: "Music",            Icon: Music },
+    { name: "BookOpen",         Icon: BookOpen },
+    { name: "Home",             Icon: Home },
+    { name: "Coffee",           Icon: Coffee },
+    { name: "UtensilsCrossed",  Icon: UtensilsCrossed },
+    { name: "Heart",            Icon: Heart },
+    { name: "Gamepad2",         Icon: Gamepad2 },
+    { name: "Dumbbell",         Icon: Dumbbell },
+    { name: "Bike",             Icon: Bike },
+    { name: "Car",              Icon: Car },
+    { name: "Baby",             Icon: Baby },
+    { name: "Dog",              Icon: Dog },
+    { name: "Leaf",             Icon: Leaf },
+    { name: "Globe",            Icon: Globe },
+    { name: "Wrench",           Icon: Wrench },
+];
+
+// ─── Helper: renderiza ícono dinámico por nombre ──────────────────────────────
+function CategoryIcon({ name, size = 18, color = "var(--primary-dark)" }) {
+    const Icon = (name && LucideIcons[name]) ? LucideIcons[name] : LucideIcons.Tag;
+    return <Icon size={size} color={color} />;
+}
+
+// ─── Picker de íconos ─────────────────────────────────────────────────────────
+function IconPicker({ value, onChange, disabled }) {
+    return (
+        <div>
+            <p style={{ fontSize: "13px", fontWeight: "600", color: "#374151", margin: "0 0 8px 0" }}>
+                Ícono
+            </p>
+            <div style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(5, 1fr)",
+                gap: "6px",
+                maxHeight: "180px",
+                overflowY: "auto",
+                padding: "4px",
+            }}>
+                {ICON_OPTIONS.map(({ name, Icon }) => {
+                    const selected = value === name;
+                    return (
+                        <button
+                            key={name}
+                            type="button"
+                            onClick={() => !disabled && onChange(name)}
+                            title={name}
+                            disabled={disabled}
+                            style={{
+                                padding: "10px 6px",
+                                borderRadius: "8px",
+                                border: `2px solid ${selected ? "var(--primary-dark)" : "#e5e7eb"}`,
+                                backgroundColor: selected ? "#f0fdf4" : "white",
+                                cursor: disabled ? "default" : "pointer",
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                gap: "4px",
+                                transition: "border-color 0.15s, background-color 0.15s",
+                            }}
+                        >
+                            <Icon size={18} color={selected ? "var(--primary-dark)" : "#9ca3af"} />
+                            <span style={{
+                                fontSize: "9px",
+                                color: selected ? "var(--primary-dark)" : "#9ca3af",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                                maxWidth: "100%",
+                            }}>
+                                {name}
+                            </span>
+                        </button>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
 
 const cardStyle = {
     backgroundColor: "var(--background-white)",
@@ -10,8 +113,10 @@ const cardStyle = {
     boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
 };
 
+// ─── Modal: Crear categoría ───────────────────────────────────────────────────
 function CreateModal({ onSave, onCancel }) {
     const [name, setName]         = useState("");
+    const [icon, setIcon]         = useState("Tag");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError]       = useState("");
 
@@ -23,7 +128,7 @@ function CreateModal({ onSave, onCancel }) {
         setIsSubmitting(true);
         setError("");
         try {
-            await onSave(trimmed);
+            await onSave(trimmed, icon);
         } catch (err) {
             setError(err?.response?.data?.message || "No se pudo crear la categoría.");
             setIsSubmitting(false);
@@ -33,7 +138,7 @@ function CreateModal({ onSave, onCancel }) {
     return (
         <div style={{ position: "fixed", inset: 0, zIndex: 50, backgroundColor: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
             onClick={isSubmitting ? undefined : onCancel}>
-            <div style={{ backgroundColor: "white", borderRadius: "16px", padding: "24px", maxWidth: "460px", width: "100%", boxShadow: "0 20px 40px rgba(0,0,0,0.15)" }}
+            <div style={{ backgroundColor: "white", borderRadius: "16px", padding: "24px", maxWidth: "480px", width: "100%", boxShadow: "0 20px 40px rgba(0,0,0,0.15)" }}
                 onClick={e => e.stopPropagation()}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
                     <h3 style={{ fontSize: "18px", fontWeight: "700", margin: 0 }}>Nueva Categoría</h3>
@@ -49,9 +154,20 @@ function CreateModal({ onSave, onCancel }) {
                     </div>
                 )}
 
-                <div style={{ marginBottom: "20px" }}>
+                {/* Preview del ícono seleccionado */}
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px", padding: "12px", backgroundColor: "#f9fafb", borderRadius: "10px" }}>
+                    <div style={{ width: "42px", height: "42px", borderRadius: "10px", backgroundColor: "var(--background-soft)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <CategoryIcon name={icon} size={22} />
+                    </div>
+                    <div>
+                        <p style={{ margin: 0, fontSize: "14px", fontWeight: "600", color: "#111827" }}>{name.trim() || "Nombre de la categoría"}</p>
+                        <p style={{ margin: 0, fontSize: "12px", color: "#9ca3af" }}>Vista previa</p>
+                    </div>
+                </div>
+
+                <div style={{ marginBottom: "16px" }}>
                     <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#374151", marginBottom: "6px" }}>
-                        Nombre *
+                        Nombre <span style={{ color: "#dc2626" }}>*</span>
                     </label>
                     <input
                         value={name}
@@ -63,8 +179,12 @@ function CreateModal({ onSave, onCancel }) {
                         style={{ width: "100%", padding: "8px 12px", border: "1px solid #e5e7eb", borderRadius: "8px", fontSize: "14px", outline: "none", boxSizing: "border-box" }}
                     />
                     <p style={{ fontSize: "12px", color: "#9ca3af", marginTop: "4px" }}>
-                        La categoría se creará como visible y activa por defecto.
+                        Se creará como visible y activa por defecto.
                     </p>
+                </div>
+
+                <div style={{ marginBottom: "20px" }}>
+                    <IconPicker value={icon} onChange={setIcon} disabled={isSubmitting} />
                 </div>
 
                 <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
@@ -85,6 +205,7 @@ function CreateModal({ onSave, onCancel }) {
 // ─── Modal: Editar categoría ──────────────────────────────────────────────────
 function EditModal({ category, onSave, onCancel }) {
     const [name, setName]       = useState(category.name);
+    const [icon, setIcon]       = useState(category.icon ?? "Tag");
     const [visible, setVisible] = useState(category.visible);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError]     = useState("");
@@ -95,8 +216,9 @@ function EditModal({ category, onSave, onCancel }) {
         if (trimmed.length > 100) { setError("El nombre no puede superar 100 caracteres."); return; }
 
         const payload = {};
-        if (trimmed !== category.name) payload.name = trimmed;
-        if (visible !== category.visible) payload.visible = visible;
+        if (trimmed !== category.name)        payload.name    = trimmed;
+        if (visible !== category.visible)     payload.visible = visible;
+        if (icon !== (category.icon ?? "Tag")) payload.icon   = icon;
         if (Object.keys(payload).length === 0) { onCancel(); return; }
 
         setIsSubmitting(true);
@@ -112,11 +234,12 @@ function EditModal({ category, onSave, onCancel }) {
     return (
         <div style={{ position: "fixed", inset: 0, zIndex: 50, backgroundColor: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
             onClick={onCancel}>
-            <div style={{ backgroundColor: "white", borderRadius: "16px", padding: "24px", maxWidth: "460px", width: "100%", boxShadow: "0 20px 40px rgba(0,0,0,0.15)" }}
+            <div style={{ backgroundColor: "white", borderRadius: "16px", padding: "24px", maxWidth: "480px", width: "100%", boxShadow: "0 20px 40px rgba(0,0,0,0.15)" }}
                 onClick={e => e.stopPropagation()}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
                     <h3 style={{ fontSize: "18px", fontWeight: "700", margin: 0 }}>Editar Categoría</h3>
-                    <button type="button" onClick={onCancel} style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280" }}>
+                    <button type="button" onClick={onCancel}
+                        style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280" }}>
                         <X size={20} />
                     </button>
                 </div>
@@ -127,10 +250,27 @@ function EditModal({ category, onSave, onCancel }) {
                     </div>
                 )}
 
+                {/* Preview */}
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px", padding: "12px", backgroundColor: "#f9fafb", borderRadius: "10px" }}>
+                    <div style={{ width: "42px", height: "42px", borderRadius: "10px", backgroundColor: "var(--background-soft)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <CategoryIcon name={icon} size={22} />
+                    </div>
+                    <div>
+                        <p style={{ margin: 0, fontSize: "14px", fontWeight: "600", color: "#111827" }}>{name.trim() || "Nombre de la categoría"}</p>
+                        <p style={{ margin: 0, fontSize: "12px", color: "#9ca3af" }}>Vista previa</p>
+                    </div>
+                </div>
+
                 <div style={{ marginBottom: "16px" }}>
-                    <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#374151", marginBottom: "6px" }}>Nombre *</label>
+                    <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#374151", marginBottom: "6px" }}>
+                        Nombre <span style={{ color: "#dc2626" }}>*</span>
+                    </label>
                     <input value={name} onChange={e => setName(e.target.value)} disabled={isSubmitting} maxLength={100}
                         style={{ width: "100%", padding: "8px 12px", border: "1px solid #e5e7eb", borderRadius: "8px", fontSize: "14px", outline: "none", boxSizing: "border-box" }} />
+                </div>
+
+                <div style={{ marginBottom: "16px" }}>
+                    <IconPicker value={icon} onChange={setIcon} disabled={isSubmitting} />
                 </div>
 
                 <div style={{ marginBottom: "20px" }}>
@@ -184,13 +324,11 @@ function DeleteModal({ category, isDeleting, onConfirm, onCancel, deleteError })
                 <p style={{ fontSize: "13px", color: "#6b7280", margin: "0 0 24px 0" }}>
                     Los productos asociados serán reasignados a la categoría por defecto. Esta acción no se puede deshacer.
                 </p>
-
                 {deleteError && (
                     <div style={{ backgroundColor: "#fff1f2", border: "1px solid #fecdd3", borderRadius: "8px", padding: "10px 12px", color: "#be123c", fontSize: "13px", marginBottom: "16px" }}>
                         {deleteError}
                     </div>
                 )}
-
                 <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
                     <button type="button" onClick={onCancel} disabled={isDeleting}
                         style={{ padding: "8px 20px", borderRadius: "8px", border: "1px solid #d1d5db", backgroundColor: "white", fontSize: "14px", fontWeight: "500", color: "#374151", cursor: isDeleting ? "not-allowed" : "pointer", opacity: isDeleting ? 0.6 : 1 }}>
@@ -224,13 +362,11 @@ function ApproveModal({ request, isSubmitting, onConfirm, onCancel, actionError 
                 <p style={{ fontSize: "13px", color: "#15803d", margin: "0 0 24px 0", backgroundColor: "#f0fdf4", padding: "10px 12px", borderRadius: "8px", border: "1px solid #bbf7d0" }}>
                     La categoría quedará visible y disponible para todos los comercios.
                 </p>
-
                 {actionError && (
                     <div style={{ backgroundColor: "#fff1f2", border: "1px solid #fecdd3", borderRadius: "8px", padding: "10px 12px", color: "#be123c", fontSize: "13px", marginBottom: "16px" }}>
                         {actionError}
                     </div>
                 )}
-
                 <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
                     <button type="button" onClick={onCancel} disabled={isSubmitting}
                         style={{ padding: "8px 20px", borderRadius: "8px", border: "1px solid #d1d5db", backgroundColor: "white", fontSize: "14px", fontWeight: "500", color: "#374151", cursor: isSubmitting ? "not-allowed" : "pointer", opacity: isSubmitting ? 0.6 : 1 }}>
@@ -264,13 +400,11 @@ function RejectModal({ request, isSubmitting, onConfirm, onCancel, actionError }
                 <p style={{ fontSize: "13px", color: "#6b7280", margin: "0 0 24px 0" }}>
                     Los productos asociados a esta solicitud serán reasignados a la categoría por defecto. Esta acción no se puede deshacer.
                 </p>
-
                 {actionError && (
                     <div style={{ backgroundColor: "#fff1f2", border: "1px solid #fecdd3", borderRadius: "8px", padding: "10px 12px", color: "#be123c", fontSize: "13px", marginBottom: "16px" }}>
                         {actionError}
                     </div>
                 )}
-
                 <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
                     <button type="button" onClick={onCancel} disabled={isSubmitting}
                         style={{ padding: "8px 20px", borderRadius: "8px", border: "1px solid #d1d5db", backgroundColor: "white", fontSize: "14px", fontWeight: "500", color: "#374151", cursor: isSubmitting ? "not-allowed" : "pointer", opacity: isSubmitting ? 0.6 : 1 }}>
@@ -289,11 +423,11 @@ function RejectModal({ request, isSubmitting, onConfirm, onCancel, actionError }
 // ─── Fila de categoría ────────────────────────────────────────────────────────
 function CategoryRow({ cat, onEdit, onDelete }) {
     const navigate = useNavigate();
-
     return (
         <div style={{ display: "flex", alignItems: "center", gap: "14px", padding: "14px 8px", borderBottom: "1px solid #f3f4f6", flexWrap: "wrap" }}>
+            {/* Ícono dinámico de la categoría */}
             <div style={{ width: "36px", height: "36px", borderRadius: "8px", backgroundColor: "var(--background-soft)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <Tag size={18} color="var(--primary-dark)" />
+                <CategoryIcon name={cat.icon} size={18} />
             </div>
 
             <div style={{ flex: 1, minWidth: "150px" }}>
@@ -303,21 +437,10 @@ function CategoryRow({ cat, onEdit, onDelete }) {
                 </p>
             </div>
 
-            <span style={{
-                padding: "3px 10px", borderRadius: "999px", fontSize: "12px", fontWeight: "500",
-                backgroundColor: cat.visible ? "#dcfce7" : "#f1f5f9",
-                color: cat.visible ? "#15803d" : "#475569",
-                minWidth: "70px", textAlign: "center",
-            }}>
+            <span style={{ padding: "3px 10px", borderRadius: "999px", fontSize: "12px", fontWeight: "500", backgroundColor: cat.visible ? "#dcfce7" : "#f1f5f9", color: cat.visible ? "#15803d" : "#475569", minWidth: "70px", textAlign: "center" }}>
                 {cat.visible ? "Visible" : "Oculta"}
             </span>
-
-            <span style={{
-                padding: "3px 10px", borderRadius: "999px", fontSize: "12px", fontWeight: "500",
-                backgroundColor: cat.status ? "#dbeafe" : "#fef3c7",
-                color: cat.status ? "#1d4ed8" : "#92400e",
-                minWidth: "70px", textAlign: "center",
-            }}>
+            <span style={{ padding: "3px 10px", borderRadius: "999px", fontSize: "12px", fontWeight: "500", backgroundColor: cat.status ? "#dbeafe" : "#fef3c7", color: cat.status ? "#1d4ed8" : "#92400e", minWidth: "70px", textAlign: "center" }}>
                 {cat.status ? "Activa" : "Inactiva"}
             </span>
 
@@ -346,21 +469,15 @@ function RequestRow({ request, onApprove, onReject }) {
             <div style={{ width: "36px", height: "36px", borderRadius: "8px", backgroundColor: "#fef3c7", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <Clock size={18} color="#92400e" />
             </div>
-
             <div style={{ flex: 1, minWidth: "150px" }}>
                 <p style={{ margin: 0, fontWeight: "600", fontSize: "14px" }}>{request.name}</p>
                 <p style={{ margin: 0, fontSize: "12px", color: "#6b7280" }}>
                     Solicitada el {new Date(request.createdAt).toLocaleDateString("es-PY")}
                 </p>
             </div>
-
-            <span style={{
-                padding: "3px 10px", borderRadius: "999px", fontSize: "12px", fontWeight: "500",
-                backgroundColor: "#fef3c7", color: "#92400e", border: "1px solid #fde68a",
-            }}>
+            <span style={{ padding: "3px 10px", borderRadius: "999px", fontSize: "12px", fontWeight: "500", backgroundColor: "#fef3c7", color: "#92400e", border: "1px solid #fde68a" }}>
                 Pendiente
             </span>
-
             <div style={{ display: "flex", gap: "6px" }}>
                 <button type="button" onClick={() => onApprove(request)} title="Aprobar solicitud"
                     style={{ display: "flex", alignItems: "center", gap: "4px", padding: "5px 12px", borderRadius: "6px", border: "1px solid #bbf7d0", backgroundColor: "white", color: "#15803d", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}>
@@ -377,10 +494,9 @@ function RequestRow({ request, onApprove, onReject }) {
 
 // ─── Página principal ─────────────────────────────────────────────────────────
 export const AdminCategoriesPage = () => {
-    // ── Tab activo ────────────────────────────────────────────────────────────
-    const [activeTab, setActiveTab] = useState("categories"); // "categories" | "requests"
+    const [activeTab, setActiveTab] = useState("categories");
 
-    // ── Estado: Categorías ────────────────────────────────────────────────────
+    // Categorías
     const [categories, setCategories]       = useState([]);
     const [pagination, setPagination]       = useState({ categoryTotal: 0, categoryPage: 1, categoryLimit: 20, categoryTotalPages: 1 });
     const [loading, setLoading]             = useState(true);
@@ -389,25 +505,23 @@ export const AdminCategoriesPage = () => {
     const [filterVisible, setFilterVisible] = useState("all");
     const [page, setPage]                   = useState(1);
 
-    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [showCreateModal, setShowCreateModal]   = useState(false);
     const [categoryToEdit, setCategoryToEdit]     = useState(null);
     const [categoryToDelete, setCategoryToDelete] = useState(null);
     const [isDeleting, setIsDeleting]             = useState(false);
     const [deleteError, setDeleteError]           = useState("");
 
-    // ── Estado: Solicitudes pendientes ────────────────────────────────────────
-    const [requests, setRequests]           = useState([]);
-    const [requestsLoading, setRequestsLoading] = useState(false);
-    const [requestsError, setRequestsError] = useState(null);
-    const [requestPage, setRequestPage]     = useState(1);
-    const [requestPagination, setRequestPagination] = useState({ categoryTotal: 0, categoryTotalPages: 1 });
+    // Solicitudes pendientes
+    const [requests, setRequests]                       = useState([]);
+    const [requestsLoading, setRequestsLoading]         = useState(false);
+    const [requestsError, setRequestsError]             = useState(null);
+    const [requestPage, setRequestPage]                 = useState(1);
+    const [requestPagination, setRequestPagination]     = useState({ categoryTotal: 0, categoryTotalPages: 1 });
+    const [requestToApprove, setRequestToApprove]       = useState(null);
+    const [requestToReject, setRequestToReject]         = useState(null);
+    const [isActioning, setIsActioning]                 = useState(false);
+    const [actionError, setActionError]                 = useState("");
 
-    const [requestToApprove, setRequestToApprove] = useState(null);
-    const [requestToReject, setRequestToReject]   = useState(null);
-    const [isActioning, setIsActioning]           = useState(false);
-    const [actionError, setActionError]           = useState("");
-
-    // ── Carga de categorías ───────────────────────────────────────────────────
     const load = useCallback(async (currentPage) => {
         setLoading(true);
         setError(null);
@@ -433,12 +547,10 @@ export const AdminCategoriesPage = () => {
         }
     }, [search, filterVisible]);
 
-    // ── Carga de solicitudes pendientes (visible=false, status=true) ──────────
     const loadRequests = useCallback(async (currentPage) => {
         setRequestsLoading(true);
         setRequestsError(null);
         try {
-            // Las solicitudes pendientes son categorías con visible=false
             const result = await fetchCategoriesWithProducts({
                 visible: "false",
                 categoryPage: currentPage,
@@ -446,10 +558,7 @@ export const AdminCategoriesPage = () => {
                 productLimit: 0,
             });
             setRequests(result.data);
-            setRequestPagination({
-                categoryTotal:      result.categoryTotal,
-                categoryTotalPages: result.categoryTotalPages,
-            });
+            setRequestPagination({ categoryTotal: result.categoryTotal, categoryTotalPages: result.categoryTotalPages });
         } catch (err) {
             setRequestsError(err?.response?.data?.message || "Error al cargar las solicitudes.");
         } finally {
@@ -459,20 +568,15 @@ export const AdminCategoriesPage = () => {
 
     useEffect(() => { setPage(1); }, [search, filterVisible]);
     useEffect(() => { load(page); }, [load, page]);
+    useEffect(() => { if (activeTab === "requests") loadRequests(requestPage); }, [activeTab, requestPage, loadRequests]);
 
-    // Cargar solicitudes al montar y al cambiar de tab a "requests"
-    useEffect(() => {
-        if (activeTab === "requests") loadRequests(requestPage);
-    }, [activeTab, requestPage, loadRequests]);
-
-    const handleCreate = async (name) => {
-        await createAdminCategory(name);
+    const handleCreate = async (name, icon) => {
+        await createAdminCategory(name, icon);
         setShowCreateModal(false);
         setPage(1);
         load(1);
     };
 
-    // ── Handlers: Categorías ──────────────────────────────────────────────────
     const handleSaveEdit = async (id, payload) => {
         const updated = await updateAdminCategory(id, payload);
         setCategories(prev => prev.map(c => c.id === id ? { ...c, ...updated } : c));
@@ -497,19 +601,15 @@ export const AdminCategoriesPage = () => {
         }
     };
 
-    // ── Handlers: Solicitudes ─────────────────────────────────────────────────
     const handleApproveConfirm = async () => {
         if (!requestToApprove) return;
         setIsActioning(true);
         setActionError("");
         try {
-            // Aprobar = hacer visible: true usando el PUT existente
             await updateAdminCategory(requestToApprove.id, { visible: true });
-            // Quitar de la lista localmente sin recargar
             setRequests(prev => prev.filter(r => r.id !== requestToApprove.id));
             setRequestPagination(prev => ({ ...prev, categoryTotal: Math.max(0, prev.categoryTotal - 1) }));
             setRequestToApprove(null);
-            // Refrescar el tab de categorías para que aparezca la nueva
             load(page);
         } catch (err) {
             setActionError(err?.response?.data?.message || "No se pudo aprobar la solicitud.");
@@ -523,9 +623,7 @@ export const AdminCategoriesPage = () => {
         setIsActioning(true);
         setActionError("");
         try {
-            // Rechazar = eliminar (el backend reasigna productos a id=1 automáticamente)
             await deleteAdminCategory(requestToReject.id);
-            // Quitar de la lista localmente sin recargar
             setRequests(prev => prev.filter(r => r.id !== requestToReject.id));
             setRequestPagination(prev => ({ ...prev, categoryTotal: Math.max(0, prev.categoryTotal - 1) }));
             setRequestToReject(null);
@@ -536,10 +634,7 @@ export const AdminCategoriesPage = () => {
         }
     };
 
-    const selectStyle = {
-        padding: "8px 12px", border: "1px solid #e5e7eb", borderRadius: "8px",
-        fontSize: "13px", color: "#374151", background: "white", cursor: "pointer",
-    };
+    const selectStyle = { padding: "8px 12px", border: "1px solid #e5e7eb", borderRadius: "8px", fontSize: "13px", color: "#374151", background: "white", cursor: "pointer" };
 
     return (
         <div style={{ maxWidth: "1100px" }}>
@@ -550,7 +645,7 @@ export const AdminCategoriesPage = () => {
                 </p>
             </div>
 
-            {/* ── Tabs ── */}
+            {/* Tabs */}
             <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }}>
                 {[
                     { key: "categories", label: "Categorías" },
@@ -558,36 +653,11 @@ export const AdminCategoriesPage = () => {
                 ].map(tab => {
                     const isActive = activeTab === tab.key;
                     return (
-                        <button
-                            key={tab.key}
-                            type="button"
-                            onClick={() => setActiveTab(tab.key)}
-                            style={{
-                                display: "flex", alignItems: "center", gap: "7px",
-                                padding: "8px 18px",
-                                border: isActive ? "1px solid var(--primary-dark)" : "1px solid #e5e7eb",
-                                borderRadius: "8px",
-                                cursor: "pointer",
-                                fontSize: "13px",
-                                fontWeight: "600",
-                                backgroundColor: isActive ? "var(--primary-dark)" : "var(--background-white)",
-                                color: isActive ? "white" : "#6b7280",
-                                boxShadow: isActive ? "0 1px 4px rgba(0,0,0,0.10)" : "none",
-                                transition: "all 0.15s",
-                            }}
-                        >
+                        <button key={tab.key} type="button" onClick={() => setActiveTab(tab.key)}
+                            style={{ display: "flex", alignItems: "center", gap: "7px", padding: "8px 18px", border: isActive ? "1px solid var(--primary-dark)" : "1px solid #e5e7eb", borderRadius: "8px", cursor: "pointer", fontSize: "13px", fontWeight: "600", backgroundColor: isActive ? "var(--primary-dark)" : "var(--background-white)", color: isActive ? "white" : "#6b7280", transition: "all 0.15s" }}>
                             {tab.label}
                             {tab.badge > 0 && (
-                                <span style={{
-                                    backgroundColor: isActive ? "rgba(255,255,255,0.25)" : "#fef3c7",
-                                    color: isActive ? "white" : "#92400e",
-                                    border: isActive ? "1px solid rgba(255,255,255,0.35)" : "1px solid #fde68a",
-                                    borderRadius: "999px",
-                                    fontSize: "11px",
-                                    fontWeight: "700",
-                                    padding: "1px 7px",
-                                    lineHeight: "18px",
-                                }}>
+                                <span style={{ backgroundColor: isActive ? "rgba(255,255,255,0.25)" : "#fef3c7", color: isActive ? "white" : "#92400e", border: isActive ? "1px solid rgba(255,255,255,0.35)" : "1px solid #fde68a", borderRadius: "999px", fontSize: "11px", fontWeight: "700", padding: "1px 7px" }}>
                                     {tab.badge}
                                 </span>
                             )}
@@ -596,42 +666,20 @@ export const AdminCategoriesPage = () => {
                 })}
             </div>
 
-            {/* ════════════════ TAB: CATEGORÍAS ════════════════ */}
+            {/* ══ TAB: CATEGORÍAS ══ */}
             {activeTab === "categories" && (
                 <>
-                <div style={{ 
-                    display: "flex", 
-                    justifyContent: "space-between", 
-                    alignItems: "center", 
-                    marginBottom: "20px" 
-                }}>
-                    <div>
-                        <h2 style={{ margin: 0, fontSize: "18px", fontWeight: "600" }}>
-                            Categorías
-                        </h2>
-                        <p style={{ margin: "2px 0 0", fontSize: "13px", color: "#6b7280" }}>
-                            Gestiona las categorías de productos
-                        </p>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+                        <div>
+                            <h2 style={{ margin: 0, fontSize: "18px", fontWeight: "600" }}>Categorías</h2>
+                            <p style={{ margin: "2px 0 0", fontSize: "13px", color: "#6b7280" }}>Gestiona las categorías de productos</p>
+                        </div>
+                        <button onClick={() => setShowCreateModal(true)}
+                            style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 16px", backgroundColor: "var(--primary-dark)", color: "white", border: "none", borderRadius: "8px", fontSize: "13px", fontWeight: "500", cursor: "pointer" }}>
+                            <Plus size={14} /> Nueva Categoría
+                        </button>
                     </div>
-                    <button
-                        onClick={() => setShowCreateModal(true)}
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "6px",
-                            padding: "8px 16px",
-                            backgroundColor: "var(--primary-dark)",
-                            color: "white",
-                            border: "none",
-                            borderRadius: "8px",
-                            fontSize: "13px",
-                            fontWeight: "500",
-                            cursor: "pointer",
-                        }}
-                    >
-                        <Plus size={14} /> Nueva Categoría
-                    </button>
-                </div>
+
                     {/* Stat cards */}
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "20px" }}>
                         {[
@@ -664,19 +712,13 @@ export const AdminCategoriesPage = () => {
                         </div>
                     </div>
 
-                    {/* Tabla de categorías */}
+                    {/* Tabla */}
                     <div style={cardStyle}>
-                        <p style={{ margin: "0 0 4px", fontWeight: "600", fontSize: "15px" }}>
-                            Categorías ({pagination.categoryTotal})
-                        </p>
-                        <p style={{ margin: "0 0 16px", fontSize: "13px", color: "#6b7280" }}>
-                            Lista de todas las categorías disponibles en la plataforma
-                        </p>
+                        <p style={{ margin: "0 0 4px", fontWeight: "600", fontSize: "15px" }}>Categorías ({pagination.categoryTotal})</p>
+                        <p style={{ margin: "0 0 16px", fontSize: "13px", color: "#6b7280" }}>Lista de todas las categorías disponibles en la plataforma</p>
 
                         {error && (
-                            <div style={{ padding: "12px", backgroundColor: "#fee2e2", borderRadius: "8px", color: "#dc2626", fontSize: "13px", marginBottom: "16px" }}>
-                                {error}
-                            </div>
+                            <div style={{ padding: "12px", backgroundColor: "#fee2e2", borderRadius: "8px", color: "#dc2626", fontSize: "13px", marginBottom: "16px" }}>{error}</div>
                         )}
 
                         {loading ? (
@@ -686,11 +728,9 @@ export const AdminCategoriesPage = () => {
                         ) : (
                             <div style={{ display: "flex", flexDirection: "column" }}>
                                 {categories.map(cat => (
-                                    <CategoryRow
-                                        key={cat.id}
-                                        cat={cat}
-                                        onEdit={cat => { setDeleteError(""); setCategoryToEdit(cat); }}
-                                        onDelete={cat => { setDeleteError(""); setCategoryToDelete(cat); }}
+                                    <CategoryRow key={cat.id} cat={cat}
+                                        onEdit={c => { setDeleteError(""); setCategoryToEdit(c); }}
+                                        onDelete={c => { setDeleteError(""); setCategoryToDelete(c); }}
                                     />
                                 ))}
                             </div>
@@ -712,27 +752,21 @@ export const AdminCategoriesPage = () => {
 
                         {categories.filter(c => !c.visible).length > 0 && (
                             <p style={{ fontSize: "12px", color: "#6b7280", marginTop: "16px", borderTop: "1px solid #f3f4f6", paddingTop: "12px" }}>
-                                👁 Tenés {categories.filter(c => !c.visible).length} categoría{categories.filter(c => !c.visible).length !== 1 ? "s" : ""} oculta{categories.filter(c => !c.visible).length !== 1 ? "s" : ""} que no son visibles para los usuarios. Los productos en estas categorías siguen estando disponibles pero no aparecen en la navegación principal.
+                                👁 Tenés {categories.filter(c => !c.visible).length} categoría{categories.filter(c => !c.visible).length !== 1 ? "s" : ""} oculta{categories.filter(c => !c.visible).length !== 1 ? "s" : ""} que no son visibles para los usuarios.
                             </p>
                         )}
                     </div>
                 </>
             )}
 
-            {/* ════════════════ TAB: SOLICITUDES PENDIENTES ════════════════ */}
+            {/* ══ TAB: SOLICITUDES PENDIENTES ══ */}
             {activeTab === "requests" && (
                 <div style={cardStyle}>
-                    <p style={{ margin: "0 0 4px", fontWeight: "600", fontSize: "15px" }}>
-                        Solicitudes pendientes ({requestPagination.categoryTotal})
-                    </p>
-                    <p style={{ margin: "0 0 16px", fontSize: "13px", color: "#6b7280" }}>
-                        Categorías solicitadas por comercios que esperan tu aprobación
-                    </p>
+                    <p style={{ margin: "0 0 4px", fontWeight: "600", fontSize: "15px" }}>Solicitudes pendientes ({requestPagination.categoryTotal})</p>
+                    <p style={{ margin: "0 0 16px", fontSize: "13px", color: "#6b7280" }}>Categorías solicitadas por comercios que esperan tu aprobación</p>
 
                     {requestsError && (
-                        <div style={{ padding: "12px", backgroundColor: "#fee2e2", borderRadius: "8px", color: "#dc2626", fontSize: "13px", marginBottom: "16px" }}>
-                            {requestsError}
-                        </div>
+                        <div style={{ padding: "12px", backgroundColor: "#fee2e2", borderRadius: "8px", color: "#dc2626", fontSize: "13px", marginBottom: "16px" }}>{requestsError}</div>
                     )}
 
                     {requestsLoading ? (
@@ -745,9 +779,7 @@ export const AdminCategoriesPage = () => {
                     ) : (
                         <div style={{ display: "flex", flexDirection: "column" }}>
                             {requests.map(req => (
-                                <RequestRow
-                                    key={req.id}
-                                    request={req}
+                                <RequestRow key={req.id} request={req}
                                     onApprove={r => { setActionError(""); setRequestToApprove(r); }}
                                     onReject={r => { setActionError(""); setRequestToReject(r); }}
                                 />
@@ -771,50 +803,22 @@ export const AdminCategoriesPage = () => {
                 </div>
             )}
 
-            {/* ── Modales: Categorías ── */}
-            {showCreateModal && (
-                <CreateModal
-                    onSave={handleCreate}
-                    onCancel={() => setShowCreateModal(false)}
-                />
-            )}
-            {categoryToEdit && (
-                <EditModal
-                    category={categoryToEdit}
-                    onSave={handleSaveEdit}
-                    onCancel={() => setCategoryToEdit(null)}
-                />
-            )}
+            {/* Modales: Categorías */}
+            {showCreateModal && <CreateModal onSave={handleCreate} onCancel={() => setShowCreateModal(false)} />}
+            {categoryToEdit && <EditModal category={categoryToEdit} onSave={handleSaveEdit} onCancel={() => setCategoryToEdit(null)} />}
             {categoryToDelete && (
-                <DeleteModal
-                    category={categoryToDelete}
-                    isDeleting={isDeleting}
-                    onConfirm={handleDeleteConfirm}
-                    onCancel={() => {
-                        if (!isDeleting) {
-                            setCategoryToDelete(null);
-                            setDeleteError("");
-                        }
-                    }}
-                    deleteError={deleteError}
-                />
+                <DeleteModal category={categoryToDelete} isDeleting={isDeleting} onConfirm={handleDeleteConfirm}
+                    onCancel={() => { if (!isDeleting) { setCategoryToDelete(null); setDeleteError(""); } }}
+                    deleteError={deleteError} />
             )}
 
-            {/* ── Modales: Solicitudes ── */}
-            <ApproveModal
-                request={requestToApprove}
-                isSubmitting={isActioning}
-                onConfirm={handleApproveConfirm}
+            {/* Modales: Solicitudes */}
+            <ApproveModal request={requestToApprove} isSubmitting={isActioning} onConfirm={handleApproveConfirm}
                 onCancel={() => { if (!isActioning) { setRequestToApprove(null); setActionError(""); } }}
-                actionError={actionError}
-            />
-            <RejectModal
-                request={requestToReject}
-                isSubmitting={isActioning}
-                onConfirm={handleRejectConfirm}
+                actionError={actionError} />
+            <RejectModal request={requestToReject} isSubmitting={isActioning} onConfirm={handleRejectConfirm}
                 onCancel={() => { if (!isActioning) { setRequestToReject(null); setActionError(""); } }}
-                actionError={actionError}
-            />
+                actionError={actionError} />
         </div>
     );
 };

@@ -1,8 +1,65 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { z } from "zod";
+import * as LucideIcons from "lucide-react";
 import { ArrowLeft, Tag, Package, Eye, EyeOff, Pencil, X } from "lucide-react";
 import { fetchAdminCategoryById, fetchCategoriesWithProducts, updateAdminCategory } from "../services/adminCategoriesApi";
+
+// ─── Íconos disponibles ───────────────────────────────────────────────────────
+const ICON_OPTIONS = [
+    { name: "Tag",              Icon: LucideIcons.Tag },
+    { name: "Laptop",           Icon: LucideIcons.Laptop },
+    { name: "Smartphone",       Icon: LucideIcons.Smartphone },
+    { name: "Tv",               Icon: LucideIcons.Tv },
+    { name: "Watch",            Icon: LucideIcons.Watch },
+    { name: "Shirt",            Icon: LucideIcons.Shirt },
+    { name: "Gem",              Icon: LucideIcons.Gem },
+    { name: "ShoppingBag",      Icon: LucideIcons.ShoppingBag },
+    { name: "Palette",          Icon: LucideIcons.Palette },
+    { name: "Camera",           Icon: LucideIcons.Camera },
+    { name: "Music",            Icon: LucideIcons.Music },
+    { name: "BookOpen",         Icon: LucideIcons.BookOpen },
+    { name: "Home",             Icon: LucideIcons.Home },
+    { name: "Coffee",           Icon: LucideIcons.Coffee },
+    { name: "UtensilsCrossed",  Icon: LucideIcons.UtensilsCrossed },
+    { name: "Heart",            Icon: LucideIcons.Heart },
+    { name: "Gamepad2",         Icon: LucideIcons.Gamepad2 },
+    { name: "Dumbbell",         Icon: LucideIcons.Dumbbell },
+    { name: "Bike",             Icon: LucideIcons.Bike },
+    { name: "Car",              Icon: LucideIcons.Car },
+    { name: "Baby",             Icon: LucideIcons.Baby },
+    { name: "Dog",              Icon: LucideIcons.Dog },
+    { name: "Leaf",             Icon: LucideIcons.Leaf },
+    { name: "Globe",            Icon: LucideIcons.Globe },
+    { name: "Wrench",           Icon: LucideIcons.Wrench },
+];
+
+function CategoryIcon({ name, size = 18, color = "var(--primary-dark)" }) {
+    const Icon = (name && LucideIcons[name]) ? LucideIcons[name] : LucideIcons.Tag;
+    return <Icon size={size} color={color} />;
+}
+
+function IconPicker({ value, onChange, disabled }) {
+    return (
+        <div>
+            <p style={{ fontSize: "13px", fontWeight: "600", color: "#374151", margin: "0 0 8px 0" }}>Ícono</p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "6px", maxHeight: "180px", overflowY: "auto", padding: "4px" }}>
+                {ICON_OPTIONS.map(({ name, Icon }) => {
+                    const selected = value === name;
+                    return (
+                        <button key={name} type="button" onClick={() => !disabled && onChange(name)} title={name} disabled={disabled}
+                            style={{ padding: "10px 6px", borderRadius: "8px", border: `2px solid ${selected ? "var(--primary-dark)" : "#e5e7eb"}`, backgroundColor: selected ? "#f0fdf4" : "white", cursor: disabled ? "default" : "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", transition: "border-color 0.15s" }}>
+                            <Icon size={18} color={selected ? "var(--primary-dark)" : "#9ca3af"} />
+                            <span style={{ fontSize: "9px", color: selected ? "var(--primary-dark)" : "#9ca3af", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>
+                                {name}
+                            </span>
+                        </button>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
 
 // ─── Esquema de validación ──────────────────────────────────────────────────
 const categorySchema = z.object({
@@ -20,16 +77,13 @@ const cardStyle = {
 // ─── Modal: Editar categoría ──────────────────────────────────────────────────
 function EditModal({ category, onSave, onCancel }) {
     const [name, setName]       = useState(category.name);
+    const [icon, setIcon]       = useState(category.icon ?? "Tag");
     const [visible, setVisible] = useState(category.visible);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError]     = useState("");
 
     const handleSubmit = async () => {
-        const parsed = categorySchema.safeParse({
-            name: name.trim(),
-            visible,
-        });
-
+        const parsed = categorySchema.safeParse({ name: name.trim(), visible });
         if (!parsed.success) {
             const errors = {};
             for (const issue of parsed.error.issues) {
@@ -41,8 +95,9 @@ function EditModal({ category, onSave, onCancel }) {
         }
 
         const payload = {};
-        if (name.trim() !== category.name) payload.name = name.trim();
-        if (visible !== category.visible) payload.visible = visible;
+        if (name.trim() !== category.name)        payload.name    = name.trim();
+        if (visible !== category.visible)         payload.visible = visible;
+        if (icon !== (category.icon ?? "Tag"))    payload.icon    = icon;
         if (Object.keys(payload).length === 0) { onCancel(); return; }
 
         setIsSubmitting(true);
@@ -58,7 +113,7 @@ function EditModal({ category, onSave, onCancel }) {
     return (
         <div style={{ position: "fixed", inset: 0, zIndex: 50, backgroundColor: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
             onClick={onCancel}>
-            <div style={{ backgroundColor: "white", borderRadius: "16px", padding: "24px", maxWidth: "460px", width: "100%", boxShadow: "0 20px 40px rgba(0,0,0,0.15)" }}
+            <div style={{ backgroundColor: "white", borderRadius: "16px", padding: "24px", maxWidth: "480px", width: "100%", boxShadow: "0 20px 40px rgba(0,0,0,0.15)" }}
                 onClick={e => e.stopPropagation()}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
                     <h3 style={{ fontSize: "18px", fontWeight: "700", margin: 0 }}>Editar Categoría</h3>
@@ -73,10 +128,27 @@ function EditModal({ category, onSave, onCancel }) {
                     </div>
                 )}
 
+                {/* Preview */}
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px", padding: "12px", backgroundColor: "#f9fafb", borderRadius: "10px" }}>
+                    <div style={{ width: "42px", height: "42px", borderRadius: "10px", backgroundColor: "var(--background-soft)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <CategoryIcon name={icon} size={22} />
+                    </div>
+                    <div>
+                        <p style={{ margin: 0, fontSize: "14px", fontWeight: "600", color: "#111827" }}>{name.trim() || "Nombre de la categoría"}</p>
+                        <p style={{ margin: 0, fontSize: "12px", color: "#9ca3af" }}>Vista previa</p>
+                    </div>
+                </div>
+
                 <div style={{ marginBottom: "16px" }}>
-                    <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#374151", marginBottom: "6px" }}>Nombre *</label>
+                    <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#374151", marginBottom: "6px" }}>
+                        Nombre <span style={{ color: "#dc2626" }}>*</span>
+                    </label>
                     <input value={name} onChange={e => setName(e.target.value)} disabled={isSubmitting} maxLength={100}
                         style={{ width: "100%", padding: "8px 12px", border: "1px solid #e5e7eb", borderRadius: "8px", fontSize: "14px", outline: "none", boxSizing: "border-box" }} />
+                </div>
+
+                <div style={{ marginBottom: "16px" }}>
+                    <IconPicker value={icon} onChange={setIcon} disabled={isSubmitting} />
                 </div>
 
                 <div style={{ marginBottom: "20px" }}>
@@ -206,7 +278,7 @@ export const AdminCategoryDetailPage = () => {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
                         <div style={{ width: "48px", height: "48px", borderRadius: "12px", backgroundColor: "var(--background-soft)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                            <Tag size={24} color="var(--primary-dark)" />
+                            <CategoryIcon name={category?.icon} size={24} />
                         </div>
                         <div>
                             <h2 style={{ margin: "0 0 6px 0", fontSize: "20px", fontWeight: "700" }}>{category?.name}</h2>
