@@ -4626,4 +4626,525 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page.getByText('Sin stock')).toBeVisible();
   });
 
+  // OM-506 - Validación de todos los formularios
+  test('flujo login/registro: Login y registro inválidos', async ({ page }) => {
+
+    await page.unroute('**/api/users/register');
+    let registerCalled = false;
+    await page.route('**/api/users/register', async (route) => {
+      registerCalled = true;
+      await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ message: 'should not be called' }) });
+    });
+
+    await page.unroute('**/api/session');
+    let loginCalled = false;
+    await page.route('**/api/session', async (route) => {
+      loginCalled = true;
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ token: 'x', user: { id_user: 1 } }) });
+    });
+
+    // Ir a la página de auth y abrir formulario de registro
+    await page.goto('/login');
+    await page.getByRole('button', { name: 'Registrarse' }).click();
+
+    // Rellenar con valores inválidos
+    await page.getByPlaceholder('Tu nombre').fill(''); // nombre vacío
+    await page.getByPlaceholder('tu@correo.com').fill('correo-invalido');
+    await page.locator('input[name="password"]').fill('123'); // < 8
+    await page.locator('input[name="confirmPassword"]').fill('1234'); // distinto
+
+    // Intentar enviar
+    await page.locator('form button[type="submit"]').click();
+
+    // Validaciones esperadas (registro)
+    await expect(page.getByText('El nombre es obligatorio')).toBeVisible();
+    await expect(page.getByText('Ingresá un correo válido')).toBeVisible();
+    await expect(page.getByText('La contraseña debe tener mínimo 8 caracteres')).toBeVisible();
+    await expect(page.getByText('Las contraseñas no coinciden')).toBeVisible();
+
+    expect(registerCalled).toBe(false);
+
+    // Volver a login y probar validaciones de login inválido
+    await page.getByRole('button', { name: 'Iniciar sesión' }).click();
+    await page.getByPlaceholder('tu@correo.com').fill('correo-invalido');
+    await page.locator('input[name="password"]').fill(''); // vacío
+
+    await page.locator('form button[type="submit"]').click();
+
+    // Validaciones esperadas (login)
+    await expect(page.getByText('Ingresá un correo válido')).toBeVisible();
+    await expect(page.getByText('La contraseña es obligatoria')).toBeVisible();
+
+    expect(loginCalled).toBe(false);
+  });
+
+  //OM-506
+  test('flujo comercio: Campos inválidos al crear producto', async ({ page }) => {
+    // Evitar que la creación realmente se ejecute; detectar si se llamó
+    await page.unroute('**/products');
+    let createCalled = false;
+    await page.route('**/products', async (route) => {
+      createCalled = true;
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({ id_product: 999 }),
+      });
+    });
+
+    // Mock: devolver muchas tags (para poder mostrar >10)
+    await page.unroute('**/products/tags**');
+    await page.route('**/products/tags**', async (route) => {
+      const tags = Array.from({ length: 12 }, (_, i) => ({ id: i + 1, name: `tag${i + 1}`, status: true }));
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(tags) });
+    });
+
+    // Mock sesión como SELLER
+    await page.unroute('**/api/session');
+    await page.route('**/api/session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ token: 'fake-token', user: { id_user: 7, role: 'SELLER', id_store: 1 } }),
+      });
+    });
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, role: 'SELLER', id_store: 1, name: 'Seller Demo' } }),
+      });
+    });
+
+    // Login
+    await page.goto('/login');
+    await page.getByPlaceholder('tu@correo.com').fill('comercio@test.com');
+    await page.locator('input[name="password"]').fill('12345678');
+    await page.locator('form button[type="submit"]').click();
+
+    // Ir a crear producto
+    await page.goto('/comercio/productos/nuevo');
+    await expect(page.getByRole('heading', { name: 'Crear Nuevo Producto' })).toBeVisible();
+
+
+
+    // Rellenar con valores inválidos
+    await page.getByLabel('Nombre del Producto *').fill(''); // nombre vacío
+    await page.getByLabel('Descripcion *').fill(''); // descripción vacía
+    await page.getByLabel('Precio *').fill('0'); // precio <= 0
+    await page.getByLabel('Stock Disponible *').fill('-5'); // stock inválido
+
+    // Expandir lista de tags (mostrar todos)
+    await page.getByRole('button', { name: 'Ver mas' }).click();
+
+    // Asegurarse que los tags estén visibles
+    await expect(page.getByRole('button', { name: 'tag1' }).first()).toBeVisible({ timeout: 5000 });
+
+    // NO seleccionar categorías (dejar vacío)
+    // Seleccionar 10 tags (máximo permitido) — UI debe bloquear el 11
+    for (let i = 1; i <= 10; i++) {
+      await page.getByRole('button', { name: `tag${i}` }).first().click();
+    }
+
+    // El tag 11 debe existir pero estar deshabilitado por la app
+    const tag11 = page.getByRole('button', { name: 'tag11' }).first();
+    await expect(tag11).toBeVisible();
+    await expect(tag11).toBeDisabled();
+
+    // Intentar enviar
+    await page.getByRole('button', { name: 'Crear Producto' }).click();
+
+    // Validaciones esperadas (mensajes del esquema/productSchema)
+    await expect(page.getByText('El nombre del producto es obligatorio.')).toBeVisible();
+    await expect(page.getByText('La descripcion es obligatoria.')).toBeVisible();
+    await expect(page.getByText('El precio debe ser mayor a 0.')).toBeVisible();
+    await expect(page.getByText('Selecciona al menos una categoria.')).toBeVisible();
+    await expect(page.getByText('El stock debe ser un número entero mayor o igual a 0.')).toBeVisible();
+
+    expect(createCalled).toBe(false);
+  });
+
+  //OM-506
+  test('flujo cliente: Campos inválidos al agregar dirección', async ({ page }) => {
+    // Mock session como CUSTOMER
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, user: { id_user: 7, id_store: 1, name: 'Cliente Demo' } }),
+      });
+    });
+
+    // Mock addresses endpoint y detectar POST
+    await page.unroute('**/api/users/*/addresses**');
+    let postCalled = false;
+    await page.route('**/api/users/*/addresses**', async (route) => {
+      const method = route.request().method();
+      if (method === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ data: [] }),
+        });
+        return;
+      }
+      if (method === 'POST') {
+        postCalled = true;
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({ data: { id_address: 2 } }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    // Ir a la página de direcciones
+    await page.goto('/direcciones');
+    await expect(page.getByRole('heading', { name: 'Mi Cuenta' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Libreta de direcciones' })).toBeVisible();
+
+    // Abrir modal de agregar dirección
+    await page.getByRole('button', { name: 'Agregar dirección' }).first().click();
+
+    // Dejar el campo dirección vacío y NO seleccionar punto en el mapa
+    await page.getByPlaceholder('Ej: Av. República del Paraguay 1234').fill('');
+
+    // Enviar formulario
+    await page.locator('form').getByRole('button', { name: 'Agregar dirección' }).click();
+
+    // Validaciones esperadas
+    await expect(page.getByText('La dirección es obligatoria')).toBeVisible();
+    await page.getByPlaceholder('Ej: Av. República del Paraguay 1234').fill('Avda falsa 123');
+
+    // Enviar formulario
+    await page.locator('form').getByRole('button', { name: 'Agregar dirección' }).click();
+
+    await expect(page.getByText('Debes seleccionar un punto en el mapa')).toBeVisible();
+
+    // Asegurarse de que no se llamó al POST debido a errores de validación
+    expect(postCalled).toBe(false);
+  });
+
+  //OM-506
+  test('flujo cliente: Campos inválidos al crear comercio', async ({ page }) => {
+    // Interceptar creación para asegurar que NO se llame cuando hay errores
+    await page.unroute('**/api/commerces');
+    let createCalled = false;
+    await page.route('**/api/commerces', async (route) => {
+      if (route.request().method() === 'POST') {
+        createCalled = true;
+        await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ id_store: 999 }) });
+        return;
+      }
+      await route.fallback();
+    });
+
+    // Mock sesión como CUSTOMER (CommerceCreationForm lee /api/session/user-session)
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, user: { id_user: 7, role: 'CUSTOMER', name: 'Cliente Demo' } }),
+      });
+    });
+
+    // Mock categories (la UI muestra opciones, pero dejaremos sin seleccionar para validar)
+    await page.unroute('**/api/commerces/categories');
+    await page.route('**/api/commerces/categories', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          { id: 1, name: 'Comida' },
+          { id: 2, name: 'Ropa' },
+        ]),
+      });
+    });
+
+    // Ir a la página de creación de comercio
+    await page.goto('/crear-comercio');
+    await expect(page.getByText('Crear Comercio')).toBeVisible();
+
+    // Rellenar formulario con valores inválidos según el ticket
+    await page.getByPlaceholder('Ej: Mi Tienda Online').fill(''); // nombre vacio
+    await page.getByPlaceholder('contacto@mitienda.com').fill('correo-invalido'); // email inválido
+    await page.getByPlaceholder('+595XXXXXXXXX').fill('12345'); // phone inválido (no +595XXXXXXXXX)
+
+    await page.getByPlaceholder('Calle Principal 123').fill(''); // dirección vacia
+    //No se pone descripcion
+
+    //No seleccionar categorías, se deja vacío
+
+    // No seleccionar punto en el mapa
+
+    // Precios negativos
+    await page.getByPlaceholder('Ej: 2500').fill('-10');
+    await page.getByPlaceholder('Ej: 4000').fill('-5');
+
+    // URLs inválidas (sin http/https)
+    await page.getByPlaceholder('https://mi-comercio.com').fill('ftp://mi-sitio.com');
+    await page.getByPlaceholder('https://instagram.com/mi_comercio').fill('instagram.com/mi_tienda');
+    await page.getByPlaceholder('https://tiktok.com/@mi_comercio').fill('tiktok.com/@mi_tienda');
+
+    // Intentar enviar
+    await page.getByRole('button', { name: 'Registrar Comercio' }).click();
+
+    // Aserciones de validación esperadas
+    await expect(page.getByText('El nombre es obligatorio')).toBeVisible();
+    await expect(page.getByText('Ingresá un correo válido')).toBeVisible();
+    await expect(page.getByText('El teléfono debe tener el formato +595XXXXXXXXX')).toBeVisible();
+    await expect(page.getByText('La dirección es obligatoria')).toBeVisible();
+    await expect(page.getByText('Debes seleccionar al menos una categoría')).toBeVisible();
+    await expect(page.getByText('La descripción es obligatoria')).toBeVisible();
+    await expect(page.getByText('Selecciona un punto en el mapa')).toBeVisible();
+    await expect(page.getByText('El precio base debe ser mayor o igual a 0')).toBeVisible();
+    await expect(page.getByText('El precio de distancia debe ser mayor o igual a 0')).toBeVisible();
+    await expect(page.getByText('El sitio web debe iniciar con http:// o https://')).toBeVisible();
+    await expect(page.getByText('Instagram debe iniciar con http:// o https://')).toBeVisible();
+    await expect(page.getByText('TikTok debe iniciar con http:// o https://')).toBeVisible();
+
+    // Asegurar que no se intentó crear el comercio por errores de validación
+    expect(createCalled).toBe(false);
+  });
+
+  //OM-506
+  test('flujo comercio: Campos inválidos al editar comercio', async ({ page }) => {
+    // Interceptar update para asegurar que NO se llame cuando hay errores
+    await page.unroute('**/api/commerces/**');
+    let updateCalled = false;
+    await page.route('**/api/commerces/**', async (route) => {
+      const method = route.request().method();
+      if (method !== 'GET') {
+        updateCalled = true;
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id_store: 1 }) });
+        return;
+      }
+      await route.fallback();
+    });
+
+    // Mock sesión como SELLER (tiene id_store = 1)
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, role: 'SELLER', id_store: 1, name: 'Seller Demo' } }),
+      });
+    });
+
+    // Mock categorías (la página las carga pero dejaremos categoryIds vacías en el store)
+    await page.unroute('**/api/commerces/categories');
+    await page.route('**/api/commerces/categories', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          { id: 1, name: 'Comida' },
+          { id: 2, name: 'Ropa' },
+        ]),
+      });
+    });
+
+    // Mock detalle del comercio (sin categorías y sin punto en mapa para forzar validaciones)
+    await page.unroute('**/api/commerces/1');
+    await page.route('**/api/commerces/1', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id_store: 1,
+          name: 'Tienda Demo',
+          email: 'store@demo.com',
+          phone: '+595981000000',
+          description: 'Descripción demo',
+          categories: [],            // sin categorías
+          addresses: [{ address: 'Av Demo 123', latitude: null, longitude: null }],
+          logo: null,
+          website_url: 'https://mi-comercio.com',
+          instagram_url: '',
+          tiktok_url: '',
+          base_price: 1000,
+          distance_price: 2000,
+        }),
+      });
+    });
+
+    // Ir a editar comercio
+    await page.goto('/comercio/editar');
+    await expect(page.getByText('Perfil del Comercio')).toBeVisible();
+
+    // Dejar nombre vacío
+    await page.locator('input[value="Tienda Demo"]').fill('');
+
+    // Email inválido
+    await page.locator('input[value="store@demo.com"]').fill('correo-invalido');
+
+    // Teléfono inválido (no cumple +595...)
+    await page.locator('input[value="+595981000000"]').fill('');
+
+    // URLs inválidas
+    await page.locator('input[value="https://mi-comercio.com"]').fill('ftp://mi-sitio.com');
+    await page.getByPlaceholder('https://instagram.com/mi_comercio').fill('instagram.com/mi_tienda');
+    await page.getByPlaceholder('https://tiktok.com/@mi_comercio').fill('tiktok.com/@mi_tienda');
+
+    // Precios negativos
+    await page.getByPlaceholder('Ej: 2500').fill('-50');
+    await page.getByPlaceholder('Ej: 4000').fill('-10');
+
+    // Asegurarse de que no hay punto en el mapa (mock ya lo dejó null)
+    // Intentar enviar cambios
+    await page.getByRole('button', { name: 'Guardar Cambios' }).click();
+
+    // Validaciones esperadas
+    await expect(page.getByText('El nombre del comercio es obligatorio')).toBeVisible();
+    await expect(page.getByText('Ingresá un email válido')).toBeVisible();
+    await expect(page.getByText('El teléfono es obligatorio')).toBeVisible();
+    await expect(page.getByText(/Selecciona un punto en el mapa/i)).toBeVisible();
+    await expect(page.getByText('Ingresá un precio base válido mayor o igual a 0')).toBeVisible();
+    await expect(page.getByText('Ingresá un precio para larga distancia válido mayor o igual a 0')).toBeVisible();
+    await expect(page.getByText('La URL de sitio web debe iniciar con http:// o https://')).toBeVisible();
+    await expect(page.getByText('La URL de Instagram debe iniciar con http:// o https://')).toBeVisible();
+    await expect(page.getByText('La URL de TikTok debe iniciar con http:// o https://')).toBeVisible();
+
+    // No debe haberse llamado al endpoint de actualización
+    expect(updateCalled).toBe(false);
+  });
+
+  //OM-506
+  test('flujo admin: Campos inválidos al editar categoria en admin', async ({ page }) => {
+    // Mock session como ADMIN
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 1, role: 'ADMIN', name: 'Admin Demo' } }),
+      });
+    });
+
+    // Interceptar GET/PUT de la categoría
+    await page.unroute('**/api/admin/categories/1');
+    let putCalled = false;
+    await page.route('**/api/admin/categories/1', async (route) => {
+      const method = route.request().method();
+      if (method === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id: 1,
+            name: 'Electrónica',
+            visible: true,
+            status: true,
+            productCount: 0,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          }),
+        });
+        return;
+      }
+      if (method === 'PUT') {
+        putCalled = true;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ id: 1, name: 'X', visible: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    // Ir a detalle de categoría admin
+    await page.goto('/admin/categorias/1');
+    await expect(page.getByRole('heading', { name: 'Electrónica' })).toBeVisible();
+
+    // Abrir modal de edición
+    await page.getByRole('button', { name: 'Editar' }).click();
+    await expect(page.getByRole('heading', { name: 'Editar Categoría' })).toBeVisible();
+
+    // Localizar el input dentro del modal (no depende del value)
+    const nameInput = page.locator('label:has-text("Nombre *") + input, label:has-text("Nombre *") ~ input').first();
+
+    // Validación: nombre vacío
+    await nameInput.fill('');
+    await page.getByRole('button', { name: 'Guardar Cambios' }).click();
+    await expect(page.getByText('El nombre es requerido.')).toBeVisible();
+    expect(putCalled).toBe(false);
+
+    // Toggle cambia estado visual en el modal (sin guardar)
+    // Rellenar con nombre válido para no bloquear el toggle visual
+    await nameInput.fill('Nombre Válido');
+    const ocultaBtn = page.getByRole('button', { name: 'Oculta' }).first();
+    const visibleBtn = page.getByRole('button', { name: 'Visible' }).first();
+
+    // Estado inicial: "Visible" seleccionado 
+    const visibleBgBefore = await visibleBtn.evaluate((el) => getComputedStyle(el).backgroundColor);
+    // Cambiar a "Oculta"
+    await ocultaBtn.click();
+    const ocultaBgAfter = await ocultaBtn.evaluate((el) => getComputedStyle(el).backgroundColor);
+    const visibleBgAfter = await visibleBtn.evaluate((el) => getComputedStyle(el).backgroundColor);
+
+    // Comprobar que la apariencia cambió
+    expect(ocultaBgAfter).not.toBe(visibleBgBefore);
+    expect(visibleBgAfter).not.toBe(ocultaBgAfter);
+
+
+    expect(putCalled).toBe(false);
+  });
+
+  //OM-506
+  test('flujo cliente: Campos inválidos al comentar producto', async ({ page }) => {
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, role: 'CUSTOMER', name: 'Cliente Demo' } }),
+      });
+    });
+
+    await page.unroute('**/products/reviews/101');
+    await page.route('**/products/reviews/101', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          reviews: [],
+          stats: { averageRating: 0, totalReviews: 0 },
+        }),
+      });
+    });
+
+    let postCalled = false;
+    await page.unroute('**/products/101/reviews');
+    await page.route('**/products/101/reviews', async (route) => {
+      if (route.request().method() === 'POST') {
+        postCalled = true;
+        await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ id: 999 }) });
+        return;
+      }
+      await route.fallback();
+    });
+
+    await page.goto('/comentarios/101');
+    await expect(page.getByRole('heading', { name: 'Comentarios' })).toBeVisible();
+
+    // Abrir modal
+    await page.getByRole('button', { name: 'Escribir mi opinión' }).click();
+    await expect(page.getByText('Agregar una reseña')).toBeVisible();
+
+    // Validar comentario vacío
+    const commentTextarea = page.getByPlaceholder('Tu comentario');
+    await commentTextarea.fill('');
+    await page.getByRole('button', { name: 'Guardar' }).click();
+    await expect(page.getByText('El comentario es obligatorio')).toBeVisible();
+    expect(postCalled).toBe(false);
+  });
+
 });
