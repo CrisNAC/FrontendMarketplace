@@ -68,10 +68,10 @@ export function DeliveryProfilePage() {
         const load = async () => {
             try {
                 const { profile: userProfile, sessionUser: authUser } = await getCurrentUserForDeliveryForm();
-                
+
                 if (active) {
                     setSessionUser(authUser);
-                    
+
                     if (authUser?.role !== "DELIVERY") {
                         navigate("/quiero-ser-delivery", { replace: true });
                         return;
@@ -123,7 +123,7 @@ export function DeliveryProfilePage() {
         try {
             const newStatus = profile.delivery_status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
             await updateDeliveryStatus(profile.id_delivery, newStatus);
-            
+
             setProfile(prev => ({
                 ...prev,
                 delivery_status: newStatus
@@ -154,8 +154,8 @@ export function DeliveryProfilePage() {
     return (
         <>
             {/* ── Header con Toggle de Disponibilidad ─────────────────────── */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "24px", gap: "16px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "12px", flex: 1 }}>
+            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center">
                     <div style={{ width: "48px", height: "48px", borderRadius: "50%", overflow: "hidden", backgroundColor: "#e5e7eb", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
                         {profile?.avatar_url ? (
                             <img src={profile.avatar_url} alt="Avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -163,27 +163,28 @@ export function DeliveryProfilePage() {
                             <User size={24} color="#9ca3af" />
                         )}
                     </div>
-                    <div>
+                    <div className="min-w-0 flex-1">
                         <h4 style={{ fontWeight: "600", margin: "0 0 4px 0" }}>Perfil del Delivery</h4>
                         <p style={{ color: "#6b7280", margin: 0, fontSize: "14px" }}>Información general de tu cuenta de repartidor</p>
                     </div>
-                    {/* Badge de estado del delivery */}
                     <span style={{
                         padding: "3px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: "700",
                         backgroundColor: isActive ? "#dcfce7" : "#fef3c7",
                         color: isActive ? "#15803d" : "#92400e",
                         whiteSpace: "nowrap",
+                        alignSelf: "flex-start",
                     }}>
                         {isActive ? "Disponible" : "Inactivo"}
                     </span>
                 </div>
-                
-                <div style={{ display: "flex", gap: "8px" }}>
+
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
                     {/* Botón de conectar/desconectar */}
                     <button
                         type="button"
                         onClick={handleToggleAvailability}
                         disabled={updatingStatus}
+                        className="w-full justify-center sm:w-auto"
                         style={{
                             display: "flex",
                             alignItems: "center",
@@ -218,6 +219,7 @@ export function DeliveryProfilePage() {
                     <button
                         type="button"
                         onClick={() => navigate("/delivery/perfil/editar")}
+                        className="w-full justify-center sm:w-auto"
                         style={{
                             display: "flex",
                             alignItems: "center",
@@ -238,7 +240,7 @@ export function DeliveryProfilePage() {
             </div>
 
             {/* ── Grid ──────────────────────────────────────────────────────── */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: "20px", alignItems: "start" }}>
+            <div className="grid grid-cols-1 items-start gap-5 md:grid-cols-[1fr_280px]">
 
                 {/* Columna izquierda */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -246,10 +248,10 @@ export function DeliveryProfilePage() {
                         <h6 style={sectionTitle}>Datos Personales</h6>
                         <p style={labelStyle}>Nombre Completo</p>
                         <InfoRow icon={User} value={profile?.name} iconColor="#6b9080" />
-                        
+
                         <p style={labelStyle}>Email</p>
                         <InfoRow icon={Mail} value={profile?.email} iconColor="#3b82f6" />
-                        
+
                         <p style={labelStyle}>Teléfono (WhatsApp)</p>
                         <InfoRow icon={Phone} value={profile?.phone} iconColor="#16a34a" />
                     </div>
@@ -258,7 +260,7 @@ export function DeliveryProfilePage() {
                         <h6 style={sectionTitle}>Zona de Reparto y Comercio</h6>
                         <p style={labelStyle}>Ciudad</p>
                         <InfoRow icon={MapPin} value={profile?.coverage_city} iconColor="#ef4444" />
-                        
+
                         <p style={labelStyle}>Comercio Vinculado</p>
                         <InfoRow icon={Map} value={profile?.store_name} iconColor="#f59e0b" />
                     </div>
