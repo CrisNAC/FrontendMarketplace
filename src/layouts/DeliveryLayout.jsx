@@ -5,14 +5,20 @@ import { SidebarDelivery } from "../components/SidebarDelivery";
 
 const MD_BREAKPOINT = 768;
 
+function readDesktopFromMatchMedia() {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+        return true;
+    }
+    return window.matchMedia(`(min-width: ${MD_BREAKPOINT}px)`).matches;
+}
+
 function useIsDesktop() {
-    const [desktop, setDesktop] = useState(() =>
-        typeof window !== "undefined"
-            ? window.matchMedia(`(min-width: ${MD_BREAKPOINT}px)`).matches
-            : true,
-    );
+    const [desktop, setDesktop] = useState(readDesktopFromMatchMedia);
 
     useEffect(() => {
+        if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+            return;
+        }
         const mq = window.matchMedia(`(min-width: ${MD_BREAKPOINT}px)`);
         const onChange = () => setDesktop(mq.matches);
         onChange();
