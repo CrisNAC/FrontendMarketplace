@@ -5243,7 +5243,7 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page.getByText('TechPoint')).toBeVisible();
     await expect(page.getByText('DigiStore')).toBeVisible();
 
-    
+
     await page.locator('div.rounded-2xl').filter({ has: page.locator('h2', { hasText: 'Nissei' }) })
       .getByRole('button', { name: 'Eliminar' }).click();
 
@@ -5256,7 +5256,7 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page.locator('text=Orden eliminada correctamente')).toHaveCount(0);
 
     // Aceptar eliminación de Nissei
-    
+
     await page.locator('div.rounded-2xl').filter({ has: page.locator('h2', { hasText: 'Nissei' }) })
       .getByRole('button', { name: 'Eliminar' }).click();
 
@@ -5378,6 +5378,114 @@ test.describe('Flujos E2E de usuario final', () => {
 
     // Debe mostrarse el estado vacío
     await expect(page.getByText('Tu carrito está vacío')).toBeVisible();
+  });
+
+  //OM-505 - Notificaciones 
+
+
+  // notificación de pedido confirmado — badge, lista, marcar leída y navegación
+  test('flujo notificaciones: notificación de pedido confirmado (badge, lista, marcar leída y navegación)', async ({ page }) => {
+    // Mock: sesión (usuario autenticado)
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: null, name: 'Cliente Demo' } }),
+      });
+    });
+
+    // Mock: carts del usuario (fetchCartsApi) — evitar que falle el refresh del navbar
+    await page.route('**/api/users/7/carts', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ carts: [] }),
+      });
+    });
+
+    // Mock: GET /api/notifications con una notificación de pedido confirmado
+    await page.route('**/api/notifications', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          unreadCount: 1,
+          notifications: [
+            {
+              id: 123,
+              title: '¡Tu pedido #555 fue confirmado!',
+              message: 'Tu pago fue registrado y el pedido fue confirmado.',
+              referenceId: 555,
+              read: false,
+              createdAt: '2026-05-18T12:00:00.000Z',
+            },
+          ],
+        }),
+      });
+    });
+
+    // Interceptar PATCH que marca la notificación como leída
+    let patchCalled = false;
+    await page.route('**/api/notifications/123/read', async (route) => {
+      patchCalled = true;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 123,
+          title: '¡Tu pedido #555 fue confirmado!',
+          referenceId: 555,
+          read: true,
+          createdAt: '2026-05-18T12:00:00.000Z',
+        }),
+      });
+    });
+
+    // Mock: GET orders for user — necesario para la página /pedidos/:id
+    await page.route('**/api/users/7/orders', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          {
+            id: 555,
+            createdAt: '2026-05-18T11:50:00.000Z',
+            status: 'PROCESSING',
+            items: [],
+            total: 13290000,
+            address: null,
+            notes: null,
+          },
+        ]),
+      });
+    });
+
+    // Ir a la home para que el Navbar haga el fetch y muestre el badge
+    await page.goto('/');
+
+    // Esperar que el badge del navbar muestre "1"
+    const bellBadge = page.locator('a[aria-label="Notificaciones"] span');
+    await expect(bellBadge).toHaveText('1');
+
+    // Abrir centro de notificaciones desde la campana
+    await page.click('a[aria-label="Notificaciones"]');
+    await expect(page).toHaveURL(/\/notificaciones$/);
+
+    // Verificar que la notificación de pedido confirmado está en la lista
+    const notifButton = page.getByRole('button', { name: '¡Tu pedido #555 fue confirmado!' });
+    await expect(notifButton).toBeVisible();
+
+    // Hacer click en la notificación: debe llamar al PATCH y navegar a /pedidos/555
+    await notifButton.click();
+
+    // Esperar navegación a detalle del pedido
+    await page.waitForURL('**/pedidos/555');
+
+    // Verificar que el PATCH fue ejecutado
+    expect(patchCalled).toBeTruthy();
+
+    // En la página de detalle del pedido debe mostrarse el número del pedido
+    await expect(page.getByText(/Pedido N° 555/)).toBeVisible();
   });
 
 });
