@@ -1,5 +1,5 @@
 import apiClient from "../../../lib/apiClient";
-import { getSession, fetchUserProfile, updateUserProfile } from "../../commerces/services/editUserProfileApi";
+import { getSession, fetchUserProfile } from "../../commerces/services/editUserProfileApi";
 
 export const getCurrentUserForDeliveryForm = async () => {
   const session = await getSession();
@@ -34,29 +34,14 @@ const UI_VEHICLE_TO_API = {
  * Registra al usuario autenticado como delivery; el teléfono se guarda en el perfil con PUT.
  *
  * @param {string} uiVehicleType - BICICLETA | MOTOCICLETA | AUTOMOVIL | A_PIE
- * @param {string} [phone] - Número a guardar en Users.phone
  */
-export const becomeDelivery = async (uiVehicleType, phone) => {
+export const becomeDelivery = async (uiVehicleType) => {
   const vehicleType = UI_VEHICLE_TO_API[uiVehicleType];
   if (!vehicleType) {
     throw new Error("Tipo de vehículo no válido.");
   }
 
   const { data } = await apiClient.post("/api/deliveries/register", { vehicleType });
-
-  const trimmed = typeof phone === "string" ? phone.trim() : "";
-  if (trimmed) {
-    try {
-      const session = await getSession();
-      const uid = session?.user?.id_user;
-      if (uid) {
-        await updateUserProfile(uid, { phone: trimmed });
-      }
-    } catch (err) {
-      // El alta como delivery ya fue exitosa; no invalidar el flujo si falla sesión o guardado de teléfono.
-      console.warn("[becomeDelivery] No se pudo actualizar el teléfono en el perfil:", err);
-    }
-  }
 
   return data;
 };
