@@ -231,7 +231,7 @@ export function DeliveryEditProfilePage() {
                 setEmail(delivery.user?.email ?? profile?.email ?? sessionUser?.email ?? "");
                 setPhone(delivery.user?.phone ?? profile?.phone ?? sessionUser?.phone ?? "");
                 const addresses = profile?.addresses || [];
-                const primaryAddress = addresses.find(a => a.is_primary) || addresses[0];
+                const primaryAddress = addresses[0];
                 setCity(primaryAddress?.city ?? "N/A");
                 setVehicleType(delivery.vehicle_type ?? "MOTORCYCLE");
                 setAvatarUrl(delivery.user?.avatar_url ?? null);

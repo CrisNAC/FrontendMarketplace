@@ -94,8 +94,9 @@ export function DeliveryProfilePage() {
                         vehicle_type: deliveryProfile?.vehicle_type ? (UI_VEHICLE_LABELS[deliveryProfile.vehicle_type] || deliveryProfile.vehicle_type) : "N/A",
                         delivery_status: deliveryProfile?.delivery_status || "INACTIVE",
                         coverage_city: (() => {
+                            // Since the backend does not expose an `is_primary` field, we use addresses[0] directly
                             const addresses = userProfile?.addresses || [];
-                            const primaryAddress = addresses.find(a => a.is_primary) || addresses[0];
+                            const primaryAddress = addresses[0];
                             return primaryAddress?.city || "N/A";
                         })(),
                         store_name: deliveryProfile?.store?.name || "Sin comercio vinculado",
