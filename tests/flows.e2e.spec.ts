@@ -336,6 +336,20 @@ test.describe('Flujos E2E de usuario final', () => {
     await setupCommonApiMocks(page);
   });
 
+  test('auth: redirige a login sin sesion', async ({ page }) => {
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 401,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'No autenticado' })
+      });
+    });
+
+    await page.goto('/comercio');
+    await expect(page).toHaveURL('/login');
+  });
+
   // este test ya no funciona en webkit porque WebKit no ejecuta el prellenado de campos de la misma forma que Chromium
   test('flujo cliente: registro, login, homepage, comercio, producto y comentarios', async ({ page }) => {
     await page.goto('/login');
@@ -1816,15 +1830,14 @@ test.describe('Flujos E2E de usuario final', () => {
     // Modal debe estar visible
     await expect(page.getByRole('heading', { name: 'Quiero ser delivery' })).toBeVisible();
 
-    // Rellenar teléfono y seleccionar vehículo
-    await page.getByPlaceholder('+54 9 11 2345-6789').fill('0981000000');
+    // Seleccionar vehículo
     await page.locator('#delivery-vehicle').selectOption('AUTOMOVIL');
 
     // Confirmar (trigger POST -> deliveryRegistered = true)
     await page.getByRole('button', { name: 'Confirmar' }).click();
 
-    // El modal cierra y redirige a homepage (comportamiento actual)
-    await expect(page).toHaveURL('/');
+    // El modal redirige al dashboard de delivery
+    await expect(page).toHaveURL(/\/delivery\/perfil/);
 
     await page.route('**/api/deliveries/5', async (route) => {
       if (route.request().method() === 'GET') {
@@ -1977,15 +1990,6 @@ test.describe('Flujos E2E de usuario final', () => {
         return;
       }
 
-      if (route.request().method() === 'PUT') {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({ id_user: 7, phone: '0981000000' }),
-        });
-        return;
-      }
-
       await route.fallback();
     });
 
@@ -2015,15 +2019,10 @@ test.describe('Flujos E2E de usuario final', () => {
 
     await expect(page.getByRole('heading', { name: 'Quiero ser delivery' })).toBeVisible();
 
-    await page.getByPlaceholder('+54 9 11 2345-6789').fill('123');
-    await page.getByRole('button', { name: 'Confirmar' }).click();
-    await expect(page.getByText('Ingresá al menos 8 dígitos; solo números y símbolos habituales (+, espacio, guiones, paréntesis)')).toBeVisible();
-
-    await page.getByPlaceholder('+54 9 11 2345-6789').fill('0981000000');
     await page.locator('#delivery-vehicle').selectOption('AUTOMOVIL');
     await page.getByRole('button', { name: 'Confirmar' }).click();
 
-    await expect(page).toHaveURL('/');
+    await expect(page).toHaveURL(/\/delivery\/perfil/);
 
     await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
