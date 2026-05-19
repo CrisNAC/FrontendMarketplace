@@ -4923,6 +4923,29 @@ test.describe('Flujos E2E de usuario final', () => {
     let updateCalled = false;
     await page.route('**/api/commerces/**', async (route) => {
       const method = route.request().method();
+      if (method === 'GET' && route.request().url().includes('/api/commerces/my/')) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id_store: 1,
+            name: 'Tienda Demo',
+            email: 'store@demo.com',
+            phone: '+595981000000',
+            description: 'Descripción demo',
+            categories: [],
+            addresses: [{ address: 'Av Demo 123', latitude: null, longitude: null }],
+            logo: null,
+            website_url: 'https://mi-comercio.com',
+            instagram_url: '',
+            tiktok_url: '',
+            base_price: 1000,
+            distance_price: 2000,
+          }),
+        });
+        return;
+      }
+
       if (method !== 'GET') {
         updateCalled = true;
         await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id_store: 1 }) });
@@ -4955,8 +4978,8 @@ test.describe('Flujos E2E de usuario final', () => {
     });
 
     // Mock detalle del comercio (sin categorías y sin punto en mapa para forzar validaciones)
-    await page.unroute('**/api/commerces/1');
-    await page.route('**/api/commerces/1', async (route) => {
+    await page.unroute('**/api/commerces/my/1');
+    await page.route('**/api/commerces/my/1', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
