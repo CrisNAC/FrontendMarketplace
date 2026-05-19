@@ -11,6 +11,47 @@ const mockStores: Store[] = [
   { id_store: 2, name: 'TechPoint', store_category: { name: 'Electrónica' } },
 ];
 
+
+const mockCartProduct = {
+  id: 101,
+  name: 'Apple iPhone 17 Pro A3256 Dual',
+  price: 13290000,
+  isOffer: false,
+  stock: 8,
+};
+
+const mockActiveCart = {
+  id: 1,
+  storeId: 1,
+  commerce: { id: 1, name: 'Nissei' },
+  status: 'ACTIVE',
+  items: [
+    {
+      id: 1,
+      quantity: 1,
+      product: mockCartProduct,
+    },
+  ],
+};
+
+const createBaseProduct = (productId) => ({
+  id_product: productId,
+  name: 'Producto prueba',
+  description: 'Desc prueba',
+  price: 100,
+  quantity: 5,
+  visible: true,
+  isOffer: false,
+  stock: 8,
+  offerPrice: null,
+  images: [],
+  categoryId: 1,
+  categories: [{ id: 1, name: 'Cat' }],
+  store: { id_store: 1, name: 'Comercio' },
+  product_tag_relations: [],
+  tags: [],
+});
+
 const mockProducts = [
   {
     id_product: 101,
@@ -453,12 +494,7 @@ test.describe('Flujos E2E de usuario final', () => {
               {
                 id: 1,
                 quantity: 1,
-                product: {
-                  id: 101,
-                  name: 'Apple iPhone 17 Pro A3256 Dual',
-                  price: 13290000,
-                  isOffer: false, stock: 8,
-                },
+                product: mockCartProduct,
               },
             ],
           }),
@@ -482,12 +518,7 @@ test.describe('Flujos E2E de usuario final', () => {
                   {
                     id: 1,
                     quantity: 1,
-                    product: {
-                      id: 101,
-                      name: 'Apple iPhone 17 Pro A3256 Dual',
-                      price: 13290000,
-                      isOffer: false, stock: 8,
-                    },
+                    product: mockCartProduct,
                   },
                 ],
               },
@@ -565,14 +596,7 @@ test.describe('Flujos E2E de usuario final', () => {
               {
                 id: 10,
                 quantity: 1,
-                product: {
-                  id: 101,
-                  name: 'Apple iPhone 17 Pro A3256 Dual',
-                  price: 13290000,
-                  originalPrice: 13290000,
-                  offerPrice: null,
-                  isOffer: false, stock: 8,
-                },
+                product: { ...mockCartProduct, originalPrice: 13290000, offerPrice: null },
               },
             ],
           }),
@@ -660,14 +684,7 @@ test.describe('Flujos E2E de usuario final', () => {
               {
                 id: 10,
                 quantity: 2,
-                product: {
-                  id: 101,
-                  name: 'Apple iPhone 17 Pro A3256 Dual',
-                  price: 13290000,
-                  originalPrice: 13290000,
-                  offerPrice: null,
-                  isOffer: false, stock: 8,
-                },
+                product: { ...mockCartProduct, originalPrice: 13290000, offerPrice: null },
               },
             ],
           }),
@@ -743,14 +760,7 @@ test.describe('Flujos E2E de usuario final', () => {
               {
                 id: 1,
                 quantity: 1,
-                product: {
-                  id: 101,
-                  name: 'Apple iPhone 17 Pro A3256 Dual',
-                  price: 13290000,
-                  originalPrice: 13290000,
-                  offerPrice: null,
-                  isOffer: false, stock: 8,
-                },
+                product: { ...mockCartProduct, originalPrice: 13290000, offerPrice: null },
               },
             ],
           }),
@@ -802,13 +812,7 @@ test.describe('Flujos E2E de usuario final', () => {
                   {
                     id: 1,
                     quantity: 1,
-                    product: {
-                      id: 101,
-                      name: 'Apple iPhone 17 Pro A3256 Dual',
-                      price: 13290000,
-                      originalPrice: 13290000,
-                      isOffer: false, stock: 8,
-                    },
+                    product: { ...mockCartProduct, originalPrice: 13290000 },
                   },
                 ],
               },
@@ -4317,22 +4321,7 @@ test.describe('Flujos E2E de usuario final', () => {
 
     await page.unroute('**/products/101');
 
-    const baseProduct = {
-      id_product: productId,
-      name: 'Producto prueba',
-      description: 'Desc prueba',
-      price: 100,
-      quantity: 5,
-      visible: true,
-      isOffer: false, stock: 8,
-      offerPrice: null,
-      images: [],
-      categoryId: 1,
-      categories: [{ id: 1, name: 'Cat' }],
-      store: { id_store: 1, name: 'Comercio' },
-      product_tag_relations: [],
-      tags: [],
-    };
+    const baseProduct = createBaseProduct(productId);
 
     let putBody: any = null;
     let updatedProduct = { ...baseProduct };
@@ -4389,22 +4378,7 @@ test.describe('Flujos E2E de usuario final', () => {
 
     await page.unroute('**/products/101');
 
-    const baseProduct = {
-      id_product: productId,
-      name: 'Producto prueba',
-      description: 'Desc prueba',
-      price: 100,
-      quantity: 5,
-      visible: true,
-      isOffer: false, stock: 8,
-      offerPrice: null,
-      images: [],
-      categoryId: 1,
-      categories: [{ id: 1, name: 'Cat' }],
-      store: { id_store: 1, name: 'Comercio' },
-      product_tag_relations: [],
-      tags: [],
-    };
+    const baseProduct = createBaseProduct(productId);
 
     let putRequestCount = 0;
 
@@ -4549,13 +4523,7 @@ test.describe('Flujos E2E de usuario final', () => {
                   {
                     id: 1,
                     quantity: 1,
-                    product: {
-                      id: 101,
-                      name: 'Apple iPhone 17 Pro A3256 Dual',
-                      price: 13290000,
-                      originalPrice: 13290000,
-                      isOffer: false, stock: 8,
-                    },
+                    product: { ...mockCartProduct, originalPrice: 13290000 },
                   },
                 ],
               },
