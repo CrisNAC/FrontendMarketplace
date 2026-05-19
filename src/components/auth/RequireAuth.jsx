@@ -14,8 +14,10 @@ export function RequireAuth({ children }) {
         const session = await getSession();
         const user = session?.user;
         if (active) setStatus(user?.id_user ? "authorized" : "unauthorized");
-      } catch {
-        if (active) setStatus("unauthorized");
+      } catch (err) {
+        if (!active) return;
+        const code = err?.response?.status;
+        setStatus(code === 401 || code === 403 ? "unauthorized" : "error");
       }
     };
 
@@ -29,6 +31,10 @@ export function RequireAuth({ children }) {
 
   if (status === "unauthorized") {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  }
+
+  if (status === "error") {
+    return <Navigate to="/error/500" replace />;
   }
 
   return children;
