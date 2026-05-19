@@ -109,7 +109,10 @@ export const CartPage = () => {
         isOffer: Boolean(item.product?.isOffer),
         quantity: Number(item.quantity ?? 1),
         image: item.product?.imageUrl ?? "",
-        stock: Number(item.product?.stock ?? 0),
+        stock: (() => {
+          const s = Number(item.product?.stock);
+          return Number.isFinite(s) ? Math.max(0, Math.floor(s)) : 0;
+        })(),
       }));
 
       setCartItems(mappedItems);

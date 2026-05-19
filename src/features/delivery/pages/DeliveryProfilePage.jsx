@@ -93,7 +93,11 @@ export function DeliveryProfilePage() {
                         role: userProfile?.role || authUser?.role || "DELIVERY",
                         vehicle_type: deliveryProfile?.vehicle_type ? (UI_VEHICLE_LABELS[deliveryProfile.vehicle_type] || deliveryProfile.vehicle_type) : "N/A",
                         delivery_status: deliveryProfile?.delivery_status || "INACTIVE",
-                        coverage_city: userProfile?.addresses?.[0]?.city || "N/A",
+                        coverage_city: (() => {
+                            const addresses = userProfile?.addresses || [];
+                            const primaryAddress = addresses.find(a => a.is_primary) || addresses[0];
+                            return primaryAddress?.city || "N/A";
+                        })(),
                         store_name: deliveryProfile?.store?.name || "Sin comercio vinculado",
                         avatar_url: deliveryProfile?.user?.avatar_url || userProfile?.avatar_url || null,
                         created_at: deliveryProfile?.created_at || new Date().toISOString()

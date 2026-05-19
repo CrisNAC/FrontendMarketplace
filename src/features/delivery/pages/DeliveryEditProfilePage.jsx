@@ -244,7 +244,9 @@ export function DeliveryEditProfilePage() {
                 setName(delivery.user?.name ?? profile?.name ?? sessionUser?.name ?? "");
                 setEmail(delivery.user?.email ?? profile?.email ?? sessionUser?.email ?? "");
                 setPhone(delivery.user?.phone ?? profile?.phone ?? sessionUser?.phone ?? "");
-                setCity(profile?.addresses?.[0]?.city ?? "N/A");
+                const addresses = profile?.addresses || [];
+                const primaryAddress = addresses.find(a => a.is_primary) || addresses[0];
+                setCity(primaryAddress?.city ?? "N/A");
                 setVehicleType(delivery.vehicle_type ?? "MOTORCYCLE");
                 setAvatarUrl(delivery.user?.avatar_url ?? null);
             } catch (err) {
@@ -397,8 +399,10 @@ export function DeliveryEditProfilePage() {
 
                                 {/* Ciudad (Dirección base) */}
                                 <div>
-                                    <label htmlFor="delivery-city" style={{...s.label, display: "flex", justifyContent: "space-between"}}>
-                                        <span>Ciudad (Zona Base)</span>
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                                        <label htmlFor="delivery-city" style={{ ...s.label, marginBottom: 0 }}>
+                                            Ciudad (Zona Base)
+                                        </label>
                                         <button 
                                             type="button" 
                                             onClick={() => navigate("/direcciones")}
@@ -406,7 +410,7 @@ export function DeliveryEditProfilePage() {
                                         >
                                             Cambiar dirección
                                         </button>
-                                    </label>
+                                    </div>
                                     <input
                                         id="delivery-city"
                                         type="text"

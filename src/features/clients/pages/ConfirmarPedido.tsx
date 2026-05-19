@@ -276,7 +276,7 @@ export default function ConfirmarPedido() {
 
   const outOfStockItems = useMemo(() => {
     if (!cart) return [];
-    return cart.items.filter(item => (item.product.stock ?? 0) < item.quantity);
+    return cart.items.filter(item => (item.product?.stock ?? 0) < item.quantity);
   }, [cart]);
 
   const handleConfirmOrder = async () => {
@@ -615,7 +615,7 @@ export default function ConfirmarPedido() {
                       <ul className="list-disc pl-4 text-xs">
                         {outOfStockItems.map((item) => (
                           <li key={item.id}>
-                            {item.product.name} (Disp: {item.product.stock ?? 0})
+                            {item.product?.name ?? "Producto"} (Disp: {item.product?.stock ?? 0})
                           </li>
                         ))}
                       </ul>
