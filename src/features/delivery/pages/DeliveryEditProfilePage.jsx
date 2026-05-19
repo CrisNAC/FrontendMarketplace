@@ -15,15 +15,6 @@ const VEHICLE_OPTIONS = Object.entries(UI_VEHICLE_LABELS);
 
 // ─── Estilos ─────────────
 const s = {
-    page: {
-        display: "flex",
-        minHeight: "100vh",
-        backgroundColor: "#f7f9f8",
-    },
-    main: {
-        flex: 1,
-        padding: "32px 40px",
-    },
     card: {
         backgroundColor: "white",
         borderRadius: "16px",
@@ -64,11 +55,6 @@ const s = {
         fontSize: "13px",
         color: "#6b7280",
         margin: "2px 0 0 0",
-    },
-    grid: {
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        gap: "20px 28px",
     },
     label: {
         display: "block",
@@ -293,8 +279,8 @@ export function DeliveryEditProfilePage() {
     const displayedAvatar = avatarPreview ?? avatarUrl;
 
     return (
-        <div style={{ maxWidth: "820px", margin: "0 auto" }}>
-            <main style={s.main}>
+        <div className="mx-auto w-full max-w-[820px] px-1 sm:px-2">
+            <main className="px-3 py-4 sm:px-6 sm:py-8 md:px-10 md:py-8">
                 {loading && (
                     <div style={{ display: "flex", justifyContent: "center", padding: "80px 0" }}>
                         <Loader2 size={28} color="#9ca3af" style={{ animation: "spin 1s linear infinite" }} />
@@ -309,7 +295,10 @@ export function DeliveryEditProfilePage() {
                     <div style={s.card}>
 
                         {/* ── Header ── */}
-                        <div style={s.cardHeader}>
+                        <div
+                            style={s.cardHeader}
+                            className="!px-4 !py-4 sm:!px-8 sm:!py-6"
+                        >
                             <button
                                 type="button"
                                 style={s.backBtn}
@@ -325,10 +314,10 @@ export function DeliveryEditProfilePage() {
                         </div>
 
                         {/* ── Body ── */}
-                        <div style={s.cardBody}>
+                        <div style={s.cardBody} className="!px-4 !py-5 sm:!px-8 sm:!py-8">
                             {error && <div style={s.errorBox}>{error}</div>}
 
-                            <div style={s.grid}>
+                            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-x-7 md:gap-y-5">
 
                                 {/* Nombre */}
                                 <div>
@@ -403,7 +392,7 @@ export function DeliveryEditProfilePage() {
                                 <p style={{ ...s.fieldNote, marginBottom: "10px" }}>
                                     JPG, PNG o WebP · Máx. 5 MB
                                 </p>
-                                <div style={s.logoSection}>
+                                <div style={s.logoSection} className="flex-col sm:flex-row">
                                     <div style={s.avatarThumb}>
                                         {displayedAvatar
                                             ? <img src={displayedAvatar} alt="Avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -437,10 +426,14 @@ export function DeliveryEditProfilePage() {
                             </div>
 
                             {/* ── Botones ── */}
-                            <div style={s.footer}>
+                            <div
+                                style={s.footer}
+                                className="flex-col-reverse items-stretch gap-2 sm:flex-row sm:items-center sm:justify-end"
+                            >
                                 <button
                                     type="button"
                                     style={s.btnCancel}
+                                    className="w-full sm:w-auto"
                                     onClick={handleCancel}
                                     disabled={saving}
                                 >
@@ -449,6 +442,7 @@ export function DeliveryEditProfilePage() {
                                 <button
                                     type="button"
                                     style={s.btnSave(saving)}
+                                    className="w-full justify-center sm:w-auto"
                                     onClick={handleSave}
                                     disabled={saving}
                                 >
