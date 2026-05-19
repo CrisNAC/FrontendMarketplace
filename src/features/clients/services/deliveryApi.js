@@ -31,7 +31,7 @@ const UI_VEHICLE_TO_API = {
 };
 
 /**
- * Registra al usuario autenticado como delivery; el teléfono se guarda en el perfil con PUT.
+ * Registra al usuario autenticado como delivery enviando únicamente el tipo de vehículo.
  *
  * @param {string} uiVehicleType - BICICLETA | MOTOCICLETA | AUTOMOVIL | A_PIE
  */
