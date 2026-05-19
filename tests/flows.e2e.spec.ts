@@ -5488,4 +5488,116 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page.getByText(/Pedido N° 555/)).toBeVisible();
   });
 
+  //OM-521
+  test('flujo cliente: Customer sin comercio intenta acceder a comercio, este redirige a crear comercio', async ({ page }) => {
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,  // ← esto faltaba
+          user: { id_user: 7, name: 'Cliente Demo', role: 'CUSTOMER', id_store: null },
+        }),
+      });
+    });
+
+    await page.route('**/api/users/7/carts', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ carts: [] }),
+      });
+    });
+
+    await page.route('**/api/notifications', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ unreadCount: 0, notifications: [] }),
+      });
+    });
+
+    await page.route('**/api/commerces/categories', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          { id: 1, name: 'Comida' },
+          { id: 2, name: 'Tecnología' },
+        ]),
+      });
+    });
+
+    await page.goto('/');
+    await page.getByRole('link', { name: 'Comercio' }).click();
+    await expect(page).toHaveURL('/crear-comercio');
+    await expect(page.getByText('Crear Comercio')).toBeVisible();
+  });
+
+  // OM-521
+  test('flujo comercio: usuario SELLER intenta acceder a crear comercio, pero redirige a panel de comercio y muestra toast', async ({ page }) => {
+    // Sesión como SELLER
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          user: {
+            id_user: 7,
+            id_store: 1,
+            name: 'Comerciante Demo',
+            role: 'SELLER',
+          },
+        }),
+      });
+    });
+
+    // Mocks usados por Navbar en ambas pantallas
+    await page.route('**/api/users/7/carts', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ carts: [] }),
+      });
+    });
+
+    await page.route('**/api/notifications', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          unreadCount: 0,
+          notifications: [],
+        }),
+      });
+    });
+
+    // Mock del panel de comercio al que redirige
+    await page.route('**/api/commerces/my/1', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id_store: 1,
+          name: 'Comercio Demo',
+          store_status: 'ACTIVE',
+          products: [],
+        }),
+      });
+    });
+
+    // Ir directo a la vista de crear comercio
+    await page.goto('/crear-comercio');
+
+    // Debe redirigir automáticamente al panel de comercio
+    await expect(page).toHaveURL('/comercio');
+
+    // Toast de aviso
+    await expect(page.getByText('Ya tenés un comercio registrado.')).toBeVisible();
+
+    // Validación de que se cargó el panel
+    await expect(page.getByText('Dashboard - Comercio Demo')).toBeVisible();
+  });
 });
