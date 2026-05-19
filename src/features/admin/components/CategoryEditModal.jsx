@@ -14,11 +14,11 @@ const categorySchema = z.object({
 });
 
 export function CategoryEditModal({ category, onSave, onCancel }) {
-    const [name, setName]       = useState(category.name);
-    const [icon, setIcon]       = useState(category.icon ?? "Tag");
-    const [visible, setVisible] = useState(category.visible);
+    const [name, setName]                 = useState(category.name);
+    const [icon, setIcon]                 = useState(category.icon ?? "Tag");
+    const [visible, setVisible]           = useState(category.visible);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [error, setError]     = useState("");
+    const [error, setError]               = useState("");
 
     const handleSubmit = async () => {
         const parsed = categorySchema.safeParse({ name: name.trim(), visible });
@@ -29,10 +29,10 @@ export function CategoryEditModal({ category, onSave, onCancel }) {
         }
 
         const payload = {};
-        if (name.trim() !== category.name)         payload.name    = name.trim();
-        if (visible !== category.visible)          payload.visible = visible;
-        if (icon !== (category.icon ?? "Tag"))     payload.icon    = icon;
-        if (Object.keys(payload).length === 0)     { onCancel(); return; }
+        if (name.trim() !== category.name)        payload.name    = name.trim();
+        if (visible !== category.visible)         payload.visible = visible;
+        if (icon !== (category.icon ?? "Tag"))    payload.icon    = icon;
+        if (Object.keys(payload).length === 0)    { onCancel(); return; }
 
         setIsSubmitting(true);
         setError("");
@@ -45,11 +45,10 @@ export function CategoryEditModal({ category, onSave, onCancel }) {
     };
 
     return (
+        // Overlay: sin role="button". El Escape se captura en el div interior
+        // para que el foco del teclado funcione naturalmente dentro del modal.
         <div
-            role="button"
-            tabIndex={0}
             onClick={onCancel}
-            onKeyDown={e => e.key === "Escape" && onCancel()}
             style={{
                 position: "fixed", inset: 0, zIndex: 50,
                 backgroundColor: "rgba(0,0,0,0.45)",
@@ -57,8 +56,13 @@ export function CategoryEditModal({ category, onSave, onCancel }) {
                 padding: "16px",
             }}
         >
+            {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
             <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="edit-modal-title"
                 onClick={e => e.stopPropagation()}
+                onKeyDown={e => e.key === "Escape" && onCancel()}
                 style={{
                     backgroundColor: "white", borderRadius: "16px", padding: "24px",
                     maxWidth: "480px", width: "100%",
@@ -67,7 +71,9 @@ export function CategoryEditModal({ category, onSave, onCancel }) {
             >
                 {/* Header */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-                    <h3 style={{ fontSize: "18px", fontWeight: "700", margin: 0 }}>Editar Categoría</h3>
+                    <h3 id="edit-modal-title" style={{ fontSize: "18px", fontWeight: "700", margin: 0 }}>
+                        Editar Categoría
+                    </h3>
                     <button
                         type="button"
                         onClick={onCancel}

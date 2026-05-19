@@ -20,16 +20,54 @@ const cardStyle = {
     boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
 };
 
+// ─── Overlay reutilizable ─────────────────────────────────────────────────────
+// Sin role="button": el overlay cierra al hacer click fuera; el dialog
+// interior captura Escape para cumplir con los estándares de accesibilidad.
+function ModalOverlay({ onClose, children, labelId }) {
+    return (
+        <div
+            onClick={onClose}
+            style={{
+                position: "fixed", inset: 0, zIndex: 50,
+                backgroundColor: "rgba(0,0,0,0.45)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                padding: "16px",
+            }}
+        >
+            <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={labelId}
+                onClick={e => e.stopPropagation()}
+                onKeyDown={e => e.key === "Escape" && onClose()}
+                style={{
+                    backgroundColor: "white", borderRadius: "16px", padding: "24px",
+                    maxWidth: "480px", width: "100%",
+                    boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
+                }}
+            >
+                {children}
+            </div>
+        </div>
+    );
+}
+
+ModalOverlay.propTypes = {
+    onClose:  PropTypes.func.isRequired,
+    children: PropTypes.node.isRequired,
+    labelId:  PropTypes.string.isRequired,
+};
+
 // ─── Modal: Crear categoría ───────────────────────────────────────────────────
 function CreateModal({ onSave, onCancel }) {
-    const [name, setName]         = useState("");
-    const [icon, setIcon]         = useState("Tag");
+    const [name, setName]                 = useState("");
+    const [icon, setIcon]                 = useState("Tag");
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [error, setError]       = useState("");
+    const [error, setError]               = useState("");
 
     const handleSubmit = async () => {
         const trimmed = name.trim();
-        if (!trimmed)            { setError("El nombre es requerido."); return; }
+        if (!trimmed)             { setError("El nombre es requerido."); return; }
         if (trimmed.length > 100) { setError("El nombre no puede superar 100 caracteres."); return; }
 
         setIsSubmitting(true);
@@ -43,135 +81,116 @@ function CreateModal({ onSave, onCancel }) {
     };
 
     return (
-        <div
-            role="button"
-            tabIndex={0}
-            onClick={isSubmitting ? undefined : onCancel}
-            onKeyDown={e => !isSubmitting && e.key === "Escape" && onCancel()}
-            style={{
-                position: "fixed", inset: 0, zIndex: 50,
-                backgroundColor: "rgba(0,0,0,0.45)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                padding: "16px",
-            }}
-        >
-            <div
-                onClick={e => e.stopPropagation()}
-                style={{
-                    backgroundColor: "white", borderRadius: "16px", padding: "24px",
-                    maxWidth: "480px", width: "100%",
-                    boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
-                }}
-            >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-                    <h3 style={{ fontSize: "18px", fontWeight: "700", margin: 0 }}>Nueva Categoría</h3>
-                    <button
-                        type="button"
-                        onClick={isSubmitting ? undefined : onCancel}
-                        disabled={isSubmitting}
-                        style={{
-                            background: "none", border: "none",
-                            cursor: isSubmitting ? "not-allowed" : "pointer",
-                            color: "#6b7280", opacity: isSubmitting ? 0.4 : 1,
-                        }}
-                    >
-                        <X size={20} />
-                    </button>
-                </div>
+        <ModalOverlay onClose={isSubmitting ? () => {} : onCancel} labelId="create-modal-title">
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+                <h3 id="create-modal-title" style={{ fontSize: "18px", fontWeight: "700", margin: 0 }}>
+                    Nueva Categoría
+                </h3>
+                <button
+                    type="button"
+                    onClick={isSubmitting ? undefined : onCancel}
+                    disabled={isSubmitting}
+                    style={{
+                        background: "none", border: "none",
+                        cursor: isSubmitting ? "not-allowed" : "pointer",
+                        color: "#6b7280", opacity: isSubmitting ? 0.4 : 1,
+                    }}
+                >
+                    <X size={20} />
+                </button>
+            </div>
 
-                {error && (
-                    <div style={{
-                        backgroundColor: "#fff1f2", border: "1px solid #fecdd3",
-                        borderRadius: "8px", padding: "10px 12px",
-                        color: "#be123c", fontSize: "13px", marginBottom: "16px",
-                    }}>
-                        {error}
-                    </div>
-                )}
-
-                {/* Preview */}
+            {error && (
                 <div style={{
-                    display: "flex", alignItems: "center", gap: "12px",
-                    marginBottom: "16px", padding: "12px",
-                    backgroundColor: "#f9fafb", borderRadius: "10px",
+                    backgroundColor: "#fff1f2", border: "1px solid #fecdd3",
+                    borderRadius: "8px", padding: "10px 12px",
+                    color: "#be123c", fontSize: "13px", marginBottom: "16px",
                 }}>
-                    <div style={{
-                        width: "42px", height: "42px", borderRadius: "10px",
-                        backgroundColor: "var(--background-soft)",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                    }}>
-                        <CategoryIcon name={icon} size={22} />
-                    </div>
-                    <div>
-                        <p style={{ margin: 0, fontSize: "14px", fontWeight: "600", color: "#111827" }}>
-                            {name.trim() || "Nombre de la categoría"}
-                        </p>
-                        <p style={{ margin: 0, fontSize: "12px", color: "#9ca3af" }}>Vista previa</p>
-                    </div>
+                    {error}
                 </div>
+            )}
 
-                <div style={{ marginBottom: "16px" }}>
-                    <label
-                        htmlFor="create-category-name"
-                        style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#374151", marginBottom: "6px" }}
-                    >
-                        Nombre <span style={{ color: "#dc2626" }}>*</span>
-                    </label>
-                    <input
-                        id="create-category-name"
-                        value={name}
-                        onChange={e => setName(e.target.value)}
-                        disabled={isSubmitting}
-                        maxLength={100}
-                        placeholder="Ej: Electrónica"
-                        autoFocus
-                        style={{
-                            width: "100%", paddingLeft: "12px", paddingRight: "12px",
-                            paddingTop: "8px", paddingBottom: "8px",
-                            border: "1px solid #e5e7eb", borderRadius: "8px",
-                            fontSize: "14px", outline: "none", boxSizing: "border-box",
-                        }}
-                    />
-                    <p style={{ fontSize: "12px", color: "#9ca3af", marginTop: "4px" }}>
-                        Se creará como visible y activa por defecto.
+            {/* Preview */}
+            <div style={{
+                display: "flex", alignItems: "center", gap: "12px",
+                marginBottom: "16px", padding: "12px",
+                backgroundColor: "#f9fafb", borderRadius: "10px",
+            }}>
+                <div style={{
+                    width: "42px", height: "42px", borderRadius: "10px",
+                    backgroundColor: "var(--background-soft)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                    <CategoryIcon name={icon} size={22} />
+                </div>
+                <div>
+                    <p style={{ margin: 0, fontSize: "14px", fontWeight: "600", color: "#111827" }}>
+                        {name.trim() || "Nombre de la categoría"}
                     </p>
-                </div>
-
-                <div style={{ marginBottom: "20px" }}>
-                    <IconPicker value={icon} onChange={setIcon} disabled={isSubmitting} />
-                </div>
-
-                <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
-                    <button
-                        type="button"
-                        onClick={onCancel}
-                        disabled={isSubmitting}
-                        style={{
-                            padding: "8px 20px", borderRadius: "8px",
-                            border: "1px solid #d1d5db", backgroundColor: "white",
-                            fontSize: "14px", fontWeight: "500", color: "#374151",
-                            cursor: isSubmitting ? "not-allowed" : "pointer",
-                        }}
-                    >
-                        Cancelar
-                    </button>
-                    <button
-                        type="button"
-                        onClick={handleSubmit}
-                        disabled={isSubmitting}
-                        style={{
-                            padding: "8px 20px", borderRadius: "8px", border: "none",
-                            backgroundColor: "var(--primary-dark)",
-                            fontSize: "14px", fontWeight: "600", color: "white",
-                            cursor: isSubmitting ? "not-allowed" : "pointer",
-                            opacity: isSubmitting ? 0.7 : 1,
-                        }}
-                    >
-                        {isSubmitting ? "Creando..." : "Crear Categoría"}
-                    </button>
+                    <p style={{ margin: 0, fontSize: "12px", color: "#9ca3af" }}>Vista previa</p>
                 </div>
             </div>
-        </div>
+
+            <div style={{ marginBottom: "16px" }}>
+                <label
+                    htmlFor="create-category-name"
+                    style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#374151", marginBottom: "6px" }}
+                >
+                    Nombre <span style={{ color: "#dc2626" }}>*</span>
+                </label>
+                <input
+                    id="create-category-name"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    disabled={isSubmitting}
+                    maxLength={100}
+                    placeholder="Ej: Electrónica"
+                    autoFocus
+                    style={{
+                        width: "100%", padding: "8px 12px",
+                        border: "1px solid #e5e7eb", borderRadius: "8px",
+                        fontSize: "14px", outline: "none", boxSizing: "border-box",
+                    }}
+                />
+                <p style={{ fontSize: "12px", color: "#9ca3af", marginTop: "4px" }}>
+                    Se creará como visible y activa por defecto.
+                </p>
+            </div>
+
+            <div style={{ marginBottom: "20px" }}>
+                <IconPicker value={icon} onChange={setIcon} disabled={isSubmitting} />
+            </div>
+
+            <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+                <button
+                    type="button"
+                    onClick={onCancel}
+                    disabled={isSubmitting}
+                    style={{
+                        padding: "8px 20px", borderRadius: "8px",
+                        border: "1px solid #d1d5db", backgroundColor: "white",
+                        fontSize: "14px", fontWeight: "500", color: "#374151",
+                        cursor: isSubmitting ? "not-allowed" : "pointer",
+                    }}
+                >
+                    Cancelar
+                </button>
+                <button
+                    type="button"
+                    onClick={handleSubmit}
+                    disabled={isSubmitting}
+                    style={{
+                        padding: "8px 20px", borderRadius: "8px", border: "none",
+                        backgroundColor: "var(--primary-dark)",
+                        fontSize: "14px", fontWeight: "600", color: "white",
+                        cursor: isSubmitting ? "not-allowed" : "pointer",
+                        opacity: isSubmitting ? 0.7 : 1,
+                    }}
+                >
+                    {isSubmitting ? "Creando..." : "Crear Categoría"}
+                </button>
+            </div>
+        </ModalOverlay>
     );
 }
 
@@ -184,82 +203,64 @@ CreateModal.propTypes = {
 function DeleteModal({ category, isDeleting, onConfirm, onCancel, deleteError }) {
     if (!category) return null;
     return (
-        <div
-            role="button"
-            tabIndex={0}
-            onClick={onCancel}
-            onKeyDown={e => e.key === "Escape" && onCancel()}
-            style={{
-                position: "fixed", inset: 0, zIndex: 50,
-                backgroundColor: "rgba(0,0,0,0.45)",
+        <ModalOverlay onClose={isDeleting ? () => {} : onCancel} labelId="delete-modal-title">
+            <div style={{
+                width: "48px", height: "48px", borderRadius: "50%",
+                backgroundColor: "#fff1f2", border: "1px solid #fecdd3",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                padding: "16px",
-            }}
-        >
-            <div
-                onClick={e => e.stopPropagation()}
-                style={{
-                    backgroundColor: "white", borderRadius: "16px", padding: "24px",
-                    maxWidth: "420px", width: "100%",
-                    boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
-                }}
-            >
-                <div style={{
-                    width: "48px", height: "48px", borderRadius: "50%",
-                    backgroundColor: "#fff1f2", border: "1px solid #fecdd3",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    marginBottom: "16px",
-                }}>
-                    <AlertTriangle size={24} color="#dc2626" />
-                </div>
-                <h3 style={{ fontSize: "18px", fontWeight: "700", margin: "0 0 8px 0" }}>¿Eliminar categoría?</h3>
-                <p style={{ fontSize: "14px", color: "#374151", margin: "0 0 6px 0" }}>
-                    Estás por eliminar <strong>&quot;{category.name}&quot;</strong>.
-                </p>
-                <p style={{ fontSize: "13px", color: "#6b7280", margin: "0 0 24px 0" }}>
-                    Los productos asociados serán reasignados a la categoría por defecto. Esta acción no se puede deshacer.
-                </p>
-                {deleteError && (
-                    <div style={{
-                        backgroundColor: "#fff1f2", border: "1px solid #fecdd3",
-                        borderRadius: "8px", padding: "10px 12px",
-                        color: "#be123c", fontSize: "13px", marginBottom: "16px",
-                    }}>
-                        {deleteError}
-                    </div>
-                )}
-                <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
-                    <button
-                        type="button"
-                        onClick={onCancel}
-                        disabled={isDeleting}
-                        style={{
-                            padding: "8px 20px", borderRadius: "8px",
-                            border: "1px solid #d1d5db", backgroundColor: "white",
-                            fontSize: "14px", fontWeight: "500", color: "#374151",
-                            cursor: isDeleting ? "not-allowed" : "pointer",
-                            opacity: isDeleting ? 0.6 : 1,
-                        }}
-                    >
-                        Cancelar
-                    </button>
-                    <button
-                        type="button"
-                        onClick={onConfirm}
-                        disabled={isDeleting}
-                        style={{
-                            padding: "8px 20px", borderRadius: "8px", border: "none",
-                            backgroundColor: "#dc2626",
-                            fontSize: "14px", fontWeight: "600", color: "white",
-                            cursor: isDeleting ? "not-allowed" : "pointer",
-                            opacity: isDeleting ? 0.7 : 1,
-                        }}
-                    >
-                        {isDeleting ? "Eliminando..." : "Eliminar"}
-                    </button>
-                </div>
+                marginBottom: "16px",
+            }}>
+                <AlertTriangle size={24} color="#dc2626" />
             </div>
-        </div>
+            <h3 id="delete-modal-title" style={{ fontSize: "18px", fontWeight: "700", margin: "0 0 8px 0" }}>
+                ¿Eliminar categoría?
+            </h3>
+            <p style={{ fontSize: "14px", color: "#374151", margin: "0 0 6px 0" }}>
+                Estás por eliminar <strong>&quot;{category.name}&quot;</strong>.
+            </p>
+            <p style={{ fontSize: "13px", color: "#6b7280", margin: "0 0 24px 0" }}>
+                Los productos asociados serán reasignados a la categoría por defecto. Esta acción no se puede deshacer.
+            </p>
+            {deleteError && (
+                <div style={{
+                    backgroundColor: "#fff1f2", border: "1px solid #fecdd3",
+                    borderRadius: "8px", padding: "10px 12px",
+                    color: "#be123c", fontSize: "13px", marginBottom: "16px",
+                }}>
+                    {deleteError}
+                </div>
+            )}
+            <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+                <button
+                    type="button"
+                    onClick={onCancel}
+                    disabled={isDeleting}
+                    style={{
+                        padding: "8px 20px", borderRadius: "8px",
+                        border: "1px solid #d1d5db", backgroundColor: "white",
+                        fontSize: "14px", fontWeight: "500", color: "#374151",
+                        cursor: isDeleting ? "not-allowed" : "pointer",
+                        opacity: isDeleting ? 0.6 : 1,
+                    }}
+                >
+                    Cancelar
+                </button>
+                <button
+                    type="button"
+                    onClick={onConfirm}
+                    disabled={isDeleting}
+                    style={{
+                        padding: "8px 20px", borderRadius: "8px", border: "none",
+                        backgroundColor: "#dc2626",
+                        fontSize: "14px", fontWeight: "600", color: "white",
+                        cursor: isDeleting ? "not-allowed" : "pointer",
+                        opacity: isDeleting ? 0.7 : 1,
+                    }}
+                >
+                    {isDeleting ? "Eliminando..." : "Eliminar"}
+                </button>
+            </div>
+        </ModalOverlay>
     );
 }
 
@@ -275,86 +276,68 @@ DeleteModal.propTypes = {
 function ApproveModal({ request, isSubmitting, onConfirm, onCancel, actionError }) {
     if (!request) return null;
     return (
-        <div
-            role="button"
-            tabIndex={0}
-            onClick={isSubmitting ? undefined : onCancel}
-            onKeyDown={e => !isSubmitting && e.key === "Escape" && onCancel()}
-            style={{
-                position: "fixed", inset: 0, zIndex: 50,
-                backgroundColor: "rgba(0,0,0,0.45)",
+        <ModalOverlay onClose={isSubmitting ? () => {} : onCancel} labelId="approve-modal-title">
+            <div style={{
+                width: "48px", height: "48px", borderRadius: "50%",
+                backgroundColor: "#dcfce7", border: "1px solid #bbf7d0",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                padding: "16px",
-            }}
-        >
-            <div
-                onClick={e => e.stopPropagation()}
-                style={{
-                    backgroundColor: "white", borderRadius: "16px", padding: "24px",
-                    maxWidth: "420px", width: "100%",
-                    boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
-                }}
-            >
-                <div style={{
-                    width: "48px", height: "48px", borderRadius: "50%",
-                    backgroundColor: "#dcfce7", border: "1px solid #bbf7d0",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    marginBottom: "16px",
-                }}>
-                    <CheckCircle size={24} color="#15803d" />
-                </div>
-                <h3 style={{ fontSize: "18px", fontWeight: "700", margin: "0 0 8px 0" }}>¿Aprobar categoría?</h3>
-                <p style={{ fontSize: "14px", color: "#374151", margin: "0 0 6px 0" }}>
-                    Estás por aprobar <strong>&quot;{request.name}&quot;</strong>.
-                </p>
-                <p style={{
-                    fontSize: "13px", color: "#15803d", margin: "0 0 24px 0",
-                    backgroundColor: "#f0fdf4", padding: "10px 12px",
-                    borderRadius: "8px", border: "1px solid #bbf7d0",
-                }}>
-                    La categoría quedará visible y disponible para todos los comercios.
-                </p>
-                {actionError && (
-                    <div style={{
-                        backgroundColor: "#fff1f2", border: "1px solid #fecdd3",
-                        borderRadius: "8px", padding: "10px 12px",
-                        color: "#be123c", fontSize: "13px", marginBottom: "16px",
-                    }}>
-                        {actionError}
-                    </div>
-                )}
-                <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
-                    <button
-                        type="button"
-                        onClick={onCancel}
-                        disabled={isSubmitting}
-                        style={{
-                            padding: "8px 20px", borderRadius: "8px",
-                            border: "1px solid #d1d5db", backgroundColor: "white",
-                            fontSize: "14px", fontWeight: "500", color: "#374151",
-                            cursor: isSubmitting ? "not-allowed" : "pointer",
-                            opacity: isSubmitting ? 0.6 : 1,
-                        }}
-                    >
-                        Cancelar
-                    </button>
-                    <button
-                        type="button"
-                        onClick={onConfirm}
-                        disabled={isSubmitting}
-                        style={{
-                            padding: "8px 20px", borderRadius: "8px", border: "none",
-                            backgroundColor: "#15803d",
-                            fontSize: "14px", fontWeight: "600", color: "white",
-                            cursor: isSubmitting ? "not-allowed" : "pointer",
-                            opacity: isSubmitting ? 0.7 : 1,
-                        }}
-                    >
-                        {isSubmitting ? "Aprobando..." : "Aprobar"}
-                    </button>
-                </div>
+                marginBottom: "16px",
+            }}>
+                <CheckCircle size={24} color="#15803d" />
             </div>
-        </div>
+            <h3 id="approve-modal-title" style={{ fontSize: "18px", fontWeight: "700", margin: "0 0 8px 0" }}>
+                ¿Aprobar categoría?
+            </h3>
+            <p style={{ fontSize: "14px", color: "#374151", margin: "0 0 6px 0" }}>
+                Estás por aprobar <strong>&quot;{request.name}&quot;</strong>.
+            </p>
+            <p style={{
+                fontSize: "13px", color: "#15803d", margin: "0 0 24px 0",
+                backgroundColor: "#f0fdf4", padding: "10px 12px",
+                borderRadius: "8px", border: "1px solid #bbf7d0",
+            }}>
+                La categoría quedará visible y disponible para todos los comercios.
+            </p>
+            {actionError && (
+                <div style={{
+                    backgroundColor: "#fff1f2", border: "1px solid #fecdd3",
+                    borderRadius: "8px", padding: "10px 12px",
+                    color: "#be123c", fontSize: "13px", marginBottom: "16px",
+                }}>
+                    {actionError}
+                </div>
+            )}
+            <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+                <button
+                    type="button"
+                    onClick={onCancel}
+                    disabled={isSubmitting}
+                    style={{
+                        padding: "8px 20px", borderRadius: "8px",
+                        border: "1px solid #d1d5db", backgroundColor: "white",
+                        fontSize: "14px", fontWeight: "500", color: "#374151",
+                        cursor: isSubmitting ? "not-allowed" : "pointer",
+                        opacity: isSubmitting ? 0.6 : 1,
+                    }}
+                >
+                    Cancelar
+                </button>
+                <button
+                    type="button"
+                    onClick={onConfirm}
+                    disabled={isSubmitting}
+                    style={{
+                        padding: "8px 20px", borderRadius: "8px", border: "none",
+                        backgroundColor: "#15803d",
+                        fontSize: "14px", fontWeight: "600", color: "white",
+                        cursor: isSubmitting ? "not-allowed" : "pointer",
+                        opacity: isSubmitting ? 0.7 : 1,
+                    }}
+                >
+                    {isSubmitting ? "Aprobando..." : "Aprobar"}
+                </button>
+            </div>
+        </ModalOverlay>
     );
 }
 
@@ -370,82 +353,64 @@ ApproveModal.propTypes = {
 function RejectModal({ request, isSubmitting, onConfirm, onCancel, actionError }) {
     if (!request) return null;
     return (
-        <div
-            role="button"
-            tabIndex={0}
-            onClick={isSubmitting ? undefined : onCancel}
-            onKeyDown={e => !isSubmitting && e.key === "Escape" && onCancel()}
-            style={{
-                position: "fixed", inset: 0, zIndex: 50,
-                backgroundColor: "rgba(0,0,0,0.45)",
+        <ModalOverlay onClose={isSubmitting ? () => {} : onCancel} labelId="reject-modal-title">
+            <div style={{
+                width: "48px", height: "48px", borderRadius: "50%",
+                backgroundColor: "#fee2e2", border: "1px solid #fecaca",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                padding: "16px",
-            }}
-        >
-            <div
-                onClick={e => e.stopPropagation()}
-                style={{
-                    backgroundColor: "white", borderRadius: "16px", padding: "24px",
-                    maxWidth: "420px", width: "100%",
-                    boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
-                }}
-            >
-                <div style={{
-                    width: "48px", height: "48px", borderRadius: "50%",
-                    backgroundColor: "#fee2e2", border: "1px solid #fecaca",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    marginBottom: "16px",
-                }}>
-                    <XCircle size={24} color="#dc2626" />
-                </div>
-                <h3 style={{ fontSize: "18px", fontWeight: "700", margin: "0 0 8px 0" }}>¿Rechazar solicitud?</h3>
-                <p style={{ fontSize: "14px", color: "#374151", margin: "0 0 6px 0" }}>
-                    Estás por rechazar <strong>&quot;{request.name}&quot;</strong>.
-                </p>
-                <p style={{ fontSize: "13px", color: "#6b7280", margin: "0 0 24px 0" }}>
-                    Los productos asociados a esta solicitud serán reasignados a la categoría por defecto. Esta acción no se puede deshacer.
-                </p>
-                {actionError && (
-                    <div style={{
-                        backgroundColor: "#fff1f2", border: "1px solid #fecdd3",
-                        borderRadius: "8px", padding: "10px 12px",
-                        color: "#be123c", fontSize: "13px", marginBottom: "16px",
-                    }}>
-                        {actionError}
-                    </div>
-                )}
-                <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
-                    <button
-                        type="button"
-                        onClick={onCancel}
-                        disabled={isSubmitting}
-                        style={{
-                            padding: "8px 20px", borderRadius: "8px",
-                            border: "1px solid #d1d5db", backgroundColor: "white",
-                            fontSize: "14px", fontWeight: "500", color: "#374151",
-                            cursor: isSubmitting ? "not-allowed" : "pointer",
-                            opacity: isSubmitting ? 0.6 : 1,
-                        }}
-                    >
-                        Cancelar
-                    </button>
-                    <button
-                        type="button"
-                        onClick={onConfirm}
-                        disabled={isSubmitting}
-                        style={{
-                            padding: "8px 20px", borderRadius: "8px", border: "none",
-                            backgroundColor: "#dc2626",
-                            fontSize: "14px", fontWeight: "600", color: "white",
-                            cursor: isSubmitting ? "not-allowed" : "pointer",
-                            opacity: isSubmitting ? 0.7 : 1,
-                        }}
-                    >
-                        {isSubmitting ? "Rechazando..." : "Rechazar"}
-                    </button>
-                </div>
+                marginBottom: "16px",
+            }}>
+                <XCircle size={24} color="#dc2626" />
             </div>
-        </div>
+            <h3 id="reject-modal-title" style={{ fontSize: "18px", fontWeight: "700", margin: "0 0 8px 0" }}>
+                ¿Rechazar solicitud?
+            </h3>
+            <p style={{ fontSize: "14px", color: "#374151", margin: "0 0 6px 0" }}>
+                Estás por rechazar <strong>&quot;{request.name}&quot;</strong>.
+            </p>
+            <p style={{ fontSize: "13px", color: "#6b7280", margin: "0 0 24px 0" }}>
+                Los productos asociados a esta solicitud serán reasignados a la categoría por defecto. Esta acción no se puede deshacer.
+            </p>
+            {actionError && (
+                <div style={{
+                    backgroundColor: "#fff1f2", border: "1px solid #fecdd3",
+                    borderRadius: "8px", padding: "10px 12px",
+                    color: "#be123c", fontSize: "13px", marginBottom: "16px",
+                }}>
+                    {actionError}
+                </div>
+            )}
+            <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+                <button
+                    type="button"
+                    onClick={onCancel}
+                    disabled={isSubmitting}
+                    style={{
+                        padding: "8px 20px", borderRadius: "8px",
+                        border: "1px solid #d1d5db", backgroundColor: "white",
+                        fontSize: "14px", fontWeight: "500", color: "#374151",
+                        cursor: isSubmitting ? "not-allowed" : "pointer",
+                        opacity: isSubmitting ? 0.6 : 1,
+                    }}
+                >
+                    Cancelar
+                </button>
+                <button
+                    type="button"
+                    onClick={onConfirm}
+                    disabled={isSubmitting}
+                    style={{
+                        padding: "8px 20px", borderRadius: "8px", border: "none",
+                        backgroundColor: "#dc2626",
+                        fontSize: "14px", fontWeight: "600", color: "white",
+                        cursor: isSubmitting ? "not-allowed" : "pointer",
+                        opacity: isSubmitting ? 0.7 : 1,
+                    }}
+                >
+                    {isSubmitting ? "Rechazando..." : "Rechazar"}
+                </button>
+            </div>
+        </ModalOverlay>
     );
 }
 
@@ -543,7 +508,7 @@ CategoryRow.propTypes = {
     cat: PropTypes.shape({
         id:           PropTypes.number.isRequired,
         name:         PropTypes.string.isRequired,
-        icon:         PropTypes.string,                  // fix: was missing
+        icon:         PropTypes.string,
         visible:      PropTypes.bool.isRequired,
         status:       PropTypes.bool.isRequired,
         productCount: PropTypes.number.isRequired,
@@ -696,7 +661,9 @@ export const AdminCategoriesPage = () => {
 
     useEffect(() => { setPage(1); }, [search, filterVisible]);
     useEffect(() => { load(page); }, [load, page]);
-    useEffect(() => { if (activeTab === "requests") loadRequests(requestPage); }, [activeTab, requestPage, loadRequests]);
+    useEffect(() => {
+        if (activeTab === "requests") loadRequests(requestPage);
+    }, [activeTab, requestPage, loadRequests]);
 
     const handleCreate = async (name, icon) => {
         await createAdminCategory(name, icon);
@@ -719,7 +686,6 @@ export const AdminCategoriesPage = () => {
             await deleteAdminCategory(categoryToDelete.id);
             const nextPage = categories.length === 1 && page > 1 ? page - 1 : page;
             setCategoryToDelete(null);
-            setDeleteError("");
             if (nextPage !== page) setPage(nextPage);
             else load(page);
         } catch (err) {
@@ -762,7 +728,7 @@ export const AdminCategoriesPage = () => {
         }
     };
 
-    const hiddenCategories = categories.filter(c => c.visible);
+    const hiddenCount = categories.filter(c => !c.visible).length;
     const selectStyle = {
         padding: "8px 12px", border: "1px solid #e5e7eb", borderRadius: "8px",
         fontSize: "13px", color: "#374151", background: "white", cursor: "pointer",
@@ -822,9 +788,12 @@ export const AdminCategoriesPage = () => {
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
                         <div>
                             <h2 style={{ margin: 0, fontSize: "18px", fontWeight: "600" }}>Categorías</h2>
-                            <p style={{ margin: "2px 0 0", fontSize: "13px", color: "#6b7280" }}>Gestiona las categorías de productos</p>
+                            <p style={{ margin: "2px 0 0", fontSize: "13px", color: "#6b7280" }}>
+                                Gestiona las categorías de productos
+                            </p>
                         </div>
                         <button
+                            type="button"
                             onClick={() => setShowCreateModal(true)}
                             style={{
                                 display: "flex", alignItems: "center", gap: "6px",
@@ -842,7 +811,7 @@ export const AdminCategoriesPage = () => {
                         {[
                             { label: "Total de Categorías", value: pagination.categoryTotal },
                             { label: "Categorías Visibles",  value: categories.filter(c => c.visible).length },
-                            { label: "Categorías Ocultas",   value: categories.filter(c => !c.visible).length },
+                            { label: "Categorías Ocultas",   value: hiddenCount },
                         ].map(({ label, value }) => (
                             <div key={label} style={{ ...cardStyle, textAlign: "center" }}>
                                 <p style={{ margin: "0 0 4px", fontSize: "13px", color: "#6b7280" }}>{label}</p>
@@ -924,6 +893,7 @@ export const AdminCategoriesPage = () => {
                         {pagination.categoryTotalPages > 1 && (
                             <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "8px", marginTop: "20px" }}>
                                 <button
+                                    type="button"
                                     onClick={() => setPage(p => Math.max(1, p - 1))}
                                     disabled={page === 1}
                                     style={{ padding: "6px 14px", borderRadius: "8px", border: "1px solid #e5e7eb", backgroundColor: "white", cursor: page === 1 ? "not-allowed" : "pointer", opacity: page === 1 ? 0.5 : 1, fontSize: "13px" }}
@@ -932,6 +902,7 @@ export const AdminCategoriesPage = () => {
                                 </button>
                                 <span style={{ fontSize: "13px" }}>{page} / {pagination.categoryTotalPages}</span>
                                 <button
+                                    type="button"
                                     onClick={() => setPage(p => Math.min(pagination.categoryTotalPages, p + 1))}
                                     disabled={page === pagination.categoryTotalPages}
                                     style={{ padding: "6px 14px", borderRadius: "8px", border: "1px solid #e5e7eb", backgroundColor: "white", cursor: page === pagination.categoryTotalPages ? "not-allowed" : "pointer", opacity: page === pagination.categoryTotalPages ? 0.5 : 1, fontSize: "13px" }}
@@ -941,10 +912,9 @@ export const AdminCategoriesPage = () => {
                             </div>
                         )}
 
-                        {/* fix: use .some() to avoid negated condition flag */}
                         {categories.some(c => !c.visible) && (
                             <p style={{ fontSize: "12px", color: "#6b7280", marginTop: "16px", borderTop: "1px solid #f3f4f6", paddingTop: "12px" }}>
-                                👁 Tenés {hiddenCategories.length} categoría{hiddenCategories.length !== 1 ? "s" : ""} oculta{hiddenCategories.length !== 1 ? "s" : ""} que no son visibles para los usuarios.
+                                👁 Tenés {hiddenCount} categoría{hiddenCount !== 1 ? "s" : ""} oculta{hiddenCount !== 1 ? "s" : ""} que no son visibles para los usuarios.
                             </p>
                         )}
                     </div>
@@ -992,6 +962,7 @@ export const AdminCategoriesPage = () => {
                     {requestPagination.categoryTotalPages > 1 && (
                         <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "8px", marginTop: "20px" }}>
                             <button
+                                type="button"
                                 onClick={() => setRequestPage(p => Math.max(1, p - 1))}
                                 disabled={requestPage === 1}
                                 style={{ padding: "6px 14px", borderRadius: "8px", border: "1px solid #e5e7eb", backgroundColor: "white", cursor: requestPage === 1 ? "not-allowed" : "pointer", opacity: requestPage === 1 ? 0.5 : 1, fontSize: "13px" }}
@@ -1000,6 +971,7 @@ export const AdminCategoriesPage = () => {
                             </button>
                             <span style={{ fontSize: "13px" }}>{requestPage} / {requestPagination.categoryTotalPages}</span>
                             <button
+                                type="button"
                                 onClick={() => setRequestPage(p => Math.min(requestPagination.categoryTotalPages, p + 1))}
                                 disabled={requestPage === requestPagination.categoryTotalPages}
                                 style={{ padding: "6px 14px", borderRadius: "8px", border: "1px solid #e5e7eb", backgroundColor: "white", cursor: requestPage === requestPagination.categoryTotalPages ? "not-allowed" : "pointer", opacity: requestPage === requestPagination.categoryTotalPages ? 0.5 : 1, fontSize: "13px" }}

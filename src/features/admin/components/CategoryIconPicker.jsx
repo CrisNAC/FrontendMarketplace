@@ -34,7 +34,7 @@ export function CategoryIcon({ name, size = 18, color = "var(--primary-dark)" })
     return <Icon size={size} color={color} />;
 }
 
-export function IconPicker({ value, onChange, disabled }) {
+export function IconPicker({ value, onChange, disabled = false }) {
     return (
         <div>
             <p style={{ fontSize: "13px", fontWeight: "600", color: "#374151", margin: "0 0 8px 0" }}>Ícono</p>
