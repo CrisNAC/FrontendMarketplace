@@ -13,7 +13,7 @@ export const getCurrentUserForDeliveryForm = async () => {
   return {
     userId,
     sessionUser: session.user,
-    profile: profileResponse ?? null,
+    profile: profileResponse?.data ?? null,
   };
 };
 

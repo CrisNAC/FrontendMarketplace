@@ -11,6 +11,47 @@ const mockStores: Store[] = [
   { id_store: 2, name: 'TechPoint', store_category: { name: 'Electrónica' } },
 ];
 
+
+const mockCartProduct = {
+  id: 101,
+  name: 'Apple iPhone 17 Pro A3256 Dual',
+  price: 13290000,
+  isOffer: false,
+  stock: 8,
+};
+
+const mockActiveCart = {
+  id: 1,
+  storeId: 1,
+  commerce: { id: 1, name: 'Nissei' },
+  status: 'ACTIVE',
+  items: [
+    {
+      id: 1,
+      quantity: 1,
+      product: mockCartProduct,
+    },
+  ],
+};
+
+const createBaseProduct = (productId) => ({
+  id_product: productId,
+  name: 'Producto prueba',
+  description: 'Desc prueba',
+  price: 100,
+  quantity: 5,
+  visible: true,
+  isOffer: false,
+  stock: 8,
+  offerPrice: null,
+  images: [],
+  categoryId: 1,
+  categories: [{ id: 1, name: 'Cat' }],
+  store: { id_store: 1, name: 'Comercio' },
+  product_tag_relations: [],
+  tags: [],
+});
+
 const mockProducts = [
   {
     id_product: 101,
@@ -467,12 +508,7 @@ test.describe('Flujos E2E de usuario final', () => {
               {
                 id: 1,
                 quantity: 1,
-                product: {
-                  id: 101,
-                  name: 'Apple iPhone 17 Pro A3256 Dual',
-                  price: 13290000,
-                  isOffer: false,
-                },
+                product: mockCartProduct,
               },
             ],
           }),
@@ -496,12 +532,7 @@ test.describe('Flujos E2E de usuario final', () => {
                   {
                     id: 1,
                     quantity: 1,
-                    product: {
-                      id: 101,
-                      name: 'Apple iPhone 17 Pro A3256 Dual',
-                      price: 13290000,
-                      isOffer: false,
-                    },
+                    product: mockCartProduct,
                   },
                 ],
               },
@@ -579,14 +610,7 @@ test.describe('Flujos E2E de usuario final', () => {
               {
                 id: 10,
                 quantity: 1,
-                product: {
-                  id: 101,
-                  name: 'Apple iPhone 17 Pro A3256 Dual',
-                  price: 13290000,
-                  originalPrice: 13290000,
-                  offerPrice: null,
-                  isOffer: false,
-                },
+                product: { ...mockCartProduct, originalPrice: 13290000, offerPrice: null },
               },
             ],
           }),
@@ -674,14 +698,7 @@ test.describe('Flujos E2E de usuario final', () => {
               {
                 id: 10,
                 quantity: 2,
-                product: {
-                  id: 101,
-                  name: 'Apple iPhone 17 Pro A3256 Dual',
-                  price: 13290000,
-                  originalPrice: 13290000,
-                  offerPrice: null,
-                  isOffer: false,
-                },
+                product: { ...mockCartProduct, originalPrice: 13290000, offerPrice: null },
               },
             ],
           }),
@@ -757,14 +774,7 @@ test.describe('Flujos E2E de usuario final', () => {
               {
                 id: 1,
                 quantity: 1,
-                product: {
-                  id: 101,
-                  name: 'Apple iPhone 17 Pro A3256 Dual',
-                  price: 13290000,
-                  originalPrice: 13290000,
-                  offerPrice: null,
-                  isOffer: false,
-                },
+                product: { ...mockCartProduct, originalPrice: 13290000, offerPrice: null },
               },
             ],
           }),
@@ -816,13 +826,7 @@ test.describe('Flujos E2E de usuario final', () => {
                   {
                     id: 1,
                     quantity: 1,
-                    product: {
-                      id: 101,
-                      name: 'Apple iPhone 17 Pro A3256 Dual',
-                      price: 13290000,
-                      originalPrice: 13290000,
-                      isOffer: false,
-                    },
+                    product: { ...mockCartProduct, originalPrice: 13290000 },
                   },
                 ],
               },
@@ -1798,7 +1802,7 @@ test.describe('Flujos E2E de usuario final', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ id_user: 7, name: 'Cliente Demo', email: 'cliente@test.com', phone: '0981000000', role: 'CUSTOMER' }),
+        body: JSON.stringify({ success: true, data: { id_user: 7, name: 'Cliente Demo', email: 'cliente@test.com', phone: '0981000000', role: 'CUSTOMER' } }),
       });
     });
 
@@ -1880,7 +1884,7 @@ test.describe('Flujos E2E de usuario final', () => {
 
     // Perfil de usuario
     await page.route('**/api/users/7', async (route) => {
-      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000', role: 'DELIVERY' }) });
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: { id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000', role: 'DELIVERY' } }) });
     });
 
     // Navegar al panel delivery
@@ -1921,11 +1925,13 @@ test.describe('Flujos E2E de usuario final', () => {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          id_user: 7,
-          name: 'Cliente Demo',
-          email: 'cliente@test.com',
-          phone: '0981000000',
-          role: 'CUSTOMER',
+          success: true, data: {
+            id_user: 7,
+            name: 'Cliente Demo',
+            email: 'cliente@test.com',
+            phone: '0981000000',
+            role: 'CUSTOMER',
+          }
         }),
       });
     });
@@ -1980,12 +1986,23 @@ test.describe('Flujos E2E de usuario final', () => {
           status: 200,
           contentType: 'application/json',
           body: JSON.stringify({
-            id_user: 7,
-            name: 'Cliente Demo',
-            email: 'cliente@test.com',
-            phone: '0981000000',
-            role: 'CUSTOMER',
+            success: true, data: {
+              id_user: 7,
+              name: 'Cliente Demo',
+              email: 'cliente@test.com',
+              phone: '0981000000',
+              role: 'CUSTOMER',
+            }
           }),
+        });
+        return;
+      }
+
+      if (route.request().method() === 'PUT') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ success: true, data: { id_user: 7, phone: '0981000000' } }),
         });
         return;
       }
@@ -2074,7 +2091,7 @@ test.describe('Flujos E2E de usuario final', () => {
 
     // Perfil usuario
     await page.route('**/api/users/7', async (route) => {
-      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000' }) });
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: { id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000', addresses: [{ city: 'Asunción' }] } }) });
     });
 
     // Perfil de delivery (getDeliveryProfile)
@@ -2102,7 +2119,7 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page.getByText('Delivery Demo')).toBeVisible();
     await expect(page.getByText('delivery@test.com')).toBeVisible();
     await expect(page.getByText('0981000000')).toBeVisible();
-    await expect(page.getByText('CAR')).toBeVisible();
+    await expect(page.getByText('Automóvil')).toBeVisible();
     await expect(page.getByText('Asunción')).toBeVisible();
   });
 
@@ -2115,7 +2132,7 @@ test.describe('Flujos E2E de usuario final', () => {
     });
 
     await page.route('**/api/users/7', async (route) => {
-      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000', role: 'DELIVERY' }) });
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: { id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000', role: 'DELIVERY' } }) });
     });
 
     // Perfil de delivery inicialmente INACTIVE
@@ -2168,7 +2185,7 @@ test.describe('Flujos E2E de usuario final', () => {
     });
 
     await page.route('**/api/users/7', async (route) => {
-      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000', role: 'DELIVERY' }) });
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: { id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000', role: 'DELIVERY' } }) });
     });
 
     // Perfil de delivery inicialmente ACTIVE
@@ -2222,7 +2239,7 @@ test.describe('Flujos E2E de usuario final', () => {
     });
 
     await page.route('**/api/users/7', async (route) => {
-      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000', role: 'DELIVERY' }) });
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: { id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000', role: 'DELIVERY' } }) });
     });
 
     const mockDeliveryProfileAvailable = {
@@ -2268,7 +2285,7 @@ test.describe('Flujos E2E de usuario final', () => {
     });
 
     await page.route('**/api/users/7', async (route) => {
-      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000', role: 'DELIVERY' }) });
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: { id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000', role: 'DELIVERY' } }) });
     });
 
     const mockDeliveryProfileAvailable = {
@@ -2588,7 +2605,7 @@ test.describe('Flujos E2E de usuario final', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000' }),
+        body: JSON.stringify({ success: true, data: { id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000' } }),
       });
     });
 
@@ -2639,7 +2656,7 @@ test.describe('Flujos E2E de usuario final', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ id_user: 7, name: 'Juan Delivery', email: 'juan@test.com', phone: '0981555444' }),
+        body: JSON.stringify({ success: true, data: { id_user: 7, name: 'Juan Delivery', email: 'juan@test.com', phone: '0981555444' } }),
       });
     });
 
@@ -2689,7 +2706,7 @@ test.describe('Flujos E2E de usuario final', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ id_user: 7, name: 'Carlos Delivery', email: 'carlos@test.com', phone: '0981777888' }),
+        body: JSON.stringify({ success: true, data: { id_user: 7, name: 'Carlos Delivery', email: 'carlos@test.com', phone: '0981777888' } }),
       });
     });
 
@@ -2743,7 +2760,7 @@ test.describe('Flujos E2E de usuario final', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ id_user: 7, name: 'María Delivery', email: 'maria@test.com', phone: '0981333222' }),
+        body: JSON.stringify({ success: true, data: { id_user: 7, name: 'María Delivery', email: 'maria@test.com', phone: '0981333222' } }),
       });
     });
 
@@ -2844,7 +2861,7 @@ test.describe('Flujos E2E de usuario final', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ id_user: 7, name: 'Pedro Delivery', email: 'pedro@test.com', phone: '0981222333' }),
+        body: JSON.stringify({ success: true, data: { id_user: 7, name: 'Pedro Delivery', email: 'pedro@test.com', phone: '0981222333' } }),
       });
     });
 
@@ -2909,7 +2926,7 @@ test.describe('Flujos E2E de usuario final', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ id_user: 7, name: 'Ana Delivery', email: 'ana@test.com', phone: '0981444555' }),
+        body: JSON.stringify({ success: true, data: { id_user: 7, name: 'Ana Delivery', email: 'ana@test.com', phone: '0981444555' } }),
       });
     });
 
@@ -4278,11 +4295,13 @@ test.describe('Flujos E2E de usuario final', () => {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          id_user: 7,
-          name: 'Delivery Demo',
-          email: 'delivery@test.com',
-          phone: '0981 111 222',
-          role: 'DELIVERY',
+          success: true, data: {
+            id_user: 7,
+            name: 'Delivery Demo',
+            email: 'delivery@test.com',
+            phone: '0981 111 222',
+            role: 'DELIVERY',
+          }
         }),
       });
     });
@@ -4319,22 +4338,7 @@ test.describe('Flujos E2E de usuario final', () => {
 
     await page.unroute('**/products/101');
 
-    const baseProduct = {
-      id_product: productId,
-      name: 'Producto prueba',
-      description: 'Desc prueba',
-      price: 100,
-      quantity: 5,
-      visible: true,
-      isOffer: false,
-      offerPrice: null,
-      images: [],
-      categoryId: 1,
-      categories: [{ id: 1, name: 'Cat' }],
-      store: { id_store: 1, name: 'Comercio' },
-      product_tag_relations: [],
-      tags: [],
-    };
+    const baseProduct = createBaseProduct(productId);
 
     let putBody: any = null;
     let updatedProduct = { ...baseProduct };
@@ -4391,22 +4395,7 @@ test.describe('Flujos E2E de usuario final', () => {
 
     await page.unroute('**/products/101');
 
-    const baseProduct = {
-      id_product: productId,
-      name: 'Producto prueba',
-      description: 'Desc prueba',
-      price: 100,
-      quantity: 5,
-      visible: true,
-      isOffer: false,
-      offerPrice: null,
-      images: [],
-      categoryId: 1,
-      categories: [{ id: 1, name: 'Cat' }],
-      store: { id_store: 1, name: 'Comercio' },
-      product_tag_relations: [],
-      tags: [],
-    };
+    const baseProduct = createBaseProduct(productId);
 
     let putRequestCount = 0;
 
@@ -4551,13 +4540,7 @@ test.describe('Flujos E2E de usuario final', () => {
                   {
                     id: 1,
                     quantity: 1,
-                    product: {
-                      id: 101,
-                      name: 'Apple iPhone 17 Pro A3256 Dual',
-                      price: 13290000,
-                      originalPrice: 13290000,
-                      isOffer: false,
-                    },
+                    product: { ...mockCartProduct, originalPrice: 13290000 },
                   },
                 ],
               },
@@ -4954,8 +4937,8 @@ test.describe('Flujos E2E de usuario final', () => {
     });
 
     // Mock detalle del comercio (sin categorías y sin punto en mapa para forzar validaciones)
-    await page.unroute('**/api/commerces/1');
-    await page.route('**/api/commerces/1', async (route) => {
+    await page.unroute('**/api/commerces/my/1');
+    await page.route('**/api/commerces/my/1', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -5242,7 +5225,7 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page.getByText('TechPoint')).toBeVisible();
     await expect(page.getByText('DigiStore')).toBeVisible();
 
-    
+
     await page.locator('div.rounded-2xl').filter({ has: page.locator('h2', { hasText: 'Nissei' }) })
       .getByRole('button', { name: 'Eliminar' }).click();
 
@@ -5255,7 +5238,7 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page.locator('text=Orden eliminada correctamente')).toHaveCount(0);
 
     // Aceptar eliminación de Nissei
-    
+
     await page.locator('div.rounded-2xl').filter({ has: page.locator('h2', { hasText: 'Nissei' }) })
       .getByRole('button', { name: 'Eliminar' }).click();
 

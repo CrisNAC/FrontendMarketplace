@@ -194,6 +194,7 @@ export function DeliveryEditProfilePage() {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [phone, setPhone] = useState("");
+    const [city, setCity] = useState("N/A");
     const [vehicleType, setVehicleType] = useState("MOTORCYCLE");
     const [avatarUrl, setAvatarUrl] = useState(null);
     const [avatarFile, setAvatarFile] = useState(null);
@@ -229,6 +230,9 @@ export function DeliveryEditProfilePage() {
                 setName(delivery.user?.name ?? profile?.name ?? sessionUser?.name ?? "");
                 setEmail(delivery.user?.email ?? profile?.email ?? sessionUser?.email ?? "");
                 setPhone(delivery.user?.phone ?? profile?.phone ?? sessionUser?.phone ?? "");
+                const addresses = profile?.addresses || [];
+                const primaryAddress = addresses[0];
+                setCity(primaryAddress?.city ?? "N/A");
                 setVehicleType(delivery.vehicle_type ?? "MOTORCYCLE");
                 setAvatarUrl(delivery.user?.avatar_url ?? null);
             } catch (err) {
@@ -380,6 +384,30 @@ export function DeliveryEditProfilePage() {
                                             <option key={val} value={val}>{label}</option>
                                         ))}
                                     </select>
+                                </div>
+
+                                {/* Ciudad (Dirección base) */}
+                                <div>
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                                        <label htmlFor="delivery-city" style={{ ...s.label, marginBottom: 0 }}>
+                                            Ciudad (Zona Base)
+                                        </label>
+                                        <button 
+                                            type="button" 
+                                            onClick={() => navigate("/direcciones")}
+                                            style={{ color: "#5B7B6D", background: "none", border: "none", cursor: "pointer", fontSize: "12px", fontWeight: "600", padding: 0 }}
+                                        >
+                                            Cambiar dirección
+                                        </button>
+                                    </div>
+                                    <input
+                                        id="delivery-city"
+                                        type="text"
+                                        value={city}
+                                        readOnly
+                                        style={{ ...s.input, ...s.inputReadonly }}
+                                    />
+                                    <p style={s.fieldNote}>Basado en tu dirección principal de usuario.</p>
                                 </div>
 
                             </div>
