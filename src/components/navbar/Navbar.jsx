@@ -135,7 +135,6 @@ const Navbar = () => {
       await axios.delete(`${apiBase}/api/session`, { withCredentials: true });
       setSessionUser(null);
       setCartCount(0);
-      setUnreadCount(0);
       window.dispatchEvent(new Event("cartUpdated"));
       toast.success("Sesión cerrada");
       navigate("/");
