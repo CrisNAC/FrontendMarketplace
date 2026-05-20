@@ -56,14 +56,10 @@ export function CategoryEditModal({ category, onSave, onCancel }) {
         }
     };
 
-    const handleOverlayClick = (event) => {
-        if (event.target === event.currentTarget) {
+    const handleKeyDown = (event) => {
+        if (event.key === "Escape") {
             onCancel();
         }
-    };
-
-    const stopPropagation = (event) => {
-        event.stopPropagation();
     };
 
     return (
@@ -72,7 +68,7 @@ export function CategoryEditModal({ category, onSave, onCancel }) {
             aria-modal="true"
             aria-labelledby="edit-modal-title"
             onClose={onCancel}
-            onClick={handleOverlayClick}
+            onKeyDown={handleKeyDown}
             style={{
                 position: "fixed",
                 inset: 0,
@@ -87,9 +83,26 @@ export function CategoryEditModal({ category, onSave, onCancel }) {
                 height: "100%",
             }}
         >
-            <div
-                onClick={stopPropagation}
+            {/* Botón invisible que actúa como el overlay de fondo para clics y accesibilidad */}
+            <button
+                type="button"
+                onClick={onCancel}
+                aria-label="Cerrar modal"
                 style={{
+                    position: "absolute",
+                    inset: 0,
+                    width: "100%",
+                    height: "100%",
+                    background: "transparent",
+                    border: "none",
+                    cursor: "default",
+                }}
+            />
+
+            {/* Contenedor del Modal */}
+            <div
+                style={{
+                    position: "relative", // Para quedar por encima del botón invisible del overlay
                     backgroundColor: "white",
                     borderRadius: "16px",
                     padding: "24px",

@@ -29,6 +29,14 @@ const categorySchema = z.object({
 });
 
 function ModalOverlay({ onClose, children, labelId }) {
+    // Manejador para cerrar con el teclado (Accesibilidad)
+    const handleKeyDown = (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            onClose();
+        }
+    };
+
     return (
         <dialog
             open
@@ -38,6 +46,9 @@ function ModalOverlay({ onClose, children, labelId }) {
                     onClose();
                 }
             }}
+            onKeyDown={handleKeyDown}
+            role="button"
+            tabIndex={0}
             style={{
                 position: "fixed",
                 inset: 0,
@@ -50,9 +61,14 @@ function ModalOverlay({ onClose, children, labelId }) {
                 border: "none",
                 width: "100%",
                 height: "100%",
+                cursor: "default",
             }}
         >
+            {/* Contenedor del contenido (detiene la propagación para que no se cierre al hacer click adentro) */}
             <div
+                role="document"
+                onClick={(e) => e.stopPropagation()}
+                onKeyDown={(e) => e.stopPropagation()}
                 style={{
                     backgroundColor: "white",
                     borderRadius: "16px",
@@ -60,6 +76,7 @@ function ModalOverlay({ onClose, children, labelId }) {
                     maxWidth: "480px",
                     width: "100%",
                     boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
+                    cursor: "default",
                 }}
             >
                 {children}
@@ -482,7 +499,7 @@ function CategoryRow({ cat, onEdit, onDelete }) {
             <div style={{ flex: 1, minWidth: "150px" }}>
                 <p style={{ margin: 0, fontWeight: "600", fontSize: "14px" }}>{cat.name}</p>
                 <p style={{ margin: 0, fontSize: "12px", color: "#6b7280", display: "flex", alignItems: "center", gap: "4px" }}>
-                    <Package size={11} /> {cat.productCount} producto{cat.productCount !== 1 ? "s" : ""}
+                    <Package size={11} /> {cat.productCount} producto{cat.productCount === 1 ? "" : "s"}
                 </p>
             </div>
 
@@ -836,27 +853,21 @@ export const AdminCategoriesPage = () => {
     };
 
     const handleDeleteCancel = () => {
-        const canCloseModal = isDeleting === false;
-
-        if (canCloseModal) {
+        if (!isDeleting) {
             setCategoryToDelete(null);
             setDeleteError("");
         }
     };
 
     const handleApproveCancel = () => {
-        const canCloseModal = isActioning === false;
-
-        if (canCloseModal) {
+        if (!isActioning) {
             setRequestToApprove(null);
             setActionError("");
         }
     };
 
     const handleRejectCancel = () => {
-        const canCloseModal = isActioning === false;
-
-        if (canCloseModal) {
+        if (!isActioning) {
             setRequestToReject(null);
             setActionError("");
         }
@@ -925,7 +936,7 @@ export const AdminCategoriesPage = () => {
                             onClick={() => setShowCreateModal(true)}
                             style={{
                                 display: "flex", alignItems: "center", gap: "6px",
-                                padding: "8px 16px", backgroundColor: "var(--primary-dark)",
+                                padding: "8px 166px", backgroundColor: "var(--primary-dark)",
                                 color: "white", border: "none", borderRadius: "8px",
                                 fontSize: "13px", fontWeight: "500", cursor: "pointer",
                             }}
@@ -1040,11 +1051,15 @@ export const AdminCategoriesPage = () => {
                             </div>
                         )}
 
-                        {categories.some(c => c.visible === false) && (
+                        {hiddenCount === 1 ? (
                             <p style={{ fontSize: "12px", color: "#6b7280", marginTop: "16px", borderTop: "1px solid #f3f4f6", paddingTop: "12px" }}>
-                                👁 Tenés {hiddenCount} categoría{hiddenCount !== 1 ? "s" : ""} oculta{hiddenCount !== 1 ? "s" : ""} que no son visibles para los usuarios.
+                                👁 Tenés {hiddenCount} categoría oculta que no es visible para los usuarios.
                             </p>
-                        )}
+                        ) : hiddenCount > 1 ? (
+                            <p style={{ fontSize: "12px", color: "#6b7280", marginTop: "16px", borderTop: "1px solid #f3f4f6", paddingTop: "12px" }}>
+                                👁 Tenés {hiddenCount} categorías ocultas que no son visibles para los usuarios.
+                            </p>
+                        ) : null}
                     </div>
                 </>
             )}
