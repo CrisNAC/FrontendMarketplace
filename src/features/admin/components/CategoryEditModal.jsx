@@ -56,19 +56,13 @@ export function CategoryEditModal({ category, onSave, onCancel }) {
         }
     };
 
-    const handleKeyDown = (event) => {
-        if (event.key === "Escape") {
-            onCancel();
-        }
-    };
-
     return (
         <dialog
             open
             aria-modal="true"
             aria-labelledby="edit-modal-title"
             onClose={onCancel}
-            onKeyDown={handleKeyDown}
+            onKeyDown={(e) => e.key === "Escape" && !isSubmitting && onCancel()}
             style={{
                 position: "fixed",
                 inset: 0,
@@ -83,11 +77,12 @@ export function CategoryEditModal({ category, onSave, onCancel }) {
                 height: "100%",
             }}
         >
-            {/* Botón invisible que actúa como el overlay de fondo para clics y accesibilidad */}
+            {/* Botón nativo invisible que actúa como overlay de fondo para clics */}
             <button
                 type="button"
-                onClick={onCancel}
+                onClick={isSubmitting ? undefined : onCancel}
                 aria-label="Cerrar modal"
+                disabled={isSubmitting}
                 style={{
                     position: "absolute",
                     inset: 0,
@@ -95,14 +90,14 @@ export function CategoryEditModal({ category, onSave, onCancel }) {
                     height: "100%",
                     background: "transparent",
                     border: "none",
-                    cursor: "default",
+                    cursor: isSubmitting ? "not-allowed" : "default"
                 }}
             />
 
-            {/* Contenedor del Modal */}
+            {/* Contenedor del contenido (Ya no requiere onClick ni stopPropagation) */}
             <div
                 style={{
-                    position: "relative", // Para quedar por encima del botón invisible del overlay
+                    position: "relative",
                     backgroundColor: "white",
                     borderRadius: "16px",
                     padding: "24px",
@@ -119,7 +114,8 @@ export function CategoryEditModal({ category, onSave, onCancel }) {
                     <button
                         type="button"
                         onClick={onCancel}
-                        style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280" }}
+                        disabled={isSubmitting}
+                        style={{ background: "none", border: "none", cursor: isSubmitting ? "not-allowed" : "pointer", color: "#6b7280" }}
                     >
                         <X size={20} />
                     </button>
