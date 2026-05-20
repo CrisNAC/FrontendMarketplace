@@ -425,7 +425,7 @@ test.describe('Flujos E2E de usuario final', () => {
     await setupCommonApiMocks(page);
   });
 
-  
+
 
   // este test ya no funciona en webkit porque WebKit no ejecuta el prellenado de campos de la misma forma que Chromium
   test('flujo cliente: registro, login, homepage, comercio, producto y comentarios', async ({ page }) => {
@@ -5755,5 +5755,61 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page).toHaveURL('/');
   });
 
-  
+
+  //OM-518
+  test('flujo cliente: visualizar productos relacionados en detalle de producto', async ({ page }) => {
+    let requestedLimit: string | null = null;
+
+    const relatedProducts = Array.from({ length: 10 }, (_, index) => {
+      const itemNumber = index + 1;
+
+      return {
+        id: 200 + itemNumber,
+        name: `Producto relacionado ${itemNumber}`,
+        description: `Descripción relacionada ${itemNumber}`,
+        price: 1000000 + index * 100000,
+        quantity: 10,
+        imageUrl: itemNumber % 2 === 0 ? `https://picsum.photos/seed/related-${itemNumber}/400/400` : null,
+        isOffer: itemNumber === 1,
+        offerPrice: itemNumber === 1 ? 850000 : null,
+        averageRating: 4.1 + (index % 4) * 0.1,
+        reviewCount: 12 + index,
+        categories: [{ id: 1, name: 'Celulares' }],
+      };
+    });
+
+    await page.route('**/products/101/related**', async (route) => {
+      const url = new URL(route.request().url());
+      requestedLimit = url.searchParams.get('limit');
+
+      const limit = Number(requestedLimit ?? 8);
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(relatedProducts.slice(0, limit)),
+      });
+    });
+
+    await page.goto('/producto-detalle/101');
+
+    await expect(page.getByRole('heading', { name: 'Productos relacionados' })).toBeVisible();
+    await expect.poll(() => requestedLimit).toBe('8');
+
+    const relatedSection = page.locator('section').filter({ hasText: 'Productos relacionados' });
+
+    await expect(relatedSection).toBeVisible();
+    await expect(relatedSection.getByRole('button', { name: /Producto relacionado/i })).toHaveCount(8);
+    await expect(relatedSection.getByText('Apple iPhone 17 Pro A3256 Dual')).toHaveCount(0);
+
+    const firstCard = relatedSection.getByRole('button', { name: /Producto relacionado 1/i });
+
+    await expect(firstCard.getByText('Celulares')).toBeVisible();
+    await expect(firstCard.getByText('Oferta')).toBeVisible();
+    await expect(firstCard.getByText(/★/)).toBeVisible();
+
+    await firstCard.click();
+    await expect(page).toHaveURL('/producto-detalle/201');
+  });
+
 });
