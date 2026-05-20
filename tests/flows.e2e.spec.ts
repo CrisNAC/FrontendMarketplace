@@ -82,7 +82,7 @@ const mockActiveCart = {
   ],
 };
 
-const createBaseProduct = (productId) => ({
+const createBaseProduct = (productId: number) => ({
   id_product: productId,
   name: 'Producto prueba',
   description: 'Desc prueba',
