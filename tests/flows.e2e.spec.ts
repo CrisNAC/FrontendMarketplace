@@ -4114,7 +4114,9 @@ test.describe('Flujos E2E de usuario final', () => {
         items: [{ id: 1, quantity: 1 }],
       },
       getStatus: () => currentStatus,
-      setStatus: () => { /* no-op */ },
+      setStatus: (status: string) => {
+        currentStatus = status;
+      },
     });
 
     // Mock del endpoint de deliveries: backend retorna solo deliveries elegibles (ACTIVE, sin asignaciones)
@@ -4129,7 +4131,7 @@ test.describe('Flujos E2E de usuario final', () => {
           ],
           delivery_address: { address: 'Calle Falsa 123', city: 'Asuncion' },
           order_id: 9011,
-          order_status: 'PENDING',
+          order_status: 'PROCESSING',
         }),
       });
     });
@@ -4137,8 +4139,12 @@ test.describe('Flujos E2E de usuario final', () => {
     await page.goto('/comercio/pedidos');
     await expect(page.getByText('#ORD-9011')).toBeVisible();
 
+    await page.getByRole('button', { name: 'Aceptar' }).click();
+    await page.getByRole('button', { name: 'Seguimiento' }).click();
+
+    await expect(page.getByText('ORD-9011')).toBeVisible();
     // Abrir modal de asignación
-    await page.getByRole('button', { name: 'Asignar delivery' }).click();
+    await page.getByRole('button', { name: 'Añadir delivery' }).click();
 
     // Modal visible y lista con los deliveries retornados
     await expect(page.getByText('Delivery Activo Uno')).toBeVisible();
@@ -4169,10 +4175,11 @@ test.describe('Flujos E2E de usuario final', () => {
         items: [{ id: 1, quantity: 1 }],
       },
       getStatus: () => currentStatus,
-      setStatus: () => { /* no-op */ },
+      setStatus: (status: string) => {
+        currentStatus = status;
+      },
     });
 
-    // Mock GET deliveries (lista elegible)
     await page.route('**/api/stores/1/orders/9020/deliveries', async (route) => {
       await route.fulfill({
         status: 200,
@@ -4184,12 +4191,11 @@ test.describe('Flujos E2E de usuario final', () => {
           ],
           delivery_address: { address: 'Calle Test 55', city: 'Asuncion' },
           order_id: 9020,
-          order_status: 'PENDING',
+          order_status: 'PROCESSING',
         }),
       });
     });
 
-    // Capturamos el POST a /api/assignments
     let capturedBody: Record<string, unknown> | null = null;
     await page.route('**/api/assignments', async (route) => {
       if (route.request().method() === 'POST') {
@@ -4204,23 +4210,24 @@ test.describe('Flujos E2E de usuario final', () => {
       await route.fallback();
     });
 
-    // Ir a la página de pedidos del comercio y abrir modal
     await page.goto('/comercio/pedidos');
     await expect(page.getByText('#ORD-9020')).toBeVisible();
-    await page.getByRole('button', { name: 'Asignar delivery' }).click();
 
-    // Seleccionar el delivery y confirmars
+    await page.getByRole('button', { name: 'Aceptar' }).click();
+    await page.getByRole('button', { name: 'Seguimiento' }).click();
+
+    await expect(page.getByText('ORD-9020')).toBeVisible();
+    await page.getByRole('button', { name: 'Añadir delivery' }).click();
+
     await page.getByText('Delivery Selector').click();
     await page.getByRole('button', { name: 'Asignar delivery' }).click();
 
-    // Esperar que el modal se cierre
     await expect(page.getByRole('heading', { name: 'Asignar delivery' })).not.toBeVisible();
-
+    expect(capturedBody).toEqual({ fk_order: 9020, fk_delivery: 52 });
   });
 
   // OM-489
   test('flujo comercio: Sin deliveries disponibles muestra mensaje sin deliveries disponibles y boton Asignar desactivado', async ({ page }) => {
-    // Restaurar sesión SELLER
     await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
@@ -4241,10 +4248,11 @@ test.describe('Flujos E2E de usuario final', () => {
         items: [{ id: 1, quantity: 1 }],
       },
       getStatus: () => currentStatus,
-      setStatus: () => { /* no-op */ },
+      setStatus: (status: string) => {
+        currentStatus = status;
+      },
     });
 
-    // Endpoint devuelve lista vacía
     await page.route('**/api/stores/1/orders/9015/deliveries', async (route) => {
       await route.fulfill({
         status: 200,
@@ -4253,18 +4261,23 @@ test.describe('Flujos E2E de usuario final', () => {
           available_deliveries: [],
           delivery_address: { address: 'Calle Vacia 0', city: 'Villarrica' },
           order_id: 9015,
-          order_status: 'PENDING',
+          order_status: 'PROCESSING',
         }),
       });
     });
 
     await page.goto('/comercio/pedidos');
     await expect(page.getByText('#ORD-9015')).toBeVisible();
-    await page.getByRole('button', { name: 'Asignar delivery' }).click();
 
-    // Debe mostrar mensaje de estado vacío y el botón principal debe estar deshabilitado
-    await expect(page.getByText('No hay deliveries disponibles')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Asignar delivery' })).toBeDisabled();
+    await page.getByRole('button', { name: 'Aceptar' }).click();
+    await page.getByRole('button', { name: 'Seguimiento' }).click();
+
+    await expect(page.getByText('ORD-9015')).toBeVisible();
+    await page.getByRole('button', { name: 'Añadir delivery' }).click();
+
+    const modal = page.locator('dialog');
+    await expect(modal.getByText('No hay deliveries disponibles')).toBeVisible();
+    await expect(modal.getByRole('button', { name: 'Asignar delivery' })).toBeDisabled();
   });
 
   // OM-490
