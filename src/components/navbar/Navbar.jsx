@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ShoppingCart, Bell, User, Search, X, ChevronDown, LogOut } from "lucide-react";
+import { ShoppingCart, User, Search, X, ChevronDown, LogOut } from "lucide-react";
+import { NotificationBellDropdown } from "../notifications/NotificationBellDropdown";
 import axios from "axios";
 import toast from "react-hot-toast";
 import logo from "/src/assets/feather.png";
@@ -43,8 +44,6 @@ const Navbar = () => {
   const [profileOpen, setProfileOpen] = useState(false);
   const [sessionUser, setSessionUser] = useState(undefined);
   const [loggingOut, setLoggingOut] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
-
   const isLoggedIn = Boolean(sessionUser?.id_user);
   const isCustomer = sessionUser?.role === "CUSTOMER";
 
@@ -60,14 +59,6 @@ const Navbar = () => {
       if (uid) {
         const carts = await fetchCartsApi(uid);
         setCartCount(sumServerCartQuantities(carts));
-        try {
-          const { data } = await axios.get(`${apiBase}/api/notifications`, { withCredentials: true });
-          setUnreadCount(
-            data.unreadCount ?? data.notifications?.filter((n) => !n.read).length ?? 0
-          );
-        } catch {
-          setUnreadCount(0);
-        }
         return;
       }
     } catch {
@@ -252,18 +243,13 @@ const Navbar = () => {
 
         {/* Icons */}
         <div className="flex gap-[15px] items-center">
-          <Link
-            to="/notificaciones"
-            className="relative flex items-center gap-0.5 rounded-full p-1.5 text-[#333] hover:bg-black/10 hover:text-[#2e6b4f] transition-colors"
-            aria-label="Notificaciones"
-          >
-            <Bell size={25} className="text-[#2f3e39] hover:text-[#2e6b4f] transition-colors" />
-            {isLoggedIn && unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold px-1 rounded-full">
-                {unreadCount > 99 ? "99+" : unreadCount}
-              </span>
-            )}
-          </Link>
+          {isLoggedIn && (
+            <NotificationBellDropdown
+              role={sessionUser?.role ?? "CUSTOMER"}
+              iconSize={25}
+              className="hover:bg-black/10 rounded-full"
+            />
+          )}
           <Link
             to="/carrito"
             className="relative flex items-center gap-0.5 rounded-full p-1.5 text-[#333] hover:bg-black/10 hover:text-[#2e6b4f] transition-colors"

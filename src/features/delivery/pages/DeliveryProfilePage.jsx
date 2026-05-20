@@ -130,7 +130,12 @@ export function DeliveryProfilePage() {
                 delivery_status: newStatus
             }));
 
-            toast.success(newStatus === "ACTIVE" ? "¡Conectado! Ahora recibirás pedidos" : "Desconectado. No recibirás más pedidos");
+            if (newStatus === "INACTIVE") {
+                toast.success("Desconectado. Los pedidos pendientes fueron rechazados y el comercio fue notificado.");
+                window.dispatchEvent(new Event("notificationsUpdated"));
+            } else {
+                toast.success("¡Conectado! Ahora recibirás pedidos");
+            }
         } catch (err) {
             console.error("Error al cambiar estado:", err);
             toast.error("No se pudo cambiar tu estado. Intenta nuevamente.");
