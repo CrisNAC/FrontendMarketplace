@@ -2,10 +2,10 @@ import apiClient from '../../../lib/apiClient';
 
 const BASE = '/api/admin/categories';
 
-// POST /api/admin/categories — acepta { name }
-export const createAdminCategory = async (name) => {
-    const { data } = await apiClient.post(BASE, { name });
-    return data; // { id, name, visible, status, createdAt }
+// POST /api/admin/categories — acepta { name, icon }
+export const createAdminCategory = async (name, icon = null) => {
+    const { data } = await apiClient.post(BASE, { name, icon });
+    return data; // { id, name, icon, visible, status, createdAt }
 };
 
 // GET /api/admin/categories
@@ -23,7 +23,7 @@ export const fetchAdminCategories = async ({ visible, searchCategory, categoryPa
 // GET /api/admin/categories/:id
 export const fetchAdminCategoryById = async (id) => {
     const { data } = await apiClient.get(`${BASE}/${id}`);
-    return data; // { id, name, status, productCount, createdAt, updatedAt }
+    return data; // { id, name, icon, visible, status, productCount, createdAt, updatedAt }
 };
 
 // GET /api/admin/categories/filter/withProducts
@@ -43,10 +43,10 @@ export const fetchCategoriesWithProducts = async (filters = {}) => {
     return data;
 };
 
-// PUT /api/admin/categories/:id — acepta { name?, visible? }
+// PUT /api/admin/categories/:id — acepta { name?, visible?, icon? }
 export const updateAdminCategory = async (id, payload) => {
     const { data } = await apiClient.put(`${BASE}/${id}`, payload);
-    return data; // { id, name, visible, createdAt, updatedAt }
+    return data; // { id, name, icon, visible, createdAt, updatedAt }
 };
 
 // DELETE /api/admin/categories/:id

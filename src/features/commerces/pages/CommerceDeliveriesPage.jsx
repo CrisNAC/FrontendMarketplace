@@ -245,7 +245,6 @@ export function CommerceDeliveriesPage() {
             setData(result);
         } catch (err) {
             setError(getDeliveryErrorMessage(err, "No se pudieron cargar los repartidores."));
-            throw err;
         }
     }, []);
 

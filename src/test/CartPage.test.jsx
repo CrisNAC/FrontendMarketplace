@@ -49,6 +49,7 @@ describe("CartPage", () => {
                       price: 100000,
                       originalPrice: 100000,
                       isOffer: false,
+                      stock: 5,
                     },
                   },
                 ],

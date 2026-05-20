@@ -156,6 +156,7 @@ const CategorySelector = ({ categories, selectedIds, onChange, disabled, error }
 const inputCls = "w-full px-3 py-2 border border-green-100 rounded-md bg-green-50/30 focus:outline-none focus:ring-1 focus:ring-[#5B7B6D] focus:border-[#5B7B6D] disabled:cursor-not-allowed disabled:opacity-60"
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:3000").trim()
 const HTTP_URL_REGEX = /^https?:\/\//i
+const PHONE_REGEX = /^\+595\d{9}$/
 
 export const CommerceCreationForm = () => {
     const navigate = useNavigate()
@@ -322,14 +323,20 @@ export const CommerceCreationForm = () => {
             if (logoFile instanceof File && newStoreId) {
                 const logoFormData = new FormData()
                 logoFormData.append("image", logoFile)
-                await fetch(`${API_BASE_URL}/stores/${newStoreId}/image`, {
-                    method: "POST",
-                    credentials: "include",
-                    body: logoFormData,
-                }).catch((err) => {
+                try {
+                    const logoResponse = await fetch(`${API_BASE_URL}/stores/${newStoreId}/image`, {
+                        method: "POST",
+                        credentials: "include",
+                        body: logoFormData,
+                    })
                     // no bloqueamos el éxito del comercio por un fallo de logo
+                    if (!logoResponse.ok) {
+                        const logoError = await logoResponse.json().catch(() => ({}))
+                        console.warn("[WARN] No se pudo subir el logo del comercio:", logoError.message || logoResponse.status)
+                    }
+                } catch (err) {
                     console.warn("[WARN] No se pudo subir el logo del comercio:", err)
-                })
+                }
             }
 
             console.log("Comercio creado exitosamente:", data)

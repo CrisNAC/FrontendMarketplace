@@ -1,4 +1,4 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Page, Route } from '@playwright/test';
 
 type Store = {
   id_store: number;
@@ -6,10 +6,99 @@ type Store = {
   store_category?: { name: string };
 };
 
+type DeliveryAssignmentItem = {
+  id_delivery_assignment: number;
+  order: {
+    id_order: number;
+    user: { name: string };
+    order_status: string;
+    created_at: string;
+  };
+};
+
+type DeliveryPutBody = {
+  name: string | null;
+  phone: string | null;
+  vehicleType: string | null;
+};
+
+/** Nav lateral del panel delivery. */
+const deliverySidebar = (page: Page) => page.getByRole('navigation');
+
+/** Título del panel (fuera de <nav>; filtra el duplicado del header móvil oculto en desktop). */
+const deliveryPanelTitle = (page: Page) => page.getByText('Panel Delivery').filter({ visible: true });
+
+/** Misma regla que BecomeDeliveryModal: al menos 8 dígitos en el teléfono enviado por PUT. */
+const isValidDeliveryPhone = (phone: string) => /^(?=(?:.*\d){8,})[\d\s+().\-]+$/.test(phone.trim());
+
+async function fulfillUserProfilePut(route: Route, successBody: Record<string, unknown>) {
+  let payload: { phone?: unknown };
+  try {
+    payload = route.request().postDataJSON() as { phone?: unknown };
+  } catch {
+    payload = {};
+  }
+  const phone = typeof payload.phone === 'string' ? payload.phone.trim() : '';
+  if (!phone || !isValidDeliveryPhone(phone)) {
+    await route.fulfill({
+      status: 400,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: { code: 400, message: 'phone inválido o faltante' } }),
+    });
+    return;
+  }
+  await route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ ...successBody, phone }),
+  });
+}
+
 const mockStores: Store[] = [
   { id_store: 1, name: 'Nissei', store_category: { name: 'Tecnología' } },
   { id_store: 2, name: 'TechPoint', store_category: { name: 'Electrónica' } },
 ];
+
+
+const mockCartProduct = {
+  id: 101,
+  name: 'Apple iPhone 17 Pro A3256 Dual',
+  price: 13290000,
+  isOffer: false,
+  stock: 8,
+};
+
+const mockActiveCart = {
+  id: 1,
+  storeId: 1,
+  commerce: { id: 1, name: 'Nissei' },
+  status: 'ACTIVE',
+  items: [
+    {
+      id: 1,
+      quantity: 1,
+      product: mockCartProduct,
+    },
+  ],
+};
+
+const createBaseProduct = (productId) => ({
+  id_product: productId,
+  name: 'Producto prueba',
+  description: 'Desc prueba',
+  price: 100,
+  quantity: 5,
+  visible: true,
+  isOffer: false,
+  stock: 8,
+  offerPrice: null,
+  images: [],
+  categoryId: 1,
+  categories: [{ id: 1, name: 'Cat' }],
+  store: { id_store: 1, name: 'Comercio' },
+  product_tag_relations: [],
+  tags: [],
+});
 
 const mockProducts = [
   {
@@ -89,6 +178,7 @@ async function setupCommonApiMocks(page: Page) {
       body: JSON.stringify({
         id_store: 1,
         name: 'Nissei',
+        store_status: 'ACTIVE',
         store_category: { id_store_category: 1, name: 'Tecnología' },
         products: mockProducts.map((product) => ({
           id_product: product.id_product,
@@ -335,6 +425,20 @@ test.describe('Flujos E2E de usuario final', () => {
     await setupCommonApiMocks(page);
   });
 
+  test('auth: redirige a login sin sesion', async ({ page }) => {
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 401,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'No autenticado' })
+      });
+    });
+
+    await page.goto('/comercio');
+    await expect(page).toHaveURL('/login');
+  });
+
   // este test ya no funciona en webkit porque WebKit no ejecuta el prellenado de campos de la misma forma que Chromium
   test('flujo cliente: registro, login, homepage, comercio, producto y comentarios', async ({ page }) => {
     await page.goto('/login');
@@ -452,12 +556,7 @@ test.describe('Flujos E2E de usuario final', () => {
               {
                 id: 1,
                 quantity: 1,
-                product: {
-                  id: 101,
-                  name: 'Apple iPhone 17 Pro A3256 Dual',
-                  price: 13290000,
-                  isOffer: false,
-                },
+                product: mockCartProduct,
               },
             ],
           }),
@@ -481,12 +580,7 @@ test.describe('Flujos E2E de usuario final', () => {
                   {
                     id: 1,
                     quantity: 1,
-                    product: {
-                      id: 101,
-                      name: 'Apple iPhone 17 Pro A3256 Dual',
-                      price: 13290000,
-                      isOffer: false,
-                    },
+                    product: mockCartProduct,
                   },
                 ],
               },
@@ -564,14 +658,7 @@ test.describe('Flujos E2E de usuario final', () => {
               {
                 id: 10,
                 quantity: 1,
-                product: {
-                  id: 101,
-                  name: 'Apple iPhone 17 Pro A3256 Dual',
-                  price: 13290000,
-                  originalPrice: 13290000,
-                  offerPrice: null,
-                  isOffer: false,
-                },
+                product: { ...mockCartProduct, originalPrice: 13290000, offerPrice: null },
               },
             ],
           }),
@@ -659,14 +746,7 @@ test.describe('Flujos E2E de usuario final', () => {
               {
                 id: 10,
                 quantity: 2,
-                product: {
-                  id: 101,
-                  name: 'Apple iPhone 17 Pro A3256 Dual',
-                  price: 13290000,
-                  originalPrice: 13290000,
-                  offerPrice: null,
-                  isOffer: false,
-                },
+                product: { ...mockCartProduct, originalPrice: 13290000, offerPrice: null },
               },
             ],
           }),
@@ -742,14 +822,7 @@ test.describe('Flujos E2E de usuario final', () => {
               {
                 id: 1,
                 quantity: 1,
-                product: {
-                  id: 101,
-                  name: 'Apple iPhone 17 Pro A3256 Dual',
-                  price: 13290000,
-                  originalPrice: 13290000,
-                  offerPrice: null,
-                  isOffer: false,
-                },
+                product: { ...mockCartProduct, originalPrice: 13290000, offerPrice: null },
               },
             ],
           }),
@@ -801,13 +874,7 @@ test.describe('Flujos E2E de usuario final', () => {
                   {
                     id: 1,
                     quantity: 1,
-                    product: {
-                      id: 101,
-                      name: 'Apple iPhone 17 Pro A3256 Dual',
-                      price: 13290000,
-                      originalPrice: 13290000,
-                      isOffer: false,
-                    },
+                    product: { ...mockCartProduct, originalPrice: 13290000 },
                   },
                 ],
               },
@@ -1132,6 +1199,7 @@ test.describe('Flujos E2E de usuario final', () => {
             email: 'ana@demo.com',
             phone: '0981000000',
             description: 'Comercio de prueba',
+            logo: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==',
             created_at: '2026-03-22T10:00:00.000Z',
           },
         ],
@@ -1144,9 +1212,11 @@ test.describe('Flujos E2E de usuario final', () => {
     await page.goto('/admin/comercios-pendientes');
 
     await expect(page.getByRole('heading', { name: 'Comercios por Aprobar' })).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Logo de Tienda Demo' })).toBeVisible();
     await page.getByRole('button', { name: 'Evaluar' }).first().click();
     await expect(page.getByText('Detalles del Comercio')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Tienda Demo' })).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Logo de Tienda Demo' }).last()).toBeVisible();
   });
 
   test('flujo comercio: moderar reclamo de producto', async ({ page }) => {
@@ -1775,12 +1845,20 @@ test.describe('Flujos E2E de usuario final', () => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ user }) });
     });
 
-    // Perfil usuario (getCurrentUserForDeliveryForm -> fetchUserProfile)
+    // Perfil usuario (getCurrentUserForDeliveryForm -> fetchUserProfile / actualizar teléfono)
     await page.route('**/api/users/7', async (route) => {
+      if (route.request().method() === 'PUT') {
+        await fulfillUserProfilePut(route, {
+          id_user: 7,
+          name: 'Cliente Demo',
+          email: 'cliente@test.com',
+        });
+        return;
+      }
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ id_user: 7, name: 'Cliente Demo', email: 'cliente@test.com', phone: '0981000000', role: 'CUSTOMER' }),
+        body: JSON.stringify({ success: true, data: { id_user: 7, name: 'Cliente Demo', email: 'cliente@test.com', phone: '0981000000', role: 'CUSTOMER' } }),
       });
     });
 
@@ -1793,34 +1871,6 @@ test.describe('Flujos E2E de usuario final', () => {
       }
       await route.fallback();
     });
-
-    // Registrar cuenta 
-    await page.goto('/login');
-    await page.getByRole('button', { name: 'Registrarse' }).click();
-    await page.getByPlaceholder('Tu nombre').fill('Cliente Demo');
-    await page.getByPlaceholder('tu@correo.com').fill('cliente@test.com');
-    await page.locator('input[name="password"]').fill('12345678');
-    await page.locator('input[name="confirmPassword"]').fill('12345678');
-    await page.getByRole('button', { name: 'Crear Cuenta' }).click();
-
-    // Iniciar sesión
-    await page.locator('form button[type="submit"]').click();
-
-    // Ir a la página "Quiero ser delivery"
-    await page.goto('/quiero-ser-delivery');
-
-    // Modal debe estar visible
-    await expect(page.getByRole('heading', { name: 'Quiero ser delivery' })).toBeVisible();
-
-    // Rellenar teléfono y seleccionar vehículo
-    await page.getByPlaceholder('+54 9 11 2345-6789').fill('0981000000');
-    await page.locator('#delivery-vehicle').selectOption('AUTOMOVIL');
-
-    // Confirmar (trigger POST -> deliveryRegistered = true)
-    await page.getByRole('button', { name: 'Confirmar' }).click();
-
-    // El modal cierra y redirige a homepage (comportamiento actual)
-    await expect(page).toHaveURL('/');
 
     await page.route('**/api/deliveries/5', async (route) => {
       if (route.request().method() === 'GET') {
@@ -1843,12 +1893,38 @@ test.describe('Flujos E2E de usuario final', () => {
         });
       }
     });
-    // Navegar manualmente al perfil del delivery para validar que el registro fue exitoso
-    await page.goto('/delivery/perfil');
+
+    // Registrar cuenta 
+    await page.goto('/login');
+    await page.getByRole('button', { name: 'Registrarse' }).click();
+    await page.getByPlaceholder('Tu nombre').fill('Cliente Demo');
+    await page.getByPlaceholder('tu@correo.com').fill('cliente@test.com');
+    await page.locator('input[name="password"]').fill('12345678');
+    await page.locator('input[name="confirmPassword"]').fill('12345678');
+    await page.getByRole('button', { name: 'Crear Cuenta' }).click();
+
+    // Iniciar sesión
+    await page.locator('form button[type="submit"]').click();
+
+    // Ir a la página "Quiero ser delivery"
+    await page.goto('/quiero-ser-delivery');
+
+    // Modal debe estar visible
+    await expect(page.getByRole('heading', { name: 'Quiero ser delivery' })).toBeVisible();
+
+    // Teléfono y vehículo
+    await page.getByPlaceholder('+54 9 11 2345-6789').fill('0981000000');
+    await page.locator('#delivery-vehicle').selectOption('AUTOMOVIL');
+
+    // Confirmar (trigger POST -> deliveryRegistered = true)
+    await page.getByRole('button', { name: 'Confirmar' }).click();
+
+    // Redirige al panel del delivery tras registro exitoso (OM-533)
+    await expect(page).toHaveURL(/\/delivery\/perfil/);
 
     // Sidebar Panel Delivery debe estar presente
-    await expect(page.getByText('Panel Delivery')).toBeVisible();
-    await expect(page.getByText('Mi Perfil')).toBeVisible();
+    await expect(deliveryPanelTitle(page)).toBeVisible();
+    await expect(deliverySidebar(page).getByText('Mi Perfil')).toBeVisible();
 
     await expect(page.getByRole('heading', { name: 'Perfil del Delivery' })).toBeVisible({ timeout: 5000 });
   });
@@ -1863,7 +1939,7 @@ test.describe('Flujos E2E de usuario final', () => {
 
     // Perfil de usuario
     await page.route('**/api/users/7', async (route) => {
-      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000', role: 'DELIVERY' }) });
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: { id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000', role: 'DELIVERY' } }) });
     });
 
     // Navegar al panel delivery
@@ -1871,10 +1947,10 @@ test.describe('Flujos E2E de usuario final', () => {
 
     // Debe redirigir a /delivery/perfil y mostrar sidebar
     await expect(page).toHaveURL(/\/delivery\/perfil/);
-    await expect(page.getByText('Panel Delivery')).toBeVisible();
-    await expect(page.getByText('Mi Perfil')).toBeVisible();
-    await expect(page.getByText('Órdenes')).toBeVisible();
-    await expect(page.getByText('Historial')).toBeVisible();
+    await expect(deliveryPanelTitle(page)).toBeVisible();
+    await expect(deliverySidebar(page).getByText('Mi Perfil')).toBeVisible();
+    await expect(deliverySidebar(page).getByText('Órdenes')).toBeVisible();
+    await expect(deliverySidebar(page).getByText('Historial')).toBeVisible();
   });
 
   //OM-497
@@ -1904,11 +1980,13 @@ test.describe('Flujos E2E de usuario final', () => {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          id_user: 7,
-          name: 'Cliente Demo',
-          email: 'cliente@test.com',
-          phone: '0981000000',
-          role: 'CUSTOMER',
+          success: true, data: {
+            id_user: 7,
+            name: 'Cliente Demo',
+            email: 'cliente@test.com',
+            phone: '0981000000',
+            role: 'CUSTOMER',
+          }
         }),
       });
     });
@@ -1958,16 +2036,26 @@ test.describe('Flujos E2E de usuario final', () => {
     });
 
     await page.route('**/api/users/7', async (route) => {
+      if (route.request().method() === 'PUT') {
+        await fulfillUserProfilePut(route, {
+          id_user: 7,
+          name: 'Cliente Demo',
+          email: 'cliente@test.com',
+        });
+        return;
+      }
       if (route.request().method() === 'GET') {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
           body: JSON.stringify({
-            id_user: 7,
-            name: 'Cliente Demo',
-            email: 'cliente@test.com',
-            phone: '0981000000',
-            role: 'CUSTOMER',
+            success: true, data: {
+              id_user: 7,
+              name: 'Cliente Demo',
+              email: 'cliente@test.com',
+              phone: '0981000000',
+              role: 'CUSTOMER',
+            }
           }),
         });
         return;
@@ -1977,7 +2065,7 @@ test.describe('Flujos E2E de usuario final', () => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
-          body: JSON.stringify({ id_user: 7, phone: '0981000000' }),
+          body: JSON.stringify({ success: true, data: { id_user: 7, phone: '0981000000' } }),
         });
         return;
       }
@@ -2007,29 +2095,6 @@ test.describe('Flujos E2E de usuario final', () => {
       await route.fallback();
     });
 
-    await page.goto('/quiero-ser-delivery');
-
-    await expect(page.getByRole('heading', { name: 'Quiero ser delivery' })).toBeVisible();
-
-    await page.getByPlaceholder('+54 9 11 2345-6789').fill('123');
-    await page.getByRole('button', { name: 'Confirmar' }).click();
-    await expect(page.getByText('Ingresá al menos 8 dígitos; solo números y símbolos habituales (+, espacio, guiones, paréntesis)')).toBeVisible();
-
-    await page.getByPlaceholder('+54 9 11 2345-6789').fill('0981000000');
-    await page.locator('#delivery-vehicle').selectOption('AUTOMOVIL');
-    await page.getByRole('button', { name: 'Confirmar' }).click();
-
-    await expect(page).toHaveURL('/');
-
-    await page.unroute('**/api/session/user-session');
-    await page.route('**/api/session/user-session', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ user: { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'Cliente Demo', email: 'cliente@test.com' } }),
-      });
-    });
-
     await page.route('**/api/deliveries/5', async (route) => {
       if (route.request().method() === 'GET') {
         await route.fulfill({
@@ -2055,8 +2120,15 @@ test.describe('Flujos E2E de usuario final', () => {
       await route.fallback();
     });
 
-    await page.goto('/delivery/perfil');
-    await expect(page).toHaveURL('/delivery/perfil');
+    await page.goto('/quiero-ser-delivery');
+
+    await expect(page.getByRole('heading', { name: 'Quiero ser delivery' })).toBeVisible();
+
+    await page.getByPlaceholder('+54 9 11 2345-6789').fill('0981000000');
+    await page.locator('#delivery-vehicle').selectOption('AUTOMOVIL');
+    await page.getByRole('button', { name: 'Confirmar' }).click();
+
+    await expect(page).toHaveURL(/\/delivery\/perfil/);
     await expect(page.getByRole('heading', { name: 'Perfil del Delivery' })).toBeVisible();
     await expect(page.getByText('Cliente Demo')).toBeVisible();
     await expect(page.getByText('0981000000')).toBeVisible();
@@ -2071,7 +2143,7 @@ test.describe('Flujos E2E de usuario final', () => {
 
     // Perfil usuario
     await page.route('**/api/users/7', async (route) => {
-      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000' }) });
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: { id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000', addresses: [{ city: 'Asunción' }] } }) });
     });
 
     // Perfil de delivery (getDeliveryProfile)
@@ -2099,7 +2171,7 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page.getByText('Delivery Demo')).toBeVisible();
     await expect(page.getByText('delivery@test.com')).toBeVisible();
     await expect(page.getByText('0981000000')).toBeVisible();
-    await expect(page.getByText('CAR')).toBeVisible();
+    await expect(page.getByText('Automóvil')).toBeVisible();
     await expect(page.getByText('Asunción')).toBeVisible();
   });
 
@@ -2112,7 +2184,7 @@ test.describe('Flujos E2E de usuario final', () => {
     });
 
     await page.route('**/api/users/7', async (route) => {
-      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000', role: 'DELIVERY' }) });
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: { id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000', role: 'DELIVERY' } }) });
     });
 
     // Perfil de delivery inicialmente INACTIVE
@@ -2135,7 +2207,7 @@ test.describe('Flujos E2E de usuario final', () => {
     });
 
     let patchCalled = false;
-    let patchBody = null;
+    let patchBody: string | null = null;
     await page.route('**/api/deliveries/5/status', async (route) => {
       patchCalled = true;
       patchBody = route.request().postData();
@@ -2165,7 +2237,7 @@ test.describe('Flujos E2E de usuario final', () => {
     });
 
     await page.route('**/api/users/7', async (route) => {
-      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000', role: 'DELIVERY' }) });
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: { id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000', role: 'DELIVERY' } }) });
     });
 
     // Perfil de delivery inicialmente ACTIVE
@@ -2188,7 +2260,7 @@ test.describe('Flujos E2E de usuario final', () => {
     });
 
     let patchCalled = false;
-    let patchBody = null;
+    let patchBody: string | null = null;
     await page.route('**/api/deliveries/5/status', async (route) => {
       patchCalled = true;
       patchBody = route.request().postData();
@@ -2219,7 +2291,7 @@ test.describe('Flujos E2E de usuario final', () => {
     });
 
     await page.route('**/api/users/7', async (route) => {
-      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000', role: 'DELIVERY' }) });
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: { id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000', role: 'DELIVERY' } }) });
     });
 
     const mockDeliveryProfileAvailable = {
@@ -2265,7 +2337,7 @@ test.describe('Flujos E2E de usuario final', () => {
     });
 
     await page.route('**/api/users/7', async (route) => {
-      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000', role: 'DELIVERY' }) });
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: { id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000', role: 'DELIVERY' } }) });
     });
 
     const mockDeliveryProfileAvailable = {
@@ -2585,7 +2657,7 @@ test.describe('Flujos E2E de usuario final', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000' }),
+        body: JSON.stringify({ success: true, data: { id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000' } }),
       });
     });
 
@@ -2636,7 +2708,7 @@ test.describe('Flujos E2E de usuario final', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ id_user: 7, name: 'Juan Delivery', email: 'juan@test.com', phone: '0981555444' }),
+        body: JSON.stringify({ success: true, data: { id_user: 7, name: 'Juan Delivery', email: 'juan@test.com', phone: '0981555444' } }),
       });
     });
 
@@ -2686,7 +2758,7 @@ test.describe('Flujos E2E de usuario final', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ id_user: 7, name: 'Carlos Delivery', email: 'carlos@test.com', phone: '0981777888' }),
+        body: JSON.stringify({ success: true, data: { id_user: 7, name: 'Carlos Delivery', email: 'carlos@test.com', phone: '0981777888' } }),
       });
     });
 
@@ -2725,7 +2797,7 @@ test.describe('Flujos E2E de usuario final', () => {
   // OM-323
   test('flujo delivery: guardar cambios del perfil con PUT exitoso', async ({ page }) => {
     let putCalled = false;
-    let putBody = null;
+    let putBody: DeliveryPutBody | null = null;
 
     await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
@@ -2740,7 +2812,7 @@ test.describe('Flujos E2E de usuario final', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ id_user: 7, name: 'María Delivery', email: 'maria@test.com', phone: '0981333222' }),
+        body: JSON.stringify({ success: true, data: { id_user: 7, name: 'María Delivery', email: 'maria@test.com', phone: '0981333222' } }),
       });
     });
 
@@ -2841,7 +2913,7 @@ test.describe('Flujos E2E de usuario final', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ id_user: 7, name: 'Pedro Delivery', email: 'pedro@test.com', phone: '0981222333' }),
+        body: JSON.stringify({ success: true, data: { id_user: 7, name: 'Pedro Delivery', email: 'pedro@test.com', phone: '0981222333' } }),
       });
     });
 
@@ -2906,7 +2978,7 @@ test.describe('Flujos E2E de usuario final', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ id_user: 7, name: 'Ana Delivery', email: 'ana@test.com', phone: '0981444555' }),
+        body: JSON.stringify({ success: true, data: { id_user: 7, name: 'Ana Delivery', email: 'ana@test.com', phone: '0981444555' } }),
       });
     });
 
@@ -3019,300 +3091,369 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-491
   test('flujo comercio: visualizar reseñas de un delivery', async ({ page }) => {
-    const mockReviews = [
-      {
-        id: 1,
-        customerName: 'Cliente Uno',
-        orderId: 1001,
-        rating: 5,
-        comment: 'Excelente entrega, llegó rápido',
-        createdAt: '2026-05-01T10:00:00.000Z',
-      },
-      {
-        id: 2,
-        customerName: 'Cliente Dos',
-        orderId: 1002,
-        rating: 4,
-        comment: 'Muy bueno, sin problemas',
-        createdAt: '2026-05-02T10:00:00.000Z',
-      },
-      {
-        id: 3,
-        customerName: 'Cliente Tres',
-        orderId: 1003,
-        rating: 5,
-        comment: 'Perfecto, excelente servicio',
-        createdAt: '2026-05-03T10:00:00.000Z',
-      },
-    ];
-
-    await installDeliveryReviewsMock(page, {
-      reviews: mockReviews,
-      total: mockReviews.length,
+    // Mock sesión
+    await page.route('**/api/session/user-session', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      });
     });
 
-    await page.goto('/comercio/deliveries/resenas');
+    // Mock listado de deliveries (pagina /comercio/delivery)
+    await page.route('**/api/stores/1/deliveries', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          stats: { total: 1, available: 1, inDelivery: 0, avgRating: 4.8 },
+          deliveries: [
+            {
+              id: 5,
+              user: { id: 5, name: 'Repartidor X', email: 'rx@test.com', phone: '098100000' },
+              status: 'AVAILABLE',
+              completedDeliveries: 10,
+              successRate: 90,
+              avgRating: 4.8,
+              reviewCount: 2,
+            },
+          ],
+        }),
+      });
+    });
 
-    await expect(page.getByRole('heading', { name: 'Reseñas de Repartidores' })).toBeVisible();
+    // Capturar y mockear la petición de reseñas específica del delivery
+    let requestedDeliveryId: number | null = null;
+    await page.route(/\/api\/stores\/\d+\/deliveries\/\d+\/reviews/, async route => {
+      const m = route.request().url().match(/\/deliveries\/(\d+)\/reviews/);
+      requestedDeliveryId = m ? Number(m[1]) : null;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          reviews: [
+            { id: 1, customerName: 'Cliente A', orderId: 1001, rating: 5, comment: 'Excelente', createdAt: '2026-05-01T10:00:00.000Z' },
+            { id: 2, customerName: 'Cliente B', orderId: 1002, rating: 4, comment: 'Bien', createdAt: '2026-05-02T10:00:00.000Z' },
+          ],
+          total: 2,
+        }),
+      });
+    });
 
-    // Ingresar ID del repartidor
-    await page.locator('input[placeholder="Ej: 12"]').fill('5');
+    await page.goto('/comercio/delivery');
 
-    // Aplicar filtros (sin búsqueda específica)
-    await page.getByRole('button', { name: 'Aplicar filtros' }).click();
+    await expect(page.getByRole('heading', { name: 'Gestión de Repartidores' })).toBeVisible();
 
-    // Verificar que se cargaron las reseñas
-    await expect(page.getByText('Cliente Uno')).toBeVisible();
-    await expect(page.getByText('Cliente Dos')).toBeVisible();
-    await expect(page.getByText('Cliente Tres')).toBeVisible();
+    await page.getByRole('button', { name: 'Ver reseñas' }).first().click();
 
-    // Verificar que muestra la calificación promedio
-    await expect(page.getByText('Calificación Promedio')).toBeVisible();
-    await expect(page.getByText('4.7')).toBeVisible();
-
-    // Verificar que muestra el total de reseñas
-    await expect(page.getByText('Total Reseñas')).toBeVisible();
+    // Aserciones: URL, título con el nombre del delivery, reseñas visibles, y request contra el delivery correcto
+    await expect(page).toHaveURL(/\/comercio\/deliveries\/resenas\?deliveryId=5/);
+    await expect(page.getByRole('heading', { name: 'Reseñas de Repartidor X' })).toBeVisible();
+    await expect(page.getByText('Cliente A')).toBeVisible();
+    await expect(page.getByText('Cliente B')).toBeVisible();
+    expect(requestedDeliveryId).toBe(5);
   });
 
   // OM-491
   test('flujo comercio: buscar reseñas por código de pedido', async ({ page }) => {
-    const mockReviews = [
-      {
-        id: 1,
-        customerName: 'Cliente A',
-        orderId: 2001,
-        rating: 5,
-        comment: 'Entrega perfecta',
-        createdAt: '2026-05-01T10:00:00.000Z',
-      },
-      {
-        id: 2,
-        customerName: 'Cliente B',
-        orderId: 2002,
-        rating: 4,
-        comment: 'Buena entrega',
-        createdAt: '2026-05-02T10:00:00.000Z',
-      },
-      {
-        id: 3,
-        customerName: 'Cliente C',
-        orderId: 2003,
-        rating: 3,
-        comment: 'Aceptable',
-        createdAt: '2026-05-03T10:00:00.000Z',
-      },
-    ];
-
-    await installDeliveryReviewsMock(page, {
-      reviews: mockReviews,
-      total: mockReviews.length,
+    //mock de sesion
+    await page.route('**/api/session/user-session', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      });
     });
 
-    await page.goto('/comercio/deliveries/resenas');
+    // Mock listado de deliveries
+    await page.route('**/api/stores/1/deliveries', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          stats: { total: 1, available: 1, inDelivery: 0, avgRating: 4.8 },
+          deliveries: [
+            {
+              id: 5,
+              user: { id: 5, name: 'Repartidor X', email: 'rx@test.com', phone: '098100000' },
+              status: 'AVAILABLE',
+              completedDeliveries: 10,
+              successRate: 90,
+              avgRating: 4.8,
+              reviewCount: 3,
+            },
+          ],
+        }),
+      });
+    });
 
-    // Ingresar ID del repartidor
-    await page.locator('input[placeholder="Ej: 12"]').fill('1');
+    // Mock reviews endpoint y capturar parámetro de búsqueda
+    let requestedSearch: string | null = null;
+    await page.route(/\/api\/stores\/\d+\/deliveries\/\d+\/reviews/, async route => {
+      const url = new URL(route.request().url());
+      requestedSearch = url.searchParams.get('search');
+      const all = [
+        { id: 1, customerName: 'Cliente A', orderId: 1001, rating: 5, comment: 'Excelente', createdAt: '2026-05-01T10:00:00.000Z' },
+        { id: 2, customerName: 'Cliente B', orderId: 1002, rating: 4, comment: 'Bien', createdAt: '2026-05-02T10:00:00.000Z' },
+        { id: 3, customerName: 'Cliente C', orderId: 1003, rating: 5, comment: 'Perfecto', createdAt: '2026-05-03T10:00:00.000Z' },
+      ];
+      const filtered = requestedSearch ? all.filter(r => String(r.orderId) === requestedSearch) : all;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ reviews: filtered, total: filtered.length }),
+      });
+    });
 
-    // Ingresar código de pedido
-    await page.locator('input[placeholder="Código de pedido"]').fill('2001');
+    await page.goto('/comercio/delivery');
+    await page.getByRole('button', { name: 'Ver reseñas' }).first().click();
+
+    await expect(page).toHaveURL(/\/comercio\/deliveries\/resenas\?deliveryId=5/);
+    await expect(page.getByRole('heading', { name: /Reseñas de Repartidor X/ })).toBeVisible();
+
+    // buscar por código de pedido 1002
+    await page.getByPlaceholder(/N.*de pedido/i).fill('1002');
 
     // Aplicar filtros
     await page.getByRole('button', { name: 'Aplicar filtros' }).click();
 
-    // Debe mostrar solo la reseña del pedido 2001
-    await expect(page.getByText('Cliente A')).toBeVisible();
-    await expect(page.getByText('Entrega perfecta')).toBeVisible();
-
-    // No debe mostrar las otras reseñas
-    await expect(page.getByText('Cliente B')).not.toBeVisible();
+    // Debe mostrar solo la reseña del pedido 1002 y la petición incluyó el parámetro de búsqueda correcto
+    await expect(page.getByText('Cliente B')).toBeVisible();
+    await expect(page.getByText('Cliente A')).not.toBeVisible();
     await expect(page.getByText('Cliente C')).not.toBeVisible();
-
-    // Verificar que el total es 1
-    // Buscar dentro del contexto "Total Reseñas"
-    const totalReviewsDiv = page.getByText('Total Reseñas').locator('..');
-    await expect(totalReviewsDiv.locator('p').nth(1)).toContainText('1');
+    expect(requestedSearch).toBe('1002');
   });
 
   // OM-491
   test('flujo comercio: filtrar reseñas por estrellas', async ({ page }) => {
-    const mockReviews = [
-      {
-        id: 1,
-        customerName: 'Usuario 1',
-        orderId: 3001,
-        rating: 5,
-        comment: 'Excelente',
-        createdAt: '2026-05-01T10:00:00.000Z',
-      },
-      {
-        id: 2,
-        customerName: 'Usuario 2',
-        orderId: 3002,
-        rating: 4,
-        comment: 'Muy bueno',
-        createdAt: '2026-05-02T10:00:00.000Z',
-      },
-      {
-        id: 3,
-        customerName: 'Usuario 3',
-        orderId: 3003,
-        rating: 5,
-        comment: 'Perfecto',
-        createdAt: '2026-05-03T10:00:00.000Z',
-      },
-      {
-        id: 4,
-        customerName: 'Usuario 4',
-        orderId: 3004,
-        rating: 3,
-        comment: 'Regular',
-        createdAt: '2026-05-04T10:00:00.000Z',
-      },
-    ];
-
-    await installDeliveryReviewsMock(page, {
-      reviews: mockReviews,
-      total: mockReviews.length,
+    await page.route('**/api/session/user-session', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      });
     });
 
-    await page.goto('/comercio/deliveries/resenas');
+    // Mock listado de deliveries
+    await page.route('**/api/stores/1/deliveries', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          stats: { total: 1, available: 1, inDelivery: 0, avgRating: 4.8 },
+          deliveries: [
+            {
+              id: 5,
+              user: { id: 5, name: 'Repartidor X', email: 'rx@test.com', phone: '098100000' },
+              status: 'AVAILABLE',
+              completedDeliveries: 10,
+              successRate: 90,
+              avgRating: 4.8,
+              reviewCount: 3,
+            },
+          ],
+        }),
+      });
+    });
 
-    // Ingresar ID del repartidor
-    await page.locator('input[placeholder="Ej: 12"]').fill('1');
+    // Mock reviews endpoint y capturar min/max rating
+    let requestedMin: string | null = null;
+    let requestedMax: string | null = null;
+    await page.route(/\/api\/stores\/\d+\/deliveries\/\d+\/reviews/, async route => {
+      const url = new URL(route.request().url());
+      requestedMin = url.searchParams.get('minRating');
+      requestedMax = url.searchParams.get('maxRating');
 
-    // Seleccionar filtro de 5 estrellas
-    await page.locator('select').selectOption('5');
+      const all = [
+        { id: 1, customerName: 'Cliente 5A', orderId: 1101, rating: 5, comment: 'Excelente', createdAt: '2026-05-01T10:00:00.000Z' },
+        { id: 2, customerName: 'Cliente 4', orderId: 1102, rating: 4, comment: 'Bien', createdAt: '2026-05-02T10:00:00.000Z' },
+        { id: 3, customerName: 'Cliente 5B', orderId: 1103, rating: 5, comment: 'Perfecto', createdAt: '2026-05-03T10:00:00.000Z' },
+      ];
 
-    // Aplicar filtros
+      const filtered = (requestedMin && requestedMax)
+        ? all.filter(r => r.rating >= Number(requestedMin) && r.rating <= Number(requestedMax))
+        : all;
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ reviews: filtered, total: filtered.length }),
+      });
+    });
+
+    // Navegar desde la lista y abrir reseñas
+    await page.goto('/comercio/delivery');
+    await page.getByRole('button', { name: 'Ver Reseñas' }).first().click();
+
+    await expect(page).toHaveURL(/\/comercio\/deliveries\/resenas\?deliveryId=5/);
+    await expect(page.getByRole('heading', { name: /Reseñas de Repartidor X/ })).toBeVisible();
+
+    // Seleccionar filtro de 5 estrellas y aplicar
+    await page.selectOption('select', '5');
     await page.getByRole('button', { name: 'Aplicar filtros' }).click();
 
-    // Debe mostrar solo las reseñas de 5 estrellas
-    await expect(page.getByText('Usuario 1')).toBeVisible();
-    await expect(page.getByText('Excelente')).toBeVisible();
-    await expect(page.getByText('Usuario 3')).toBeVisible();
-    await expect(page.getByText('Perfecto')).toBeVisible();
-
-    // No debe mostrar reseñas de otras calificaciones
-    await expect(page.getByText('Usuario 2')).not.toBeVisible();
-    await expect(page.getByText('Usuario 4')).not.toBeVisible();
+    // Aserciones: solo aparecen reseñas con 5 estrellas y la petición incluyó min/max = 5
+    await expect(page.getByText('Cliente 5A')).toBeVisible();
+    await expect(page.getByText('Cliente 5B')).toBeVisible();
+    await expect(page.getByText('Cliente 4')).not.toBeVisible();
+    expect(requestedMin).toBe('5');
+    expect(requestedMax).toBe('5');
   });
 
   // OM-491
   test('flujo comercio: buscar y filtrar reseñas simultáneamente', async ({ page }) => {
-    const mockReviews = [
-      {
-        id: 1,
-        customerName: 'User Alfa',
-        orderId: 4001,
-        rating: 5,
-        comment: 'Excelente servicio',
-        createdAt: '2026-05-01T10:00:00.000Z',
-      },
-      {
-        id: 2,
-        customerName: 'User Beta',
-        orderId: 4002,
-        rating: 5,
-        comment: 'Muy satisfecho',
-        createdAt: '2026-05-02T10:00:00.000Z',
-      },
-      {
-        id: 3,
-        customerName: 'User Gamma',
-        orderId: 4001,
-        rating: 4,
-        comment: 'Buena entrega',
-        createdAt: '2026-05-03T10:00:00.000Z',
-      },
-      {
-        id: 4,
-        customerName: 'User Delta',
-        orderId: 4003,
-        rating: 5,
-        comment: 'Perfecto',
-        createdAt: '2026-05-04T10:00:00.000Z',
-      },
-    ];
-
-    await installDeliveryReviewsMock(page, {
-      reviews: mockReviews,
-      total: mockReviews.length,
+    await page.route('**/api/session/user-session', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      });
     });
 
-    await page.goto('/comercio/deliveries/resenas');
+    // Mock listado de deliveries
+    await page.route('**/api/stores/1/deliveries', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          stats: { total: 1, available: 1, inDelivery: 0, avgRating: 4.8 },
+          deliveries: [
+            {
+              id: 5,
+              user: { id: 5, name: 'Repartidor X', email: 'rx@test.com', phone: '098100000' },
+              status: 'AVAILABLE',
+              completedDeliveries: 10,
+              successRate: 90,
+              avgRating: 4.8,
+              reviewCount: 3,
+            },
+          ],
+        }),
+      });
+    });
 
-    // Ingresar ID del repartidor
-    await page.locator('input[placeholder="Ej: 12"]').fill('1');
+    // Mock reviews endpoint y capturar parámetros
+    let requestedSearch: string | null = null;
+    let requestedMin: string | null = null;
+    let requestedMax: string | null = null;
+    await page.route(/\/api\/stores\/\d+\/deliveries\/\d+\/reviews/, async route => {
+      const url = new URL(route.request().url());
+      requestedSearch = url.searchParams.get('search');
+      requestedMin = url.searchParams.get('minRating');
+      requestedMax = url.searchParams.get('maxRating');
 
-    // Ingresar código de pedido
-    await page.locator('input[placeholder="Código de pedido"]').fill('4001');
+      const all = [
+        { id: 1, customerName: 'Cliente 5A', orderId: 1101, rating: 5, comment: 'Excelente', createdAt: '2026-05-01T10:00:00.000Z' },
+        { id: 2, customerName: 'Cliente 4', orderId: 1102, rating: 4, comment: 'Bien', createdAt: '2026-05-02T10:00:00.000Z' },
+        { id: 3, customerName: 'Cliente 5B', orderId: 1103, rating: 5, comment: 'Perfecto', createdAt: '2026-05-03T10:00:00.000Z' },
+      ];
 
-    // Seleccionar filtro de 5 estrellas
-    await page.locator('select').selectOption('5');
+      const filtered = all
+        .filter(r => !requestedSearch || String(r.orderId) === requestedSearch)
+        .filter(r => !(requestedMin && requestedMax) || (r.rating >= Number(requestedMin) && r.rating <= Number(requestedMax)));
 
-    // Aplicar filtros
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ reviews: filtered, total: filtered.length }),
+      });
+    });
+
+    // Navegar desde la lista y abrir reseñas
+    await page.goto('/comercio/delivery');
+    await page.getByRole('button', { name: 'Ver Reseñas' }).first().click();
+
+    await expect(page).toHaveURL(/\/comercio\/deliveries\/resenas\?deliveryId=5/);
+    await expect(page.getByRole('heading', { name: /Reseñas de Repartidor X/ })).toBeVisible();
+
+    // Aplicar búsqueda por código y filtro de 5 estrellas
+    await page.getByPlaceholder(/N.*de pedido/i).fill('1103');
+    await page.selectOption('select', '5');
     await page.getByRole('button', { name: 'Aplicar filtros' }).click();
 
-    // Debe mostrar solo la reseña que coincide con ambos filtros (pedido 4001 + 5 estrellas)
-    await expect(page.getByText('User Alfa')).toBeVisible();
-    await expect(page.getByText('Excelente servicio')).toBeVisible();
-
-    // No debe mostrar otras reseñas
-    await expect(page.getByText('User Beta')).not.toBeVisible();
-    await expect(page.getByText('User Gamma')).not.toBeVisible();
-    await expect(page.getByText('User Delta')).not.toBeVisible();
-
-    // Verificar que el total es 1
-    const totalReviewsDiv = page.getByText('Total Reseñas').locator('..');
-    await expect(totalReviewsDiv.locator('p').nth(1)).toContainText('1');
+    // Aserciones
+    await expect(page.getByText('Cliente 5B')).toBeVisible();
+    await expect(page.getByText('Cliente 5A')).not.toBeVisible();
+    await expect(page.getByText('Cliente 4')).not.toBeVisible();
+    expect(requestedSearch).toBe('1103');
+    expect(requestedMin).toBe('5');
+    expect(requestedMax).toBe('5');
   });
 
   // OM-491
   test('flujo comercio: mostrar estado vacío cuando no hay resultados', async ({ page }) => {
-    const mockReviews = [
-      {
-        id: 1,
-        customerName: 'Reviewer One',
-        orderId: 5001,
-        rating: 4,
-        comment: 'Bueno',
-        createdAt: '2026-05-01T10:00:00.000Z',
-      },
-      {
-        id: 2,
-        customerName: 'Reviewer Two',
-        orderId: 5002,
-        rating: 3,
-        comment: 'Regular',
-        createdAt: '2026-05-02T10:00:00.000Z',
-      },
-    ];
-
-    await installDeliveryReviewsMock(page, {
-      reviews: mockReviews,
-      total: mockReviews.length,
+    await page.route('**/api/session/user-session', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      });
     });
 
-    await page.goto('/comercio/deliveries/resenas');
+    // Mock listado de deliveries
+    await page.route('**/api/stores/1/deliveries', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          stats: { total: 1, available: 1, inDelivery: 0, avgRating: 4.8 },
+          deliveries: [
+            {
+              id: 5,
+              user: { id: 5, name: 'Repartidor X', email: 'rx@test.com', phone: '098100000' },
+              status: 'AVAILABLE',
+              completedDeliveries: 10,
+              successRate: 90,
+              avgRating: 4.8,
+              reviewCount: 3,
+            },
+          ],
+        }),
+      });
+    });
 
-    // Ingresar ID del repartidor
-    await page.locator('input[placeholder="Ej: 12"]').fill('5');
+    // Mock reviews endpoint con filtros que devuelven vacío
+    await page.route(/\/api\/stores\/\d+\/deliveries\/\d+\/reviews/, async route => {
+      const url = new URL(route.request().url());
+      const search = url.searchParams.get('search');
+      const minRating = url.searchParams.get('minRating');
 
-    // Buscar un pedido que no existe
-    await page.locator('input[placeholder="Código de pedido"]').fill('9999');
+      // Si hay búsqueda o filtro muy restrictivo, devolver vacío
+      if (search === '9999' || minRating === '1') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ reviews: [], total: 0 }),
+        });
+        return;
+      }
 
-    // Aplicar filtros
+      // Caso por defecto: devolver reseñas
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          reviews: [
+            { id: 1, customerName: 'Cliente A', orderId: 1101, rating: 5, comment: 'Excelente', createdAt: '2026-05-01T10:00:00.000Z' },
+          ],
+          total: 1,
+        }),
+      });
+    });
+
+    // Navegar desde la lista y abrir reseñas
+    await page.goto('/comercio/delivery');
+    await page.getByRole('button', { name: 'Ver Reseñas' }).first().click();
+
+    await expect(page).toHaveURL(/\/comercio\/deliveries\/resenas\?deliveryId=5/);
+
+    // Aplicar búsqueda con código inexistente para generar estado vacío
+    await page.getByPlaceholder(/N.* de pedido/i).fill('9999');
     await page.getByRole('button', { name: 'Aplicar filtros' }).click();
 
-    // Debe mostrar el estado vacío
+    //se muestra el estado vacío
     await expect(page.getByText('No hay reseñas para los filtros aplicados.')).toBeVisible();
-
-    // Verificar que el total es 0
-    await expect(page.locator('p', { hasText: /^0$/ })).toBeVisible();
-
-    // No debe mostrar ninguna reseña
-    await expect(page.getByText('Reviewer One')).not.toBeVisible();
-    await expect(page.getByText('Reviewer Two')).not.toBeVisible();
+    await expect(page.getByRole('heading', { name: /Reseñas/ })).toBeVisible();
   });
   // OM-488: Historial de delivery
 
@@ -3375,7 +3516,7 @@ test.describe('Flujos E2E de usuario final', () => {
       const totalPages = Math.ceil(total / size);
       const start = (pageParam - 1) * size + 1;
       const end = Math.min(pageParam * size, total);
-      const items = [];
+      const items: DeliveryAssignmentItem[] = [];
       for (let i = start; i <= end; i++) {
         items.push({
           id_delivery_assignment: i,
@@ -3413,7 +3554,7 @@ test.describe('Flujos E2E de usuario final', () => {
       const pageParam = Number(url.searchParams.get('page') || '1');
       const period = url.searchParams.get('period') || '';
       const assignment_status = url.searchParams.get('assignment_status') || '';
-      const items = [];
+      const items: DeliveryAssignmentItem[] = [];
       if (period === '7d') {
         items.push({ id_delivery_assignment: 10, order: { id_order: 2001, user: { name: 'Reciente' }, order_status: 'DELIVERED', created_at: '2026-05-05T10:00:00.000Z' } });
       } else if (period === '1m') {
@@ -3622,7 +3763,6 @@ test.describe('Flujos E2E de usuario final', () => {
     await page.goto('/comercio/delivery');
 
     await expect(page.getByRole('heading', { name: 'Gestión de Repartidores' })).toBeVisible();
-    await expect(page.getByText('Repartidores Vinculados', { exact: true })).toBeVisible();
 
     // Stats superiores
     await expect(page.getByText('Disponibles')).toBeVisible();
@@ -3647,7 +3787,7 @@ test.describe('Flujos E2E de usuario final', () => {
 
     // Headers de la tabla
     await expect(page.getByText('Nombre Completo')).toBeVisible();
-    await expect(page.getByText('Estado')).toBeVisible();
+    await expect(page.getByText('Estado').nth(1)).toBeVisible();
     await expect(page.getByText('Teléfono')).toBeVisible();
     await expect(page.getByText('Correo')).toBeVisible();
     await expect(page.getByText('Entregas')).toBeVisible();
@@ -3659,17 +3799,7 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page.getByText('Juan Pérez')).toBeVisible();
   });
 
-  // OM-321
-  test('flujo comercio: navegar a reseñas desde botón Ver Reseñas', async ({ page }) => {
-    await installCommerceDeliveriesMock(page);
 
-    await page.goto('/comercio/delivery');
-
-    await page.getByRole('button', { name: 'Ver Reseñas' }).first().click();
-
-    await expect(page).toHaveURL('/comercio/deliveries/resenas');
-    await expect(page.getByRole('heading', { name: 'Reseñas de Repartidores' })).toBeVisible();
-  });
 
   // OM-321
   test('flujo comercio: abrir y cerrar modal de desvinculación', async ({ page }) => {
@@ -4217,11 +4347,13 @@ test.describe('Flujos E2E de usuario final', () => {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          id_user: 7,
-          name: 'Delivery Demo',
-          email: 'delivery@test.com',
-          phone: '0981 111 222',
-          role: 'DELIVERY',
+          success: true, data: {
+            id_user: 7,
+            name: 'Delivery Demo',
+            email: 'delivery@test.com',
+            phone: '0981 111 222',
+            role: 'DELIVERY',
+          }
         }),
       });
     });
@@ -4239,4 +4371,1047 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page.getByText('Entrega finalizada correctamente')).toBeVisible();
     await expect(page.getByText('¡No tienes pedidos activos! Buen trabajo completando entregas.')).toBeVisible();
   });
+
+  // OM-514 - Gestión de stock de productos
+
+  test('flujo comercio: Editar stock disponible de un producto', async ({ page }) => {
+    const productId = 101;
+
+
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      });
+    });
+
+
+    await page.unroute('**/products/101');
+
+    const baseProduct = createBaseProduct(productId);
+
+    let putBody: any = null;
+    let updatedProduct = { ...baseProduct };
+
+    const handler = async (route: any) => {
+      const req = route.request();
+      if (req.method() === 'PUT') {
+        const bodyText = await req.postData();
+        putBody = bodyText ? JSON.parse(bodyText) : {};
+        updatedProduct = {
+          ...updatedProduct,
+          quantity: putBody.quantity ?? updatedProduct.quantity,
+          categoryId: putBody.categoryIds?.[0] ?? updatedProduct.categoryId,
+          categories: putBody.categoryIds?.length
+            ? putBody.categoryIds.map((id: number) => ({ id, name: `Cat ${id}` }))
+            : updatedProduct.categories,
+        };
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(updatedProduct) });
+      } else {
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(updatedProduct) });
+      }
+    };
+
+    await page.route(`**/products/${productId}`, handler);
+    await page.route(`**/api/products/${productId}`, handler);
+
+    await page.goto(`/comercio/productos/${productId}/editar`);
+
+    // Esperar que el componente termina de cargar
+    await expect(page.getByLabel('Stock Disponible *')).not.toBeDisabled({ timeout: 10000 });
+    await expect(page.getByLabel('Stock Disponible *')).toHaveValue('5');
+
+    await page.getByLabel('Stock Disponible *').fill('8');
+    await page.getByRole('button', { name: /Actualizar/i }).click();
+
+    expect(putBody).not.toBeNull();
+    expect(putBody.quantity).toBe(8);
+
+    await page.goto(`/producto-detalle/${productId}`);
+    await expect(page.getByText('En stock')).toBeVisible();
+  });
+
+  test('flujo comercio: Validar stock inválido en edición', async ({ page }) => {
+    const productId = 101;
+
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      });
+    });
+
+    await page.unroute('**/products/101');
+
+    const baseProduct = createBaseProduct(productId);
+
+    let putRequestCount = 0;
+
+    const handler = async (route: any) => {
+      const req = route.request();
+      if (req.method() === 'PUT') {
+        putRequestCount += 1;
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(baseProduct) });
+        return;
+      }
+
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(baseProduct) });
+    };
+
+    await page.route(`**/products/${productId}`, handler);
+    await page.route(`**/api/products/${productId}`, handler);
+
+    await page.goto(`/comercio/productos/${productId}/editar`);
+
+    const stockInput = page.getByLabel('Stock Disponible *');
+    await expect(stockInput).not.toBeDisabled({ timeout: 10000 });
+    await expect(stockInput).toHaveValue('5');
+
+    await stockInput.fill('-1');
+    await page.getByRole('button', { name: /Actualizar/i }).click();
+
+    await expect(page.getByText('El stock debe ser un número entero mayor o igual a 0.')).toBeVisible();
+    expect(putRequestCount).toBe(0);
+
+    // Validar stock negativo
+    await stockInput.fill('-1');
+    await page.getByRole('button', { name: /Actualizar/i }).click();
+    await expect(page.getByText('El stock debe ser un número entero mayor o igual a 0.')).toBeVisible();
+    expect(putRequestCount).toBe(0);
+
+    // Validar stock decimal
+    await stockInput.fill('3.5');
+    await page.getByRole('button', { name: /Actualizar/i }).click();
+    await expect(page.getByText('El stock debe ser un número entero mayor o igual a 0.')).toBeVisible();
+    expect(putRequestCount).toBe(0);
+  });
+
+  //OM-514
+  test('flujo carrito: mostrar sin stock y bloquear compra', async ({ page }) => {
+    let cartPostCalls = 0;
+
+    // Mock del producto sin stock (sobrescribe el mock común)
+    await page.route('**/products/101', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id_product: 101,
+          name: 'Apple iPhone 17 Pro A3256 Dual',
+          description: 'Smartphone premium',
+          price: 13290000,
+          quantity: 0,
+          averageRating: 4.7,
+          reviewCount: 542,
+          category: { name: 'Celulares' },
+          commerce: { name: 'Nissei' },
+          tags: [{ id: 1, name: 'OLED' }],
+        }),
+      });
+    });
+
+    // Contador de intentos de compra
+    await page.route('**/api/users/*/cart/items', async (route) => {
+      if (route.request().method() === 'POST') {
+        cartPostCalls += 1;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ id: 1, items: [] }),
+        });
+        return;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ id: 1, items: [] }),
+      });
+    });
+
+    await page.goto('/producto-detalle/101');
+
+    await expect(page.getByText('Sin stock')).toBeVisible();
+
+    const addToCartBtn = page.getByRole('button', { name: /agregar al carrito/i });
+    await expect(addToCartBtn).toBeVisible();
+    await addToCartBtn.click();
+
+    await expect(page.getByText('Este producto no tiene stock disponible')).toBeVisible();
+    await expect.poll(() => cartPostCalls).toBe(0);
+  });
+
+  //OM-514
+  test('flujo cliente: descontar stock al confirmar compra', async ({ page }) => {
+    let currentStock = 1;
+    let orderPostCalls = 0;
+
+    await page.unroute('**/products/101');
+
+    const buildProduct = () => ({
+      id_product: 101,
+      name: 'Apple iPhone 17 Pro A3256 Dual',
+      description: 'Smartphone premium',
+      price: 13290000,
+      quantity: currentStock,
+      averageRating: 4.7,
+      reviewCount: 542,
+      category: { name: 'Celulares' },
+      commerce: { name: 'Nissei' },
+      tags: [{ id: 1, name: 'OLED' }],
+    });
+
+    const productHandler = async (route: any) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(buildProduct()),
+      });
+    };
+
+    await page.route('**/products/101', productHandler);
+    await page.route('**/api/products/101', productHandler);
+
+    await page.route('**/api/users/*/carts', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            carts: [
+              {
+                id: 1,
+                storeId: 1,
+                commerce: { id: 1, name: 'Nissei' },
+                status: 'ACTIVE',
+                items: [
+                  {
+                    id: 1,
+                    quantity: 1,
+                    product: { ...mockCartProduct, originalPrice: 13290000 },
+                  },
+                ],
+              },
+            ],
+          }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    await page.route('**/api/users/*/addresses', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ data: [] }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    await page.route('**/api/orders', async (route) => {
+      if (route.request().method() === 'POST') {
+        orderPostCalls += 1;
+        currentStock = Math.max(0, currentStock - 1);
+
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id: 556,
+            status: 'PENDING',
+            total: 13290000,
+            notes: null,
+            address: null,
+            items: [
+              {
+                id: 1,
+                name: 'Apple iPhone 17 Pro A3256 Dual',
+                quantity: 1,
+                price: 13290000,
+                originalPrice: 13290000,
+                isOfferApplied: false,
+                subtotal: 13290000,
+              },
+            ],
+            createdAt: '2026-03-20T10:00:00.000Z',
+            updatedAt: '2026-03-20T10:00:00.000Z',
+          }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    await page.goto('/producto-detalle/101');
+    await expect(page.getByText('En stock')).toBeVisible();
+
+    await page.goto('/confirmar-pedido/1');
+    await expect(page.getByRole('heading', { name: 'Confirmar Pedido' })).toBeVisible();
+    await page.getByRole('button', { name: 'Confirmar Pedido' }).click();
+
+    await expect(page).toHaveURL('/pedido-confirmado');
+    await expect.poll(() => orderPostCalls).toBe(1);
+
+    await page.goto('/producto-detalle/101');
+    await expect(page.getByText('Sin stock')).toBeVisible();
+  });
+
+  // OM-506 - Validación de todos los formularios
+  test('flujo login/registro: Login y registro inválidos', async ({ page }) => {
+
+    await page.unroute('**/api/users/register');
+    let registerCalled = false;
+    await page.route('**/api/users/register', async (route) => {
+      registerCalled = true;
+      await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ message: 'should not be called' }) });
+    });
+
+    await page.unroute('**/api/session');
+    let loginCalled = false;
+    await page.route('**/api/session', async (route) => {
+      loginCalled = true;
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ token: 'x', user: { id_user: 1 } }) });
+    });
+
+    // Ir a la página de auth y abrir formulario de registro
+    await page.goto('/login');
+    await page.getByRole('button', { name: 'Registrarse' }).click();
+
+    // Rellenar con valores inválidos
+    await page.getByPlaceholder('Tu nombre').fill(''); // nombre vacío
+    await page.getByPlaceholder('tu@correo.com').fill('correo-invalido');
+    await page.locator('input[name="password"]').fill('123'); // < 8
+    await page.locator('input[name="confirmPassword"]').fill('1234'); // distinto
+
+    // Intentar enviar
+    await page.locator('form button[type="submit"]').click();
+
+    // Validaciones esperadas (registro)
+    await expect(page.getByText('El nombre es obligatorio')).toBeVisible();
+    await expect(page.getByText('Ingresá un correo válido')).toBeVisible();
+    await expect(page.getByText('La contraseña debe tener mínimo 8 caracteres')).toBeVisible();
+    await expect(page.getByText('Las contraseñas no coinciden')).toBeVisible();
+
+    expect(registerCalled).toBe(false);
+
+    // Volver a login y probar validaciones de login inválido
+    await page.getByRole('button', { name: 'Iniciar sesión' }).click();
+    await page.getByPlaceholder('tu@correo.com').fill('correo-invalido');
+    await page.locator('input[name="password"]').fill(''); // vacío
+
+    await page.locator('form button[type="submit"]').click();
+
+    // Validaciones esperadas (login)
+    await expect(page.getByText('Ingresá un correo válido')).toBeVisible();
+    await expect(page.getByText('La contraseña es obligatoria')).toBeVisible();
+
+    expect(loginCalled).toBe(false);
+  });
+
+  //OM-506
+  test('flujo comercio: Campos inválidos al crear producto', async ({ page }) => {
+    // Evitar que la creación realmente se ejecute; detectar si se llamó
+    await page.unroute('**/products');
+    let createCalled = false;
+    await page.route('**/products', async (route) => {
+      createCalled = true;
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({ id_product: 999 }),
+      });
+    });
+
+    // Mock: devolver muchas tags (para poder mostrar >10)
+    await page.unroute('**/products/tags**');
+    await page.route('**/products/tags**', async (route) => {
+      const tags = Array.from({ length: 12 }, (_, i) => ({ id: i + 1, name: `tag${i + 1}`, status: true }));
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(tags) });
+    });
+
+    // Mock sesión como SELLER
+    await page.unroute('**/api/session');
+    await page.route('**/api/session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ token: 'fake-token', user: { id_user: 7, role: 'SELLER', id_store: 1 } }),
+      });
+    });
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, role: 'SELLER', id_store: 1, name: 'Seller Demo' } }),
+      });
+    });
+
+    // Login
+    await page.goto('/login');
+    await page.getByPlaceholder('tu@correo.com').fill('comercio@test.com');
+    await page.locator('input[name="password"]').fill('12345678');
+    await page.locator('form button[type="submit"]').click();
+
+    // Ir a crear producto
+    await page.goto('/comercio/productos/nuevo');
+    await expect(page.getByRole('heading', { name: 'Crear Nuevo Producto' })).toBeVisible();
+
+
+
+    // Rellenar con valores inválidos
+    await page.getByLabel('Nombre del Producto *').fill(''); // nombre vacío
+    await page.getByLabel('Descripcion *').fill(''); // descripción vacía
+    await page.getByLabel('Precio *').fill('0'); // precio <= 0
+    await page.getByLabel('Stock Disponible *').fill('-5'); // stock inválido
+
+    // Expandir lista de tags (mostrar todos)
+    await page.getByRole('button', { name: 'Ver mas' }).click();
+
+    // Asegurarse que los tags estén visibles
+    await expect(page.getByRole('button', { name: 'tag1' }).first()).toBeVisible({ timeout: 5000 });
+
+    // NO seleccionar categorías (dejar vacío)
+    // Seleccionar 10 tags (máximo permitido) — UI debe bloquear el 11
+    for (let i = 1; i <= 10; i++) {
+      await page.getByRole('button', { name: `tag${i}` }).first().click();
+    }
+
+    // El tag 11 debe existir pero estar deshabilitado por la app
+    const tag11 = page.getByRole('button', { name: 'tag11' }).first();
+    await expect(tag11).toBeVisible();
+    await expect(tag11).toBeDisabled();
+
+    // Intentar enviar
+    await page.getByRole('button', { name: 'Crear Producto' }).click();
+
+    // Validaciones esperadas (mensajes del esquema/productSchema)
+    await expect(page.getByText('El nombre del producto es obligatorio.')).toBeVisible();
+    await expect(page.getByText('La descripcion es obligatoria.')).toBeVisible();
+    await expect(page.getByText('El precio debe ser mayor a 0.')).toBeVisible();
+    await expect(page.getByText('Selecciona al menos una categoria.')).toBeVisible();
+    await expect(page.getByText('El stock debe ser un número entero mayor o igual a 0.')).toBeVisible();
+
+    expect(createCalled).toBe(false);
+  });
+
+  //OM-506
+  test('flujo cliente: Campos inválidos al agregar dirección', async ({ page }) => {
+    // Mock session como CUSTOMER
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, user: { id_user: 7, id_store: 1, name: 'Cliente Demo' } }),
+      });
+    });
+
+    // Mock addresses endpoint y detectar POST
+    await page.unroute('**/api/users/*/addresses**');
+    let postCalled = false;
+    await page.route('**/api/users/*/addresses**', async (route) => {
+      const method = route.request().method();
+      if (method === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ data: [] }),
+        });
+        return;
+      }
+      if (method === 'POST') {
+        postCalled = true;
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({ data: { id_address: 2 } }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    // Ir a la página de direcciones
+    await page.goto('/direcciones');
+    await expect(page.getByRole('heading', { name: 'Mi Cuenta' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Libreta de direcciones' })).toBeVisible();
+
+    // Abrir modal de agregar dirección
+    await page.getByRole('button', { name: 'Agregar dirección' }).first().click();
+
+    // Dejar el campo dirección vacío y NO seleccionar punto en el mapa
+    await page.getByPlaceholder('Ej: Av. República del Paraguay 1234').fill('');
+
+    // Enviar formulario
+    await page.locator('form').getByRole('button', { name: 'Agregar dirección' }).click();
+
+    // Validaciones esperadas
+    await expect(page.getByText('La dirección es obligatoria')).toBeVisible();
+    await page.getByPlaceholder('Ej: Av. República del Paraguay 1234').fill('Avda falsa 123');
+
+    // Enviar formulario
+    await page.locator('form').getByRole('button', { name: 'Agregar dirección' }).click();
+
+    await expect(page.getByText('Debes seleccionar un punto en el mapa')).toBeVisible();
+
+    // Asegurarse de que no se llamó al POST debido a errores de validación
+    expect(postCalled).toBe(false);
+  });
+
+  //OM-506
+  test('flujo cliente: Campos inválidos al crear comercio', async ({ page }) => {
+    // Interceptar creación para asegurar que NO se llame cuando hay errores
+    await page.unroute('**/api/commerces');
+    let createCalled = false;
+    await page.route('**/api/commerces', async (route) => {
+      if (route.request().method() === 'POST') {
+        createCalled = true;
+        await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ id_store: 999 }) });
+        return;
+      }
+      await route.fallback();
+    });
+
+    // Mock sesión como CUSTOMER (CommerceCreationForm lee /api/session/user-session)
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, user: { id_user: 7, role: 'CUSTOMER', name: 'Cliente Demo' } }),
+      });
+    });
+
+    // Mock categories (la UI muestra opciones, pero dejaremos sin seleccionar para validar)
+    await page.unroute('**/api/commerces/categories');
+    await page.route('**/api/commerces/categories', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          { id: 1, name: 'Comida' },
+          { id: 2, name: 'Ropa' },
+        ]),
+      });
+    });
+
+    // Ir a la página de creación de comercio
+    await page.goto('/crear-comercio');
+    await expect(page.getByText('Crear Comercio')).toBeVisible();
+
+    // Rellenar formulario con valores inválidos según el ticket
+    await page.getByPlaceholder('Ej: Mi Tienda Online').fill(''); // nombre vacio
+    await page.getByPlaceholder('contacto@mitienda.com').fill('correo-invalido'); // email inválido
+    await page.getByPlaceholder('+595XXXXXXXXX').fill('12345'); // phone inválido (no +595XXXXXXXXX)
+
+    await page.getByPlaceholder('Calle Principal 123').fill(''); // dirección vacia
+    //No se pone descripcion
+
+    //No seleccionar categorías, se deja vacío
+
+    // No seleccionar punto en el mapa
+
+    // Precios negativos
+    await page.getByPlaceholder('Ej: 2500').fill('-10');
+    await page.getByPlaceholder('Ej: 4000').fill('-5');
+
+    // URLs inválidas (sin http/https)
+    await page.getByPlaceholder('https://mi-comercio.com').fill('ftp://mi-sitio.com');
+    await page.getByPlaceholder('https://instagram.com/mi_comercio').fill('instagram.com/mi_tienda');
+    await page.getByPlaceholder('https://tiktok.com/@mi_comercio').fill('tiktok.com/@mi_tienda');
+
+    // Intentar enviar
+    await page.getByRole('button', { name: 'Registrar Comercio' }).click();
+
+    // Aserciones de validación esperadas
+    await expect(page.getByText('El nombre es obligatorio')).toBeVisible();
+    await expect(page.getByText('Ingresá un correo válido')).toBeVisible();
+    await expect(page.getByText('El teléfono debe tener el formato +595XXXXXXXXX')).toBeVisible();
+    await expect(page.getByText('La dirección es obligatoria')).toBeVisible();
+    await expect(page.getByText('Debes seleccionar al menos una categoría')).toBeVisible();
+    await expect(page.getByText('La descripción es obligatoria')).toBeVisible();
+    await expect(page.getByText('Selecciona un punto en el mapa')).toBeVisible();
+    await expect(page.getByText('El precio base debe ser mayor o igual a 0')).toBeVisible();
+    await expect(page.getByText('El precio de distancia debe ser mayor o igual a 0')).toBeVisible();
+    await expect(page.getByText('El sitio web debe iniciar con http:// o https://')).toBeVisible();
+    await expect(page.getByText('Instagram debe iniciar con http:// o https://')).toBeVisible();
+    await expect(page.getByText('TikTok debe iniciar con http:// o https://')).toBeVisible();
+
+    // Asegurar que no se intentó crear el comercio por errores de validación
+    expect(createCalled).toBe(false);
+  });
+
+  //OM-506
+  test('flujo comercio: Campos inválidos al editar comercio', async ({ page }) => {
+    // Interceptar update para asegurar que NO se llame cuando hay errores
+    await page.unroute('**/api/commerces/**');
+    let updateCalled = false;
+    await page.route('**/api/commerces/**', async (route) => {
+      const method = route.request().method();
+      if (method !== 'GET') {
+        updateCalled = true;
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id_store: 1 }) });
+        return;
+      }
+      await route.fallback();
+    });
+
+    // Mock sesión como SELLER (tiene id_store = 1)
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, role: 'SELLER', id_store: 1, name: 'Seller Demo' } }),
+      });
+    });
+
+    // Mock categorías (la página las carga pero dejaremos categoryIds vacías en el store)
+    await page.unroute('**/api/commerces/categories');
+    await page.route('**/api/commerces/categories', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          { id: 1, name: 'Comida' },
+          { id: 2, name: 'Ropa' },
+        ]),
+      });
+    });
+
+    // Mock detalle del comercio (sin categorías y sin punto en mapa para forzar validaciones)
+    await page.unroute('**/api/commerces/my/1');
+    await page.route('**/api/commerces/my/1', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id_store: 1,
+          name: 'Tienda Demo',
+          email: 'store@demo.com',
+          phone: '+595981000000',
+          description: 'Descripción demo',
+          categories: [],            // sin categorías
+          addresses: [{ address: 'Av Demo 123', latitude: null, longitude: null }],
+          logo: null,
+          website_url: 'https://mi-comercio.com',
+          instagram_url: '',
+          tiktok_url: '',
+          base_price: 1000,
+          distance_price: 2000,
+        }),
+      });
+    });
+
+    // Ir a editar comercio
+    await page.goto('/comercio/editar');
+    await expect(page.getByText('Perfil del Comercio')).toBeVisible();
+
+    // Dejar nombre vacío
+    await page.locator('input[value="Tienda Demo"]').fill('');
+
+    // Email inválido
+    await page.locator('input[value="store@demo.com"]').fill('correo-invalido');
+
+    // Teléfono inválido (no cumple +595...)
+    await page.locator('input[value="+595981000000"]').fill('');
+
+    // URLs inválidas
+    await page.locator('input[value="https://mi-comercio.com"]').fill('ftp://mi-sitio.com');
+    await page.getByPlaceholder('https://instagram.com/mi_comercio').fill('instagram.com/mi_tienda');
+    await page.getByPlaceholder('https://tiktok.com/@mi_comercio').fill('tiktok.com/@mi_tienda');
+
+    // Precios negativos
+    await page.getByPlaceholder('Ej: 2500').fill('-50');
+    await page.getByPlaceholder('Ej: 4000').fill('-10');
+
+    // Asegurarse de que no hay punto en el mapa (mock ya lo dejó null)
+    // Intentar enviar cambios
+    await page.getByRole('button', { name: 'Guardar Cambios' }).click();
+
+    // Validaciones esperadas
+    await expect(page.getByText('El nombre del comercio es obligatorio')).toBeVisible();
+    await expect(page.getByText('Ingresá un email válido')).toBeVisible();
+    await expect(page.getByText('El teléfono es obligatorio')).toBeVisible();
+    await expect(page.getByText(/Selecciona un punto en el mapa/i)).toBeVisible();
+    await expect(page.getByText('Ingresá un precio base válido mayor o igual a 0')).toBeVisible();
+    await expect(page.getByText('Ingresá un precio para larga distancia válido mayor o igual a 0')).toBeVisible();
+    await expect(page.getByText('La URL de sitio web debe iniciar con http:// o https://')).toBeVisible();
+    await expect(page.getByText('La URL de Instagram debe iniciar con http:// o https://')).toBeVisible();
+    await expect(page.getByText('La URL de TikTok debe iniciar con http:// o https://')).toBeVisible();
+
+    // No debe haberse llamado al endpoint de actualización
+    expect(updateCalled).toBe(false);
+  });
+
+  //OM-506
+  test('flujo admin: Campos inválidos al editar categoria en admin', async ({ page }) => {
+    // Mock session como ADMIN
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 1, role: 'ADMIN', name: 'Admin Demo' } }),
+      });
+    });
+
+    // Interceptar GET/PUT de la categoría
+    await page.unroute('**/api/admin/categories/1');
+    let putCalled = false;
+    await page.route('**/api/admin/categories/1', async (route) => {
+      const method = route.request().method();
+      if (method === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id: 1,
+            name: 'Electrónica',
+            visible: true,
+            status: true,
+            productCount: 0,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          }),
+        });
+        return;
+      }
+      if (method === 'PUT') {
+        putCalled = true;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ id: 1, name: 'X', visible: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    // Ir a detalle de categoría admin
+    await page.goto('/admin/categorias/1');
+    await expect(page.getByRole('heading', { name: 'Electrónica' })).toBeVisible();
+
+    // Abrir modal de edición
+    await page.getByRole('button', { name: 'Editar' }).click();
+    await expect(page.getByRole('heading', { name: 'Editar Categoría' })).toBeVisible();
+
+    // Localizar el input dentro del modal (no depende del value)
+    const nameInput = page.locator('label:has-text("Nombre *") + input, label:has-text("Nombre *") ~ input').first();
+
+    // Validación: nombre vacío
+    await nameInput.fill('');
+    await page.getByRole('button', { name: 'Guardar Cambios' }).click();
+    await expect(page.getByText('El nombre es requerido.')).toBeVisible();
+    expect(putCalled).toBe(false);
+
+    // Toggle cambia estado visual en el modal (sin guardar)
+    // Rellenar con nombre válido para no bloquear el toggle visual
+    await nameInput.fill('Nombre Válido');
+    const ocultaBtn = page.getByRole('button', { name: 'Oculta' }).first();
+    const visibleBtn = page.getByRole('button', { name: 'Visible' }).first();
+
+    // Estado inicial: "Visible" seleccionado 
+    const visibleBgBefore = await visibleBtn.evaluate((el) => getComputedStyle(el).backgroundColor);
+    // Cambiar a "Oculta"
+    await ocultaBtn.click();
+    const ocultaBgAfter = await ocultaBtn.evaluate((el) => getComputedStyle(el).backgroundColor);
+    const visibleBgAfter = await visibleBtn.evaluate((el) => getComputedStyle(el).backgroundColor);
+
+    // Comprobar que la apariencia cambió
+    expect(ocultaBgAfter).not.toBe(visibleBgBefore);
+    expect(visibleBgAfter).not.toBe(ocultaBgAfter);
+
+
+    expect(putCalled).toBe(false);
+  });
+
+  //OM-506
+  test('flujo cliente: Campos inválidos al comentar producto', async ({ page }) => {
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, role: 'CUSTOMER', name: 'Cliente Demo' } }),
+      });
+    });
+
+    await page.unroute('**/products/reviews/101');
+    await page.route('**/products/reviews/101', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          reviews: [],
+          stats: { averageRating: 0, totalReviews: 0 },
+        }),
+      });
+    });
+
+    let postCalled = false;
+    await page.unroute('**/products/101/reviews');
+    await page.route('**/products/101/reviews', async (route) => {
+      if (route.request().method() === 'POST') {
+        postCalled = true;
+        await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ id: 999 }) });
+        return;
+      }
+      await route.fallback();
+    });
+
+    await page.goto('/comentarios/101');
+    await expect(page.getByRole('heading', { name: 'Comentarios' })).toBeVisible();
+
+    // Abrir modal
+    await page.getByRole('button', { name: 'Escribir mi opinión' }).click();
+    await expect(page.getByText('Agregar una reseña')).toBeVisible();
+
+    // Validar comentario vacío
+    const commentTextarea = page.getByPlaceholder('Tu comentario');
+    await commentTextarea.fill('');
+    await page.getByRole('button', { name: 'Guardar' }).click();
+    await expect(page.getByText('El comentario es obligatorio')).toBeVisible();
+    expect(postCalled).toBe(false);
+  });
+
+  //OM-511 -  Eliminar una o todas las ordenes de compra
+  test('flujo cliente: eliminar orden individual (cancelar y aceptar)', async ({ page }) => {
+    let carts = [
+      {
+        id: 1,
+        storeId: 1,
+        commerce: { id: 1, name: 'Nissei' },
+        status: 'ACTIVE',
+        items: [
+          {
+            id: 1,
+            quantity: 1,
+            product: {
+              id: 101,
+              name: 'Apple iPhone 17 Pro A3256 Dual',
+              price: 13290000,
+            },
+          },
+        ],
+      },
+      {
+        id: 2,
+        storeId: 2,
+        commerce: { id: 2, name: 'TechPoint' },
+        status: 'ACTIVE',
+        items: [
+          {
+            id: 2,
+            quantity: 2,
+            product: {
+              id: 102,
+              name: 'Samsung Galaxy S24 Ultra',
+              price: 8999000,
+            },
+          },
+        ],
+      },
+      {
+        id: 3,
+        storeId: 3,
+        commerce: { id: 3, name: 'DigiStore' },
+        status: 'ACTIVE',
+        items: [
+          {
+            id: 3,
+            quantity: 1,
+            product: {
+              id: 103,
+              name: 'MacBook Air M3',
+              price: 25990000,
+            },
+          },
+        ],
+      },
+    ];
+
+    await page.route('**/api/users/*/carts', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ carts }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    await page.route('**/api/users/*/cart/*', async (route) => {
+      if (route.request().method() === 'DELETE') {
+        const url = new URL(route.request().url());
+        const parts = url.pathname.split('/');
+        const cartId = Number(parts[parts.length - 1]);
+        carts = carts.filter((c) => c.id !== cartId);
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ message: 'Orden eliminada correctamente' }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    await page.goto('/carrito');
+    await expect(page.getByRole('heading', { name: 'Ordenes de Compras' })).toBeVisible();
+
+    // Verificar que las tres tiendas están visibles
+    await expect(page.getByText('Nissei')).toBeVisible();
+    await expect(page.getByText('TechPoint')).toBeVisible();
+    await expect(page.getByText('DigiStore')).toBeVisible();
+
+
+    await page.locator('div.rounded-2xl').filter({ has: page.locator('h2', { hasText: 'Nissei' }) })
+      .getByRole('button', { name: 'Eliminar' }).click();
+
+    await expect(page.getByText('¿Estás seguro de que deseas eliminar esta orden de compra?')).toBeVisible();
+    await page.getByRole('button', { name: 'Cancelar' }).click();
+
+    await expect(page.getByText('Nissei')).toBeVisible();
+    await expect(page.getByText('TechPoint')).toBeVisible();
+    await expect(page.getByText('DigiStore')).toBeVisible();
+    await expect(page.locator('text=Orden eliminada correctamente')).toHaveCount(0);
+
+    // Aceptar eliminación de Nissei
+
+    await page.locator('div.rounded-2xl').filter({ has: page.locator('h2', { hasText: 'Nissei' }) })
+      .getByRole('button', { name: 'Eliminar' }).click();
+
+    await expect(page.getByText('¿Estás seguro de que deseas eliminar esta orden de compra?')).toBeVisible();
+    await page.getByRole('button', { name: 'Eliminar orden' }).click();
+
+    await expect(page.getByText('Orden eliminada correctamente')).toBeVisible();
+    await expect(page.getByText('Nissei')).not.toBeVisible();
+    await expect(page.getByText('TechPoint')).toBeVisible();
+    await expect(page.getByText('DigiStore')).toBeVisible();
+  });
+
+  //OM-511
+  test('flujo cliente: eliminar todas las órdenes (cancelar y aceptar)', async ({ page }) => {
+    let carts = [
+      {
+        id: 1,
+        storeId: 1,
+        commerce: { id: 1, name: 'Nissei' },
+        status: 'ACTIVE',
+        items: [
+          {
+            id: 1,
+            quantity: 1,
+            product: {
+              id: 101,
+              name: 'Apple iPhone 17 Pro A3256 Dual',
+              price: 13290000,
+            },
+          },
+        ],
+      },
+      {
+        id: 2,
+        storeId: 2,
+        commerce: { id: 2, name: 'TechPoint' },
+        status: 'ACTIVE',
+        items: [
+          {
+            id: 2,
+            quantity: 2,
+            product: {
+              id: 102,
+              name: 'Samsung Galaxy S24 Ultra',
+              price: 8999000,
+            },
+          },
+        ],
+      },
+      {
+        id: 3,
+        storeId: 3,
+        commerce: { id: 3, name: 'DigiStore' },
+        status: 'ACTIVE',
+        items: [
+          {
+            id: 3,
+            quantity: 1,
+            product: {
+              id: 103,
+              name: 'MacBook Air M3',
+              price: 25990000,
+            },
+          },
+        ],
+      },
+    ];
+
+    await page.route('**/api/users/*/carts', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ carts }),
+        });
+        return;
+      }
+      if (route.request().method() === 'DELETE') {
+        carts = [];
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ message: 'Todas las órdenes fueron eliminadas correctamente' }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    await page.goto('/carrito');
+    await expect(page.getByRole('heading', { name: 'Ordenes de Compras' })).toBeVisible();
+
+    // Verificar que las tres tiendas están visibles
+    await expect(page.getByText('Nissei')).toBeVisible();
+    await expect(page.getByText('TechPoint')).toBeVisible();
+    await expect(page.getByText('DigiStore')).toBeVisible();
+
+    //Cancelar eliminación de todas las órdenes
+    await page.getByRole('button', { name: 'Eliminar todas' }).click();
+
+    await expect(page.getByText('¿Estás seguro de que deseas eliminar TODAS tus órdenes de compra?')).toBeVisible();
+    await page.getByRole('button', { name: 'Cancelar' }).click();
+
+    // Las tres órdenes deben seguir visibles
+    await expect(page.getByText('Nissei')).toBeVisible();
+    await expect(page.getByText('TechPoint')).toBeVisible();
+    await expect(page.getByText('DigiStore')).toBeVisible();
+
+    // Aceptar eliminación de todas las órdenes
+    await page.getByRole('button', { name: 'Eliminar todas' }).click();
+    await expect(page.getByText('¿Estás seguro de que deseas eliminar TODAS tus órdenes de compra?')).toBeVisible();
+    await page.getByRole('button', { name: 'Eliminar todas' }).nth(1).click();
+
+    // Todas las órdenes deben desaparecer y mostrarse el toast de éxito
+    await expect(page.getByText('Todas las órdenes fueron eliminadas correctamente')).toBeVisible();
+    await expect(page.getByText('Nissei')).not.toBeVisible();
+    await expect(page.getByText('TechPoint')).not.toBeVisible();
+    await expect(page.getByText('DigiStore')).not.toBeVisible();
+
+    // Debe mostrarse el estado vacío
+    await expect(page.getByText('Tu carrito está vacío')).toBeVisible();
+  });
+
 });

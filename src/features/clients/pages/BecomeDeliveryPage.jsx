@@ -15,7 +15,7 @@ export const BecomeDeliveryPage = () => {
       <BecomeDeliveryModal
         open
         onClose={() => navigate("/", { replace: true })}
-        onSuccess={() => navigate("/delivery", { replace: true })}
+        onSuccess={() => navigate("/delivery/perfil", { replace: true })}
       />
     </div>
   );

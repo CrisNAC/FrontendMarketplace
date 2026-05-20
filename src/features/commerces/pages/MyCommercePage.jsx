@@ -1,7 +1,7 @@
 // src/features/commerces/pages/MyCommercePage.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Package, Star, MessageSquare, Layers, AlertCircle, Info, ArrowLeft } from "lucide-react";
+import { Package, Star, MessageSquare, Layers, AlertCircle, Info, Send, ArrowLeft } from "lucide-react";
 import { Topbar } from "../components/dashboard/Topbar";
 import { StatCard } from "../components/dashboard/StatCard";
 import { BestRatedSection } from "../components/dashboard/BestRatedSection";
@@ -89,6 +89,19 @@ export const MyCommercePage = () => {
                         <strong style={{ display: 'block', fontSize: '15px', marginBottom: '4px' }}>Comercio no aprobado o suspendido</strong>
                         <span style={{ fontSize: '14px' }}>Tu comercio ha sido rechazado o suspendido y no está visible al público. Revisá tus notificaciones para más detalles o comunicate con soporte.</span>
                     </div>
+                </div>
+            )}
+
+            {store?.store_status === 'SUSPENDED' && (
+                <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '10px', marginTop: '-12px', marginBottom: '24px' }}>
+                    <button
+                        type="button"
+                        onClick={() => navigate("/comercio/editar")}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', border: 'none', borderRadius: '8px', backgroundColor: '#991b1b', color: 'white', padding: '8px 12px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+                    >
+                        <Send size={14} />
+                        Editar Comercio para Revisión
+                    </button>
                 </div>
             )}
 

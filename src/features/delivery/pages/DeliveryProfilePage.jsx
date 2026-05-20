@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { User, Mail, Phone, MapPin, Map, Star, Truck, Calendar, Activity, Clock, Edit, Power } from "lucide-react";
 import toast from "react-hot-toast";
-import { getCurrentUserForDeliveryForm, getDeliveryProfile, updateDeliveryStatus } from "../../clients/services/deliveryApi";
+import { getCurrentUserForDeliveryForm, getDeliveryProfile, updateDeliveryStatus, UI_VEHICLE_LABELS } from "../../clients/services/deliveryApi";
 import { getBackendErrorMessage } from "../../commerces/services/editUserProfileApi";
 
 // ─── Estilos compartidos ──────────────────────────────────────────────────────
@@ -68,10 +68,10 @@ export function DeliveryProfilePage() {
         const load = async () => {
             try {
                 const { profile: userProfile, sessionUser: authUser } = await getCurrentUserForDeliveryForm();
-                
+
                 if (active) {
                     setSessionUser(authUser);
-                    
+
                     if (authUser?.role !== "DELIVERY") {
                         navigate("/quiero-ser-delivery", { replace: true });
                         return;
@@ -87,19 +87,20 @@ export function DeliveryProfilePage() {
 
                     setProfile({
                         id_delivery: authUser?.id_delivery || null,
-                        name: userProfile?.name || authUser?.name || "",
-                        email: userProfile?.email || authUser?.email || "",
-                        phone: userProfile?.phone || "",
+                        name: deliveryProfile?.user?.name || userProfile?.name || authUser?.name || "",
+                        email: deliveryProfile?.user?.email || userProfile?.email || authUser?.email || "",
+                        phone: deliveryProfile?.user?.phone || userProfile?.phone || authUser?.phone || "",
                         role: userProfile?.role || authUser?.role || "DELIVERY",
-                        vehicle_type: deliveryProfile?.vehicle_type || "N/A",
+                        vehicle_type: deliveryProfile?.vehicle_type ? (UI_VEHICLE_LABELS[deliveryProfile.vehicle_type] || deliveryProfile.vehicle_type) : "N/A",
                         delivery_status: deliveryProfile?.delivery_status || "INACTIVE",
-                        coverage_city: deliveryProfile?.coverage_city || "N/A",
-                        coverage_region: deliveryProfile?.coverage_region || "N/A",
-                        coverage_radius_km: deliveryProfile?.coverage_radius_km || 0,
-                        availability_notes: deliveryProfile?.availability_notes || "N/A",
-                        average_rating: deliveryProfile?.average_rating || 0,
-                        total_deliveries: deliveryProfile?.total_deliveries || 0,
-                        reviews_count: deliveryProfile?.reviews_count || 0,
+                        coverage_city: (() => {
+                            // Since the backend does not expose an `is_primary` field, we use addresses[0] directly
+                            const addresses = userProfile?.addresses || [];
+                            const primaryAddress = addresses[0];
+                            return primaryAddress?.city || "N/A";
+                        })(),
+                        store_name: deliveryProfile?.store?.name || "Sin comercio vinculado",
+                        avatar_url: deliveryProfile?.user?.avatar_url || userProfile?.avatar_url || null,
                         created_at: deliveryProfile?.created_at || new Date().toISOString()
                     });
                 }
@@ -123,7 +124,7 @@ export function DeliveryProfilePage() {
         try {
             const newStatus = profile.delivery_status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
             await updateDeliveryStatus(profile.id_delivery, newStatus);
-            
+
             setProfile(prev => ({
                 ...prev,
                 delivery_status: newStatus
@@ -154,29 +155,37 @@ export function DeliveryProfilePage() {
     return (
         <>
             {/* ── Header con Toggle de Disponibilidad ─────────────────────── */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "24px", gap: "16px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "12px", flex: 1 }}>
-                    <div>
+            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+                    <div style={{ width: "48px", height: "48px", borderRadius: "50%", overflow: "hidden", backgroundColor: "#e5e7eb", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        {profile?.avatar_url ? (
+                            <img src={profile.avatar_url} alt="Avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        ) : (
+                            <User size={24} color="#9ca3af" />
+                        )}
+                    </div>
+                    <div className="min-w-0 flex-1">
                         <h4 style={{ fontWeight: "600", margin: "0 0 4px 0" }}>Perfil del Delivery</h4>
                         <p style={{ color: "#6b7280", margin: 0, fontSize: "14px" }}>Información general de tu cuenta de repartidor</p>
                     </div>
-                    {/* Badge de estado del delivery */}
                     <span style={{
                         padding: "3px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: "700",
                         backgroundColor: isActive ? "#dcfce7" : "#fef3c7",
                         color: isActive ? "#15803d" : "#92400e",
                         whiteSpace: "nowrap",
+                        alignSelf: "flex-start",
                     }}>
                         {isActive ? "Disponible" : "Inactivo"}
                     </span>
                 </div>
-                
-                <div style={{ display: "flex", gap: "8px" }}>
+
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
                     {/* Botón de conectar/desconectar */}
                     <button
                         type="button"
                         onClick={handleToggleAvailability}
                         disabled={updatingStatus}
+                        className="w-full justify-center sm:w-auto"
                         style={{
                             display: "flex",
                             alignItems: "center",
@@ -211,6 +220,7 @@ export function DeliveryProfilePage() {
                     <button
                         type="button"
                         onClick={() => navigate("/delivery/perfil/editar")}
+                        className="w-full justify-center sm:w-auto"
                         style={{
                             display: "flex",
                             alignItems: "center",
@@ -231,7 +241,7 @@ export function DeliveryProfilePage() {
             </div>
 
             {/* ── Grid ──────────────────────────────────────────────────────── */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: "20px", alignItems: "start" }}>
+            <div className="grid grid-cols-1 items-start gap-5 md:grid-cols-[1fr_280px]">
 
                 {/* Columna izquierda */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -239,27 +249,21 @@ export function DeliveryProfilePage() {
                         <h6 style={sectionTitle}>Datos Personales</h6>
                         <p style={labelStyle}>Nombre Completo</p>
                         <InfoRow icon={User} value={profile?.name} iconColor="#6b9080" />
-                        
+
                         <p style={labelStyle}>Email</p>
                         <InfoRow icon={Mail} value={profile?.email} iconColor="#3b82f6" />
-                        
+
                         <p style={labelStyle}>Teléfono (WhatsApp)</p>
                         <InfoRow icon={Phone} value={profile?.phone} iconColor="#16a34a" />
                     </div>
 
                     <div style={card}>
-                        <h6 style={sectionTitle}>Zona y Horarios de Reparto</h6>
+                        <h6 style={sectionTitle}>Zona de Reparto y Comercio</h6>
                         <p style={labelStyle}>Ciudad</p>
                         <InfoRow icon={MapPin} value={profile?.coverage_city} iconColor="#ef4444" />
-                        
-                        <p style={labelStyle}>Barrio / Zona Base</p>
-                        <InfoRow icon={Map} value={profile?.coverage_region} iconColor="#f59e0b" />
-                        
-                        <p style={labelStyle}>Radio de Cobertura</p>
-                        <InfoRow icon={Activity} value={`${profile?.coverage_radius_km} km`} iconColor="#0ea5e9" />
 
-                        <p style={labelStyle}>Disponibilidad / Horarios</p>
-                        <InfoRow icon={Clock} value={profile?.availability_notes} iconColor="#8b5cf6" />
+                        <p style={labelStyle}>Comercio Vinculado</p>
+                        <InfoRow icon={Map} value={profile?.store_name} iconColor="#f59e0b" />
                     </div>
                 </div>
 
@@ -278,27 +282,6 @@ export function DeliveryProfilePage() {
                         </div>
                     </div>
 
-                    <div style={card}>
-                        <h6 style={sectionTitle}>Estadísticas</h6>
-                        <StatRow label="Calificación:">
-                            <span style={{ display: "flex", alignItems: "center", gap: "4px", color: "#f59e0b" }}>
-                                <Star size={13} color="#f59e0b" fill="#f59e0b" />
-                                {profile?.average_rating ?? "—"}
-                            </span>
-                        </StatRow>
-                        <StatRow label="Entregas totales:">
-                            <span style={{ color: "#16a34a" }}>{profile?.total_deliveries ?? "—"}</span>
-                        </StatRow>
-                        <StatRow label="Total reseñas:">
-                            <span style={{ color: "#3b82f6" }}>{profile?.reviews_count ?? "—"}</span>
-                        </StatRow>
-                        <StatRow label="Miembro desde:">
-                            <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                                <Calendar size={12} color="#6b7280" />
-                                {createdAt}
-                            </span>
-                        </StatRow>
-                    </div>
                 </div>
             </div>
         </>
