@@ -1,7 +1,7 @@
 // src/features/commerces/pages/MyCommercePage.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Package, Star, MessageSquare, Layers, AlertCircle, Info } from "lucide-react";
+import { Package, Star, MessageSquare, Layers, AlertCircle, Info, ArrowLeft } from "lucide-react";
 import { Topbar } from "../components/dashboard/Topbar";
 import { StatCard } from "../components/dashboard/StatCard";
 import { BestRatedSection } from "../components/dashboard/BestRatedSection";
@@ -57,6 +57,18 @@ export const MyCommercePage = () => {
 
     return (
         <>
+            <button
+                onClick={() => navigate("/")}
+                style={{
+                    display: "flex", alignItems: "center", gap: "6px",
+                    background: "none", border: "none", cursor: "pointer",
+                    color: "#6b7280", fontSize: "14px", padding: "0 0 16px 0",
+                }}
+            >
+                <ArrowLeft size={16} />
+                Volver al inicio
+            </button>
+
             <Topbar storeName={store?.name} />
 
             {/* Banner de estado del comercio */}

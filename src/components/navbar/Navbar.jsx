@@ -41,7 +41,7 @@ const Navbar = () => {
   const [search, setSearch] = useState("");
   const [cartCount, setCartCount] = useState(0);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [sessionUser, setSessionUser] = useState(null);
+  const [sessionUser, setSessionUser] = useState(undefined);
   const [loggingOut, setLoggingOut] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -185,12 +185,15 @@ const Navbar = () => {
           >
             Productos
           </Link>
-          <Link
-            to={isCustomer ? "/crear-comercio" : "/comercio"}
-            className="!no-underline !text-[#485B53] hover:!text-[#2e6b4f] transition-colors"
-          >
-            Comercio
-          </Link>
+          {isLoggedIn && (
+            <Link
+              to={isCustomer ? "/crear-comercio" : "/comercio"}
+              onClick={(e) => { if (sessionUser === undefined) e.preventDefault(); }}
+              className="!no-underline !text-[#485B53] hover:!text-[#2e6b4f] transition-colors"
+            >
+              {isCustomer ? "Crear Comercio" : "Comercio"}
+            </Link>
+          )}
           <Link
             to="/ofertas"
             className="!no-underline !text-[#7f1d1d] font-semibold hover:!text-[#b91c1c] transition-colors"
