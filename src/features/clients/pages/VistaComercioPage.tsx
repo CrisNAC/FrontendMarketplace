@@ -19,6 +19,7 @@ type Store = {
     total_reviews?: number | null;
     open_time?: string | null;
     close_time?: string | null;
+    is_open?: boolean;
     categories?: Array<{ id?: number; name: string }>;
     store_category?: { id_store_category: number; name: string };
     status?: boolean;
@@ -265,7 +266,7 @@ export const VistaComercioPage = () => {
             <CommerceProfileHeader
                 name={headerName}
                 category={headerCategory}
-                isOpen={Boolean(store?.status)}
+                isOpen={Boolean(store?.is_open)}
                 rating={Number(store?.average_rating ?? 0)}
                 reviews={Number(store?.total_reviews ?? 0)}
                 closesAt={closesAt}
