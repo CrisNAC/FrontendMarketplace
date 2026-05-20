@@ -1,23 +1,9 @@
-import { useEffect, useState } from "react";
-import { Plus, Bell } from "lucide-react";
-import { useNavigate, Link } from "react-router-dom";
-import { apiClient } from "../../services/editCommerceApi";
+import { Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { NotificationBellDropdown } from "../../../../components/notifications/NotificationBellDropdown";
 
 export const Topbar = ({ storeName = "Mi Comercio", showCreateProduct = true }) => {
     const navigate = useNavigate();
-    const [unreadCount, setUnreadCount] = useState(0);
-
-    useEffect(() => {
-        const fetchNotifications = async () => {
-            try {
-                const { data } = await apiClient.get('/api/notifications');
-                setUnreadCount(data.unreadCount ?? data.notifications?.filter(n => !n.read).length ?? 0);
-            } catch (err) {
-                // Ignore error
-            }
-        };
-        fetchNotifications();
-    }, []);
 
     return (
         <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "24px" }}>
@@ -30,19 +16,7 @@ export const Topbar = ({ storeName = "Mi Comercio", showCreateProduct = true }) 
                 </p>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                <Link to="/notificaciones" style={{ position: "relative", color: "#4b5563", textDecoration: "none" }} title="Notificaciones">
-                    <Bell size={20} />
-                    {unreadCount > 0 && (
-                        <span style={{
-                            position: "absolute", top: "-4px", right: "-4px",
-                            backgroundColor: "#ef4444", color: "white", fontSize: "10px", fontWeight: "bold",
-                            borderRadius: "50%", minWidth: "16px", height: "16px", display: "flex",
-                            alignItems: "center", justifyContent: "center", padding: "0 4px"
-                        }}>
-                            {unreadCount > 99 ? '99+' : unreadCount}
-                        </span>
-                    )}
-                </Link>
+                <NotificationBellDropdown role="SELLER" iconSize={20} />
                 {showCreateProduct && (
                     <button 
                     onClick={() => navigate('/comercio/productos/nuevo')}
