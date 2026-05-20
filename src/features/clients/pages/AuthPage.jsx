@@ -271,6 +271,18 @@ export default function AuthPage() {
               {fieldErrors.password && <p className="mt-1 text-xs text-red-600">{fieldErrors.password}</p>}
             </div>
 
+            {isLogin && (
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => navigate("/recuperar-contrasena")}
+                  className="text-xs text-[#355347] underline-offset-2 hover:underline"
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
+              </div>
+            )}
+
             {!isLogin && (
               <div>
                 <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-slate-500">
