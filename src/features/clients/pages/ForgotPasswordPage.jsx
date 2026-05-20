@@ -120,7 +120,7 @@ export default function ForgotPasswordPage() {
 
               <form className="space-y-4" onSubmit={handleSubmit} noValidate>
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-slate-500">
+                  <label htmlFor="email" className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-slate-500">
                     Correo electrónico
                   </label>
                   <div className={`flex items-center rounded-xl border px-3 py-2.5 transition focus-within:border-[#769482]/50 focus-within:ring-2 focus-within:ring-[#769482]/20 ${
@@ -128,6 +128,7 @@ export default function ForgotPasswordPage() {
                   }`}>
                     <Mail size={18} className="mr-2.5 shrink-0 text-[#769482]" />
                     <input
+                      id="email"
                       type="email"
                       value={email}
                       onChange={(e) => { setEmail(e.target.value); setFieldError(null); setError(null); }}
