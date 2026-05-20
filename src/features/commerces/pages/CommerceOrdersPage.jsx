@@ -586,6 +586,8 @@ export function CommerceOrdersPage() {
   const [actionError, setActionError]       = useState("");
   const [assignedOrders, setAssignedOrders] = useState(new Set());
   const [delegatingOrder, setDelegatingOrder] = useState(null);
+  const ITEMS_PER_PAGE = 10;
+  const ACTIVE_ORDER_STATUSES = ["PENDING", "PROCESSING", "SHIPPED"];
 
   const addActioning    = (id, action) => setActioningSet(prev => new Set(prev).add(`${id}:${action}`));
   const removeActioning = (id, action) => setActioningSet(prev => { const s = new Set(prev); s.delete(`${id}:${action}`); return s; });
@@ -595,9 +597,10 @@ export function CommerceOrdersPage() {
   const loadOrders = useCallback(async (sid) => {
     try {
       const data = await fetchStoreOrders(sid, {
-        order_status: ["PENDING", "PROCESSING", "SHIPPED", "DELIVERED"],
+        order_status: ACTIVE_ORDER_STATUSES,
         limit: 100,
       });
+
       setOrders(data.orders);
     } catch (err) {
       setError(getOrderErrorMessage(err, "No se pudieron cargar los pedidos."));
@@ -639,7 +642,7 @@ export function CommerceOrdersPage() {
 
   const pendingOrders  = useMemo(() => orders.filter(o => o.status === "PENDING"), [orders]);
   const trackingOrders = useMemo(
-    () => orders.filter(o => ["PROCESSING", "SHIPPED", "DELIVERED"].includes(o.status)),
+    () => orders.filter(o => ["PROCESSING", "SHIPPED"].includes(o.status)),
     [orders]
   );
 
@@ -665,11 +668,6 @@ export function CommerceOrdersPage() {
     try {
       await updateOrderStatus(orderId, newStatus);
       await loadOrders(storeId);
-      const leavesActiveList = activeTab === "tracking" && newStatus === "DELIVERED";
-      if (leavesActiveList) {
-        const newTotalPages = Math.ceil((activeOrders.length - 1) / ITEMS_PER_PAGE);
-        if (page > newTotalPages && newTotalPages > 0) setPage(newTotalPages);
-      }
     } catch (err) {
       setActionError(getOrderErrorMessage(err, "No se pudo actualizar el pedido."));
     } finally {

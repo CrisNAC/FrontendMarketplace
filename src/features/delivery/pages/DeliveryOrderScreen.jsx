@@ -162,18 +162,22 @@ export default function DeliveryOrderScreen() {
   }, []);
 
   useEffect(() => {
-    const timer = setInterval(() => setNowTick(Date. Now()), 1000);
+    const timer = setInterval(() => setNowTick(Date.now()), 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [setNowTick]);
 
   useEffect(() => {
-    const hasOpenDeadline = cards.some(
-      (c) => c.responseDeadline && !isDeadlineExpired(c.responseDeadline)
-    );
-    if (!hasOpenDeadline) return undefined;
-    const hasExpired = cards.some((c) => isDeadlineExpired(c.responseDeadline));
-    if (!hasExpired) return undefined;
-    const refresh = setTimeout(() => loadOffers(), 800);
+     const deadlines = cards
+      .map((c) => (c.responseDeadline ? new Date(c.responseDeadline).getTime() : null))
+      .filter((ts) => Number.isFinite(ts));
+    if (deadlines.length === 0) return undefined;
+
+    const now = Date.now();
+    const expired = deadlines.some((ts) => ts <= now);
+    const future = deadlines.filter((ts) => ts > now);
+    const delay = expired ? 800 : Math.max(0, Math.min(...future) - now + 800);
+
+    const refresh = setTimeout(() => loadOffers(), delay);
     return () => clearTimeout(refresh);
   }, [cards, loadOffers]);
 
