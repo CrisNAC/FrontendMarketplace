@@ -5825,4 +5825,188 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page).toHaveURL('/producto-detalle/201');
   });
 
+  //Om-508
+  test('flujo admin: crear categoria con icono, persistir en tabla, editar icono y ver detalle', async ({ page }) => {
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          user: { id_user: 1, role: 'ADMIN', name: 'Admin Demo' },
+        }),
+      });
+    });
+
+    const createdAt = new Date().toISOString();
+    let updatedAt = createdAt;
+    let categoryCreated = false;
+
+    // Categoría preexistente
+    const existingCategory = {
+      id: 100,
+      name: 'Electrónica',
+      icon: 'Monitor',
+      visible: true,
+      status: true,
+      productCount: 3,
+      createdAt,
+      updatedAt,
+    };
+
+    // Categoría que se va a crear
+    const newCategoryState = {
+      id: 101,
+      name: 'Audio',
+      icon: 'Laptop',
+      visible: true,
+      status: true,
+      productCount: 0,
+      createdAt,
+      updatedAt,
+    };
+
+    await page.unroute('**/api/admin/categories/filter/withProducts');
+    await page.route('**/api/admin/categories/filter/withProducts**', async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.fallback();
+        return;
+      }
+
+      const data = categoryCreated
+        ? [existingCategory, newCategoryState]
+        : [existingCategory];
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data,
+          categoryTotal: data.length,
+          categoryPage: 1,
+          categoryLimit: 20,
+          categoryTotalPages: 1,
+        }),
+      });
+    });
+
+    await page.route('**/api/admin/categories/100', async (route) => {
+      const method = route.request().method();
+
+      if (method === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            ...existingCategory,
+            createdAt,
+            updatedAt,
+            products: {
+              data: [],
+              total: 0,
+              productPage: 1,
+              productLimit: 10,
+              productTotalPages: 1,
+            },
+          }),
+        });
+        return;
+      }
+
+      if (method === 'PUT') {
+        const payload = route.request().postDataJSON();
+
+        existingCategory.name = payload.name ?? existingCategory.name;
+        existingCategory.visible = payload.visible ?? existingCategory.visible;
+        existingCategory.icon = payload.icon ?? existingCategory.icon;
+        updatedAt = new Date().toISOString();
+        existingCategory.updatedAt = updatedAt;
+
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id: existingCategory.id,
+            name: existingCategory.name,
+            icon: existingCategory.icon,
+            visible: existingCategory.visible,
+            status: existingCategory.status,
+            productCount: existingCategory.productCount,
+            createdAt: existingCategory.createdAt,
+            updatedAt: existingCategory.updatedAt,
+          }),
+        });
+        return;
+      }
+
+      await route.fallback();
+    });
+
+    let createCalled = false;
+    await page.unroute('**/api/admin/categories');
+    await page.route('**/api/admin/categories', async (route) => {
+      if (route.request().method() !== 'POST') {
+        await route.fallback();
+        return;
+      }
+
+      createCalled = true;
+      categoryCreated = true;
+      const payload = route.request().postDataJSON();
+
+      newCategoryState.name = payload.name;
+      newCategoryState.icon = payload.icon ?? 'Tag';
+
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: newCategoryState.id,
+          name: newCategoryState.name,
+          icon: newCategoryState.icon,
+          visible: true,
+          status: true,
+          createdAt,
+        }),
+      });
+    });
+
+    await page.goto('/admin/categorias');
+    await expect(page.getByRole('heading', { name: 'Gestión de Categorías' })).toBeVisible();
+
+    // Verificar que la categoría preexistente está visible y la nueva aún no
+    await expect(page.getByText('Electrónica')).toBeVisible();
+    await expect(page.getByText('Audio')).not.toBeVisible();
+
+    await page.getByRole('button', { name: 'Nueva Categoría' }).click();
+    await expect(page.getByRole('heading', { name: 'Nueva Categoría' })).toBeVisible();
+
+    await page.getByPlaceholder('Ej: Electrónica').fill('Audio');
+    await page.getByRole('button', { name: 'Laptop' }).click();
+    await expect(page.locator('svg.lucide-laptop').first()).toBeVisible();
+
+    await page.getByRole('button', { name: 'Crear Categoría' }).click();
+    expect(createCalled).toBe(true);
+
+    // Ahora deben aparecer las dos categorías
+    await expect(page.getByText('Electrónica')).toBeVisible();
+    await expect(page.getByText('Audio')).toBeVisible();
+    await expect(page.locator('div').filter({ hasText: 'Audio' }).locator('svg.lucide-laptop')).toBeVisible();
+
+    // Usar el primer botón "Ver detalle" que corresponde a Electrónica
+    await page.getByRole('button', { name: 'Ver detalle' }).first().click();
+    await expect(page.getByRole('heading', { name: 'Electrónica' })).toBeVisible();
+    await expect(page.locator('svg.lucide-monitor')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Editar' }).click();
+    await expect(page.getByRole('heading', { name: 'Editar Categoría' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Smartphone' }).click();
+    await expect(page.locator('svg.lucide-smartphone').first()).toBeVisible();
+
+    await page.getByRole('button', { name: 'Guardar Cambios' }).click();
+    await expect(page.locator('svg.lucide-smartphone')).toBeVisible();
+    await expect(page.locator('svg.lucide-monitor')).toHaveCount(0);
+  });
+
 });
