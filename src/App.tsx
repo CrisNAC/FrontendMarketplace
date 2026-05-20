@@ -46,6 +46,7 @@ import { CommerceDeliveryReviewsPage } from './features/commerces/pages/Commerce
 import { CommerceDeliveriesPage } from './features/commerces/pages/CommerceDeliveriesPage'
 import { AddStoreDeliveryPage } from './features/commerces/pages/AddStoreDeliveryPage'
 import { EditCommercePage } from './features/commerces/pages/EditCommercePage'
+import { StoreBusinessHoursPage } from './features/commerces/pages/StoreBusinessHoursPage'
 import AuthPage from './features/clients/pages/AuthPage';
 
 import ProductDetailView from './features/commerces/pages/ProductDetailView';
@@ -190,6 +191,9 @@ function App() {
         } />
         <Route path="/comercio/editar" element={
           <MyCommerceLayout><EditCommercePage /></MyCommerceLayout>
+        } />
+        <Route path="/comercio/horarios" element={
+          <MyCommerceLayout><StoreBusinessHoursPage /></MyCommerceLayout>
         } />
         <Route path="/comercio/pedidos" element={
           <MyCommerceLayout><CommerceOrdersPage /></MyCommerceLayout>

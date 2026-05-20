@@ -1,7 +1,7 @@
 // src/features/commerces/pages/CommerceProfilePage.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Edit, Mail, Phone, MapPin, Calendar, Star, Zap, Image, Trash2, AlertTriangle, Globe, Instagram, Music2, ToggleLeft, ToggleRight } from "lucide-react";
+import { Edit, Mail, Phone, MapPin, Calendar, Star, Zap, Image, Trash2, AlertTriangle, Globe, Instagram, Music2, ToggleLeft, ToggleRight, Clock } from "lucide-react";
 import { apiClient, getBackendErrorMessage, updateStoreStatus } from "../services/editCommerceApi";
 
 // ─── Estilos compartidos ──────────────────────────────────────────────────────
@@ -374,6 +374,9 @@ export function CommerceProfilePage() {
                         <h6 style={sectionTitle}>Acciones Rápidas</h6>
                         <OutlineBtn onClick={() => navigate("/comercio/editar")} icon={Image}>
                             Cambiar Logo
+                        </OutlineBtn>
+                        <OutlineBtn onClick={() => navigate("/comercio/horarios")} icon={Clock}>
+                            Gestionar Horarios
                         </OutlineBtn>
                         <OutlineBtn color="#9ca3af" icon={Zap} disabled title="Estadísticas disponibles próximamente">
                             Ver Estadísticas
