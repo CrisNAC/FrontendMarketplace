@@ -1,4 +1,4 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Page, Route } from '@playwright/test';
 
 type Store = {
   id_store: number;
@@ -27,6 +27,32 @@ const deliverySidebar = (page: Page) => page.getByRole('navigation');
 
 /** Título del panel (fuera de <nav>; filtra el duplicado del header móvil oculto en desktop). */
 const deliveryPanelTitle = (page: Page) => page.getByText('Panel Delivery').filter({ visible: true });
+
+/** Misma regla que BecomeDeliveryModal: al menos 8 dígitos en el teléfono enviado por PUT. */
+const isValidDeliveryPhone = (phone: string) => /^(?=(?:.*\d){8,})[\d\s+().\-]+$/.test(phone.trim());
+
+async function fulfillUserProfilePut(route: Route, successBody: Record<string, unknown>) {
+  let payload: { phone?: unknown };
+  try {
+    payload = route.request().postDataJSON() as { phone?: unknown };
+  } catch {
+    payload = {};
+  }
+  const phone = typeof payload.phone === 'string' ? payload.phone.trim() : '';
+  if (!phone || !isValidDeliveryPhone(phone)) {
+    await route.fulfill({
+      status: 400,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: { code: 400, message: 'phone inválido o faltante' } }),
+    });
+    return;
+  }
+  await route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ ...successBody, phone }),
+  });
+}
 
 const mockStores: Store[] = [
   { id_store: 1, name: 'Nissei', store_category: { name: 'Tecnología' } },
@@ -1818,10 +1844,10 @@ test.describe('Flujos E2E de usuario final', () => {
     // Perfil usuario (getCurrentUserForDeliveryForm -> fetchUserProfile / actualizar teléfono)
     await page.route('**/api/users/7', async (route) => {
       if (route.request().method() === 'PUT') {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({ id_user: 7, name: 'Cliente Demo', email: 'cliente@test.com', phone: '0981000000' }),
+        await fulfillUserProfilePut(route, {
+          id_user: 7,
+          name: 'Cliente Demo',
+          email: 'cliente@test.com',
         });
         return;
       }
@@ -2005,15 +2031,10 @@ test.describe('Flujos E2E de usuario final', () => {
 
     await page.route('**/api/users/7', async (route) => {
       if (route.request().method() === 'PUT') {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            id_user: 7,
-            name: 'Cliente Demo',
-            email: 'cliente@test.com',
-            phone: '0981000000',
-          }),
+        await fulfillUserProfilePut(route, {
+          id_user: 7,
+          name: 'Cliente Demo',
+          email: 'cliente@test.com',
         });
         return;
       }
