@@ -1,6 +1,7 @@
 // src/features/admin/pages/AdminCategoriesPage.jsx
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { z } from "zod";
 import { CategoryIcon, IconPicker } from "../components/CategoryIconPicker";
 import {
     Search, Trash2, Eye, AlertTriangle, Package,
@@ -20,60 +21,84 @@ const cardStyle = {
     boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
 };
 
-// ─── Overlay reutilizable ─────────────────────────────────────────────────────
-// Sin role="button": el overlay cierra al hacer click fuera; el dialog
-// interior captura Escape para cumplir con los estándares de accesibilidad.
+const categorySchema = z.object({
+    name: z
+        .string()
+        .min(1, "El nombre es requerido.")
+        .max(100, "El nombre no puede superar 100 caracteres."),
+});
+
 function ModalOverlay({ onClose, children, labelId }) {
     return (
-        <div
-            onClick={onClose}
+        <dialog
+            open
+            aria-labelledby={labelId}
+            onClick={(event) => {
+                if (event.target === event.currentTarget) {
+                    onClose();
+                }
+            }}
             style={{
-                position: "fixed", inset: 0, zIndex: 50,
+                position: "fixed",
+                inset: 0,
+                zIndex: 50,
                 backgroundColor: "rgba(0,0,0,0.45)",
-                display: "flex", alignItems: "center", justifyContent: "center",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
                 padding: "16px",
+                border: "none",
+                width: "100%",
+                height: "100%",
             }}
         >
             <div
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby={labelId}
-                onClick={e => e.stopPropagation()}
-                onKeyDown={e => e.key === "Escape" && onClose()}
                 style={{
-                    backgroundColor: "white", borderRadius: "16px", padding: "24px",
-                    maxWidth: "480px", width: "100%",
+                    backgroundColor: "white",
+                    borderRadius: "16px",
+                    padding: "24px",
+                    maxWidth: "480px",
+                    width: "100%",
                     boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
                 }}
             >
                 {children}
             </div>
-        </div>
+        </dialog>
     );
 }
 
 ModalOverlay.propTypes = {
-    onClose:  PropTypes.func.isRequired,
+    onClose: PropTypes.func.isRequired,
     children: PropTypes.node.isRequired,
-    labelId:  PropTypes.string.isRequired,
+    labelId: PropTypes.string.isRequired,
 };
 
 // ─── Modal: Crear categoría ───────────────────────────────────────────────────
 function CreateModal({ onSave, onCancel }) {
-    const [name, setName]                 = useState("");
-    const [icon, setIcon]                 = useState("Tag");
+    const [name, setName] = useState("");
+    const [icon, setIcon] = useState("Tag");
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [error, setError]               = useState("");
+    const [error, setError] = useState("");
+
+    const trimmedName = name.trim();
 
     const handleSubmit = async () => {
-        const trimmed = name.trim();
-        if (!trimmed)             { setError("El nombre es requerido."); return; }
-        if (trimmed.length > 100) { setError("El nombre no puede superar 100 caracteres."); return; }
+        const parsed = categorySchema.safeParse({
+            name: trimmedName,
+        });
+
+        if (!parsed.success) {
+            const first = parsed.error.issues[0];
+            setError(first?.message ?? "Error en el formulario.");
+            return;
+        }
 
         setIsSubmitting(true);
         setError("");
+
         try {
-            await onSave(trimmed, icon);
+            await onSave(trimmedName, icon);
         } catch (err) {
             setError(err?.response?.data?.message ?? "No se pudo crear la categoría.");
             setIsSubmitting(false);
@@ -81,7 +106,7 @@ function CreateModal({ onSave, onCancel }) {
     };
 
     return (
-        <ModalOverlay onClose={isSubmitting ? () => {} : onCancel} labelId="create-modal-title">
+        <ModalOverlay onClose={isSubmitting ? () => { } : onCancel} labelId="create-modal-title">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
                 <h3 id="create-modal-title" style={{ fontSize: "18px", fontWeight: "700", margin: 0 }}>
                     Nueva Categoría
@@ -125,7 +150,7 @@ function CreateModal({ onSave, onCancel }) {
                 </div>
                 <div>
                     <p style={{ margin: 0, fontSize: "14px", fontWeight: "600", color: "#111827" }}>
-                        {name.trim() || "Nombre de la categoría"}
+                        {trimmedName || "Nombre de la categoría"}
                     </p>
                     <p style={{ margin: 0, fontSize: "12px", color: "#9ca3af" }}>Vista previa</p>
                 </div>
@@ -141,7 +166,13 @@ function CreateModal({ onSave, onCancel }) {
                 <input
                     id="create-category-name"
                     value={name}
-                    onChange={e => setName(e.target.value)}
+                    onChange={e => {
+                        setName(e.target.value);
+
+                        if (error) {
+                            setError("");
+                        }
+                    }}
                     disabled={isSubmitting}
                     maxLength={100}
                     placeholder="Ej: Electrónica"
@@ -195,15 +226,16 @@ function CreateModal({ onSave, onCancel }) {
 }
 
 CreateModal.propTypes = {
-    onSave:   PropTypes.func.isRequired,
+    onSave: PropTypes.func.isRequired,
     onCancel: PropTypes.func.isRequired,
 };
 
 // ─── Modal: Confirmar borrado ─────────────────────────────────────────────────
 function DeleteModal({ category, isDeleting, onConfirm, onCancel, deleteError }) {
     if (!category) return null;
+
     return (
-        <ModalOverlay onClose={isDeleting ? () => {} : onCancel} labelId="delete-modal-title">
+        <ModalOverlay onClose={isDeleting ? () => { } : onCancel} labelId="delete-modal-title">
             <div style={{
                 width: "48px", height: "48px", borderRadius: "50%",
                 backgroundColor: "#fff1f2", border: "1px solid #fecdd3",
@@ -212,15 +244,19 @@ function DeleteModal({ category, isDeleting, onConfirm, onCancel, deleteError })
             }}>
                 <AlertTriangle size={24} color="#dc2626" />
             </div>
+
             <h3 id="delete-modal-title" style={{ fontSize: "18px", fontWeight: "700", margin: "0 0 8px 0" }}>
                 ¿Eliminar categoría?
             </h3>
+
             <p style={{ fontSize: "14px", color: "#374151", margin: "0 0 6px 0" }}>
                 Estás por eliminar <strong>&quot;{category.name}&quot;</strong>.
             </p>
+
             <p style={{ fontSize: "13px", color: "#6b7280", margin: "0 0 24px 0" }}>
                 Los productos asociados serán reasignados a la categoría por defecto. Esta acción no se puede deshacer.
             </p>
+
             {deleteError && (
                 <div style={{
                     backgroundColor: "#fff1f2", border: "1px solid #fecdd3",
@@ -230,6 +266,7 @@ function DeleteModal({ category, isDeleting, onConfirm, onCancel, deleteError })
                     {deleteError}
                 </div>
             )}
+
             <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
                 <button
                     type="button"
@@ -245,6 +282,7 @@ function DeleteModal({ category, isDeleting, onConfirm, onCancel, deleteError })
                 >
                     Cancelar
                 </button>
+
                 <button
                     type="button"
                     onClick={onConfirm}
@@ -265,10 +303,13 @@ function DeleteModal({ category, isDeleting, onConfirm, onCancel, deleteError })
 }
 
 DeleteModal.propTypes = {
-    category:    PropTypes.shape({ name: PropTypes.string.isRequired }).isRequired,
-    isDeleting:  PropTypes.bool.isRequired,
-    onConfirm:   PropTypes.func.isRequired,
-    onCancel:    PropTypes.func.isRequired,
+    category: PropTypes.shape({
+        id: PropTypes.number.isRequired,
+        name: PropTypes.string.isRequired,
+    }),
+    isDeleting: PropTypes.bool.isRequired,
+    onConfirm: PropTypes.func.isRequired,
+    onCancel: PropTypes.func.isRequired,
     deleteError: PropTypes.string,
 };
 
@@ -276,7 +317,7 @@ DeleteModal.propTypes = {
 function ApproveModal({ request, isSubmitting, onConfirm, onCancel, actionError }) {
     if (!request) return null;
     return (
-        <ModalOverlay onClose={isSubmitting ? () => {} : onCancel} labelId="approve-modal-title">
+        <ModalOverlay onClose={isSubmitting ? () => { } : onCancel} labelId="approve-modal-title">
             <div style={{
                 width: "48px", height: "48px", borderRadius: "50%",
                 backgroundColor: "#dcfce7", border: "1px solid #bbf7d0",
@@ -342,18 +383,18 @@ function ApproveModal({ request, isSubmitting, onConfirm, onCancel, actionError 
 }
 
 ApproveModal.propTypes = {
-    request:      PropTypes.shape({ name: PropTypes.string.isRequired }),
+    request: PropTypes.shape({ name: PropTypes.string.isRequired }),
     isSubmitting: PropTypes.bool.isRequired,
-    onConfirm:    PropTypes.func.isRequired,
-    onCancel:     PropTypes.func.isRequired,
-    actionError:  PropTypes.string,
+    onConfirm: PropTypes.func.isRequired,
+    onCancel: PropTypes.func.isRequired,
+    actionError: PropTypes.string,
 };
 
 // ─── Modal: Rechazar solicitud ────────────────────────────────────────────────
 function RejectModal({ request, isSubmitting, onConfirm, onCancel, actionError }) {
     if (!request) return null;
     return (
-        <ModalOverlay onClose={isSubmitting ? () => {} : onCancel} labelId="reject-modal-title">
+        <ModalOverlay onClose={isSubmitting ? () => { } : onCancel} labelId="reject-modal-title">
             <div style={{
                 width: "48px", height: "48px", borderRadius: "50%",
                 backgroundColor: "#fee2e2", border: "1px solid #fecaca",
@@ -415,11 +456,11 @@ function RejectModal({ request, isSubmitting, onConfirm, onCancel, actionError }
 }
 
 RejectModal.propTypes = {
-    request:      PropTypes.shape({ name: PropTypes.string.isRequired }),
+    request: PropTypes.shape({ name: PropTypes.string.isRequired }),
     isSubmitting: PropTypes.bool.isRequired,
-    onConfirm:    PropTypes.func.isRequired,
-    onCancel:     PropTypes.func.isRequired,
-    actionError:  PropTypes.string,
+    onConfirm: PropTypes.func.isRequired,
+    onCancel: PropTypes.func.isRequired,
+    actionError: PropTypes.string,
 };
 
 // ─── Fila de categoría ────────────────────────────────────────────────────────
@@ -506,14 +547,14 @@ function CategoryRow({ cat, onEdit, onDelete }) {
 
 CategoryRow.propTypes = {
     cat: PropTypes.shape({
-        id:           PropTypes.number.isRequired,
-        name:         PropTypes.string.isRequired,
-        icon:         PropTypes.string,
-        visible:      PropTypes.bool.isRequired,
-        status:       PropTypes.bool.isRequired,
+        id: PropTypes.number.isRequired,
+        name: PropTypes.string.isRequired,
+        icon: PropTypes.string,
+        visible: PropTypes.bool.isRequired,
+        status: PropTypes.bool.isRequired,
         productCount: PropTypes.number.isRequired,
     }).isRequired,
-    onEdit:   PropTypes.func.isRequired,
+    onEdit: PropTypes.func.isRequired,
     onDelete: PropTypes.func.isRequired,
 };
 
@@ -577,12 +618,12 @@ function RequestRow({ request, onApprove, onReject }) {
 
 RequestRow.propTypes = {
     request: PropTypes.shape({
-        id:        PropTypes.number.isRequired,
-        name:      PropTypes.string.isRequired,
+        id: PropTypes.number.isRequired,
+        name: PropTypes.string.isRequired,
         createdAt: PropTypes.string.isRequired,
     }).isRequired,
     onApprove: PropTypes.func.isRequired,
-    onReject:  PropTypes.func.isRequired,
+    onReject: PropTypes.func.isRequired,
 };
 
 // ─── Página principal ─────────────────────────────────────────────────────────
@@ -590,30 +631,30 @@ export const AdminCategoriesPage = () => {
     const [activeTab, setActiveTab] = useState("categories");
 
     // Categorías
-    const [categories, setCategories]       = useState([]);
-    const [pagination, setPagination]       = useState({ categoryTotal: 0, categoryPage: 1, categoryLimit: 20, categoryTotalPages: 1 });
-    const [loading, setLoading]             = useState(true);
-    const [error, setError]                 = useState(null);
-    const [search, setSearch]               = useState("");
+    const [categories, setCategories] = useState([]);
+    const [pagination, setPagination] = useState({ categoryTotal: 0, categoryPage: 1, categoryLimit: 20, categoryTotalPages: 1 });
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [search, setSearch] = useState("");
     const [filterVisible, setFilterVisible] = useState("all");
-    const [page, setPage]                   = useState(1);
+    const [page, setPage] = useState(1);
 
-    const [showCreateModal, setShowCreateModal]   = useState(false);
-    const [categoryToEdit, setCategoryToEdit]     = useState(null);
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [categoryToEdit, setCategoryToEdit] = useState(null);
     const [categoryToDelete, setCategoryToDelete] = useState(null);
-    const [isDeleting, setIsDeleting]             = useState(false);
-    const [deleteError, setDeleteError]           = useState("");
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [deleteError, setDeleteError] = useState("");
 
     // Solicitudes pendientes
-    const [requests, setRequests]                   = useState([]);
-    const [requestsLoading, setRequestsLoading]     = useState(false);
-    const [requestsError, setRequestsError]         = useState(null);
-    const [requestPage, setRequestPage]             = useState(1);
+    const [requests, setRequests] = useState([]);
+    const [requestsLoading, setRequestsLoading] = useState(false);
+    const [requestsError, setRequestsError] = useState(null);
+    const [requestPage, setRequestPage] = useState(1);
     const [requestPagination, setRequestPagination] = useState({ categoryTotal: 0, categoryTotalPages: 1 });
-    const [requestToApprove, setRequestToApprove]   = useState(null);
-    const [requestToReject, setRequestToReject]     = useState(null);
-    const [isActioning, setIsActioning]             = useState(false);
-    const [actionError, setActionError]             = useState("");
+    const [requestToApprove, setRequestToApprove] = useState(null);
+    const [requestToReject, setRequestToReject] = useState(null);
+    const [isActioning, setIsActioning] = useState(false);
+    const [actionError, setActionError] = useState("");
 
     const load = useCallback(async (currentPage) => {
         setLoading(true);
@@ -628,9 +669,9 @@ export const AdminCategoriesPage = () => {
             });
             setCategories(result.data);
             setPagination({
-                categoryTotal:      result.categoryTotal,
-                categoryPage:       result.categoryPage,
-                categoryLimit:      result.categoryLimit,
+                categoryTotal: result.categoryTotal,
+                categoryPage: result.categoryPage,
+                categoryLimit: result.categoryLimit,
                 categoryTotalPages: result.categoryTotalPages,
             });
         } catch (err) {
@@ -643,17 +684,26 @@ export const AdminCategoriesPage = () => {
     const loadRequests = useCallback(async (currentPage) => {
         setRequestsLoading(true);
         setRequestsError(null);
+
         try {
             const result = await fetchCategoriesWithProducts({
-                visible: "false",
+                status: false,
                 categoryPage: currentPage,
                 categoryLimit: 20,
                 productLimit: 0,
             });
+
             setRequests(result.data);
-            setRequestPagination({ categoryTotal: result.categoryTotal, categoryTotalPages: result.categoryTotalPages });
+
+            setRequestPagination({
+                categoryTotal: result.categoryTotal,
+                categoryTotalPages: result.categoryTotalPages,
+            });
         } catch (err) {
-            setRequestsError(err?.response?.data?.message ?? "Error al cargar las solicitudes.");
+            setRequestsError(
+                err?.response?.data?.message ??
+                "Error al cargar las solicitudes."
+            );
         } finally {
             setRequestsLoading(false);
         }
@@ -664,6 +714,15 @@ export const AdminCategoriesPage = () => {
     useEffect(() => {
         if (activeTab === "requests") loadRequests(requestPage);
     }, [activeTab, requestPage, loadRequests]);
+    useEffect(() => {
+        if (activeTab === "requests") {
+            setActionError("");
+        }
+
+        if (activeTab === "categories") {
+            setDeleteError("");
+        }
+    }, [activeTab]);
 
     const handleCreate = async (name, icon) => {
         await createAdminCategory(name, icon);
@@ -697,16 +756,37 @@ export const AdminCategoriesPage = () => {
 
     const handleApproveConfirm = async () => {
         if (!requestToApprove) return;
+
         setIsActioning(true);
         setActionError("");
+
         try {
-            await updateAdminCategory(requestToApprove.id, { visible: true });
-            setRequests(prev => prev.filter(r => r.id !== requestToApprove.id));
-            setRequestPagination(prev => ({ ...prev, categoryTotal: Math.max(0, prev.categoryTotal - 1) }));
+            await updateAdminCategory(requestToApprove.id, {
+                status: true,
+                visible: true,
+            });
+
+            setRequests(prev =>
+                prev.filter(r => r.id !== requestToApprove.id)
+            );
+
+            setRequestPagination(prev => ({
+                ...prev,
+                categoryTotal: Math.max(0, prev.categoryTotal - 1),
+            }));
+
             setRequestToApprove(null);
-            load(page);
+
+            await load(page);
+
+            if (requestPage > 1 && requests.length === 1) {
+                setRequestPage(prev => prev - 1);
+            }
         } catch (err) {
-            setActionError(err?.response?.data?.message ?? "No se pudo aprobar la solicitud.");
+            setActionError(
+                err?.response?.data?.message ??
+                "No se pudo aprobar la solicitud."
+            );
         } finally {
             setIsActioning(false);
         }
@@ -714,24 +794,72 @@ export const AdminCategoriesPage = () => {
 
     const handleRejectConfirm = async () => {
         if (!requestToReject) return;
+
         setIsActioning(true);
         setActionError("");
+
         try {
             await deleteAdminCategory(requestToReject.id);
-            setRequests(prev => prev.filter(r => r.id !== requestToReject.id));
-            setRequestPagination(prev => ({ ...prev, categoryTotal: Math.max(0, prev.categoryTotal - 1) }));
+
+            setRequests(prev =>
+                prev.filter(r => r.id !== requestToReject.id)
+            );
+
+            setRequestPagination(prev => ({
+                ...prev,
+                categoryTotal: Math.max(0, prev.categoryTotal - 1),
+            }));
+
             setRequestToReject(null);
+
+            if (requestPage > 1 && requests.length === 1) {
+                setRequestPage(prev => prev - 1);
+            }
         } catch (err) {
-            setActionError(err?.response?.data?.message ?? "No se pudo rechazar la solicitud.");
+            setActionError(
+                err?.response?.data?.message ??
+                "No se pudo rechazar la solicitud."
+            );
         } finally {
             setIsActioning(false);
         }
     };
 
-    const hiddenCount = categories.filter(c => !c.visible).length;
+    const hiddenCount = categories.reduce(
+        (acc, category) => category.visible === false ? acc + 1 : acc,
+        0
+    );
+
     const selectStyle = {
         padding: "8px 12px", border: "1px solid #e5e7eb", borderRadius: "8px",
         fontSize: "13px", color: "#374151", background: "white", cursor: "pointer",
+    };
+
+    const handleDeleteCancel = () => {
+        const canCloseModal = isDeleting === false;
+
+        if (canCloseModal) {
+            setCategoryToDelete(null);
+            setDeleteError("");
+        }
+    };
+
+    const handleApproveCancel = () => {
+        const canCloseModal = isActioning === false;
+
+        if (canCloseModal) {
+            setRequestToApprove(null);
+            setActionError("");
+        }
+    };
+
+    const handleRejectCancel = () => {
+        const canCloseModal = isActioning === false;
+
+        if (canCloseModal) {
+            setRequestToReject(null);
+            setActionError("");
+        }
     };
 
     return (
@@ -747,7 +875,7 @@ export const AdminCategoriesPage = () => {
             <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }}>
                 {[
                     { key: "categories", label: "Categorías" },
-                    { key: "requests",   label: "Solicitudes pendientes", badge: requestPagination.categoryTotal || null },
+                    { key: "requests", label: "Solicitudes pendientes", badge: requestPagination.categoryTotal || null },
                 ].map(tab => {
                     const isActive = activeTab === tab.key;
                     return (
@@ -810,8 +938,8 @@ export const AdminCategoriesPage = () => {
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "20px" }}>
                         {[
                             { label: "Total de Categorías", value: pagination.categoryTotal },
-                            { label: "Categorías Visibles",  value: categories.filter(c => c.visible).length },
-                            { label: "Categorías Ocultas",   value: hiddenCount },
+                            { label: "Categorías Visibles", value: categories.filter(c => c.visible).length },
+                            { label: "Categorías Ocultas", value: hiddenCount },
                         ].map(({ label, value }) => (
                             <div key={label} style={{ ...cardStyle, textAlign: "center" }}>
                                 <p style={{ margin: "0 0 4px", fontSize: "13px", color: "#6b7280" }}>{label}</p>
@@ -883,7 +1011,7 @@ export const AdminCategoriesPage = () => {
                                     <CategoryRow
                                         key={cat.id}
                                         cat={cat}
-                                        onEdit={c  => { setDeleteError(""); setCategoryToEdit(c); }}
+                                        onEdit={c => { setDeleteError(""); setCategoryToEdit(c); }}
                                         onDelete={c => { setDeleteError(""); setCategoryToDelete(c); }}
                                     />
                                 ))}
@@ -912,7 +1040,7 @@ export const AdminCategoriesPage = () => {
                             </div>
                         )}
 
-                        {categories.some(c => !c.visible) && (
+                        {categories.some(c => c.visible === false) && (
                             <p style={{ fontSize: "12px", color: "#6b7280", marginTop: "16px", borderTop: "1px solid #f3f4f6", paddingTop: "12px" }}>
                                 👁 Tenés {hiddenCount} categoría{hiddenCount !== 1 ? "s" : ""} oculta{hiddenCount !== 1 ? "s" : ""} que no son visibles para los usuarios.
                             </p>
@@ -953,7 +1081,7 @@ export const AdminCategoriesPage = () => {
                                     key={req.id}
                                     request={req}
                                     onApprove={r => { setActionError(""); setRequestToApprove(r); }}
-                                    onReject={r  => { setActionError(""); setRequestToReject(r); }}
+                                    onReject={r => { setActionError(""); setRequestToReject(r); }}
                                 />
                             ))}
                         </div>
@@ -997,7 +1125,7 @@ export const AdminCategoriesPage = () => {
                     category={categoryToDelete}
                     isDeleting={isDeleting}
                     onConfirm={handleDeleteConfirm}
-                    onCancel={() => { if (!isDeleting) { setCategoryToDelete(null); setDeleteError(""); } }}
+                    onCancel={handleDeleteCancel}
                     deleteError={deleteError}
                 />
             )}
@@ -1007,14 +1135,14 @@ export const AdminCategoriesPage = () => {
                 request={requestToApprove}
                 isSubmitting={isActioning}
                 onConfirm={handleApproveConfirm}
-                onCancel={() => { if (!isActioning) { setRequestToApprove(null); setActionError(""); } }}
+                onCancel={handleApproveCancel}
                 actionError={actionError}
             />
             <RejectModal
                 request={requestToReject}
                 isSubmitting={isActioning}
                 onConfirm={handleRejectConfirm}
-                onCancel={() => { if (!isActioning) { setRequestToReject(null); setActionError(""); } }}
+                onCancel={handleRejectCancel}
                 actionError={actionError}
             />
         </div>

@@ -14,14 +14,19 @@ const categorySchema = z.object({
 });
 
 export function CategoryEditModal({ category, onSave, onCancel }) {
-    const [name, setName]                 = useState(category.name);
-    const [icon, setIcon]                 = useState(category.icon ?? "Tag");
-    const [visible, setVisible]           = useState(category.visible);
+    const [name, setName] = useState(category.name);
+    const [icon, setIcon] = useState(category.icon ?? "Tag");
+    const [visible, setVisible] = useState(category.visible);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [error, setError]               = useState("");
+    const [error, setError] = useState("");
+    const trimmedName = name.trim();
 
     const handleSubmit = async () => {
-        const parsed = categorySchema.safeParse({ name: name.trim(), visible });
+        const parsed = categorySchema.safeParse({
+            name: trimmedName,
+            visible,
+        });
+
         if (!parsed.success) {
             const first = parsed.error.issues[0];
             setError(first?.message ?? "Error en el formulario.");
@@ -29,10 +34,17 @@ export function CategoryEditModal({ category, onSave, onCancel }) {
         }
 
         const payload = {};
-        if (name.trim() !== category.name)        payload.name    = name.trim();
-        if (visible !== category.visible)         payload.visible = visible;
-        if (icon !== (category.icon ?? "Tag"))    payload.icon    = icon;
-        if (Object.keys(payload).length === 0)    { onCancel(); return; }
+        if (trimmedName !== category.name) {
+            payload.name = trimmedName;
+        }
+        if (visible !== category.visible) payload.visible = visible;
+        if (icon !== (category.icon ?? "Tag")) payload.icon = icon;
+        const hasNoChanges = Object.keys(payload).length === 0;
+
+        if (hasNoChanges) {
+            onCancel();
+            return;
+        }
 
         setIsSubmitting(true);
         setError("");
@@ -44,28 +56,45 @@ export function CategoryEditModal({ category, onSave, onCancel }) {
         }
     };
 
+    const handleOverlayClick = (event) => {
+        if (event.target === event.currentTarget) {
+            onCancel();
+        }
+    };
+
+    const stopPropagation = (event) => {
+        event.stopPropagation();
+    };
+
     return (
-        // Overlay: sin role="button". El Escape se captura en el div interior
-        // para que el foco del teclado funcione naturalmente dentro del modal.
-        <div
-            onClick={onCancel}
+        <dialog
+            open
+            aria-modal="true"
+            aria-labelledby="edit-modal-title"
+            onClose={onCancel}
+            onClick={handleOverlayClick}
             style={{
-                position: "fixed", inset: 0, zIndex: 50,
+                position: "fixed",
+                inset: 0,
+                zIndex: 50,
                 backgroundColor: "rgba(0,0,0,0.45)",
-                display: "flex", alignItems: "center", justifyContent: "center",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
                 padding: "16px",
+                border: "none",
+                width: "100%",
+                height: "100%",
             }}
         >
-            {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
             <div
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="edit-modal-title"
-                onClick={e => e.stopPropagation()}
-                onKeyDown={e => e.key === "Escape" && onCancel()}
+                onClick={stopPropagation}
                 style={{
-                    backgroundColor: "white", borderRadius: "16px", padding: "24px",
-                    maxWidth: "480px", width: "100%",
+                    backgroundColor: "white",
+                    borderRadius: "16px",
+                    padding: "24px",
+                    maxWidth: "480px",
+                    width: "100%",
                     boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
                 }}
             >
@@ -109,7 +138,7 @@ export function CategoryEditModal({ category, onSave, onCancel }) {
                     </div>
                     <div>
                         <p style={{ margin: 0, fontSize: "14px", fontWeight: "600", color: "#111827" }}>
-                            {name.trim() || "Nombre de la categoría"}
+                            {trimmedName || "Nombre de la categoría"}
                         </p>
                         <p style={{ margin: 0, fontSize: "12px", color: "#9ca3af" }}>Vista previa</p>
                     </div>
@@ -152,8 +181,8 @@ export function CategoryEditModal({ category, onSave, onCancel }) {
                     </legend>
                     <div style={{ display: "flex", gap: "10px", clear: "both" }}>
                         {[
-                            { value: true,  label: "Visible", color: "#15803d", bg: "#dcfce7", border: "#bbf7d0" },
-                            { value: false, label: "Oculta",  color: "#475569", bg: "#f1f5f9", border: "#cbd5e1" },
+                            { value: true, label: "Visible", color: "#15803d", bg: "#dcfce7", border: "#bbf7d0" },
+                            { value: false, label: "Oculta", color: "#475569", bg: "#f1f5f9", border: "#cbd5e1" },
                         ].map(opt => (
                             <button
                                 key={String(opt.value)}
@@ -205,17 +234,17 @@ export function CategoryEditModal({ category, onSave, onCancel }) {
                     </button>
                 </div>
             </div>
-        </div>
+        </dialog>
     );
 }
 
 CategoryEditModal.propTypes = {
     category: PropTypes.shape({
-        id:      PropTypes.number.isRequired,
-        name:    PropTypes.string.isRequired,
-        icon:    PropTypes.string,
+        id: PropTypes.number.isRequired,
+        name: PropTypes.string.isRequired,
+        icon: PropTypes.string,
         visible: PropTypes.bool.isRequired,
     }).isRequired,
-    onSave:   PropTypes.func.isRequired,
+    onSave: PropTypes.func.isRequired,
     onCancel: PropTypes.func.isRequired,
 };
