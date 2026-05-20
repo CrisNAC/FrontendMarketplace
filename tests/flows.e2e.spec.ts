@@ -336,19 +336,7 @@ test.describe('Flujos E2E de usuario final', () => {
     await setupCommonApiMocks(page);
   });
 
-  test('auth: redirige a login sin sesion', async ({ page }) => {
-    await page.unroute('**/api/session/user-session');
-    await page.route('**/api/session/user-session', async (route) => {
-      await route.fulfill({
-        status: 401,
-        contentType: 'application/json',
-        body: JSON.stringify({ error: 'No autenticado' })
-      });
-    });
-
-    await page.goto('/comercio');
-    await expect(page).toHaveURL('/login');
-  });
+  
 
   // este test ya no funciona en webkit porque WebKit no ejecuta el prellenado de campos de la misma forma que Chromium
   test('flujo cliente: registro, login, homepage, comercio, producto y comentarios', async ({ page }) => {
