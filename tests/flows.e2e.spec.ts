@@ -6,6 +6,28 @@ type Store = {
   store_category?: { name: string };
 };
 
+type DeliveryAssignmentItem = {
+  id_delivery_assignment: number;
+  order: {
+    id_order: number;
+    user: { name: string };
+    order_status: string;
+    created_at: string;
+  };
+};
+
+type DeliveryPutBody = {
+  name: string | null;
+  phone: string | null;
+  vehicleType: string | null;
+};
+
+/** Nav lateral del panel delivery. */
+const deliverySidebar = (page: Page) => page.getByRole('navigation');
+
+/** Título del panel (fuera de <nav>; filtra el duplicado del header móvil oculto en desktop). */
+const deliveryPanelTitle = (page: Page) => page.getByText('Panel Delivery').filter({ visible: true });
+
 const mockStores: Store[] = [
   { id_store: 1, name: 'Nissei', store_category: { name: 'Tecnología' } },
   { id_store: 2, name: 'TechPoint', store_category: { name: 'Electrónica' } },
@@ -1812,6 +1834,28 @@ test.describe('Flujos E2E de usuario final', () => {
       await route.fallback();
     });
 
+    await page.route('**/api/deliveries/5', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id_delivery: 5,
+            fk_user: 7,
+            delivery_status: 'INACTIVE',
+            vehicle_type: 'CAR',
+            phone: '0981000000',
+            zone: null,
+            schedule: null,
+            rating: 0,
+            total_deliveries: 0,
+            total_reviews: 0,
+            created_at: new Date().toISOString(),
+          }),
+        });
+      }
+    });
+
     // Registrar cuenta 
     await page.goto('/login');
     await page.getByRole('button', { name: 'Registrarse' }).click();
@@ -1836,36 +1880,12 @@ test.describe('Flujos E2E de usuario final', () => {
     // Confirmar (trigger POST -> deliveryRegistered = true)
     await page.getByRole('button', { name: 'Confirmar' }).click();
 
-    // El modal redirige al dashboard de delivery
+    // Redirige al panel del delivery tras registro exitoso (OM-533)
     await expect(page).toHaveURL(/\/delivery\/perfil/);
 
-    await page.route('**/api/deliveries/5', async (route) => {
-      if (route.request().method() === 'GET') {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            id_delivery: 5,
-            fk_user: 7,
-            delivery_status: 'INACTIVE',
-            vehicle_type: 'CAR',
-            phone: '0981000000',
-            zone: null,
-            schedule: null,
-            rating: 0,
-            total_deliveries: 0,
-            total_reviews: 0,
-            created_at: new Date().toISOString(),
-          }),
-        });
-      }
-    });
-    // Navegar manualmente al perfil del delivery para validar que el registro fue exitoso
-    await page.goto('/delivery/perfil');
-
     // Sidebar Panel Delivery debe estar presente
-    await expect(page.getByText('Panel Delivery')).toBeVisible();
-    await expect(page.getByText('Mi Perfil')).toBeVisible();
+    await expect(deliveryPanelTitle(page)).toBeVisible();
+    await expect(deliverySidebar(page).getByText('Mi Perfil')).toBeVisible();
 
     await expect(page.getByRole('heading', { name: 'Perfil del Delivery' })).toBeVisible({ timeout: 5000 });
   });
@@ -1888,10 +1908,10 @@ test.describe('Flujos E2E de usuario final', () => {
 
     // Debe redirigir a /delivery/perfil y mostrar sidebar
     await expect(page).toHaveURL(/\/delivery\/perfil/);
-    await expect(page.getByText('Panel Delivery')).toBeVisible();
-    await expect(page.getByText('Mi Perfil')).toBeVisible();
-    await expect(page.getByText('Órdenes')).toBeVisible();
-    await expect(page.getByText('Historial')).toBeVisible();
+    await expect(deliveryPanelTitle(page)).toBeVisible();
+    await expect(deliverySidebar(page).getByText('Mi Perfil')).toBeVisible();
+    await expect(deliverySidebar(page).getByText('Órdenes')).toBeVisible();
+    await expect(deliverySidebar(page).getByText('Historial')).toBeVisible();
   });
 
   //OM-497
@@ -2015,24 +2035,6 @@ test.describe('Flujos E2E de usuario final', () => {
       await route.fallback();
     });
 
-    await page.goto('/quiero-ser-delivery');
-
-    await expect(page.getByRole('heading', { name: 'Quiero ser delivery' })).toBeVisible();
-
-    await page.locator('#delivery-vehicle').selectOption('AUTOMOVIL');
-    await page.getByRole('button', { name: 'Confirmar' }).click();
-
-    await expect(page).toHaveURL(/\/delivery\/perfil/);
-
-    await page.unroute('**/api/session/user-session');
-    await page.route('**/api/session/user-session', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ user: { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'Cliente Demo', email: 'cliente@test.com' } }),
-      });
-    });
-
     await page.route('**/api/deliveries/5', async (route) => {
       if (route.request().method() === 'GET') {
         await route.fulfill({
@@ -2058,8 +2060,14 @@ test.describe('Flujos E2E de usuario final', () => {
       await route.fallback();
     });
 
-    await page.goto('/delivery/perfil');
-    await expect(page).toHaveURL('/delivery/perfil');
+    await page.goto('/quiero-ser-delivery');
+
+    await expect(page.getByRole('heading', { name: 'Quiero ser delivery' })).toBeVisible();
+
+    await page.locator('#delivery-vehicle').selectOption('AUTOMOVIL');
+    await page.getByRole('button', { name: 'Confirmar' }).click();
+
+    await expect(page).toHaveURL(/\/delivery\/perfil/);
     await expect(page.getByRole('heading', { name: 'Perfil del Delivery' })).toBeVisible();
     await expect(page.getByText('Cliente Demo')).toBeVisible();
     await expect(page.getByText('0981000000')).toBeVisible();
@@ -2138,7 +2146,7 @@ test.describe('Flujos E2E de usuario final', () => {
     });
 
     let patchCalled = false;
-    let patchBody = null;
+    let patchBody: string | null = null;
     await page.route('**/api/deliveries/5/status', async (route) => {
       patchCalled = true;
       patchBody = route.request().postData();
@@ -2191,7 +2199,7 @@ test.describe('Flujos E2E de usuario final', () => {
     });
 
     let patchCalled = false;
-    let patchBody = null;
+    let patchBody: string | null = null;
     await page.route('**/api/deliveries/5/status', async (route) => {
       patchCalled = true;
       patchBody = route.request().postData();
@@ -2728,7 +2736,7 @@ test.describe('Flujos E2E de usuario final', () => {
   // OM-323
   test('flujo delivery: guardar cambios del perfil con PUT exitoso', async ({ page }) => {
     let putCalled = false;
-    let putBody = null;
+    let putBody: DeliveryPutBody | null = null;
 
     await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
@@ -3447,7 +3455,7 @@ test.describe('Flujos E2E de usuario final', () => {
       const totalPages = Math.ceil(total / size);
       const start = (pageParam - 1) * size + 1;
       const end = Math.min(pageParam * size, total);
-      const items = [];
+      const items: DeliveryAssignmentItem[] = [];
       for (let i = start; i <= end; i++) {
         items.push({
           id_delivery_assignment: i,
@@ -3485,7 +3493,7 @@ test.describe('Flujos E2E de usuario final', () => {
       const pageParam = Number(url.searchParams.get('page') || '1');
       const period = url.searchParams.get('period') || '';
       const assignment_status = url.searchParams.get('assignment_status') || '';
-      const items = [];
+      const items: DeliveryAssignmentItem[] = [];
       if (period === '7d') {
         items.push({ id_delivery_assignment: 10, order: { id_order: 2001, user: { name: 'Reciente' }, order_status: 'DELIVERED', created_at: '2026-05-05T10:00:00.000Z' } });
       } else if (period === '1m') {
