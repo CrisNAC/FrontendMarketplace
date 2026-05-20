@@ -1,7 +1,7 @@
 // src/features/commerces/pages/CommerceOrdersPage.jsx
 import { useState, useEffect, useMemo, useCallback } from "react";
 import PropTypes from "prop-types";
-import { ShoppingBag, Clock, CheckCircle, XCircle, Truck, MapPin, Calendar, Filter } from "lucide-react";
+import { ShoppingBag, Clock, CheckCircle, XCircle, Truck, MapPin, Calendar, Filter, ChevronDown, ChevronUp, Package } from "lucide-react";
 import { Pagination } from "../../clients/components/commerceProfile/Pagination";
 import { OrderStepper } from "../../clients/components/OrderStepper";
 import { apiClient as commerceApiClient } from "../services/editCommerceApi";
@@ -133,7 +133,7 @@ function DeliveryActions({ order, isBusy, isDelegating, isAssigned, onDelegate }
         opacity: isBusy ? 0.6 : 1,
       }}
     >
-      <Truck size={14} /> {isDelegating ? "Abriendo..." : "Asignar delivery"}
+      <Truck size={14} /> {isDelegating ? "Abriendo..." : "Añadir delivery"}
     </button>
   );
 }
@@ -148,9 +148,11 @@ DeliveryActions.propTypes = {
 
 // ─── Tab: Pedidos Pendientes ──────────────────────────────────────────────────
 
-function PendingOrderCard({ order, onDelegate, onAccept, onReject, isDelegating, isAccepting, isRejecting, isAssigned }) {
+function PendingOrderCard({ order, onAccept, onReject, isAccepting, isRejecting }) {
+  const [showDetail, setShowDetail] = useState(false);
   const isPickup = !order.address;
-  const isBusy   = isDelegating || isAccepting || isRejecting;
+  const isBusy   = isAccepting || isRejecting;
+  const itemCount = order.items?.length ?? 0;
 
   const locationLabel = isPickup
     ? "Retiro en tienda"
@@ -172,11 +174,25 @@ function PendingOrderCard({ order, onDelegate, onAccept, onReject, isDelegating,
             </span>
           </div>
           <p style={{ fontSize: "12px", color: "#374151", margin: "0 0 4px 0" }}>
-            {order.items?.length ?? 0} ítem{order.items?.length !== 1 ? "s" : ""}
+            {itemCount} ítem{itemCount !== 1 ? "s" : ""}
           </p>
           {order.notes && (
             <p style={{ fontSize: "11px", color: "#9ca3af", margin: 0, fontStyle: "italic" }}>{order.notes}</p>
           )}
+          <button
+            type="button"
+            onClick={() => setShowDetail((prev) => !prev)}
+            style={{
+              display: "inline-flex", alignItems: "center", gap: "5px", marginTop: "8px",
+              padding: "6px 12px", borderRadius: "8px", backgroundColor: "white",
+              color: "var(--primary-dark)", border: "1px solid #d1d5db",
+              fontSize: "12px", fontWeight: "600", cursor: "pointer",
+            }}
+          >
+            {showDetail ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            {showDetail ? "Ocultar detalle" : "Ver detalle del pedido"}
+          </button>
+          {showDetail && <OrderItemsDetail order={order} />}
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "10px", flexShrink: 0 }}>
@@ -185,24 +201,14 @@ function PendingOrderCard({ order, onDelegate, onAccept, onReject, isDelegating,
             <p style={{ fontSize: "18px", fontWeight: "700", color: "#111827", margin: 0 }}>{formatGuarani(order.total)}</p>
           </div>
 
-          {isPickup ? (
-            <PickupActions
-              orderId={order.id}
-              isBusy={isBusy}
-              isAccepting={isAccepting}
-              isRejecting={isRejecting}
-              onAccept={onAccept}
-              onReject={onReject}
-            />
-          ) : (
-            <DeliveryActions
-              order={order}
-              isBusy={isBusy}
-              isDelegating={isDelegating}
-              isAssigned={isAssigned}
-              onDelegate={onDelegate}
-            />
-          )}
+          <PickupActions
+            orderId={order.id}
+            isBusy={isBusy}
+            isAccepting={isAccepting}
+            isRejecting={isRejecting}
+            onAccept={onAccept}
+            onReject={onReject}
+          />
         </div>
       </div>
     </div>
@@ -218,21 +224,136 @@ PendingOrderCard.propTypes = {
     notes:     PropTypes.string,
     total:     PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   }).isRequired,
-  onDelegate:   PropTypes.func.isRequired,
-  onAccept:     PropTypes.func.isRequired,
-  onReject:     PropTypes.func.isRequired,
-  isDelegating: PropTypes.bool.isRequired,
-  isAccepting:  PropTypes.bool.isRequired,
-  isRejecting:  PropTypes.bool.isRequired,
-  isAssigned:   PropTypes.bool.isRequired,
+  onAccept:    PropTypes.func.isRequired,
+  onReject:    PropTypes.func.isRequired,
+  isAccepting: PropTypes.bool.isRequired,
+  isRejecting: PropTypes.bool.isRequired,
+};
+
+// ─── Detalle de productos (seguimiento) ───────────────────────────────────────
+
+function OrderItemsDetail({ order }) {
+  const items = order.items ?? [];
+  const itemsSubtotal = items.reduce((acc, item) => acc + Number(item.subtotal ?? 0), 0);
+  const shippingCost = Number(order.shippingCost ?? 0);
+
+  if (items.length === 0) {
+    return (
+      <p style={{ fontSize: "13px", color: "#9ca3af", margin: "12px 0 0 0" }}>
+        No hay productos registrados en este pedido.
+      </p>
+    );
+  }
+
+  const gridCols = "1fr 72px 100px 110px";
+  const headerStyle = {
+    display: "grid",
+    gridTemplateColumns: gridCols,
+    gap: "8px",
+    padding: "8px 12px",
+    backgroundColor: "#f9fafb",
+    borderRadius: "8px 8px 0 0",
+    fontSize: "11px",
+    fontWeight: "700",
+    color: "#6b7280",
+    textTransform: "uppercase",
+    letterSpacing: "0.04em",
+  };
+  const rowStyle = {
+    display: "grid",
+    gridTemplateColumns: gridCols,
+    gap: "8px",
+    padding: "10px 12px",
+    borderBottom: "1px solid #f3f4f6",
+    fontSize: "13px",
+    alignItems: "center",
+  };
+
+  return (
+    <section style={{ marginTop: "12px", borderTop: "1px solid #f3f4f6", paddingTop: "12px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "10px" }}>
+        <Package size={14} color="#6b7280" />
+        <span style={{ fontSize: "12px", fontWeight: "700", color: "#374151", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          Productos del pedido
+        </span>
+      </div>
+
+      <div style={{ border: "1px solid #e5e7eb", borderRadius: "8px", overflow: "hidden" }}>
+        <div style={headerStyle}>
+          <span>Producto</span>
+          <span style={{ textAlign: "center" }}>Cant.</span>
+          <span style={{ textAlign: "right" }}>P. unit.</span>
+          <span style={{ textAlign: "right" }}>Subtotal</span>
+        </div>
+        {items.map((item, idx) => (
+          <div
+            key={item.id ?? idx}
+            style={{ ...rowStyle, borderBottom: idx < items.length - 1 ? "1px solid #f3f4f6" : "none" }}
+          >
+            <div>
+              <p style={{ fontWeight: "600", color: "#111827", margin: "0 0 2px 0" }}>
+                {item.name ?? "Producto"}
+              </p>
+              {item.isOfferApplied && (
+                <span style={{ fontSize: "11px", color: "#15803d" }}>Oferta aplicada</span>
+              )}
+            </div>
+            <p style={{ textAlign: "center", color: "#374151", margin: 0 }}>{item.quantity}</p>
+            <div>
+              <p style={{ textAlign: "right", color: "#374151", margin: 0 }}>{formatGuarani(item.price)}</p>
+              {item.isOfferApplied && item.originalPrice != null && (
+                <p style={{ textAlign: "right", fontSize: "11px", color: "#9ca3af", margin: "2px 0 0 0", textDecoration: "line-through" }}>
+                  {formatGuarani(item.originalPrice)}
+                </p>
+              )}
+            </div>
+            <p style={{ textAlign: "right", fontWeight: "600", color: "#111827", margin: 0 }}>
+              {formatGuarani(item.subtotal)}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ marginTop: "10px", padding: "10px 12px", backgroundColor: "#f9fafb", borderRadius: "8px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", color: "#6b7280", marginBottom: shippingCost > 0 ? "4px" : 0 }}>
+          <span>Subtotal productos</span>
+          <span>{formatGuarani(itemsSubtotal)}</span>
+        </div>
+        {shippingCost > 0 && (
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", color: "#6b7280", marginBottom: "4px" }}>
+            <span>Envío</span>
+            <span>{formatGuarani(shippingCost)}</span>
+          </div>
+        )}
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px", fontWeight: "700", color: "#111827", paddingTop: "6px", borderTop: "1px solid #e5e7eb" }}>
+          <span>Total</span>
+          <span>{formatGuarani(order.total)}</span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+OrderItemsDetail.propTypes = {
+  order: PropTypes.shape({
+    items: PropTypes.array,
+    total: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    shippingCost: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  }).isRequired,
 };
 
 // ─── Tab: Seguimiento ─────────────────────────────────────────────────────────
 
-function TrackingOrderCard({ order, onReject, onAdvance, isRejecting, isActioning }) {
+function TrackingOrderCard({
+  order, onReject, onAdvance, onDelegate, isRejecting, isActioning, isDelegating, isAssigned,
+}) {
+  const [showDetail, setShowDetail] = useState(false);
   const stepperEstado = STATUS_LABELS[order.status] ?? order.status;
-  const canAdvance    = !!NEXT_STATUS[order.status];
-  const isBusy        = isRejecting || isActioning;
+  const isPickup      = !order.address;
+  const canAdvance    = isPickup && !!NEXT_STATUS[order.status];
+  const showDelivery  = order.status === "PROCESSING" && !isPickup;
+  const isBusy        = isRejecting || isActioning || isDelegating;
+  const itemCount     = order.items?.length ?? 0;
 
   return (
     <div style={{ backgroundColor: "white", borderRadius: "14px", padding: "16px 20px", boxShadow: "0 1px 4px rgba(0,0,0,0.07)", marginBottom: "12px" }}>
@@ -240,7 +361,7 @@ function TrackingOrderCard({ order, onReject, onAdvance, isRejecting, isActionin
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{ fontSize: "13px", color: "#6b7280", margin: "0 0 2px 0" }}>ORD-{order.id}</p>
           <p style={{ fontSize: "14px", fontWeight: "700", color: "#111827", margin: "0 0 4px 0" }}>
-            {order.address?.city ?? "—"}{order.address?.region ? `, ${order.address.region}` : ""}
+            {isPickup ? "Retiro en tienda" : `${order.address?.city ?? "—"}${order.address?.region ? `, ${order.address.region}` : ""}`}
           </p>
           <p style={{ fontSize: "12px", color: "#6b7280", margin: 0, display: "flex", alignItems: "center", gap: "4px" }}>
             <Clock size={11} /> {timeAgo(order.createdAt)}
@@ -257,6 +378,15 @@ function TrackingOrderCard({ order, onReject, onAdvance, isRejecting, isActionin
               <XCircle size={14} /> {isRejecting ? "Cancelando..." : "Cancelar"}
             </button>
           )}
+          {showDelivery && (
+            <DeliveryActions
+              order={order}
+              isBusy={isBusy}
+              isDelegating={isDelegating}
+              isAssigned={isAssigned}
+              onDelegate={onDelegate}
+            />
+          )}
           {canAdvance && (
             <button type="button" onClick={() => onAdvance(order.id, order.status)} disabled={isBusy} style={{
               display: "flex", alignItems: "center", gap: "5px", padding: "7px 14px", borderRadius: "8px",
@@ -271,9 +401,37 @@ function TrackingOrderCard({ order, onReject, onAdvance, isRejecting, isActionin
 
       <OrderStepper estado={stepperEstado} />
 
-      <p style={{ fontSize: "12px", color: "#374151", margin: "8px 0 0 0" }}>
-        {order.items?.length ?? 0} ítem{order.items?.length !== 1 ? "s" : ""} — {formatGuarani(order.total)}
-      </p>
+      {order.deliveryUnavailable && order.status === "PROCESSING" && (
+        <div style={{
+          marginTop: "10px", padding: "10px 12px", borderRadius: "8px",
+          backgroundColor: "#fff7ed", border: "1px solid #fed7aa",
+          fontSize: "12px", color: "#9a3412", fontWeight: "600",
+        }}>
+          Sin repartidor disponible: un delivery rechazó o no hay más repartidores activos. Asigná manualmente otro delivery.
+        </div>
+      )}
+
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "8px", gap: "12px", flexWrap: "wrap" }}>
+        <p style={{ fontSize: "12px", color: "#374151", margin: 0 }}>
+          {itemCount} ítem{itemCount !== 1 ? "s" : ""} — {formatGuarani(order.total)}
+        </p>
+        <button
+          type="button"
+          onClick={() => setShowDetail((prev) => !prev)}
+          style={{
+            display: "flex", alignItems: "center", gap: "5px",
+            padding: "6px 12px", borderRadius: "8px",
+            backgroundColor: "white", color: "var(--primary-dark)",
+            border: "1px solid #d1d5db", fontSize: "12px", fontWeight: "600",
+            cursor: "pointer",
+          }}
+        >
+          {showDetail ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          {showDetail ? "Ocultar detalle" : "Ver detalle del pedido"}
+        </button>
+      </div>
+
+      {showDetail && <OrderItemsDetail order={order} />}
     </div>
   );
 }
@@ -286,11 +444,15 @@ TrackingOrderCard.propTypes = {
     createdAt: PropTypes.string,
     items:     PropTypes.array,
     total:     PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    shippingCost: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   }).isRequired,
-  onReject:    PropTypes.func.isRequired,
-  onAdvance:   PropTypes.func.isRequired,
-  isRejecting: PropTypes.bool.isRequired,
-  isActioning: PropTypes.bool.isRequired,
+  onReject:     PropTypes.func.isRequired,
+  onAdvance:    PropTypes.func.isRequired,
+  onDelegate:   PropTypes.func.isRequired,
+  isRejecting:  PropTypes.bool.isRequired,
+  isActioning:  PropTypes.bool.isRequired,
+  isDelegating: PropTypes.bool.isRequired,
+  isAssigned:   PropTypes.bool.isRequired,
 };
 
 // ─── Tab: Historial ───────────────────────────────────────────────────────────
@@ -433,7 +595,7 @@ export function CommerceOrdersPage() {
   const loadOrders = useCallback(async (sid) => {
     try {
       const data = await fetchStoreOrders(sid, {
-        order_status: ["PENDING", "PROCESSING", "SHIPPED"],
+        order_status: ["PENDING", "PROCESSING", "SHIPPED", "DELIVERED"],
         limit: 100,
       });
       setOrders(data.orders);
@@ -444,8 +606,10 @@ export function CommerceOrdersPage() {
 
   const checkAssignments = useCallback(async (orderList) => {
     const assigned = new Set();
-    for (const order of orderList) {
-      if (!order.address) continue;
+    const toCheck = orderList.filter(
+      (o) => o.address && o.status === "PROCESSING"
+    );
+    for (const order of toCheck) {
       try {
         const result = await checkOrderAssignment(order.id);
         if (result.has_assignment) assigned.add(order.id);
@@ -474,15 +638,26 @@ export function CommerceOrdersPage() {
   }, [loadOrders]);
 
   const pendingOrders  = useMemo(() => orders.filter(o => o.status === "PENDING"), [orders]);
-  const trackingOrders = useMemo(() => orders.filter(o => ["PROCESSING", "SHIPPED"].includes(o.status)), [orders]);
+  const trackingOrders = useMemo(
+    () => orders.filter(o => ["PROCESSING", "SHIPPED", "DELIVERED"].includes(o.status)),
+    [orders]
+  );
 
   const activeOrders      = activeTab === "pending" ? pendingOrders : trackingOrders;
   const currentTotalPages = Math.ceil(activeOrders.length / ITEMS_PER_PAGE);
   const paginated         = activeOrders.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   useEffect(() => {
-    if (activeOrders.length > 0) checkAssignments(activeOrders);
-  }, [activeOrders, checkAssignments]);
+    if (activeTab === "tracking" && activeOrders.length > 0) {
+      checkAssignments(activeOrders);
+    }
+  }, [activeTab, activeOrders, checkAssignments]);
+
+  useEffect(() => {
+    if (!storeId || activeTab !== "tracking") return undefined;
+    const intervalId = setInterval(() => loadOrders(storeId), 15000);
+    return () => clearInterval(intervalId);
+  }, [storeId, activeTab, loadOrders]);
 
   const handleStatusUpdate = async (orderId, newStatus, action) => {
     addActioning(orderId, action);
@@ -520,8 +695,8 @@ export function CommerceOrdersPage() {
 
   // Descripciones de tabs extraídas (fix nested ternary Sonar)
   const tabDescriptions = {
-    pending:  "Asigná un delivery a cada pedido entrante.",
-    tracking: "Gestioná y actualizá el progreso de tus ventas en tiempo real.",
+    pending:  "Aceptá o rechazá los pedidos entrantes antes de prepararlos.",
+    tracking: "Asigná delivery y seguí el progreso hasta la entrega.",
     history:  "Gestioná y revisá todas tus transacciones pasadas en un solo lugar.",
   };
 
@@ -607,13 +782,10 @@ export function CommerceOrdersPage() {
         <PendingOrderCard
           key={order.id}
           order={order}
-          onDelegate={handleDelegate}
           onAccept={() => handleStatusUpdate(order.id, "PROCESSING", "accept")}
           onReject={handleReject}
-          isDelegating={delegatingOrder?.id === order.id}
           isAccepting={isActioning(order.id, "accept")}
           isRejecting={isActioning(order.id, "reject")}
-          isAssigned={assignedOrders.has(order.id)}
         />
       ))}
 
@@ -623,8 +795,11 @@ export function CommerceOrdersPage() {
           order={order}
           onReject={handleReject}
           onAdvance={handleAdvance}
+          onDelegate={handleDelegate}
           isRejecting={isActioning(order.id, "reject")}
           isActioning={isAnyActioning(order.id)}
+          isDelegating={delegatingOrder?.id === order.id}
+          isAssigned={assignedOrders.has(order.id)}
         />
       ))}
 
