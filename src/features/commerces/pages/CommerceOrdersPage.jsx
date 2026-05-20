@@ -13,6 +13,7 @@ import { formatGuarani } from "../../../lib/formatGuarani.js";
 export { formatGuarani };
 
 const ITEMS_PER_PAGE = 10;
+const ACTIVE_ORDER_STATUSES = ["PENDING", "PROCESSING", "SHIPPED"];
 
 const STATUS_LABELS = {
   PENDING:    "Pendiente",
@@ -586,8 +587,6 @@ export function CommerceOrdersPage() {
   const [actionError, setActionError]       = useState("");
   const [assignedOrders, setAssignedOrders] = useState(new Set());
   const [delegatingOrder, setDelegatingOrder] = useState(null);
-  const ITEMS_PER_PAGE = 10;
-  const ACTIVE_ORDER_STATUSES = ["PENDING", "PROCESSING", "SHIPPED"];
 
   const addActioning    = (id, action) => setActioningSet(prev => new Set(prev).add(`${id}:${action}`));
   const removeActioning = (id, action) => setActioningSet(prev => { const s = new Set(prev); s.delete(`${id}:${action}`); return s; });
