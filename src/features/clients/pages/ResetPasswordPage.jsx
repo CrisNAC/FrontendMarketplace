@@ -31,7 +31,7 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     const validate = async () => {
       try {
-        await apiClient.get(`/api/users/validate-reset-token/${token}`, { skipGlobalErrorRedirect: true });
+        await apiClient.post("/api/users/validate-reset-token", { token }, { skipGlobalErrorRedirect: true });
         setTokenStatus("valid");
       } catch {
         setTokenStatus("invalid");
