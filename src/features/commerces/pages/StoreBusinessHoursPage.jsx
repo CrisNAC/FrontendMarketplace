@@ -269,7 +269,7 @@ export function StoreBusinessHoursPage() {
                 <button
                     type="button"
                     onClick={handleSave}
-                    disabled={saving}
+                    disabled={saving || !storeId}
                     style={{
                         marginTop: "20px",
                         display: "inline-flex",
@@ -282,8 +282,8 @@ export function StoreBusinessHoursPage() {
                         padding: "10px 18px",
                         fontSize: "14px",
                         fontWeight: "500",
-                        cursor: saving ? "not-allowed" : "pointer",
-                        opacity: saving ? 0.7 : 1,
+                        cursor: saving || !storeId ? "not-allowed" : "pointer",
+                        opacity: saving || !storeId ? 0.7 : 1,
                     }}
                 >
                     <Save size={16} />
