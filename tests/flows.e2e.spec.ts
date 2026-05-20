@@ -5623,4 +5623,115 @@ test.describe('Flujos E2E de usuario final', () => {
     // Validación de que se cargó el panel
     await expect(page.getByText('Dashboard - Comercio Demo')).toBeVisible();
   });
+
+
+  // OM-504
+  test('flujo login: volver al inicio, bloquear campos, error personalizado y mostrar contraseña', async ({ page }) => {
+    await page.goto('/login');
+
+    const backButton = page.getByRole('button', { name: /Inicio/i });
+    await expect(backButton).toBeVisible();
+
+    await page.getByPlaceholder('tu@correo.com').fill('invalid-email');
+    await page.locator('input[name="password"]').fill('12345');
+
+    // Selector corregido: Lucide renderiza clases como lucide-eye en el SVG
+    const eyeButton = page.locator('button').filter({
+      has: page.locator('svg.lucide-eye, svg.lucide-eye-off'),
+    }).first();
+    await expect(eyeButton).toBeVisible();
+    await eyeButton.click();
+
+    const passwordInput = page.locator('input[name="password"]');
+    await expect(passwordInput).toHaveAttribute('type', 'text');
+
+    await eyeButton.click();
+    await expect(passwordInput).toHaveAttribute('type', 'password');
+
+    await page.locator('form button[type="submit"]').click();
+
+    await expect(page.getByText('Ingresá un correo válido')).toBeVisible();
+    // Corregido: la contraseña "12345" tiene 5 chars, falla por longitud mínima (8), no por obligatoriedad
+    await expect(page.getByText('La contraseña debe tener mínimo 8 caracteres')).toBeVisible();
+
+    const submitButton = page.locator('form button[type="submit"]');
+    await expect(submitButton).toBeEnabled();
+
+    await page.getByPlaceholder('tu@correo.com').fill('user@test.com');
+    await page.locator('input[name="password"]').fill('12345678');
+    await expect(page.getByPlaceholder('tu@correo.com')).toBeEnabled();
+
+    await backButton.click();
+    await expect(page).toHaveURL('/');
+  });
+
+  // OM-504
+  test('flujo registro: volver al inicio, bloquear campos, error personalizado y mostrar contraseña', async ({ page }) => {
+    await page.goto('/login');
+
+    // Cambiar a pestaña Registrarse
+    await page.getByRole('button', { name: 'Registrarse' }).click();
+
+    // Verificar que existe el botón de volver al Inicio
+    const backButton = page.getByRole('button', { name: /Inicio/i });
+    await expect(backButton).toBeVisible();
+
+    // Validaciones: enviar datos inválidos
+    await page.getByPlaceholder('Tu nombre').fill(''); // vacío
+    await page.getByPlaceholder('tu@correo.com').fill('bad-email');
+    await page.locator('input[name="password"]').fill('short');
+    await page.locator('input[name="confirmPassword"]').fill('different');
+
+    // Mostrar/ocultar password y confirmPassword
+    const pwdEye = page.locator('input[name="password"] + button');
+    const confirmPwdEye = page.locator('input[name="confirmPassword"] + button');
+    await pwdEye.click();
+    await expect(page.locator('input[name="password"]')).toHaveAttribute('type', 'text');
+    await pwdEye.click();
+    await expect(page.locator('input[name="password"]')).toHaveAttribute('type', 'password');
+
+    await confirmPwdEye.click();
+    await expect(page.locator('input[name="confirmPassword"]')).toHaveAttribute('type', 'text');
+    await confirmPwdEye.click();
+    await expect(page.locator('input[name="confirmPassword"]')).toHaveAttribute('type', 'password');
+
+    // Intentar enviar y verificar mensajes de error personalizados debajo de cada campo
+    await page.locator('form button[type="submit"]').click();
+    await expect(page.getByText('El nombre es obligatorio')).toBeVisible();
+    await expect(page.getByText('Ingresá un correo válido')).toBeVisible();
+    await expect(page.getByText('La contraseña debe tener mínimo 8 caracteres')).toBeVisible();
+    await expect(page.getByText('Las contraseñas no coinciden')).toBeVisible();
+
+    // Ahora probar bloqueo de campos durante la petición: interceptamos y retardamos la respuesta
+    await page.route('**/api/users/register', async (route) => {
+      await new Promise((r) => setTimeout(r, 300));
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Registro exitoso' }),
+      });
+    });
+
+    // Rellenar datos válidos y enviar
+    await page.getByPlaceholder('Tu nombre').fill('Test User');
+    await page.getByPlaceholder('tu@correo.com').fill('user@test.com');
+    await page.locator('input[name="password"]').fill('12345678');
+    await page.locator('input[name="confirmPassword"]').fill('12345678');
+
+    const submitBtn = page.locator('form button[type="submit"]');
+    await submitBtn.click();
+
+    // Durante la petición los inputs y botones deben estar deshabilitados
+    await expect(page.getByPlaceholder('Tu nombre')).toBeDisabled();
+    await expect(page.getByPlaceholder('tu@correo.com')).toBeDisabled();
+    await expect(page.locator('input[name="password"]')).toBeDisabled();
+    await expect(page.locator('input[name="confirmPassword"]')).toBeDisabled();
+    await expect(submitBtn).toBeDisabled();
+
+    // Volver al inicio usando el botón de flecha
+    await backButton.click();
+    await expect(page).toHaveURL('/');
+  });
+
+  
 });
