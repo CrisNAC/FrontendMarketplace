@@ -140,7 +140,7 @@ export function DeliveryOrdersPage() {
                 borderLeft: '3px solid var(--primary-dark)',
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
                 {/* Lado izquierdo: Información del pedido */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ fontSize: '15px', fontWeight: '700', color: '#111827', margin: '0 0 8px 0' }}>
@@ -170,8 +170,8 @@ export function DeliveryOrdersPage() {
                 </div>
 
                 {/* Lado derecho: Total y botón */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px', flexShrink: 0 }}>
-                  <div style={{ textAlign: 'right' }}>
+                <div className="flex w-full flex-col gap-3 border-t border-slate-100 pt-3 sm:w-auto sm:items-end sm:border-t-0 sm:pt-0 sm:pl-0" style={{ flexShrink: 0 }}>
+                  <div className="w-full text-left sm:text-right">
                     <p style={{ fontSize: '11px', color: '#6b7280', margin: '0 0 2px 0', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.05em' }}>
                       Total a cobrar
                     </p>
@@ -184,6 +184,7 @@ export function DeliveryOrdersPage() {
                   <button
                     onClick={() => handleCompleteDelivery(assignment.id_delivery_assignment)}
                     disabled={isCompleting}
+                    className="w-full justify-center sm:w-auto"
                     style={{
                       display: 'flex',
                       alignItems: 'center',
