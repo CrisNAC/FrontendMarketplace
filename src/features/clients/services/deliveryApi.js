@@ -1,5 +1,5 @@
 import apiClient from "../../../lib/apiClient";
-import { getSession, fetchUserProfile } from "../../commerces/services/editUserProfileApi";
+import { getSession, fetchUserProfile, updateUserProfile } from "../../commerces/services/editUserProfileApi";
 
 export const getCurrentUserForDeliveryForm = async () => {
   const session = await getSession();
@@ -18,7 +18,9 @@ export const getCurrentUserForDeliveryForm = async () => {
 };
 
 export const getDeliveryProfile = async (deliveryId) => {
-  const { data } = await apiClient.get(`/api/deliveries/${deliveryId}`);
+  const { data } = await apiClient.get(`/api/deliveries/${deliveryId}`, {
+    skipGlobalErrorRedirect: true,
+  });
   return data;
 };
 
@@ -31,14 +33,25 @@ const UI_VEHICLE_TO_API = {
 };
 
 /**
- * Registra al usuario autenticado como delivery enviando únicamente el tipo de vehículo.
+ * Registra al usuario autenticado como delivery.
  *
  * @param {string} uiVehicleType - BICICLETA | MOTOCICLETA | AUTOMOVIL | A_PIE
+ * @param {string} [phone] - Teléfono / WhatsApp (se guarda en el perfil del usuario)
  */
-export const becomeDelivery = async (uiVehicleType) => {
+export const becomeDelivery = async (uiVehicleType, phone) => {
   const vehicleType = UI_VEHICLE_TO_API[uiVehicleType];
   if (!vehicleType) {
     throw new Error("Tipo de vehículo no válido.");
+  }
+
+  const session = await getSession();
+  const userId = session?.user?.id_user;
+  if (!userId) {
+    throw new Error("No hay sesión activa.");
+  }
+
+  if (phone?.trim()) {
+    await updateUserProfile(userId, { phone: phone.trim() });
   }
 
   const { data } = await apiClient.post("/api/deliveries/register", { vehicleType });
