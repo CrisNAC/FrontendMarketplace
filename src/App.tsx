@@ -49,6 +49,8 @@ import { AddStoreDeliveryPage } from './features/commerces/pages/AddStoreDeliver
 import { EditCommercePage } from './features/commerces/pages/EditCommercePage'
 import { StoreBusinessHoursPage } from './features/commerces/pages/StoreBusinessHoursPage'
 import AuthPage from './features/clients/pages/AuthPage';
+import ForgotPasswordPage from './features/clients/pages/ForgotPasswordPage';
+import ResetPasswordPage from './features/clients/pages/ResetPasswordPage';
 
 import ProductDetailView from './features/commerces/pages/ProductDetailView';
 import PriceComparisonPage from './features/clients/pages/PriceComparisonPage';
@@ -105,6 +107,8 @@ function App() {
         <Route path="/test" element={<TestPage />} />
 
         <Route path="/login" element={<AuthPage />} />
+        <Route path="/recuperar-contrasena" element={<ForgotPasswordPage />} />
+        <Route path="/restablecer-contrasena/:token" element={<ResetPasswordPage />} />
 
         <Route path="/perfil" element={<RequireAuth><MyAccountPage /></RequireAuth>} />
         <Route path="/mi-perfil" element={<RequireAuth><EditClientProfile /></RequireAuth>} />
