@@ -1815,8 +1815,16 @@ test.describe('Flujos E2E de usuario final', () => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ user }) });
     });
 
-    // Perfil usuario (getCurrentUserForDeliveryForm -> fetchUserProfile)
+    // Perfil usuario (getCurrentUserForDeliveryForm -> fetchUserProfile / actualizar teléfono)
     await page.route('**/api/users/7', async (route) => {
+      if (route.request().method() === 'PUT') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ id_user: 7, name: 'Cliente Demo', email: 'cliente@test.com', phone: '0981000000' }),
+        });
+        return;
+      }
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -1874,7 +1882,8 @@ test.describe('Flujos E2E de usuario final', () => {
     // Modal debe estar visible
     await expect(page.getByRole('heading', { name: 'Quiero ser delivery' })).toBeVisible();
 
-    // Seleccionar vehículo
+    // Teléfono y vehículo
+    await page.getByPlaceholder('+54 9 11 2345-6789').fill('0981000000');
     await page.locator('#delivery-vehicle').selectOption('AUTOMOVIL');
 
     // Confirmar (trigger POST -> deliveryRegistered = true)
@@ -1995,6 +2004,19 @@ test.describe('Flujos E2E de usuario final', () => {
     });
 
     await page.route('**/api/users/7', async (route) => {
+      if (route.request().method() === 'PUT') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id_user: 7,
+            name: 'Cliente Demo',
+            email: 'cliente@test.com',
+            phone: '0981000000',
+          }),
+        });
+        return;
+      }
       if (route.request().method() === 'GET') {
         await route.fulfill({
           status: 200,
@@ -2064,6 +2086,7 @@ test.describe('Flujos E2E de usuario final', () => {
 
     await expect(page.getByRole('heading', { name: 'Quiero ser delivery' })).toBeVisible();
 
+    await page.getByPlaceholder('+54 9 11 2345-6789').fill('0981000000');
     await page.locator('#delivery-vehicle').selectOption('AUTOMOVIL');
     await page.getByRole('button', { name: 'Confirmar' }).click();
 
