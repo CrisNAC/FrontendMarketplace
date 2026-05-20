@@ -181,13 +181,13 @@ export default function DeliveryHistoryPage() {
         {!gateReason && (
           <>
             <section className="mb-4">
-              <div className="grid w-full grid-cols-4 overflow-hidden rounded-xl border border-[#719783] bg-white sm:max-w-xl">
+              <div className="grid w-full grid-cols-2 gap-0 overflow-hidden rounded-xl border border-[#719783] bg-white sm:max-w-xl sm:grid-cols-4">
                 {PERIOD_TABS.map((tab, idx) => (
                   <button
                     key={tab.value}
                     type="button"
                     onClick={() => setPeriodTab(idx)}
-                    className={`h-10 text-xs font-semibold transition sm:text-sm ${
+                    className={`min-h-11 px-1 py-2 text-xs font-semibold transition sm:h-10 sm:px-2 sm:py-0 sm:text-sm ${
                       idx === periodTab
                         ? "bg-[#719783] text-white"
                         : "text-slate-700 hover:bg-[#F3FAF7]"

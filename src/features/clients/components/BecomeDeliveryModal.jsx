@@ -1,20 +1,12 @@
 import { useEffect, useState } from "react";
 import { z } from "zod";
-import { Phone, X } from "lucide-react";
+import { X } from "lucide-react";
 import toast from "react-hot-toast";
 import { becomeDelivery, getCurrentUserForDeliveryForm } from "../services/deliveryApi";
 import { getBackendErrorMessage } from "../../commerces/services/editUserProfileApi";
 
 const formSchema = z.object({
   vehicleType: z.enum(["BICICLETA", "MOTOCICLETA", "AUTOMOVIL", "A_PIE"]),
-  phone: z
-    .string()
-    .trim()
-    .max(20, "Máximo 20 caracteres")
-    .regex(
-      /^(?=(?:.*\d){8,})[\d\s+().\-]+$/,
-      "Ingresá al menos 8 dígitos; solo números y símbolos habituales (+, espacio, guiones, paréntesis)"
-    ),
 });
 
 const VEHICLE_TYPE_LABELS = {
@@ -35,7 +27,7 @@ function resolveProfileUser(profile, sessionUser) {
 }
 
 /**
- * Modal: teléfono (editable) + tipo de vehículo. Nombre y correo siguen en la cuenta.
+ * Modal: tipo de vehículo. Nombre y correo siguen en la cuenta.
  */
 export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
   const [loading, setLoading] = useState(true);
@@ -46,7 +38,6 @@ export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
   const [profileUser, setProfileUser] = useState(null);
   const [isAlreadyDelivery, setIsAlreadyDelivery] = useState(false);
   const [vehicleType, setVehicleType] = useState("MOTOCICLETA");
-  const [phone, setPhone] = useState("");
 
   useEffect(() => {
     if (!open) return;
@@ -63,7 +54,6 @@ export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
         setUserId(uid);
         const resolved = resolveProfileUser(profile, su);
         setProfileUser(resolved);
-        setPhone((resolved.phone ?? "").trim());
         setIsAlreadyDelivery(resolved.role === "DELIVERY" || su?.role === "DELIVERY");
       } catch (err) {
         if (!mounted) return;
@@ -84,7 +74,6 @@ export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
       setError("");
       setFieldErrors({});
       setVehicleType("MOTOCICLETA");
-      setPhone("");
     }
   }, [open]);
 
@@ -93,7 +82,7 @@ export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const parsed = formSchema.safeParse({ vehicleType, phone });
+    const parsed = formSchema.safeParse({ vehicleType });
     if (!parsed.success) {
       const next = {};
       for (const issue of parsed.error.issues) {
@@ -126,11 +115,10 @@ export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
     setFieldErrors({});
 
     try {
-      await becomeDelivery(parsed.data.vehicleType, parsed.data.phone);
+      await becomeDelivery(parsed.data.vehicleType);
       window.dispatchEvent(new Event("deliveryRegistered"));
       toast.success("Listo: ahora sos delivery.");
       onSuccess?.();
-      onClose?.();
     } catch (err) {
       setError(getBackendErrorMessage(err, "No se pudo completar el registro como delivery."));
     } finally {
@@ -160,47 +148,13 @@ export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
             Quiero ser delivery
           </h2>
           <p className="mt-2 text-sm text-slate-600 leading-relaxed">
-            Indicá tu <strong>teléfono</strong> y el <strong>tipo de vehículo</strong>. El nombre y el correo son los de tu cuenta.
+            Indicá el <strong>tipo de vehículo</strong>. El nombre y el correo son los de tu cuenta.
           </p>
 
           {loading && <p className="mt-6 text-sm text-slate-600">Cargando…</p>}
 
           {!loading && (
             <form className="mt-6 space-y-5" onSubmit={handleSubmit} noValidate>
-              <div>
-                <label htmlFor="delivery-phone" className="block text-sm font-medium text-slate-700 mb-1.5">
-                  Teléfono / WhatsApp
-                </label>
-                <div className="relative">
-                  <Phone
-                    className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[#6B9080]"
-                    aria-hidden
-                  />
-                  <input
-                    id="delivery-phone"
-                    type="tel"
-                    name="phone"
-                    inputMode="tel"
-                    autoComplete="tel"
-                    placeholder="+54 9 11 2345-6789"
-                    value={phone}
-                    disabled={saving || isAlreadyDelivery}
-                    onChange={(e) => {
-                      setPhone(e.target.value);
-                      setFieldErrors((prev) => ({ ...prev, phone: undefined }));
-                      setError("");
-                    }}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50/90 py-2.5 pl-10 pr-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[#769482]/45 focus:bg-white focus:ring-2 focus:ring-[#769482]/18 disabled:opacity-60"
-                  />
-                </div>
-                <p className="mt-1.5 text-xs text-slate-500">
-                  Donde te podemos contactar para coordinar entregas.
-                </p>
-                {fieldErrors.phone && (
-                  <p className="mt-1 text-xs text-red-600">{fieldErrors.phone}</p>
-                )}
-              </div>
-
               <div>
                 <label htmlFor="delivery-vehicle" className="block text-sm font-medium text-slate-700 mb-1.5">
                   Tipo de vehículo
