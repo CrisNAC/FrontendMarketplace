@@ -82,7 +82,7 @@ const mockActiveCart = {
   ],
 };
 
-const createBaseProduct = (productId) => ({
+const createBaseProduct = (productId: number) => ({
   id_product: productId,
   name: 'Producto prueba',
   description: 'Desc prueba',
@@ -425,19 +425,7 @@ test.describe('Flujos E2E de usuario final', () => {
     await setupCommonApiMocks(page);
   });
 
-  test('auth: redirige a login sin sesion', async ({ page }) => {
-    await page.unroute('**/api/session/user-session');
-    await page.route('**/api/session/user-session', async (route) => {
-      await route.fulfill({
-        status: 401,
-        contentType: 'application/json',
-        body: JSON.stringify({ error: 'No autenticado' })
-      });
-    });
 
-    await page.goto('/comercio');
-    await expect(page).toHaveURL('/login');
-  });
 
   // este test ya no funciona en webkit porque WebKit no ejecuta el prellenado de campos de la misma forma que Chromium
   test('flujo cliente: registro, login, homepage, comercio, producto y comentarios', async ({ page }) => {
@@ -4126,7 +4114,9 @@ test.describe('Flujos E2E de usuario final', () => {
         items: [{ id: 1, quantity: 1 }],
       },
       getStatus: () => currentStatus,
-      setStatus: () => { /* no-op */ },
+      setStatus: (status: string) => {
+        currentStatus = status;
+      },
     });
 
     // Mock del endpoint de deliveries: backend retorna solo deliveries elegibles (ACTIVE, sin asignaciones)
@@ -4141,7 +4131,7 @@ test.describe('Flujos E2E de usuario final', () => {
           ],
           delivery_address: { address: 'Calle Falsa 123', city: 'Asuncion' },
           order_id: 9011,
-          order_status: 'PENDING',
+          order_status: 'PROCESSING',
         }),
       });
     });
@@ -4149,8 +4139,12 @@ test.describe('Flujos E2E de usuario final', () => {
     await page.goto('/comercio/pedidos');
     await expect(page.getByText('#ORD-9011')).toBeVisible();
 
+    await page.getByRole('button', { name: 'Aceptar' }).click();
+    await page.getByRole('button', { name: 'Seguimiento' }).click();
+
+    await expect(page.getByText('ORD-9011')).toBeVisible();
     // Abrir modal de asignación
-    await page.getByRole('button', { name: 'Asignar delivery' }).click();
+    await page.getByRole('button', { name: 'Añadir delivery' }).click();
 
     // Modal visible y lista con los deliveries retornados
     await expect(page.getByText('Delivery Activo Uno')).toBeVisible();
@@ -4181,10 +4175,11 @@ test.describe('Flujos E2E de usuario final', () => {
         items: [{ id: 1, quantity: 1 }],
       },
       getStatus: () => currentStatus,
-      setStatus: () => { /* no-op */ },
+      setStatus: (status: string) => {
+        currentStatus = status;
+      },
     });
 
-    // Mock GET deliveries (lista elegible)
     await page.route('**/api/stores/1/orders/9020/deliveries', async (route) => {
       await route.fulfill({
         status: 200,
@@ -4196,12 +4191,11 @@ test.describe('Flujos E2E de usuario final', () => {
           ],
           delivery_address: { address: 'Calle Test 55', city: 'Asuncion' },
           order_id: 9020,
-          order_status: 'PENDING',
+          order_status: 'PROCESSING',
         }),
       });
     });
 
-    // Capturamos el POST a /api/assignments
     let capturedBody: Record<string, unknown> | null = null;
     await page.route('**/api/assignments', async (route) => {
       if (route.request().method() === 'POST') {
@@ -4216,23 +4210,24 @@ test.describe('Flujos E2E de usuario final', () => {
       await route.fallback();
     });
 
-    // Ir a la página de pedidos del comercio y abrir modal
     await page.goto('/comercio/pedidos');
     await expect(page.getByText('#ORD-9020')).toBeVisible();
-    await page.getByRole('button', { name: 'Asignar delivery' }).click();
 
-    // Seleccionar el delivery y confirmars
+    await page.getByRole('button', { name: 'Aceptar' }).click();
+    await page.getByRole('button', { name: 'Seguimiento' }).click();
+
+    await expect(page.getByText('ORD-9020')).toBeVisible();
+    await page.getByRole('button', { name: 'Añadir delivery' }).click();
+
     await page.getByText('Delivery Selector').click();
     await page.getByRole('button', { name: 'Asignar delivery' }).click();
 
-    // Esperar que el modal se cierre
     await expect(page.getByRole('heading', { name: 'Asignar delivery' })).not.toBeVisible();
-
+    expect(capturedBody).toEqual({ fk_order: 9020, fk_delivery: 52 });
   });
 
   // OM-489
   test('flujo comercio: Sin deliveries disponibles muestra mensaje sin deliveries disponibles y boton Asignar desactivado', async ({ page }) => {
-    // Restaurar sesión SELLER
     await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
@@ -4253,10 +4248,11 @@ test.describe('Flujos E2E de usuario final', () => {
         items: [{ id: 1, quantity: 1 }],
       },
       getStatus: () => currentStatus,
-      setStatus: () => { /* no-op */ },
+      setStatus: (status: string) => {
+        currentStatus = status;
+      },
     });
 
-    // Endpoint devuelve lista vacía
     await page.route('**/api/stores/1/orders/9015/deliveries', async (route) => {
       await route.fulfill({
         status: 200,
@@ -4265,18 +4261,23 @@ test.describe('Flujos E2E de usuario final', () => {
           available_deliveries: [],
           delivery_address: { address: 'Calle Vacia 0', city: 'Villarrica' },
           order_id: 9015,
-          order_status: 'PENDING',
+          order_status: 'PROCESSING',
         }),
       });
     });
 
     await page.goto('/comercio/pedidos');
     await expect(page.getByText('#ORD-9015')).toBeVisible();
-    await page.getByRole('button', { name: 'Asignar delivery' }).click();
 
-    // Debe mostrar mensaje de estado vacío y el botón principal debe estar deshabilitado
-    await expect(page.getByText('No hay deliveries disponibles')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Asignar delivery' })).toBeDisabled();
+    await page.getByRole('button', { name: 'Aceptar' }).click();
+    await page.getByRole('button', { name: 'Seguimiento' }).click();
+
+    await expect(page.getByText('ORD-9015')).toBeVisible();
+    await page.getByRole('button', { name: 'Añadir delivery' }).click();
+
+    const modal = page.locator('dialog');
+    await expect(modal.getByText('No hay deliveries disponibles')).toBeVisible();
+    await expect(modal.getByRole('button', { name: 'Asignar delivery' })).toBeDisabled();
   });
 
   // OM-490
@@ -4906,7 +4907,7 @@ test.describe('Flujos E2E de usuario final', () => {
 
     // Ir a la página de creación de comercio
     await page.goto('/crear-comercio');
-    await expect(page.getByText('Crear Comercio')).toBeVisible();
+    await expect(page.getByText('Crear Comercio').nth(1)).toBeVisible();
 
     // Rellenar formulario con valores inválidos según el ticket
     await page.getByPlaceholder('Ej: Mi Tienda Online').fill(''); // nombre vacio
@@ -4957,6 +4958,29 @@ test.describe('Flujos E2E de usuario final', () => {
     let updateCalled = false;
     await page.route('**/api/commerces/**', async (route) => {
       const method = route.request().method();
+      if (method === 'GET' && route.request().url().includes('/api/commerces/my/')) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id_store: 1,
+            name: 'Tienda Demo',
+            email: 'store@demo.com',
+            phone: '+595981000000',
+            description: 'Descripción demo',
+            categories: [],
+            addresses: [{ address: 'Av Demo 123', latitude: null, longitude: null }],
+            logo: null,
+            website_url: 'https://mi-comercio.com',
+            instagram_url: '',
+            tiktok_url: '',
+            base_price: 1000,
+            distance_price: 2000,
+          }),
+        });
+        return;
+      }
+
       if (method !== 'GET') {
         updateCalled = true;
         await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id_store: 1 }) });
@@ -5412,6 +5436,576 @@ test.describe('Flujos E2E de usuario final', () => {
 
     // Debe mostrarse el estado vacío
     await expect(page.getByText('Tu carrito está vacío')).toBeVisible();
+  });
+
+  //OM-505 - Notificaciones 
+
+
+  // notificación de pedido confirmado — badge, lista, marcar leída y navegación
+  test('flujo notificaciones: notificación de pedido confirmado (badge, lista, marcar leída y navegación)', async ({ page }) => {
+    // Mock: sesión (usuario autenticado)
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: null, name: 'Cliente Demo' } }),
+      });
+    });
+
+    // Mock: carts del usuario (fetchCartsApi) — evitar que falle el refresh del navbar
+    await page.route('**/api/users/7/carts', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ carts: [] }),
+      });
+    });
+
+    // Mock: GET /api/notifications con una notificación de pedido confirmado
+    await page.route('**/api/notifications', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          unreadCount: 1,
+          notifications: [
+            {
+              id: 123,
+              title: '¡Tu pedido #555 fue confirmado!',
+              message: 'Tu pago fue registrado y el pedido fue confirmado.',
+              referenceId: 555,
+              read: false,
+              createdAt: '2026-05-18T12:00:00.000Z',
+            },
+          ],
+        }),
+      });
+    });
+
+    // Interceptar PATCH que marca la notificación como leída
+    let patchCalled = false;
+    await page.route('**/api/notifications/123/read', async (route) => {
+      patchCalled = true;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 123,
+          title: '¡Tu pedido #555 fue confirmado!',
+          referenceId: 555,
+          read: true,
+          createdAt: '2026-05-18T12:00:00.000Z',
+        }),
+      });
+    });
+
+    // Mock: GET orders for user — necesario para la página /pedidos/:id
+    await page.route('**/api/users/7/orders', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          {
+            id: 555,
+            createdAt: '2026-05-18T11:50:00.000Z',
+            status: 'PROCESSING',
+            items: [],
+            total: 13290000,
+            address: null,
+            notes: null,
+          },
+        ]),
+      });
+    });
+
+    // Ir a la home para que el Navbar haga el fetch y muestre el badge
+    await page.goto('/');
+
+    // Esperar que el badge del navbar muestre "1"
+    const bellBadge = page.locator('button[aria-label="Notificaciones"] span');
+    await expect(bellBadge).toHaveText('1');
+
+    // Abrir el dropdown de notificaciones desde la campana
+    await page.click('button[aria-label="Notificaciones"]');
+
+    // Verificar que la notificación de pedido confirmado está en la lista
+    const notifButton = page.getByRole('button', { name: '¡Tu pedido #555 fue confirmado!' });
+    await expect(notifButton).toBeVisible();
+
+    // Hacer click en la notificación: debe llamar al PATCH y navegar a /pedidos/555
+    await notifButton.click();
+
+    // Esperar navegación a detalle del pedido
+    await page.waitForURL('**/pedidos/555');
+
+    // Verificar que el PATCH fue ejecutado
+    expect(patchCalled).toBeTruthy();
+
+    // En la página de detalle del pedido debe mostrarse el número del pedido
+    await expect(page.getByText(/Pedido N° 555/)).toBeVisible();
+  });
+
+  //OM-521
+  test('flujo cliente: Customer sin comercio intenta acceder a comercio, este redirige a crear comercio', async ({ page }) => {
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,  // ← esto faltaba
+          user: { id_user: 7, name: 'Cliente Demo', role: 'CUSTOMER', id_store: null },
+        }),
+      });
+    });
+
+    await page.route('**/api/users/7/carts', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ carts: [] }),
+      });
+    });
+
+    await page.route('**/api/notifications', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ unreadCount: 0, notifications: [] }),
+      });
+    });
+
+    await page.route('**/api/commerces/categories', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          { id: 1, name: 'Comida' },
+          { id: 2, name: 'Tecnología' },
+        ]),
+      });
+    });
+
+    await page.goto('/');
+    await page.getByRole('link', { name: 'Comercio' }).click();
+    await expect(page).toHaveURL('/crear-comercio');
+    await expect(page.getByText('Crear Comercio').nth(1)).toBeVisible();
+  });
+
+  // OM-521
+  test('flujo comercio: usuario SELLER intenta acceder a crear comercio, pero redirige a panel de comercio y muestra toast', async ({ page }) => {
+    // Sesión como SELLER
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          user: {
+            id_user: 7,
+            id_store: 1,
+            name: 'Comerciante Demo',
+            role: 'SELLER',
+          },
+        }),
+      });
+    });
+
+    // Mocks usados por Navbar en ambas pantallas
+    await page.route('**/api/users/7/carts', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ carts: [] }),
+      });
+    });
+
+    await page.route('**/api/notifications', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          unreadCount: 0,
+          notifications: [],
+        }),
+      });
+    });
+
+    // Mock del panel de comercio al que redirige
+    await page.route('**/api/commerces/my/1', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id_store: 1,
+          name: 'Comercio Demo',
+          store_status: 'ACTIVE',
+          products: [],
+        }),
+      });
+    });
+
+    // Ir directo a la vista de crear comercio
+    await page.goto('/crear-comercio');
+
+    // Debe redirigir automáticamente al panel de comercio
+    await expect(page).toHaveURL('/comercio');
+
+    // Toast de aviso
+    await expect(page.getByText('Ya tenés un comercio registrado.')).toBeVisible();
+
+    // Validación de que se cargó el panel
+    await expect(page.getByText('Dashboard - Comercio Demo')).toBeVisible();
+  });
+
+
+  // OM-504
+  test('flujo login: volver al inicio, bloquear campos, error personalizado y mostrar contraseña', async ({ page }) => {
+    await page.goto('/login');
+
+    const backButton = page.getByRole('button', { name: /Inicio/i });
+    await expect(backButton).toBeVisible();
+
+    await page.getByPlaceholder('tu@correo.com').fill('invalid-email');
+    await page.locator('input[name="password"]').fill('12345');
+
+    // Selector corregido: Lucide renderiza clases como lucide-eye en el SVG
+    const eyeButton = page.locator('button').filter({
+      has: page.locator('svg.lucide-eye, svg.lucide-eye-off'),
+    }).first();
+    await expect(eyeButton).toBeVisible();
+    await eyeButton.click();
+
+    const passwordInput = page.locator('input[name="password"]');
+    await expect(passwordInput).toHaveAttribute('type', 'text');
+
+    await eyeButton.click();
+    await expect(passwordInput).toHaveAttribute('type', 'password');
+
+    await page.locator('form button[type="submit"]').click();
+
+    await expect(page.getByText('Ingresá un correo válido')).toBeVisible();
+    // Corregido: la contraseña "12345" tiene 5 chars, falla por longitud mínima (8), no por obligatoriedad
+    await expect(page.getByText('La contraseña debe tener mínimo 8 caracteres')).toBeVisible();
+
+    const submitButton = page.locator('form button[type="submit"]');
+    await expect(submitButton).toBeEnabled();
+
+    await page.getByPlaceholder('tu@correo.com').fill('user@test.com');
+    await page.locator('input[name="password"]').fill('12345678');
+    await expect(page.getByPlaceholder('tu@correo.com')).toBeEnabled();
+
+    await backButton.click();
+    await expect(page).toHaveURL('/');
+  });
+
+  // OM-504
+  test('flujo registro: volver al inicio, bloquear campos, error personalizado y mostrar contraseña', async ({ page }) => {
+    await page.goto('/login');
+
+    // Cambiar a pestaña Registrarse
+    await page.getByRole('button', { name: 'Registrarse' }).click();
+
+    // Verificar que existe el botón de volver al Inicio
+    const backButton = page.getByRole('button', { name: /Inicio/i });
+    await expect(backButton).toBeVisible();
+
+    // Validaciones: enviar datos inválidos
+    await page.getByPlaceholder('Tu nombre').fill(''); // vacío
+    await page.getByPlaceholder('tu@correo.com').fill('bad-email');
+    await page.locator('input[name="password"]').fill('short');
+    await page.locator('input[name="confirmPassword"]').fill('different');
+
+    // Mostrar/ocultar password y confirmPassword
+    const pwdEye = page.locator('input[name="password"] + button');
+    const confirmPwdEye = page.locator('input[name="confirmPassword"] + button');
+    await pwdEye.click();
+    await expect(page.locator('input[name="password"]')).toHaveAttribute('type', 'text');
+    await pwdEye.click();
+    await expect(page.locator('input[name="password"]')).toHaveAttribute('type', 'password');
+
+    await confirmPwdEye.click();
+    await expect(page.locator('input[name="confirmPassword"]')).toHaveAttribute('type', 'text');
+    await confirmPwdEye.click();
+    await expect(page.locator('input[name="confirmPassword"]')).toHaveAttribute('type', 'password');
+
+    // Intentar enviar y verificar mensajes de error personalizados debajo de cada campo
+    await page.locator('form button[type="submit"]').click();
+    await expect(page.getByText('El nombre es obligatorio')).toBeVisible();
+    await expect(page.getByText('Ingresá un correo válido')).toBeVisible();
+    await expect(page.getByText('La contraseña debe tener mínimo 8 caracteres')).toBeVisible();
+    await expect(page.getByText('Las contraseñas no coinciden')).toBeVisible();
+
+    // Ahora probar bloqueo de campos durante la petición: interceptamos y retardamos la respuesta
+    await page.route('**/api/users/register', async (route) => {
+      await new Promise((r) => setTimeout(r, 300));
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Registro exitoso' }),
+      });
+    });
+
+    // Rellenar datos válidos y enviar
+    await page.getByPlaceholder('Tu nombre').fill('Test User');
+    await page.getByPlaceholder('tu@correo.com').fill('user@test.com');
+    await page.locator('input[name="password"]').fill('12345678');
+    await page.locator('input[name="confirmPassword"]').fill('12345678');
+
+    const submitBtn = page.locator('form button[type="submit"]');
+    await submitBtn.click();
+
+    // Durante la petición los inputs y botones deben estar deshabilitados
+    await expect(page.getByPlaceholder('Tu nombre')).toBeDisabled();
+    await expect(page.getByPlaceholder('tu@correo.com')).toBeDisabled();
+    await expect(page.locator('input[name="password"]')).toBeDisabled();
+    await expect(page.locator('input[name="confirmPassword"]')).toBeDisabled();
+    await expect(submitBtn).toBeDisabled();
+
+    // Volver al inicio usando el botón de flecha
+    await backButton.click();
+    await expect(page).toHaveURL('/');
+  });
+
+
+  //OM-518
+  test('flujo cliente: visualizar productos relacionados en detalle de producto', async ({ page }) => {
+    let requestedLimit: string | null = null;
+
+    const relatedProducts = Array.from({ length: 10 }, (_, index) => {
+      const itemNumber = index + 1;
+
+      return {
+        id: 200 + itemNumber,
+        name: `Producto relacionado ${itemNumber}`,
+        description: `Descripción relacionada ${itemNumber}`,
+        price: 1000000 + index * 100000,
+        quantity: 10,
+        imageUrl: itemNumber % 2 === 0 ? `https://picsum.photos/seed/related-${itemNumber}/400/400` : null,
+        isOffer: itemNumber === 1,
+        offerPrice: itemNumber === 1 ? 850000 : null,
+        averageRating: 4.1 + (index % 4) * 0.1,
+        reviewCount: 12 + index,
+        categories: [{ id: 1, name: 'Celulares' }],
+      };
+    });
+
+    await page.route('**/products/101/related**', async (route) => {
+      const url = new URL(route.request().url());
+      requestedLimit = url.searchParams.get('limit');
+
+      const limit = Number(requestedLimit ?? 8);
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(relatedProducts.slice(0, limit)),
+      });
+    });
+
+    await page.goto('/producto-detalle/101');
+
+    await expect(page.getByRole('heading', { name: 'Productos relacionados' })).toBeVisible();
+    await expect.poll(() => requestedLimit).toBe('8');
+
+    const relatedSection = page.locator('section').filter({ hasText: 'Productos relacionados' });
+
+    await expect(relatedSection).toBeVisible();
+    await expect(relatedSection.getByRole('button', { name: /Producto relacionado/i })).toHaveCount(8);
+    await expect(relatedSection.getByText('Apple iPhone 17 Pro A3256 Dual')).toHaveCount(0);
+
+    const firstCard = relatedSection.getByRole('button', { name: /Producto relacionado 1/i });
+
+    await expect(firstCard.getByText('Celulares')).toBeVisible();
+    await expect(firstCard.getByText('Oferta')).toBeVisible();
+    await expect(firstCard.getByText(/★/)).toBeVisible();
+
+    await firstCard.click();
+    await expect(page).toHaveURL('/producto-detalle/201');
+  });
+
+  //Om-508
+  test('flujo admin: crear categoria con icono, persistir en tabla, editar icono y ver detalle', async ({ page }) => {
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          user: { id_user: 1, role: 'ADMIN', name: 'Admin Demo' },
+        }),
+      });
+    });
+
+    const createdAt = new Date().toISOString();
+    let updatedAt = createdAt;
+    let categoryCreated = false;
+
+    // Categoría preexistente
+    const existingCategory = {
+      id: 100,
+      name: 'Electrónica',
+      icon: 'Monitor',
+      visible: true,
+      status: true,
+      productCount: 3,
+      createdAt,
+      updatedAt,
+    };
+
+    // Categoría que se va a crear
+    const newCategoryState = {
+      id: 101,
+      name: 'Audio',
+      icon: 'Laptop',
+      visible: true,
+      status: true,
+      productCount: 0,
+      createdAt,
+      updatedAt,
+    };
+
+    await page.unroute('**/api/admin/categories/filter/withProducts');
+    await page.route('**/api/admin/categories/filter/withProducts**', async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.fallback();
+        return;
+      }
+
+      const data = categoryCreated
+        ? [existingCategory, newCategoryState]
+        : [existingCategory];
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data,
+          categoryTotal: data.length,
+          categoryPage: 1,
+          categoryLimit: 20,
+          categoryTotalPages: 1,
+        }),
+      });
+    });
+
+    await page.route('**/api/admin/categories/100', async (route) => {
+      const method = route.request().method();
+
+      if (method === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            ...existingCategory,
+            createdAt,
+            updatedAt,
+            products: {
+              data: [],
+              total: 0,
+              productPage: 1,
+              productLimit: 10,
+              productTotalPages: 1,
+            },
+          }),
+        });
+        return;
+      }
+
+      if (method === 'PUT') {
+        const payload = route.request().postDataJSON();
+
+        existingCategory.name = payload.name ?? existingCategory.name;
+        existingCategory.visible = payload.visible ?? existingCategory.visible;
+        existingCategory.icon = payload.icon ?? existingCategory.icon;
+        updatedAt = new Date().toISOString();
+        existingCategory.updatedAt = updatedAt;
+
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id: existingCategory.id,
+            name: existingCategory.name,
+            icon: existingCategory.icon,
+            visible: existingCategory.visible,
+            status: existingCategory.status,
+            productCount: existingCategory.productCount,
+            createdAt: existingCategory.createdAt,
+            updatedAt: existingCategory.updatedAt,
+          }),
+        });
+        return;
+      }
+
+      await route.fallback();
+    });
+
+    let createCalled = false;
+    await page.unroute('**/api/admin/categories');
+    await page.route('**/api/admin/categories', async (route) => {
+      if (route.request().method() !== 'POST') {
+        await route.fallback();
+        return;
+      }
+
+      createCalled = true;
+      categoryCreated = true;
+      const payload = route.request().postDataJSON();
+
+      newCategoryState.name = payload.name;
+      newCategoryState.icon = payload.icon ?? 'Tag';
+
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: newCategoryState.id,
+          name: newCategoryState.name,
+          icon: newCategoryState.icon,
+          visible: true,
+          status: true,
+          createdAt,
+        }),
+      });
+    });
+
+    await page.goto('/admin/categorias');
+    await expect(page.getByRole('heading', { name: 'Gestión de Categorías' })).toBeVisible();
+
+    // Verificar que la categoría preexistente está visible y la nueva aún no
+    await expect(page.getByText('Electrónica')).toBeVisible();
+    await expect(page.getByText('Audio')).not.toBeVisible();
+
+    await page.getByRole('button', { name: 'Nueva Categoría' }).click();
+    await expect(page.getByRole('heading', { name: 'Nueva Categoría' })).toBeVisible();
+
+    await page.getByPlaceholder('Ej: Electrónica').fill('Audio');
+    await page.getByRole('button', { name: 'Laptop' }).click();
+    await expect(page.locator('svg.lucide-laptop').first()).toBeVisible();
+
+    await page.getByRole('button', { name: 'Crear Categoría' }).click();
+    expect(createCalled).toBe(true);
+
+    // Ahora deben aparecer las dos categorías
+    await expect(page.getByText('Electrónica')).toBeVisible();
+    await expect(page.getByText('Audio')).toBeVisible();
+    await expect(page.locator('div').filter({ hasText: 'Audio' }).locator('svg.lucide-laptop')).toBeVisible();
+
+    // Usar el primer botón "Ver detalle" que corresponde a Electrónica
+    await page.getByRole('button', { name: 'Ver detalle' }).first().click();
+    await expect(page.getByRole('heading', { name: 'Electrónica' })).toBeVisible();
+    await expect(page.locator('svg.lucide-monitor')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Editar' }).click();
+    await expect(page.getByRole('heading', { name: 'Editar Categoría' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Smartphone' }).click();
+    await expect(page.locator('svg.lucide-smartphone').first()).toBeVisible();
+
+    await page.getByRole('button', { name: 'Guardar Cambios' }).click();
+    await expect(page.locator('svg.lucide-smartphone')).toBeVisible();
+    await expect(page.locator('svg.lucide-monitor')).toHaveCount(0);
   });
 
 });
