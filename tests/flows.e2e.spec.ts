@@ -4907,7 +4907,7 @@ test.describe('Flujos E2E de usuario final', () => {
 
     // Ir a la página de creación de comercio
     await page.goto('/crear-comercio');
-    await expect(page.getByText('Crear Comercio')).toBeVisible();
+    await expect(page.getByText('Crear Comercio').nth(1)).toBeVisible();
 
     // Rellenar formulario con valores inválidos según el ticket
     await page.getByPlaceholder('Ej: Mi Tienda Online').fill(''); // nombre vacio
@@ -5522,12 +5522,11 @@ test.describe('Flujos E2E de usuario final', () => {
     await page.goto('/');
 
     // Esperar que el badge del navbar muestre "1"
-    const bellBadge = page.locator('a[aria-label="Notificaciones"] span');
+    const bellBadge = page.locator('button[aria-label="Notificaciones"] span');
     await expect(bellBadge).toHaveText('1');
 
-    // Abrir centro de notificaciones desde la campana
-    await page.click('a[aria-label="Notificaciones"]');
-    await expect(page).toHaveURL(/\/notificaciones$/);
+    // Abrir el dropdown de notificaciones desde la campana
+    await page.click('button[aria-label="Notificaciones"]');
 
     // Verificar que la notificación de pedido confirmado está en la lista
     const notifButton = page.getByRole('button', { name: '¡Tu pedido #555 fue confirmado!' });
@@ -5590,7 +5589,7 @@ test.describe('Flujos E2E de usuario final', () => {
     await page.goto('/');
     await page.getByRole('link', { name: 'Comercio' }).click();
     await expect(page).toHaveURL('/crear-comercio');
-    await expect(page.getByText('Crear Comercio')).toBeVisible();
+    await expect(page.getByText('Crear Comercio').nth(1)).toBeVisible();
   });
 
   // OM-521
