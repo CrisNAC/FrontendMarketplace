@@ -6881,4 +6881,116 @@ test.describe('Flujos E2E de usuario final', () => {
     if (postOrderCalled) throw new Error('Se llamó a POST /api/orders con stock insuficiente');
   });
 
+
+  //OM-516
+  test('flujo recuperar contraseña: validación de email y envío exitoso del enlace', async ({ page }) => {
+    await page.route('**/api/users/forgot-password', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Correo enviado' }),
+      });
+    });
+
+    await page.goto('/recuperar-contrasena');
+
+    // Intentar enviar con email de formato inválido
+    await page.getByPlaceholder('tu@correo.com').fill('noesuncorreo');
+    await page.getByRole('button', { name: 'Enviar enlace de recuperación' }).click();
+    await expect(page.getByText('Ingresá un correo válido')).toBeVisible();
+
+    // Corregir y enviar con email válido → pantalla de confirmación
+    await page.getByPlaceholder('tu@correo.com').fill('usuario@test.com');
+    await page.getByRole('button', { name: 'Enviar enlace de recuperación' }).click();
+
+    await expect(page.getByText('¡Correo enviado!')).toBeVisible();
+    await expect(page.getByText('usuario@test.com')).toBeVisible();
+  });
+
+  //OM-516
+  test('flujo restablecer contraseña: token inválido muestra error y permite solicitar nuevo enlace', async ({ page }) => {
+    await page.route('**/api/users/validate-reset-token', async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Token inválido o expirado' }),
+      });
+    });
+
+    await page.goto('/restablecer-contrasena/token-invalido');
+
+    await expect(page.getByText('Enlace no válido')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Solicitar nuevo enlace' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Solicitar nuevo enlace' }).click();
+    await expect(page).toHaveURL('/recuperar-contrasena');
+  });
+
+  //OM-516
+  test('flujo restablecer contraseña: contraseñas no coinciden y restablecimiento exitoso', async ({ page }) => {
+    await page.route('**/api/users/validate-reset-token', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Token válido' }),
+      });
+    });
+
+    await page.route('**/api/users/reset-password', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Contraseña restablecida' }),
+      });
+    });
+
+    await page.goto('/restablecer-contrasena/token-valido');
+
+    await expect(page.locator('input[name="newPassword"]')).toBeVisible({ timeout: 5000 });
+
+    // Contraseñas que no coinciden
+    await page.locator('input[name="newPassword"]').fill('nuevapass123');
+    await page.locator('input[name="confirmPassword"]').fill('otrapassword');
+    await page.getByRole('button', { name: 'Restablecer contraseña' }).click();
+    await expect(page.getByText('Las contraseñas no coinciden')).toBeVisible();
+
+    // Corregir y restablecer exitosamente
+    await page.locator('input[name="confirmPassword"]').fill('nuevapass123');
+    await page.getByRole('button', { name: 'Restablecer contraseña' }).click();
+
+    await expect(page.getByText('¡Contraseña restablecida!')).toBeVisible();
+    await page.getByRole('button', { name: 'Iniciar sesión' }).click();
+    await expect(page).toHaveURL('/login');
+  });
+
+  //OM-516
+  test('flujo restablecer contraseña: token expirado durante el envío del formulario', async ({ page }) => {
+    await page.route('**/api/users/validate-reset-token', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Token válido' }),
+      });
+    });
+
+    await page.route('**/api/users/reset-password', async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Token expirado o inválido' }),
+      });
+    });
+
+    await page.goto('/restablecer-contrasena/token-expirado');
+
+    await expect(page.locator('input[name="newPassword"]')).toBeVisible({ timeout: 5000 });
+
+    await page.locator('input[name="newPassword"]').fill('nuevapass123');
+    await page.locator('input[name="confirmPassword"]').fill('nuevapass123');
+    await page.getByRole('button', { name: 'Restablecer contraseña' }).click();
+
+    await expect(page.getByText('Enlace no válido')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Solicitar nuevo enlace' })).toBeVisible();
+  });
+
 });
