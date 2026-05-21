@@ -6008,4 +6008,714 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page.locator('svg.lucide-monitor')).toHaveCount(0);
   });
 
+  // OM-522
+  test('flujo expiración de asignación: delivery ve cola vacía, comercio puede re-asignar, cliente ve estado vigente', async ({ page }) => {
+    const orderId = 8010;
+    const assignmentId = 9010;
+    const expiredDeadline = new Date(Date.now() - 120_000).toISOString();
+
+    //Mocks compartidos
+
+    // Cola del delivery: primera carga con asignación expirada; refetches = cola vacía.
+    // El componente lee `assignment.response_deadline` (snake_case) para detectar expiración.
+    let assignmentFetchCount = 0;
+    await page.route('**/api/deliveries/*/assignments', async (route) => {
+      assignmentFetchCount++;
+      const assignments = assignmentFetchCount === 1
+        ? [
+            {
+              id_delivery_assignment: assignmentId,
+              response_deadline: expiredDeadline,
+              order: {
+                id_order: orderId,
+                order_status: 'PENDING',
+                total: 6500,
+                shipping_distance_km: 2.5,
+                created_at: '2026-05-21T10:00:00.000Z',
+                user: { id_user: 130, name: 'Cliente Timeout', phone: '0981 000 111' },
+                store: { name: 'Nissei' },
+                order_items: [{ product: { name: 'Producto Timeout' }, quantity: 1 }],
+                address: { address: 'Calle Expirada 1', city: 'Asuncion', region: 'Central' },
+              },
+            },
+          ]
+        : [];
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ delivery_assignments: assignments, delivery: { id_delivery: 5 } }),
+      });
+    });
+
+    await page.route('**/api/assignments/orders/*/delivery-response', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ message: 'ok' }) });
+    });
+
+    // Pedido del comercio en seguimiento, sin asignación activa (expiró).
+    await page.route('**/api/orders/store/1**', async (route) => {
+      const url = new URL(route.request().url());
+      const requestedStatuses = (url.searchParams.get('order_status') ?? '')
+        .split(',').map(s => s.trim()).filter(Boolean);
+      const status = 'PROCESSING';
+      const shouldReturn = requestedStatuses.length === 0 || requestedStatuses.includes(status);
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          orders: shouldReturn ? [{
+            id: 9030,
+            status,
+            total: 6500,
+            notes: 'Pedido sin delivery por timeout',
+            createdAt: '2026-05-21T10:00:00.000Z',
+            address: { address: 'Calle Expirada 1', city: 'Asuncion' },
+            items: [{ id: 1, quantity: 1 }],
+          }] : [],
+          total: shouldReturn ? 1 : 0,
+          page: 1, limit: 10, total_page: 1,
+        }),
+      });
+    });
+
+    await page.route('**/api/orders/*/assignment', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ has_assignment: false }),
+      });
+    });
+
+    await page.route('**/api/stores/1/orders/9030/deliveries', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          available_deliveries: [{ id_delivery: 20, name: 'Nuevo Repartidor', phone: '0991 222333' }],
+          delivery_address: { address: 'Calle Expirada 1', city: 'Asuncion' },
+          order_id: 9030,
+          order_status: 'PROCESSING',
+        }),
+      });
+    });
+
+    // Pedido del cliente con estado vigente post-reasignación.
+    await page.unroute('**/api/users/*/orders');
+    await page.route('**/api/users/*/orders', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify([{
+            id: orderId,
+            status: 'PROCESSING',
+            total: 6500,
+            createdAt: '2026-05-21T10:00:00.000Z',
+            items: [{ id: 1, quantity: 1, price: 6500, originalPrice: 6500, isOfferApplied: false, subtotal: 6500 }],
+            address: { id: 1, address: 'Calle Expirada 1', city: 'Asuncion', region: 'Central' },
+          }]),
+        });
+      }
+    });
+
+    await page.unroute('**/api/users/*/orders/*');
+    await page.route('**/api/users/*/orders/*', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id: orderId,
+            status: 'PROCESSING',
+            total: 6500,
+            createdAt: '2026-05-21T10:00:00.000Z',
+            items: [{ id: 1, quantity: 1, price: 6500, originalPrice: 6500, isOfferApplied: false, subtotal: 6500 }],
+            address: { id: 1, address: 'Calle Expirada 1', city: 'Asuncion', region: 'Central' },
+          }),
+        });
+      }
+    });
+
+    // Delivery ve la asignación como expirada 
+
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          user: { id_user: 7, name: 'Delivery Demo', role: 'DELIVERY', id_delivery: 5 },
+        }),
+      });
+    });
+
+    await page.goto('/delivery/order');
+    await expect(page.getByRole('heading', { name: 'Pedidos para aceptar' })).toBeVisible();
+
+    // El badge muestra "El plazo para responder venció" y los botones se deshabilitan.
+    await expect(page.getByText('El plazo para responder venció')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole('button', { name: 'Aceptar' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Rechazar' })).toBeDisabled();
+
+    // Tras ~800ms el componente auto-refresca y la asignación expirada desaparece.
+    await expect(page.getByText('El plazo para responder venció')).not.toBeVisible({ timeout: 5000 });
+
+    //Comercio puede re-asignar el pedido
+
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      });
+    });
+
+    await page.goto('/comercio/pedidos');
+    await page.getByRole('button', { name: 'Seguimiento' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Seguimiento de Pedidos' })).toBeVisible();
+    await expect(page.getByText('ORD-9030')).toBeVisible();
+
+    // El pedido no está bloqueado: puede recibir una nueva asignación.
+    await expect(page.getByRole('button', { name: 'Añadir delivery' })).toBeVisible();
+    await page.getByRole('button', { name: 'Añadir delivery' }).click();
+
+    await expect(page.getByText('Nuevo Repartidor')).toBeVisible();
+
+    //Cliente ve estado vigente del pedido
+
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          user: { id_user: 7, id_store: null, name: 'Cliente Demo', role: 'CUSTOMER' },
+        }),
+      });
+    });
+
+    await page.goto('/pedidos');
+    await expect(page.getByRole('heading', { name: 'Mis Pedidos' })).toBeVisible();
+
+    const orderCard = page.locator('div.cursor-pointer').first();
+    await expect(orderCard).toBeVisible();
+    await orderCard.click();
+
+    await expect(page).toHaveURL(/\/pedidos\/\d+$/);
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.getByText('Información de pedido')).toBeVisible();
+    await expect(page.getByText('Dirección de envío')).toBeVisible();
+
+    // El pedido no muestra ningún indicador de error o bloqueo.
+    await expect(page.getByText(/[Bb]loqueado|[Ee]rror de asignación/)).not.toBeVisible();
+  });
+
+  // OM-522 — Rechazo manual de asignación de delivery
+  test('flujo rechazo manual del pedido: delivery rechaza, comercio ve aviso y puede re-asignar, cliente ve estado vigente', async ({ page }) => {
+    const orderId = 8020;
+    const assignmentId = 9020;
+    const activeDeadline = new Date(Date.now() + 300_000).toISOString(); // 5 min en el futuro
+
+    //Mocks compartidos
+
+    // Cola del delivery: primera carga con asignación activa; después del rechazo, cola vacía.
+    let assignmentFetchCount = 0;
+    await page.route('**/api/deliveries/*/assignments', async (route) => {
+      assignmentFetchCount++;
+      const assignments = assignmentFetchCount === 1
+        ? [
+            {
+              id_delivery_assignment: assignmentId,
+              response_deadline: activeDeadline,
+              order: {
+                id_order: orderId,
+                order_status: 'PENDING',
+                total: 9800,
+                shipping_distance_km: 3.1,
+                created_at: '2026-05-21T11:00:00.000Z',
+                user: { id_user: 131, name: 'Cliente Rechazo', phone: '0981 200 300' },
+                store: { name: 'Nissei' },
+                order_items: [{ product: { name: 'Producto Rechazo' }, quantity: 2 }],
+                address: { address: 'Calle Rechazo 55', city: 'Asuncion', region: 'Central' },
+              },
+            },
+          ]
+        : [];
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ delivery_assignments: assignments, delivery: { id_delivery: 5 } }),
+      });
+    });
+
+    // El backend confirma el rechazo e indica que no hay más deliveries disponibles.
+    await page.route('**/api/assignments/orders/*/delivery-response', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ message: 'ok', delivery_unavailable: true }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    // Endpoint de notificaciones que se recarga con el evento notificationsUpdated.
+    await page.route('**/api/notifications**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      });
+    });
+
+    // Pedido del comercio en seguimiento con deliveryUnavailable = true (delivery rechazó).
+    await page.route('**/api/orders/store/1**', async (route) => {
+      const url = new URL(route.request().url());
+      const requestedStatuses = (url.searchParams.get('order_status') ?? '')
+        .split(',').map(s => s.trim()).filter(Boolean);
+      const status = 'PROCESSING';
+      const shouldReturn = requestedStatuses.length === 0 || requestedStatuses.includes(status);
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          orders: shouldReturn ? [{
+            id: 9040,
+            status,
+            total: 9800,
+            deliveryUnavailable: true,
+            notes: 'Pedido con delivery rechazado',
+            createdAt: '2026-05-21T11:00:00.000Z',
+            address: { address: 'Calle Rechazo 55', city: 'Asuncion' },
+            items: [{ id: 1, quantity: 2 }],
+          }] : [],
+          total: shouldReturn ? 1 : 0,
+          page: 1, limit: 10, total_page: 1,
+        }),
+      });
+    });
+
+    await page.route('**/api/orders/*/assignment', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ has_assignment: false }),
+      });
+    });
+
+    await page.route('**/api/stores/1/orders/9040/deliveries', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          available_deliveries: [{ id_delivery: 21, name: 'Repartidor Nuevo', phone: '0992 300 400' }],
+          delivery_address: { address: 'Calle Rechazo 55', city: 'Asuncion' },
+          order_id: 9040,
+          order_status: 'PROCESSING',
+        }),
+      });
+    });
+
+    // Pedido del cliente en estado vigente post-rechazo.
+    await page.unroute('**/api/users/*/orders');
+    await page.route('**/api/users/*/orders', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify([{
+            id: orderId,
+            status: 'PROCESSING',
+            total: 9800,
+            createdAt: '2026-05-21T11:00:00.000Z',
+            items: [{ id: 1, quantity: 2, price: 9800, originalPrice: 9800, isOfferApplied: false, subtotal: 9800 }],
+            address: { id: 1, address: 'Calle Rechazo 55', city: 'Asuncion', region: 'Central' },
+          }]),
+        });
+      }
+    });
+
+    await page.unroute('**/api/users/*/orders/*');
+    await page.route('**/api/users/*/orders/*', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id: orderId,
+            status: 'PROCESSING',
+            total: 9800,
+            createdAt: '2026-05-21T11:00:00.000Z',
+            items: [{ id: 1, quantity: 2, price: 9800, originalPrice: 9800, isOfferApplied: false, subtotal: 9800 }],
+            address: { id: 1, address: 'Calle Rechazo 55', city: 'Asuncion', region: 'Central' },
+          }),
+        });
+      }
+    });
+
+    //Delivery rechaza manualmente el pedido
+
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          user: { id_user: 7, name: 'Delivery Demo', role: 'DELIVERY', id_delivery: 5 },
+        }),
+      });
+    });
+
+    await page.goto('/delivery/order');
+    await expect(page.getByRole('heading', { name: 'Pedidos para aceptar' })).toBeVisible();
+
+    // El pedido aparece con el timer activo (deadline en el futuro).
+    await expect(page.getByText('Cliente Rechazo')).toBeVisible();
+    await expect(page.getByText('Tiempo para responder:')).toBeVisible();
+
+    // El delivery rechaza manualmente.
+    await page.getByRole('button', { name: 'Rechazar' }).click();
+
+    // El backend responde con delivery_unavailable: true → toast específico.
+    await expect(
+      page.getByText('Pedido rechazado. El comercio fue notificado para reasignar otro repartidor.')
+    ).toBeVisible({ timeout: 5000 });
+
+    // Tras el auto-refresh, la cola queda vacía.
+    await expect(page.getByText('Cliente Rechazo')).not.toBeVisible({ timeout: 5000 });
+
+    //Comercio ve el aviso y puede re-asignar
+
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      });
+    });
+
+    await page.goto('/comercio/pedidos');
+    await page.getByRole('button', { name: 'Seguimiento' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Seguimiento de Pedidos' })).toBeVisible();
+    await expect(page.getByText('ORD-9040')).toBeVisible();
+
+    // El pedido muestra el aviso de que un delivery rechazó (deliveryUnavailable = true).
+    await expect(
+      page.getByText('Sin repartidor disponible: un delivery rechazó o no hay más repartidores activos. Asigná manualmente otro delivery.')
+    ).toBeVisible();
+
+    // El botón de re-asignación está disponible.
+    await expect(page.getByRole('button', { name: 'Añadir delivery' })).toBeVisible();
+    await page.getByRole('button', { name: 'Añadir delivery' }).click();
+
+    await expect(page.getByText('Repartidor Nuevo')).toBeVisible();
+
+    //Cliente ve estado vigente del pedido
+
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          user: { id_user: 7, id_store: null, name: 'Cliente Demo', role: 'CUSTOMER' },
+        }),
+      });
+    });
+
+    await page.goto('/pedidos');
+    await expect(page.getByRole('heading', { name: 'Mis Pedidos' })).toBeVisible();
+
+    const orderCard = page.locator('div.cursor-pointer').first();
+    await expect(orderCard).toBeVisible();
+    await orderCard.click();
+
+    await expect(page).toHaveURL(/\/pedidos\/\d+$/);
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.getByText('Información de pedido')).toBeVisible();
+    await expect(page.getByText('Dirección de envío')).toBeVisible();
+
+    // El pedido no muestra ningún indicador de error o bloqueo.
+    await expect(page.getByText(/[Bb]loqueado|[Ee]rror de asignación/)).not.toBeVisible();
+  });
+
+  // OM-522 — Desconexión / inactividad del delivery)
+  test('flujo desconexión del delivery: asignación liberada, comercio puede re-asignar, cliente ve estado vigente', async ({ page }) => {
+    const orderId = 8030;
+    const assignmentId = 9030;
+    const activeDeadline = new Date(Date.now() + 300_000).toISOString();
+
+    // Mocks compartidos
+
+    // Cuando el delivery se pone INACTIVE, el backend rechaza sus asignaciones pendientes.
+    let deliveryIsInactive = false;
+
+    await page.route('**/api/deliveries/5/status', async (route) => {
+      if (route.request().method() === 'PATCH') {
+        deliveryIsInactive = true;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ message: 'Estado actualizado' }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    // Perfil del delivery (inicialmente ACTIVE).
+    await page.route('**/api/deliveries/5', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id_delivery: 5,
+          delivery_status: 'ACTIVE',
+          vehicle_type: 'CAR',
+          coverage_city: 'Asunción',
+          coverage_region: 'Central',
+          coverage_radius_km: 12,
+          availability_notes: 'Lunes a Viernes',
+          average_rating: 4.5,
+          total_deliveries: 30,
+          reviews_count: 6,
+          created_at: '2025-11-01T10:00:00.000Z',
+        }),
+      });
+    });
+
+    await page.route('**/api/users/7', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: { id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000', role: 'DELIVERY' },
+        }),
+      });
+    });
+
+    // Cola de asignaciones: activa mientras el delivery está ACTIVE; vacía al desconectarse.
+    await page.route('**/api/deliveries/*/assignments', async (route) => {
+      const assignments = deliveryIsInactive
+        ? []
+        : [
+            {
+              id_delivery_assignment: assignmentId,
+              response_deadline: activeDeadline,
+              order: {
+                id_order: orderId,
+                order_status: 'PENDING',
+                total: 7400,
+                shipping_distance_km: 1.8,
+                created_at: '2026-05-21T12:00:00.000Z',
+                user: { id_user: 132, name: 'Cliente Desconexion', phone: '0981 400 500' },
+                store: { name: 'Nissei' },
+                order_items: [{ product: { name: 'Producto Desconexion' }, quantity: 1 }],
+                address: { address: 'Calle Inactivo 77', city: 'Asuncion', region: 'Central' },
+              },
+            },
+          ];
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ delivery_assignments: assignments, delivery: { id_delivery: 5 } }),
+      });
+    });
+
+    await page.route('**/api/notifications**', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) });
+    });
+
+    // Pedido del comercio en seguimiento con deliveryUnavailable = true.
+    await page.route('**/api/orders/store/1**', async (route) => {
+      const url = new URL(route.request().url());
+      const requestedStatuses = (url.searchParams.get('order_status') ?? '')
+        .split(',').map(s => s.trim()).filter(Boolean);
+      const status = 'PROCESSING';
+      const shouldReturn = requestedStatuses.length === 0 || requestedStatuses.includes(status);
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          orders: shouldReturn ? [{
+            id: 9050,
+            status,
+            total: 7400,
+            deliveryUnavailable: true,
+            notes: 'Pedido con delivery desconectado',
+            createdAt: '2026-05-21T12:00:00.000Z',
+            address: { address: 'Calle Inactivo 77', city: 'Asuncion' },
+            items: [{ id: 1, quantity: 1 }],
+          }] : [],
+          total: shouldReturn ? 1 : 0,
+          page: 1, limit: 10, total_page: 1,
+        }),
+      });
+    });
+
+    await page.route('**/api/orders/*/assignment', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ has_assignment: false }),
+      });
+    });
+
+    await page.route('**/api/stores/1/orders/9050/deliveries', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          available_deliveries: [{ id_delivery: 22, name: 'Carlos Repartidor', phone: '0993 500 600' }],
+          delivery_address: { address: 'Calle Inactivo 77', city: 'Asuncion' },
+          order_id: 9050,
+          order_status: 'PROCESSING',
+        }),
+      });
+    });
+
+    // Pedido del cliente en estado vigente.
+    await page.unroute('**/api/users/*/orders');
+    await page.route('**/api/users/*/orders', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify([{
+            id: orderId,
+            status: 'PROCESSING',
+            total: 7400,
+            createdAt: '2026-05-21T12:00:00.000Z',
+            items: [{ id: 1, quantity: 1, price: 7400, originalPrice: 7400, isOfferApplied: false, subtotal: 7400 }],
+            address: { id: 1, address: 'Calle Inactivo 77', city: 'Asuncion', region: 'Central' },
+          }]),
+        });
+      }
+    });
+
+    await page.unroute('**/api/users/*/orders/*');
+    await page.route('**/api/users/*/orders/*', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id: orderId,
+            status: 'PROCESSING',
+            total: 7400,
+            createdAt: '2026-05-21T12:00:00.000Z',
+            items: [{ id: 1, quantity: 1, price: 7400, originalPrice: 7400, isOfferApplied: false, subtotal: 7400 }],
+            address: { id: 1, address: 'Calle Inactivo 77', city: 'Asuncion', region: 'Central' },
+          }),
+        });
+      }
+    });
+
+    // Delivery se desconecta con asignación pendiente
+
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          user: { id_user: 7, name: 'Delivery Demo', role: 'DELIVERY', id_delivery: 5 },
+        }),
+      });
+    });
+
+    // Confirmar que la asignación está activa antes de desconectarse.
+    await page.goto('/delivery/order');
+    await expect(page.getByRole('heading', { name: 'Pedidos para aceptar' })).toBeVisible();
+    await expect(page.getByText('Cliente Desconexion')).toBeVisible();
+    await expect(page.getByText('Tiempo para responder:')).toBeVisible();
+
+    // Navegar al perfil y desconectarse.
+    await page.goto('/delivery/perfil');
+    await expect(page.getByRole('heading', { name: 'Perfil del Delivery' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Desconectarme' })).toBeVisible();
+    await page.getByRole('button', { name: 'Desconectarme' }).click();
+
+    // El backend rechaza las asignaciones pendientes automáticamente.
+    await expect(
+      page.getByText('Desconectado. Los pedidos pendientes fueron rechazados y el comercio fue notificado.')
+    ).toBeVisible({ timeout: 5000 });
+
+    // El perfil refleja el nuevo estado inactivo.
+    await expect(page.getByText('Inactivo').or(page.getByText('No disponible'))).toBeVisible({ timeout: 3000 });
+    await expect(page.getByRole('button', { name: 'Conectarme' })).toBeVisible();
+
+    // Al volver a la cola, ya no hay asignaciones (el backend las rechazó al desconectarse).
+    await page.goto('/delivery/order');
+    await expect(page.getByText('No hay pedidos pendientes')).toBeVisible({ timeout: 5000 });
+
+    // Comercio ve el aviso y puede re-asignar
+
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      });
+    });
+
+    await page.goto('/comercio/pedidos');
+    await page.getByRole('button', { name: 'Seguimiento' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Seguimiento de Pedidos' })).toBeVisible();
+    await expect(page.getByText('ORD-9050')).toBeVisible();
+
+    // El pedido muestra el aviso de repartidor no disponible (delivery se desconectó).
+    await expect(
+      page.getByText('Sin repartidor disponible: un delivery rechazó o no hay más repartidores activos. Asigná manualmente otro delivery.')
+    ).toBeVisible();
+
+    // El botón de re-asignación está disponible.
+    await expect(page.getByRole('button', { name: 'Añadir delivery' })).toBeVisible();
+    await page.getByRole('button', { name: 'Añadir delivery' }).click();
+
+    await expect(page.getByText('Carlos Repartidor')).toBeVisible();
+
+    // Cliente ve estado vigente del pedido
+
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          user: { id_user: 7, id_store: null, name: 'Cliente Demo', role: 'CUSTOMER' },
+        }),
+      });
+    });
+
+    await page.goto('/pedidos');
+    await expect(page.getByRole('heading', { name: 'Mis Pedidos' })).toBeVisible();
+
+    const orderCard = page.locator('div.cursor-pointer').first();
+    await expect(orderCard).toBeVisible();
+    await orderCard.click();
+
+    await expect(page).toHaveURL(/\/pedidos\/\d+$/);
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.getByText('Información de pedido')).toBeVisible();
+    await expect(page.getByText('Dirección de envío')).toBeVisible();
+
+    // El pedido no muestra ningún indicador de error o bloqueo.
+    await expect(page.getByText(/[Bb]loqueado|[Ee]rror de asignación/)).not.toBeVisible();
+  });
+
 });
