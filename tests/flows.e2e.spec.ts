@@ -1207,6 +1207,56 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page.getByRole('img', { name: 'Logo de Tienda Demo' }).last()).toBeVisible();
   });
 
+  // OM494
+  test('flujo admin: logos de comercios en panel admin - con imagen y fallback sin logo', async ({ page }) => {
+    await page.route('**/api/admin/stores/pending**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: [
+            {
+              id_store: 301,
+              name: 'Tienda Con Logo',
+              store_category: { name: 'Tecnología' },
+              user: { name: 'Ana Pérez' },
+              email: 'ana@demo.com',
+              phone: '0981000000',
+              description: 'Comercio con logo',
+              logo: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==',
+              created_at: '2026-03-22T10:00:00.000Z',
+            },
+            {
+              id_store: 302,
+              name: 'Tienda Sin Logo',
+              store_category: { name: 'Ropa' },
+              user: { name: 'Carlos García' },
+              email: 'carlos@demo.com',
+              phone: '0982000000',
+              description: 'Comercio sin logo',
+              logo: '',
+              created_at: '2026-03-23T10:00:00.000Z',
+            },
+          ],
+          pagination: { total: 2, page: 1, limit: 20, totalPages: 1 },
+        }),
+      });
+    });
+
+    await page.goto('/admin/comercios-pendientes');
+
+    // Con logo: imagen visible en la lista
+    await expect(page.getByRole('img', { name: 'Logo de Tienda Con Logo' })).toBeVisible();
+
+    // Sin logo: no se renderiza img (usa ícono de fallback)
+    await expect(page.getByRole('img', { name: 'Logo de Tienda Sin Logo' })).not.toBeVisible();
+
+    // Abrir modal de la tienda con logo: imagen visible en lista y dentro del modal
+    await page.getByRole('button', { name: 'Evaluar' }).first().click();
+    await expect(page.getByText('Detalles del Comercio')).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Logo de Tienda Con Logo' })).toHaveCount(2);
+  });
+
   test('flujo comercio: moderar reclamo de producto', async ({ page }) => {
     let currentStatus = 'PENDING';
 
