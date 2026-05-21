@@ -162,6 +162,10 @@ export default function DeliveryOrderScreen() {
   }, []);
 
   useEffect(() => {
+    loadOffers();
+  }, [loadOffers]);
+
+  useEffect(() => {
     const timer = setInterval(() => setNowTick(Date.now()), 1000);
     return () => clearInterval(timer);
   }, [setNowTick]);
