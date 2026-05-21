@@ -6768,4 +6768,117 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page.getByText(/[Bb]loqueado|[Ee]rror de asignación/)).not.toBeVisible();
   });
 
+  //OM-519
+  test('flujo cliente: advertencia de stock insuficiente, botón bloqueado e incremento bloqueado en carrito', async ({ page }) => {
+    await page.route('**/api/users/*/carts', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            carts: [
+              {
+                id: 1,
+                storeId: 1,
+                commerce: { id: 1, name: 'Nissei' },
+                status: 'ACTIVE',
+                items: [
+                  {
+                    id: 1,
+                    quantity: 5,
+                    product: { ...mockCartProduct, stock: 2 },
+                  },
+                ],
+              },
+            ],
+          }),
+        });
+      }
+    });
+
+    await page.goto('/carrito/1');
+
+    const itemCard = page.locator('article').first();
+
+    // advertencia de stock insuficiente visible en el ítem
+    await expect(itemCard.getByText(/Stock insuficiente \(Disponible: 2\)/)).toBeVisible();
+
+    //boton "Ir a Confirmar Pedido" deshabilitado
+    await expect(page.getByRole('button', { name: 'Ir a Confirmar Pedido' })).toBeDisabled();
+
+    // Clic en "+" no incrementa la cantidad y muestra toast de error
+    const plusBtn = itemCard.locator('button').nth(2);
+    const quantityDisplay = itemCard.locator('.flex.items-center.gap-2 span').first();
+
+    await expect(quantityDisplay).toHaveText('5');
+    await plusBtn.click();
+    await expect(page.getByText(/Solo hay 2 unidades disponibles de Apple iPhone 17 Pro A3256 Dual/)).toBeVisible();
+    await expect(quantityDisplay).toHaveText('5');
+  });
+
+  //OM-519
+  test('flujo cliente: advertencia de stock insuficiente y botón de confirmación bloqueado en confirmar pedido', async ({ page }) => {
+    await page.route('**/api/users/*/carts', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            carts: [
+              {
+                id: 1,
+                storeId: 1,
+                commerce: { id: 1, name: 'Nissei' },
+                status: 'ACTIVE',
+                items: [
+                  {
+                    id: 1,
+                    quantity: 5,
+                    product: { ...mockCartProduct, stock: 2, originalPrice: 13290000 },
+                  },
+                ],
+              },
+            ],
+          }),
+        });
+      }
+    });
+
+    await page.route('**/api/users/*/addresses', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ data: [] }),
+        });
+      }
+    });
+
+    let postOrderCalled = false;
+    await page.route('**/api/orders', async (route) => {
+      if (route.request().method() === 'POST') {
+        postOrderCalled = true;
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({ id: 999 }),
+        });
+      }
+    });
+
+    await page.goto('/confirmar-pedido/1');
+
+    await expect(page.getByRole('heading', { name: 'Confirmar Pedido' })).toBeVisible();
+
+    // Panel de advertencia de stock insuficiente visible con detalle del producto
+    await expect(page.getByText('Stock insuficiente')).toBeVisible();
+    await expect(page.getByText('Apple iPhone 17 Pro A3256 Dual (Disp: 2)')).toBeVisible();
+
+    // Botón "Confirmar Pedido" deshabilitado y no dispara POST /api/orders
+    const confirmarBtn = page.getByRole('button', { name: 'Confirmar Pedido' });
+    await expect(confirmarBtn).toBeDisabled();
+    await confirmarBtn.click({ force: true });
+    if (postOrderCalled) throw new Error('Se llamó a POST /api/orders con stock insuficiente');
+  });
+
 });
