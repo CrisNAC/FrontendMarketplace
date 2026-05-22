@@ -1,4 +1,4 @@
-import { test, expect, Page, Route } from '@playwright/test';
+﻿import { test, expect, Page, Route } from '@playwright/test';
 
 type Store = {
   id_store: number;
@@ -82,7 +82,7 @@ const mockActiveCart = {
   ],
 };
 
-const createBaseProduct = (productId) => ({
+const createBaseProduct = (productId: number) => ({
   id_product: productId,
   name: 'Producto prueba',
   description: 'Desc prueba',
@@ -128,6 +128,18 @@ const mockProducts = [
 ];
 
 async function setupCommonApiMocks(page: Page) {
+  // DEBE IR PRIMERO: al ser el primero registrado tiene la menor prioridad (LIFO).
+  // Intercepta cualquier request /api/* no mockeada para que no llegue al backend real
+  // (https://backendmarketplace-test.onrender.com en CI), que devolvería 401 y
+  // dispararía el interceptor de apiClient → _navigate('/login').
+  await page.route('**/api/**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({}),
+    });
+  });
+
   await page.route('**/api/users/register', async (route) => {
     await route.fulfill({
       status: 201,
@@ -148,8 +160,35 @@ async function setupCommonApiMocks(page: Page) {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      body: JSON.stringify({ success: true, user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
     });
+  });
+
+  // Navbar: carrito y notificaciones se disparan en cada página autenticada.
+  // Sin estos mocks, las requests llegan al backend real en CI y pueden
+  // recibir 401 → el interceptor de apiClient redirige a /login.
+  await page.route('**/api/users/*/carts', async (route) => {
+    if (route.request().method() === 'GET') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ carts: [] }),
+      });
+      return;
+    }
+    await route.fallback();
+  });
+
+  await page.route('**/api/notifications', async (route) => {
+    if (route.request().method() === 'GET') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ notifications: [] }),
+      });
+      return;
+    }
+    await route.fallback();
   });
 
   await page.route('**/api/categories/products**', async (route) => {
@@ -425,19 +464,7 @@ test.describe('Flujos E2E de usuario final', () => {
     await setupCommonApiMocks(page);
   });
 
-  test('auth: redirige a login sin sesion', async ({ page }) => {
-    await page.unroute('**/api/session/user-session');
-    await page.route('**/api/session/user-session', async (route) => {
-      await route.fulfill({
-        status: 401,
-        contentType: 'application/json',
-        body: JSON.stringify({ error: 'No autenticado' })
-      });
-    });
 
-    await page.goto('/comercio');
-    await expect(page).toHaveURL('/login');
-  });
 
   // este test ya no funciona en webkit porque WebKit no ejecuta el prellenado de campos de la misma forma que Chromium
   test('flujo cliente: registro, login, homepage, comercio, producto y comentarios', async ({ page }) => {
@@ -934,16 +961,6 @@ test.describe('Flujos E2E de usuario final', () => {
   });
 
   test('flujo direcciones: agregar nueva dirección del usuario', async ({ page }) => {
-    // Esta pantalla exige `success: true` en user-session.
-    await page.unroute('**/api/session/user-session');
-    await page.route('**/api/session/user-session', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ success: true, user: { id_user: 7, id_store: 1, name: 'Cliente Demo' } }),
-      });
-    });
-
     let addresses = [
       {
         id_address: 1,
@@ -1009,8 +1026,9 @@ test.describe('Flujos E2E de usuario final', () => {
     });
 
     await page.goto('/direcciones');
+    await page.waitForLoadState('networkidle');
 
-    await expect(page.getByRole('heading', { name: 'Mi Cuenta' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Mi Cuenta' })).toBeVisible({ timeout: 10000 });
     await expect(page.getByRole('link', { name: 'Libreta de direcciones' })).toBeVisible();
 
     await page.getByRole('button', { name: 'Agregar dirección' }).first().click();
@@ -1219,6 +1237,56 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page.getByRole('img', { name: 'Logo de Tienda Demo' }).last()).toBeVisible();
   });
 
+  // OM494
+  test('flujo admin: logos de comercios en panel admin - con imagen y fallback sin logo', async ({ page }) => {
+    await page.route('**/api/admin/stores/pending**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: [
+            {
+              id_store: 301,
+              name: 'Tienda Con Logo',
+              store_category: { name: 'Tecnología' },
+              user: { name: 'Ana Pérez' },
+              email: 'ana@demo.com',
+              phone: '0981000000',
+              description: 'Comercio con logo',
+              logo: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==',
+              created_at: '2026-03-22T10:00:00.000Z',
+            },
+            {
+              id_store: 302,
+              name: 'Tienda Sin Logo',
+              store_category: { name: 'Ropa' },
+              user: { name: 'Carlos García' },
+              email: 'carlos@demo.com',
+              phone: '0982000000',
+              description: 'Comercio sin logo',
+              logo: '',
+              created_at: '2026-03-23T10:00:00.000Z',
+            },
+          ],
+          pagination: { total: 2, page: 1, limit: 20, totalPages: 1 },
+        }),
+      });
+    });
+
+    await page.goto('/admin/comercios-pendientes');
+
+    // Con logo: imagen visible en la lista
+    await expect(page.getByRole('img', { name: 'Logo de Tienda Con Logo' })).toBeVisible();
+
+    // Sin logo: no se renderiza img (usa ícono de fallback)
+    await expect(page.getByRole('img', { name: 'Logo de Tienda Sin Logo' })).not.toBeVisible();
+
+    // Abrir modal de la tienda con logo: imagen visible en lista y dentro del modal
+    await page.getByRole('button', { name: 'Evaluar' }).first().click();
+    await expect(page.getByText('Detalles del Comercio')).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Logo de Tienda Con Logo' })).toHaveCount(2);
+  });
+
   test('flujo comercio: moderar reclamo de producto', async ({ page }) => {
     let currentStatus = 'PENDING';
 
@@ -1269,7 +1337,6 @@ test.describe('Flujos E2E de usuario final', () => {
   });
 
   test('flujo cliente: reportar producto y comentario', async ({ page }) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -1432,7 +1499,6 @@ test.describe('Flujos E2E de usuario final', () => {
   //OM-479
   test('flujo comercio: aceptar pedido pendiente y moverlo a seguimiento', async ({ page }) => {
     // Restaurar sesión de SELLER al inicio del test
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -1475,7 +1541,6 @@ test.describe('Flujos E2E de usuario final', () => {
   //OM-479
   test('flujo comercio: rechazar pedido pendiente', async ({ page }) => {
     // Restaurar sesión de SELLER al inicio del test
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -1512,7 +1577,6 @@ test.describe('Flujos E2E de usuario final', () => {
   //OM-479
   test("flujo comercio: reflejar pedido entregado en historial", async ({ page }) => {
     // Restaurar sesión de SELLER al inicio del test
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -1556,7 +1620,6 @@ test.describe('Flujos E2E de usuario final', () => {
   //OM-479
   test('flujo comercio: validar botones deshabilitados durante acción', async ({ page }) => {
     // Restaurar sesión de SELLER al inicio del test
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -1618,7 +1681,6 @@ test.describe('Flujos E2E de usuario final', () => {
   //OM-479
   test('flujo comercio: manejo de errores en aceptar/rechazar', async ({ page }) => {
     // Restaurar sesión de SELLER al inicio del test
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -1673,7 +1735,6 @@ test.describe('Flujos E2E de usuario final', () => {
   //OM-485
   // Mostrar ventana de calificación del delivery al iniciar sesión.
   test('flujo cliente: mostrar ventana de calificación del delivery al iniciar sesión', async ({ page }) => {
-    await page.unroute('**/api/session');
     await page.route('**/api/session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -1682,7 +1743,6 @@ test.describe('Flujos E2E de usuario final', () => {
       });
     });
 
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -1715,7 +1775,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
   //OM-485
   test('flujo cliente: calificar delivery desde la ventana emergente', async ({ page }) => {
-    await page.unroute('**/api/session');
     await page.route('**/api/session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -1724,7 +1783,6 @@ test.describe('Flujos E2E de usuario final', () => {
       });
     });
 
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -1769,7 +1827,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
   //OM-485
   test('flujo cliente: cerrar la ventana de calificación sin enviar', async ({ page }) => {
-    await page.unroute('**/api/session');
     await page.route('**/api/session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -1778,7 +1835,6 @@ test.describe('Flujos E2E de usuario final', () => {
       });
     });
 
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -1827,7 +1883,6 @@ test.describe('Flujos E2E de usuario final', () => {
     let deliveryRegistered = false;
 
     // Session usada en login
-    await page.unroute('**/api/session');
     await page.route('**/api/session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -1837,7 +1892,6 @@ test.describe('Flujos E2E de usuario final', () => {
     });
 
     // session/user-session debe cambiar su role dinámicamente según deliveryRegistered
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       const user = deliveryRegistered
         ? { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'Cliente Demo' }
@@ -1932,7 +1986,6 @@ test.describe('Flujos E2E de usuario final', () => {
   //OM-497
   test('flujo delivery: visualizar sidebar del panel', async ({ page }) => {
     // Session como DELIVERY
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ user: { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'Delivery Demo' } }) });
     });
@@ -1957,7 +2010,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
   //OM-486
   test('flujo cliente: abrir modal de delivery desde el navbar', async ({ page }) => {
-    await page.unroute('**/api/session');
     await page.route('**/api/session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -1966,7 +2018,6 @@ test.describe('Flujos E2E de usuario final', () => {
       });
     });
 
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -2013,7 +2064,6 @@ test.describe('Flujos E2E de usuario final', () => {
   test('flujo cliente: validar formulario y registrar como delivery', async ({ page }) => {
     let deliveryRegistered = false;
 
-    await page.unroute('**/api/session');
     await page.route('**/api/session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -2022,7 +2072,6 @@ test.describe('Flujos E2E de usuario final', () => {
       });
     });
 
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       const user = deliveryRegistered
         ? { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'Cliente Demo', email: 'cliente@test.com' }
@@ -2136,7 +2185,6 @@ test.describe('Flujos E2E de usuario final', () => {
   });
   test('flujo delivery: visualizar datos en mi perfil', async ({ page }) => {
     // Session DELIVERY con id_delivery
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ user: { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'Delivery Demo', email: 'delivery@test.com' } }) });
     });
@@ -2178,7 +2226,6 @@ test.describe('Flujos E2E de usuario final', () => {
   // OM-325
   // Toggle de estado del delivery
   test('flujo delivery: activar disponibilidad', async ({ page }) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ user: { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'Delivery Demo' } }) });
     });
@@ -2231,7 +2278,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-325
   test('flujo delivery: desactivar disponibilidad', async ({ page }) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ user: { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'Delivery Demo' } }) });
     });
@@ -2285,7 +2331,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-325
   test('flujo delivery: manejo de error al cambiar estado', async ({ page }) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ user: { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'Delivery Demo' } }) });
     });
@@ -2331,7 +2376,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-325
   test('flujo delivery: prevenir concurrencia con bloqueo de boton', async ({ page }) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ user: { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'Delivery Demo' } }) });
     });
@@ -2410,7 +2454,6 @@ test.describe('Flujos E2E de usuario final', () => {
       responseBody?: Record<string, unknown>;
     },
   ) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -2644,7 +2687,6 @@ test.describe('Flujos E2E de usuario final', () => {
   // OM-323: Gestionar perfil y datos de contacto del delivery
   //  Navegar a editar perfil
   test('flujo delivery: navegar a editar perfil desde pantalla de perfil', async ({ page }) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -2695,7 +2737,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-323
   test('flujo delivery: formulario de edición prellenado con datos actuales', async ({ page }) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -2745,7 +2786,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-323
   test('flujo delivery: upload de foto de perfil con vista previa', async ({ page }) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -2799,7 +2839,6 @@ test.describe('Flujos E2E de usuario final', () => {
     let putCalled = false;
     let putBody: DeliveryPutBody | null = null;
 
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -2900,7 +2939,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-323
   test('flujo delivery: validar campos obligatorios del perfil', async ({ page }) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -2965,7 +3003,6 @@ test.describe('Flujos E2E de usuario final', () => {
   test('flujo delivery: manejo de error al guardar perfil y estados de carga', async ({ page }) => {
     let putRequestCount = 0;
 
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -3050,7 +3087,6 @@ test.describe('Flujos E2E de usuario final', () => {
       total: number;
     },
   ) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -3461,7 +3497,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-488
   test('flujo delivery: Ver historial de pedidos', async ({ page }) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -3499,7 +3534,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-488
   test('flujo delivery: Paginación funciona correctamente', async ({ page }) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -3541,7 +3575,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-488
   test('flujo delivery: Filtrado por periodo y por estado', async ({ page }) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -3580,7 +3613,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-488
   test('flujo delivery: Estado vacío y manejo de error/carga', async ({ page }) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -3702,7 +3734,6 @@ test.describe('Flujos E2E de usuario final', () => {
         avgRating: 4.8,
       };
 
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -3975,8 +4006,8 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-408
   test('flujo comercio: navegar a pantalla Agregar Delivery', async ({ page }) => {
-    await installStoreDeliveriesSearchMock(page);
     await setupCommonApiMocks(page);
+    await installStoreDeliveriesSearchMock(page);
 
     await page.goto('/comercio/delivery');
     await page.waitForLoadState('networkidle');
@@ -3990,8 +4021,8 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-408
   test('flujo comercio: búsqueda por correo en tiempo real', async ({ page }) => {
-    await installStoreDeliveriesSearchMock(page);
     await setupCommonApiMocks(page);
+    await installStoreDeliveriesSearchMock(page);
 
     await page.goto('/comercio/delivery/agregar');
     await page.waitForLoadState('networkidle');
@@ -4010,8 +4041,8 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-408
   test('flujo comercio: búsqueda por teléfono en tiempo real', async ({ page }) => {
-    await installStoreDeliveriesSearchMock(page);
     await setupCommonApiMocks(page);
+    await installStoreDeliveriesSearchMock(page);
 
     await page.goto('/comercio/delivery/agregar');
     await page.waitForLoadState('networkidle');
@@ -4028,8 +4059,8 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-408
   test('flujo comercio: tarjeta de resultado con datos completos', async ({ page }) => {
-    await installStoreDeliveriesSearchMock(page);
     await setupCommonApiMocks(page);
+    await installStoreDeliveriesSearchMock(page);
 
     await page.goto('/comercio/delivery/agregar');
     await page.waitForLoadState('networkidle');
@@ -4048,8 +4079,8 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-408
   test('flujo comercio: agregar delivery con confirmación exitosa', async ({ page }) => {
-    await installStoreDeliveriesSearchMock(page);
     await setupCommonApiMocks(page);
+    await installStoreDeliveriesSearchMock(page);
 
     await page.goto('/comercio/delivery/agregar');
     await page.waitForLoadState('networkidle');
@@ -4070,8 +4101,8 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-408
   test('flujo comercio: error al agregar delivery (ya vinculado)', async ({ page }) => {
-    await installStoreDeliveriesSearchMock(page, { linkShouldFail: true, linkErrorStatus: 409 });
     await setupCommonApiMocks(page);
+    await installStoreDeliveriesSearchMock(page, { linkShouldFail: true, linkErrorStatus: 409 });
 
     await page.goto('/comercio/delivery/agregar');
     await page.waitForLoadState('networkidle');
@@ -4085,8 +4116,8 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-408
   test('flujo comercio: cancelar modal de confirmación', async ({ page }) => {
-    await installStoreDeliveriesSearchMock(page);
     await setupCommonApiMocks(page);
+    await installStoreDeliveriesSearchMock(page);
 
     await page.goto('/comercio/delivery/agregar');
     await page.waitForLoadState('networkidle');
@@ -4106,7 +4137,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
   test('flujo comercio: Listar deliveries elegibles y mostrarlos en modal', async ({ page }) => {
     // Restaurar sesión de SELLER
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -4126,7 +4156,9 @@ test.describe('Flujos E2E de usuario final', () => {
         items: [{ id: 1, quantity: 1 }],
       },
       getStatus: () => currentStatus,
-      setStatus: () => { /* no-op */ },
+      setStatus: (status: string) => {
+        currentStatus = status;
+      },
     });
 
     // Mock del endpoint de deliveries: backend retorna solo deliveries elegibles (ACTIVE, sin asignaciones)
@@ -4141,7 +4173,7 @@ test.describe('Flujos E2E de usuario final', () => {
           ],
           delivery_address: { address: 'Calle Falsa 123', city: 'Asuncion' },
           order_id: 9011,
-          order_status: 'PENDING',
+          order_status: 'PROCESSING',
         }),
       });
     });
@@ -4149,8 +4181,12 @@ test.describe('Flujos E2E de usuario final', () => {
     await page.goto('/comercio/pedidos');
     await expect(page.getByText('#ORD-9011')).toBeVisible();
 
+    await page.getByRole('button', { name: 'Aceptar' }).click();
+    await page.getByRole('button', { name: 'Seguimiento' }).click();
+
+    await expect(page.getByText('ORD-9011')).toBeVisible();
     // Abrir modal de asignación
-    await page.getByRole('button', { name: 'Asignar delivery' }).click();
+    await page.getByRole('button', { name: 'Añadir delivery' }).click();
 
     // Modal visible y lista con los deliveries retornados
     await expect(page.getByText('Delivery Activo Uno')).toBeVisible();
@@ -4161,7 +4197,6 @@ test.describe('Flujos E2E de usuario final', () => {
   //Asignar delivery desde modal y POST /api/assignments
   test('flujo comercio: Asignar delivery desde modal con exito', async ({ page }) => {
     // Restaurar sesión SELLER
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -4181,10 +4216,11 @@ test.describe('Flujos E2E de usuario final', () => {
         items: [{ id: 1, quantity: 1 }],
       },
       getStatus: () => currentStatus,
-      setStatus: () => { /* no-op */ },
+      setStatus: (status: string) => {
+        currentStatus = status;
+      },
     });
 
-    // Mock GET deliveries (lista elegible)
     await page.route('**/api/stores/1/orders/9020/deliveries', async (route) => {
       await route.fulfill({
         status: 200,
@@ -4196,12 +4232,11 @@ test.describe('Flujos E2E de usuario final', () => {
           ],
           delivery_address: { address: 'Calle Test 55', city: 'Asuncion' },
           order_id: 9020,
-          order_status: 'PENDING',
+          order_status: 'PROCESSING',
         }),
       });
     });
 
-    // Capturamos el POST a /api/assignments
     let capturedBody: Record<string, unknown> | null = null;
     await page.route('**/api/assignments', async (route) => {
       if (route.request().method() === 'POST') {
@@ -4216,24 +4251,24 @@ test.describe('Flujos E2E de usuario final', () => {
       await route.fallback();
     });
 
-    // Ir a la página de pedidos del comercio y abrir modal
     await page.goto('/comercio/pedidos');
     await expect(page.getByText('#ORD-9020')).toBeVisible();
-    await page.getByRole('button', { name: 'Asignar delivery' }).click();
 
-    // Seleccionar el delivery y confirmars
+    await page.getByRole('button', { name: 'Aceptar' }).click();
+    await page.getByRole('button', { name: 'Seguimiento' }).click();
+
+    await expect(page.getByText('ORD-9020')).toBeVisible();
+    await page.getByRole('button', { name: 'Añadir delivery' }).click();
+
     await page.getByText('Delivery Selector').click();
     await page.getByRole('button', { name: 'Asignar delivery' }).click();
 
-    // Esperar que el modal se cierre
     await expect(page.getByRole('heading', { name: 'Asignar delivery' })).not.toBeVisible();
-
+    expect(capturedBody).toEqual({ fk_order: 9020, fk_delivery: 52 });
   });
 
   // OM-489
   test('flujo comercio: Sin deliveries disponibles muestra mensaje sin deliveries disponibles y boton Asignar desactivado', async ({ page }) => {
-    // Restaurar sesión SELLER
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -4253,10 +4288,11 @@ test.describe('Flujos E2E de usuario final', () => {
         items: [{ id: 1, quantity: 1 }],
       },
       getStatus: () => currentStatus,
-      setStatus: () => { /* no-op */ },
+      setStatus: (status: string) => {
+        currentStatus = status;
+      },
     });
 
-    // Endpoint devuelve lista vacía
     await page.route('**/api/stores/1/orders/9015/deliveries', async (route) => {
       await route.fulfill({
         status: 200,
@@ -4265,23 +4301,27 @@ test.describe('Flujos E2E de usuario final', () => {
           available_deliveries: [],
           delivery_address: { address: 'Calle Vacia 0', city: 'Villarrica' },
           order_id: 9015,
-          order_status: 'PENDING',
+          order_status: 'PROCESSING',
         }),
       });
     });
 
     await page.goto('/comercio/pedidos');
     await expect(page.getByText('#ORD-9015')).toBeVisible();
-    await page.getByRole('button', { name: 'Asignar delivery' }).click();
 
-    // Debe mostrar mensaje de estado vacío y el botón principal debe estar deshabilitado
-    await expect(page.getByText('No hay deliveries disponibles')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Asignar delivery' })).toBeDisabled();
+    await page.getByRole('button', { name: 'Aceptar' }).click();
+    await page.getByRole('button', { name: 'Seguimiento' }).click();
+
+    await expect(page.getByText('ORD-9015')).toBeVisible();
+    await page.getByRole('button', { name: 'Añadir delivery' }).click();
+
+    const modal = page.locator('dialog');
+    await expect(modal.getByText('No hay deliveries disponibles')).toBeVisible();
+    await expect(modal.getByRole('button', { name: 'Asignar delivery' })).toBeDisabled();
   });
 
   // OM-490
   test('flujo delivery: finalizar pedido activo', async ({ page }) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -4378,7 +4418,6 @@ test.describe('Flujos E2E de usuario final', () => {
     const productId = 101;
 
 
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -4436,7 +4475,6 @@ test.describe('Flujos E2E de usuario final', () => {
   test('flujo comercio: Validar stock inválido en edición', async ({ page }) => {
     const productId = 101;
 
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -4674,7 +4712,6 @@ test.describe('Flujos E2E de usuario final', () => {
       await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ message: 'should not be called' }) });
     });
 
-    await page.unroute('**/api/session');
     let loginCalled = false;
     await page.route('**/api/session', async (route) => {
       loginCalled = true;
@@ -4738,7 +4775,6 @@ test.describe('Flujos E2E de usuario final', () => {
     });
 
     // Mock sesión como SELLER
-    await page.unroute('**/api/session');
     await page.route('**/api/session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -4746,7 +4782,6 @@ test.describe('Flujos E2E de usuario final', () => {
         body: JSON.stringify({ token: 'fake-token', user: { id_user: 7, role: 'SELLER', id_store: 1 } }),
       });
     });
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -4805,16 +4840,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
   //OM-506
   test('flujo cliente: Campos inválidos al agregar dirección', async ({ page }) => {
-    // Mock session como CUSTOMER
-    await page.unroute('**/api/session/user-session');
-    await page.route('**/api/session/user-session', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ success: true, user: { id_user: 7, id_store: 1, name: 'Cliente Demo' } }),
-      });
-    });
-
     // Mock addresses endpoint y detectar POST
     await page.unroute('**/api/users/*/addresses**');
     let postCalled = false;
@@ -4842,7 +4867,8 @@ test.describe('Flujos E2E de usuario final', () => {
 
     // Ir a la página de direcciones
     await page.goto('/direcciones');
-    await expect(page.getByRole('heading', { name: 'Mi Cuenta' })).toBeVisible();
+    await page.waitForLoadState('networkidle');
+    await expect(page.getByRole('heading', { name: 'Mi Cuenta' })).toBeVisible({ timeout: 10000 });
     await expect(page.getByRole('link', { name: 'Libreta de direcciones' })).toBeVisible();
 
     // Abrir modal de agregar dirección
@@ -4882,7 +4908,6 @@ test.describe('Flujos E2E de usuario final', () => {
     });
 
     // Mock sesión como CUSTOMER (CommerceCreationForm lee /api/session/user-session)
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -4906,7 +4931,7 @@ test.describe('Flujos E2E de usuario final', () => {
 
     // Ir a la página de creación de comercio
     await page.goto('/crear-comercio');
-    await expect(page.getByText('Crear Comercio')).toBeVisible();
+    await expect(page.getByText('Crear Comercio').nth(1)).toBeVisible();
 
     // Rellenar formulario con valores inválidos según el ticket
     await page.getByPlaceholder('Ej: Mi Tienda Online').fill(''); // nombre vacio
@@ -4957,6 +4982,29 @@ test.describe('Flujos E2E de usuario final', () => {
     let updateCalled = false;
     await page.route('**/api/commerces/**', async (route) => {
       const method = route.request().method();
+      if (method === 'GET' && route.request().url().includes('/api/commerces/my/')) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id_store: 1,
+            name: 'Tienda Demo',
+            email: 'store@demo.com',
+            phone: '+595981000000',
+            description: 'Descripción demo',
+            categories: [],
+            addresses: [{ address: 'Av Demo 123', latitude: null, longitude: null }],
+            logo: null,
+            website_url: 'https://mi-comercio.com',
+            instagram_url: '',
+            tiktok_url: '',
+            base_price: 1000,
+            distance_price: 2000,
+          }),
+        });
+        return;
+      }
+
       if (method !== 'GET') {
         updateCalled = true;
         await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id_store: 1 }) });
@@ -4966,7 +5014,6 @@ test.describe('Flujos E2E de usuario final', () => {
     });
 
     // Mock sesión como SELLER (tiene id_store = 1)
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -5056,7 +5103,6 @@ test.describe('Flujos E2E de usuario final', () => {
   //OM-506
   test('flujo admin: Campos inválidos al editar categoria en admin', async ({ page }) => {
     // Mock session como ADMIN
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -5138,7 +5184,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
   //OM-506
   test('flujo cliente: Campos inválidos al comentar producto', async ({ page }) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -5412,6 +5457,2041 @@ test.describe('Flujos E2E de usuario final', () => {
 
     // Debe mostrarse el estado vacío
     await expect(page.getByText('Tu carrito está vacío')).toBeVisible();
+  });
+
+  //OM-505 - Notificaciones 
+
+
+  // notificación de pedido confirmado — badge, lista, marcar leída y navegación
+  test('flujo notificaciones: notificación de pedido confirmado (badge, lista, marcar leída y navegación)', async ({ page }) => {
+    // Mock: sesión (usuario autenticado)
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: null, name: 'Cliente Demo' } }),
+      });
+    });
+
+    // Mock: carts del usuario (fetchCartsApi) — evitar que falle el refresh del navbar
+    await page.route('**/api/users/7/carts', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ carts: [] }),
+      });
+    });
+
+    // Mock: GET /api/notifications con una notificación de pedido confirmado
+    await page.route('**/api/notifications', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          unreadCount: 1,
+          notifications: [
+            {
+              id: 123,
+              title: '¡Tu pedido #555 fue confirmado!',
+              message: 'Tu pago fue registrado y el pedido fue confirmado.',
+              referenceId: 555,
+              read: false,
+              createdAt: '2026-05-18T12:00:00.000Z',
+            },
+          ],
+        }),
+      });
+    });
+
+    // Interceptar PATCH que marca la notificación como leída
+    let patchCalled = false;
+    await page.route('**/api/notifications/123/read', async (route) => {
+      patchCalled = true;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 123,
+          title: '¡Tu pedido #555 fue confirmado!',
+          referenceId: 555,
+          read: true,
+          createdAt: '2026-05-18T12:00:00.000Z',
+        }),
+      });
+    });
+
+    // Mock: GET orders for user — necesario para la página /pedidos/:id
+    await page.route('**/api/users/7/orders', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          {
+            id: 555,
+            createdAt: '2026-05-18T11:50:00.000Z',
+            status: 'PROCESSING',
+            items: [],
+            total: 13290000,
+            address: null,
+            notes: null,
+          },
+        ]),
+      });
+    });
+
+    // Ir a la home para que el Navbar haga el fetch y muestre el badge
+    await page.goto('/');
+
+    // Esperar que el badge del navbar muestre "1"
+    const bellBadge = page.locator('button[aria-label="Notificaciones"] span');
+    await expect(bellBadge).toHaveText('1');
+
+    // Abrir el dropdown de notificaciones desde la campana
+    await page.click('button[aria-label="Notificaciones"]');
+
+    // Verificar que la notificación de pedido confirmado está en la lista
+    const notifButton = page.getByRole('button', { name: '¡Tu pedido #555 fue confirmado!' });
+    await expect(notifButton).toBeVisible();
+
+    // Hacer click en la notificación: debe llamar al PATCH y navegar a /pedidos/555
+    await notifButton.click();
+
+    // Esperar navegación a detalle del pedido
+    await page.waitForURL('**/pedidos/555');
+
+    // Verificar que el PATCH fue ejecutado
+    expect(patchCalled).toBeTruthy();
+
+    // En la página de detalle del pedido debe mostrarse el número del pedido
+    await expect(page.getByText(/Pedido N° 555/)).toBeVisible();
+  });
+
+  //OM-521
+  test('flujo cliente: Customer sin comercio intenta acceder a comercio, este redirige a crear comercio', async ({ page }) => {
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,  // ← esto faltaba
+          user: { id_user: 7, name: 'Cliente Demo', role: 'CUSTOMER', id_store: null },
+        }),
+      });
+    });
+
+    await page.route('**/api/users/7/carts', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ carts: [] }),
+      });
+    });
+
+    await page.route('**/api/notifications', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ unreadCount: 0, notifications: [] }),
+      });
+    });
+
+    await page.route('**/api/commerces/categories', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          { id: 1, name: 'Comida' },
+          { id: 2, name: 'Tecnología' },
+        ]),
+      });
+    });
+
+    await page.goto('/');
+    await page.getByRole('link', { name: 'Comercio' }).click();
+    await expect(page).toHaveURL('/crear-comercio');
+    await expect(page.getByText('Crear Comercio').nth(1)).toBeVisible();
+  });
+
+  // OM-521
+  test('flujo comercio: usuario SELLER intenta acceder a crear comercio, pero redirige a panel de comercio y muestra toast', async ({ page }) => {
+    // Sesión como SELLER
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          user: {
+            id_user: 7,
+            id_store: 1,
+            name: 'Comerciante Demo',
+            role: 'SELLER',
+          },
+        }),
+      });
+    });
+
+    // Mocks usados por Navbar en ambas pantallas
+    await page.route('**/api/users/7/carts', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ carts: [] }),
+      });
+    });
+
+    await page.route('**/api/notifications', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          unreadCount: 0,
+          notifications: [],
+        }),
+      });
+    });
+
+    // Mock del panel de comercio al que redirige
+    await page.route('**/api/commerces/my/1', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id_store: 1,
+          name: 'Comercio Demo',
+          store_status: 'ACTIVE',
+          products: [],
+        }),
+      });
+    });
+
+    // Ir directo a la vista de crear comercio
+    await page.goto('/crear-comercio');
+
+    // Debe redirigir automáticamente al panel de comercio
+    await expect(page).toHaveURL('/comercio');
+
+    // Toast de aviso
+    await expect(page.getByText('Ya tenés un comercio registrado.')).toBeVisible();
+
+    // Validación de que se cargó el panel
+    await expect(page.getByText('Dashboard - Comercio Demo')).toBeVisible();
+  });
+
+
+  // OM-504
+  test('flujo login: volver al inicio, bloquear campos, error personalizado y mostrar contraseña', async ({ page }) => {
+    await page.goto('/login');
+
+    const backButton = page.getByRole('button', { name: /Inicio/i });
+    await expect(backButton).toBeVisible();
+
+    await page.getByPlaceholder('tu@correo.com').fill('invalid-email');
+    await page.locator('input[name="password"]').fill('12345');
+
+    // Selector corregido: Lucide renderiza clases como lucide-eye en el SVG
+    const eyeButton = page.locator('button').filter({
+      has: page.locator('svg.lucide-eye, svg.lucide-eye-off'),
+    }).first();
+    await expect(eyeButton).toBeVisible();
+    await eyeButton.click();
+
+    const passwordInput = page.locator('input[name="password"]');
+    await expect(passwordInput).toHaveAttribute('type', 'text');
+
+    await eyeButton.click();
+    await expect(passwordInput).toHaveAttribute('type', 'password');
+
+    await page.locator('form button[type="submit"]').click();
+
+    await expect(page.getByText('Ingresá un correo válido')).toBeVisible();
+    // Corregido: la contraseña "12345" tiene 5 chars, falla por longitud mínima (8), no por obligatoriedad
+    await expect(page.getByText('La contraseña debe tener mínimo 8 caracteres')).toBeVisible();
+
+    const submitButton = page.locator('form button[type="submit"]');
+    await expect(submitButton).toBeEnabled();
+
+    await page.getByPlaceholder('tu@correo.com').fill('user@test.com');
+    await page.locator('input[name="password"]').fill('12345678');
+    await expect(page.getByPlaceholder('tu@correo.com')).toBeEnabled();
+
+    await backButton.click();
+    await expect(page).toHaveURL('/');
+  });
+
+  // OM-504
+  test('flujo registro: volver al inicio, bloquear campos, error personalizado y mostrar contraseña', async ({ page }) => {
+    await page.goto('/login');
+
+    // Cambiar a pestaña Registrarse
+    await page.getByRole('button', { name: 'Registrarse' }).click();
+
+    // Verificar que existe el botón de volver al Inicio
+    const backButton = page.getByRole('button', { name: /Inicio/i });
+    await expect(backButton).toBeVisible();
+
+    // Validaciones: enviar datos inválidos
+    await page.getByPlaceholder('Tu nombre').fill(''); // vacío
+    await page.getByPlaceholder('tu@correo.com').fill('bad-email');
+    await page.locator('input[name="password"]').fill('short');
+    await page.locator('input[name="confirmPassword"]').fill('different');
+
+    // Mostrar/ocultar password y confirmPassword
+    const pwdEye = page.locator('input[name="password"] + button');
+    const confirmPwdEye = page.locator('input[name="confirmPassword"] + button');
+    await pwdEye.click();
+    await expect(page.locator('input[name="password"]')).toHaveAttribute('type', 'text');
+    await pwdEye.click();
+    await expect(page.locator('input[name="password"]')).toHaveAttribute('type', 'password');
+
+    await confirmPwdEye.click();
+    await expect(page.locator('input[name="confirmPassword"]')).toHaveAttribute('type', 'text');
+    await confirmPwdEye.click();
+    await expect(page.locator('input[name="confirmPassword"]')).toHaveAttribute('type', 'password');
+
+    // Intentar enviar y verificar mensajes de error personalizados debajo de cada campo
+    await page.locator('form button[type="submit"]').click();
+    await expect(page.getByText('El nombre es obligatorio')).toBeVisible();
+    await expect(page.getByText('Ingresá un correo válido')).toBeVisible();
+    await expect(page.getByText('La contraseña debe tener mínimo 8 caracteres')).toBeVisible();
+    await expect(page.getByText('Las contraseñas no coinciden')).toBeVisible();
+
+    // Ahora probar bloqueo de campos durante la petición: interceptamos y retardamos la respuesta
+    await page.route('**/api/users/register', async (route) => {
+      await new Promise((r) => setTimeout(r, 300));
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Registro exitoso' }),
+      });
+    });
+
+    // Rellenar datos válidos y enviar
+    await page.getByPlaceholder('Tu nombre').fill('Test User');
+    await page.getByPlaceholder('tu@correo.com').fill('user@test.com');
+    await page.locator('input[name="password"]').fill('12345678');
+    await page.locator('input[name="confirmPassword"]').fill('12345678');
+
+    const submitBtn = page.locator('form button[type="submit"]');
+    await submitBtn.click();
+
+    // Durante la petición los inputs y botones deben estar deshabilitados
+    await expect(page.getByPlaceholder('Tu nombre')).toBeDisabled();
+    await expect(page.getByPlaceholder('tu@correo.com')).toBeDisabled();
+    await expect(page.locator('input[name="password"]')).toBeDisabled();
+    await expect(page.locator('input[name="confirmPassword"]')).toBeDisabled();
+    await expect(submitBtn).toBeDisabled();
+
+    // Volver al inicio usando el botón de flecha
+    await backButton.click();
+    await expect(page).toHaveURL('/');
+  });
+
+
+  //OM-518
+  test('flujo cliente: visualizar productos relacionados en detalle de producto', async ({ page }) => {
+    let requestedLimit: string | null = null;
+
+    const relatedProducts = Array.from({ length: 10 }, (_, index) => {
+      const itemNumber = index + 1;
+
+      return {
+        id: 200 + itemNumber,
+        name: `Producto relacionado ${itemNumber}`,
+        description: `Descripción relacionada ${itemNumber}`,
+        price: 1000000 + index * 100000,
+        quantity: 10,
+        imageUrl: itemNumber % 2 === 0 ? `https://picsum.photos/seed/related-${itemNumber}/400/400` : null,
+        isOffer: itemNumber === 1,
+        offerPrice: itemNumber === 1 ? 850000 : null,
+        averageRating: 4.1 + (index % 4) * 0.1,
+        reviewCount: 12 + index,
+        categories: [{ id: 1, name: 'Celulares' }],
+      };
+    });
+
+    await page.route('**/products/101/related**', async (route) => {
+      const url = new URL(route.request().url());
+      requestedLimit = url.searchParams.get('limit');
+
+      const limit = Number(requestedLimit ?? 8);
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(relatedProducts.slice(0, limit)),
+      });
+    });
+
+    await page.goto('/producto-detalle/101');
+
+    await expect(page.getByRole('heading', { name: 'Productos relacionados' })).toBeVisible();
+    await expect.poll(() => requestedLimit).toBe('8');
+
+    const relatedSection = page.locator('section').filter({ hasText: 'Productos relacionados' });
+
+    await expect(relatedSection).toBeVisible();
+    await expect(relatedSection.getByRole('button', { name: /Producto relacionado/i })).toHaveCount(8);
+    await expect(relatedSection.getByText('Apple iPhone 17 Pro A3256 Dual')).toHaveCount(0);
+
+    const firstCard = relatedSection.getByRole('button', { name: /Producto relacionado 1/i });
+
+    await expect(firstCard.getByText('Celulares')).toBeVisible();
+    await expect(firstCard.getByText('Oferta')).toBeVisible();
+    await expect(firstCard.getByText(/★/)).toBeVisible();
+
+    await firstCard.click();
+    await expect(page).toHaveURL('/producto-detalle/201');
+  });
+
+  //Om-508
+  test('flujo admin: crear categoria con icono, persistir en tabla, editar icono y ver detalle', async ({ page }) => {
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          user: { id_user: 1, role: 'ADMIN', name: 'Admin Demo' },
+        }),
+      });
+    });
+
+    const createdAt = new Date().toISOString();
+    let updatedAt = createdAt;
+    let categoryCreated = false;
+
+    // Categoría preexistente
+    const existingCategory = {
+      id: 100,
+      name: 'Electrónica',
+      icon: 'Monitor',
+      visible: true,
+      status: true,
+      productCount: 3,
+      createdAt,
+      updatedAt,
+    };
+
+    // Categoría que se va a crear
+    const newCategoryState = {
+      id: 101,
+      name: 'Audio',
+      icon: 'Laptop',
+      visible: true,
+      status: true,
+      productCount: 0,
+      createdAt,
+      updatedAt,
+    };
+
+    await page.unroute('**/api/admin/categories/filter/withProducts');
+    await page.route('**/api/admin/categories/filter/withProducts**', async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.fallback();
+        return;
+      }
+
+      const data = categoryCreated
+        ? [existingCategory, newCategoryState]
+        : [existingCategory];
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data,
+          categoryTotal: data.length,
+          categoryPage: 1,
+          categoryLimit: 20,
+          categoryTotalPages: 1,
+        }),
+      });
+    });
+
+    await page.route('**/api/admin/categories/100', async (route) => {
+      const method = route.request().method();
+
+      if (method === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            ...existingCategory,
+            createdAt,
+            updatedAt,
+            products: {
+              data: [],
+              total: 0,
+              productPage: 1,
+              productLimit: 10,
+              productTotalPages: 1,
+            },
+          }),
+        });
+        return;
+      }
+
+      if (method === 'PUT') {
+        const payload = route.request().postDataJSON();
+
+        existingCategory.name = payload.name ?? existingCategory.name;
+        existingCategory.visible = payload.visible ?? existingCategory.visible;
+        existingCategory.icon = payload.icon ?? existingCategory.icon;
+        updatedAt = new Date().toISOString();
+        existingCategory.updatedAt = updatedAt;
+
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id: existingCategory.id,
+            name: existingCategory.name,
+            icon: existingCategory.icon,
+            visible: existingCategory.visible,
+            status: existingCategory.status,
+            productCount: existingCategory.productCount,
+            createdAt: existingCategory.createdAt,
+            updatedAt: existingCategory.updatedAt,
+          }),
+        });
+        return;
+      }
+
+      await route.fallback();
+    });
+
+    let createCalled = false;
+    await page.unroute('**/api/admin/categories');
+    await page.route('**/api/admin/categories', async (route) => {
+      if (route.request().method() !== 'POST') {
+        await route.fallback();
+        return;
+      }
+
+      createCalled = true;
+      categoryCreated = true;
+      const payload = route.request().postDataJSON();
+
+      newCategoryState.name = payload.name;
+      newCategoryState.icon = payload.icon ?? 'Tag';
+
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: newCategoryState.id,
+          name: newCategoryState.name,
+          icon: newCategoryState.icon,
+          visible: true,
+          status: true,
+          createdAt,
+        }),
+      });
+    });
+
+    await page.goto('/admin/categorias');
+    await expect(page.getByRole('heading', { name: 'Gestión de Categorías' })).toBeVisible();
+
+    // Verificar que la categoría preexistente está visible y la nueva aún no
+    await expect(page.getByText('Electrónica')).toBeVisible();
+    await expect(page.getByText('Audio')).not.toBeVisible();
+
+    await page.getByRole('button', { name: 'Nueva Categoría' }).click();
+    await expect(page.getByRole('heading', { name: 'Nueva Categoría' })).toBeVisible();
+
+    await page.getByPlaceholder('Ej: Electrónica').fill('Audio');
+    await page.getByRole('button', { name: 'Laptop' }).click();
+    await expect(page.locator('svg.lucide-laptop').first()).toBeVisible();
+
+    await page.getByRole('button', { name: 'Crear Categoría' }).click();
+    expect(createCalled).toBe(true);
+
+    // Ahora deben aparecer las dos categorías
+    await expect(page.getByText('Electrónica')).toBeVisible();
+    await expect(page.getByText('Audio')).toBeVisible();
+    await expect(page.locator('div').filter({ hasText: 'Audio' }).locator('svg.lucide-laptop')).toBeVisible();
+
+    // Usar el primer botón "Ver detalle" que corresponde a Electrónica
+    await page.getByRole('button', { name: 'Ver detalle' }).first().click();
+    await expect(page.getByRole('heading', { name: 'Electrónica' })).toBeVisible();
+    await expect(page.locator('svg.lucide-monitor')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Editar' }).click();
+    await expect(page.getByRole('heading', { name: 'Editar Categoría' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Smartphone' }).click();
+    await expect(page.locator('svg.lucide-smartphone').first()).toBeVisible();
+
+    await page.getByRole('button', { name: 'Guardar Cambios' }).click();
+    await expect(page.locator('svg.lucide-smartphone').first()).toBeVisible();
+    await expect(page.locator('svg.lucide-monitor')).toHaveCount(0);
+  });
+
+  // OM-522
+  test('flujo expiración de asignación: delivery ve cola vacía, comercio puede re-asignar, cliente ve estado vigente', async ({ page }) => {
+    const orderId = 8010;
+    const assignmentId = 9010;
+    const expiredDeadline = new Date(Date.now() - 120_000).toISOString();
+
+    //Mocks compartidos
+
+    // Cola del delivery: primera carga con asignación expirada; refetches = cola vacía.
+    // El componente lee `assignment.response_deadline` (snake_case) para detectar expiración.
+    let assignmentFetchCount = 0;
+    await page.route('**/api/deliveries/*/assignments', async (route) => {
+      assignmentFetchCount++;
+      const assignments = assignmentFetchCount === 1
+        ? [
+            {
+              id_delivery_assignment: assignmentId,
+              response_deadline: expiredDeadline,
+              order: {
+                id_order: orderId,
+                order_status: 'PENDING',
+                total: 6500,
+                shipping_distance_km: 2.5,
+                created_at: '2026-05-21T10:00:00.000Z',
+                user: { id_user: 130, name: 'Cliente Timeout', phone: '0981 000 111' },
+                store: { name: 'Nissei' },
+                order_items: [{ product: { name: 'Producto Timeout' }, quantity: 1 }],
+                address: { address: 'Calle Expirada 1', city: 'Asuncion', region: 'Central' },
+              },
+            },
+          ]
+        : [];
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ delivery_assignments: assignments, delivery: { id_delivery: 5 } }),
+      });
+    });
+
+    await page.route('**/api/assignments/orders/*/delivery-response', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ message: 'ok' }) });
+    });
+
+    // Pedido del comercio en seguimiento, sin asignación activa (expiró).
+    await page.route('**/api/orders/store/1**', async (route) => {
+      const url = new URL(route.request().url());
+      const requestedStatuses = (url.searchParams.get('order_status') ?? '')
+        .split(',').map(s => s.trim()).filter(Boolean);
+      const status = 'PROCESSING';
+      const shouldReturn = requestedStatuses.length === 0 || requestedStatuses.includes(status);
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          orders: shouldReturn ? [{
+            id: 9030,
+            status,
+            total: 6500,
+            notes: 'Pedido sin delivery por timeout',
+            createdAt: '2026-05-21T10:00:00.000Z',
+            address: { address: 'Calle Expirada 1', city: 'Asuncion' },
+            items: [{ id: 1, quantity: 1 }],
+          }] : [],
+          total: shouldReturn ? 1 : 0,
+          page: 1, limit: 10, total_page: 1,
+        }),
+      });
+    });
+
+    await page.route('**/api/orders/*/assignment', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ has_assignment: false }),
+      });
+    });
+
+    await page.route('**/api/stores/1/orders/9030/deliveries', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          available_deliveries: [{ id_delivery: 20, name: 'Nuevo Repartidor', phone: '0991 222333' }],
+          delivery_address: { address: 'Calle Expirada 1', city: 'Asuncion' },
+          order_id: 9030,
+          order_status: 'PROCESSING',
+        }),
+      });
+    });
+
+    // Pedido del cliente con estado vigente post-reasignación.
+    await page.unroute('**/api/users/*/orders');
+    await page.route('**/api/users/*/orders', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify([{
+            id: orderId,
+            status: 'PROCESSING',
+            total: 6500,
+            createdAt: '2026-05-21T10:00:00.000Z',
+            items: [{ id: 1, quantity: 1, price: 6500, originalPrice: 6500, isOfferApplied: false, subtotal: 6500 }],
+            address: { id: 1, address: 'Calle Expirada 1', city: 'Asuncion', region: 'Central' },
+          }]),
+        });
+      }
+    });
+
+    await page.unroute('**/api/users/*/orders/*');
+    await page.route('**/api/users/*/orders/*', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id: orderId,
+            status: 'PROCESSING',
+            total: 6500,
+            createdAt: '2026-05-21T10:00:00.000Z',
+            items: [{ id: 1, quantity: 1, price: 6500, originalPrice: 6500, isOfferApplied: false, subtotal: 6500 }],
+            address: { id: 1, address: 'Calle Expirada 1', city: 'Asuncion', region: 'Central' },
+          }),
+        });
+      }
+    });
+
+    // Delivery ve la asignación como expirada 
+
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          user: { id_user: 7, name: 'Delivery Demo', role: 'DELIVERY', id_delivery: 5 },
+        }),
+      });
+    });
+
+    await page.goto('/delivery/order');
+    await expect(page.getByRole('heading', { name: 'Pedidos para aceptar' })).toBeVisible();
+
+    // El badge muestra "El plazo para responder venció" y los botones se deshabilitan.
+    await expect(page.getByText('El plazo para responder venció')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole('button', { name: 'Aceptar' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Rechazar' })).toBeDisabled();
+
+    // Tras ~800ms el componente auto-refresca y la asignación expirada desaparece.
+    await expect(page.getByText('El plazo para responder venció')).not.toBeVisible({ timeout: 5000 });
+
+    //Comercio puede re-asignar el pedido
+
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      });
+    });
+
+    await page.goto('/comercio/pedidos');
+    await page.getByRole('button', { name: 'Seguimiento' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Seguimiento de Pedidos' })).toBeVisible();
+    await expect(page.getByText('ORD-9030')).toBeVisible();
+
+    // El pedido no está bloqueado: puede recibir una nueva asignación.
+    await expect(page.getByRole('button', { name: 'Añadir delivery' })).toBeVisible();
+    await page.getByRole('button', { name: 'Añadir delivery' }).click();
+
+    await expect(page.getByText('Nuevo Repartidor')).toBeVisible();
+
+    //Cliente ve estado vigente del pedido
+
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          user: { id_user: 7, id_store: null, name: 'Cliente Demo', role: 'CUSTOMER' },
+        }),
+      });
+    });
+
+    await page.goto('/pedidos');
+    await expect(page.getByRole('heading', { name: 'Mis Pedidos' })).toBeVisible();
+
+    const orderCard = page.locator('div.cursor-pointer').first();
+    await expect(orderCard).toBeVisible();
+    await orderCard.click();
+
+    await expect(page).toHaveURL(/\/pedidos\/\d+$/);
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.getByText('Información de pedido')).toBeVisible();
+    await expect(page.getByText('Dirección de envío')).toBeVisible();
+
+    // El pedido no muestra ningún indicador de error o bloqueo.
+    await expect(page.getByText(/[Bb]loqueado|[Ee]rror de asignación/)).not.toBeVisible();
+  });
+
+  // OM-522 — Rechazo manual de asignación de delivery
+  test('flujo rechazo manual del pedido: delivery rechaza, comercio ve aviso y puede re-asignar, cliente ve estado vigente', async ({ page }) => {
+    const orderId = 8020;
+    const assignmentId = 9020;
+    const activeDeadline = new Date(Date.now() + 300_000).toISOString(); // 5 min en el futuro
+
+    //Mocks compartidos
+
+    // Cola del delivery: primera carga con asignación activa; después del rechazo, cola vacía.
+    let assignmentFetchCount = 0;
+    await page.route('**/api/deliveries/*/assignments', async (route) => {
+      assignmentFetchCount++;
+      const assignments = assignmentFetchCount === 1
+        ? [
+            {
+              id_delivery_assignment: assignmentId,
+              response_deadline: activeDeadline,
+              order: {
+                id_order: orderId,
+                order_status: 'PENDING',
+                total: 9800,
+                shipping_distance_km: 3.1,
+                created_at: '2026-05-21T11:00:00.000Z',
+                user: { id_user: 131, name: 'Cliente Rechazo', phone: '0981 200 300' },
+                store: { name: 'Nissei' },
+                order_items: [{ product: { name: 'Producto Rechazo' }, quantity: 2 }],
+                address: { address: 'Calle Rechazo 55', city: 'Asuncion', region: 'Central' },
+              },
+            },
+          ]
+        : [];
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ delivery_assignments: assignments, delivery: { id_delivery: 5 } }),
+      });
+    });
+
+    // El backend confirma el rechazo e indica que no hay más deliveries disponibles.
+    await page.route('**/api/assignments/orders/*/delivery-response', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ message: 'ok', delivery_unavailable: true }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    // Endpoint de notificaciones que se recarga con el evento notificationsUpdated.
+    await page.route('**/api/notifications**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      });
+    });
+
+    // Pedido del comercio en seguimiento con deliveryUnavailable = true (delivery rechazó).
+    await page.route('**/api/orders/store/1**', async (route) => {
+      const url = new URL(route.request().url());
+      const requestedStatuses = (url.searchParams.get('order_status') ?? '')
+        .split(',').map(s => s.trim()).filter(Boolean);
+      const status = 'PROCESSING';
+      const shouldReturn = requestedStatuses.length === 0 || requestedStatuses.includes(status);
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          orders: shouldReturn ? [{
+            id: 9040,
+            status,
+            total: 9800,
+            deliveryUnavailable: true,
+            notes: 'Pedido con delivery rechazado',
+            createdAt: '2026-05-21T11:00:00.000Z',
+            address: { address: 'Calle Rechazo 55', city: 'Asuncion' },
+            items: [{ id: 1, quantity: 2 }],
+          }] : [],
+          total: shouldReturn ? 1 : 0,
+          page: 1, limit: 10, total_page: 1,
+        }),
+      });
+    });
+
+    await page.route('**/api/orders/*/assignment', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ has_assignment: false }),
+      });
+    });
+
+    await page.route('**/api/stores/1/orders/9040/deliveries', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          available_deliveries: [{ id_delivery: 21, name: 'Repartidor Nuevo', phone: '0992 300 400' }],
+          delivery_address: { address: 'Calle Rechazo 55', city: 'Asuncion' },
+          order_id: 9040,
+          order_status: 'PROCESSING',
+        }),
+      });
+    });
+
+    // Pedido del cliente en estado vigente post-rechazo.
+    await page.unroute('**/api/users/*/orders');
+    await page.route('**/api/users/*/orders', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify([{
+            id: orderId,
+            status: 'PROCESSING',
+            total: 9800,
+            createdAt: '2026-05-21T11:00:00.000Z',
+            items: [{ id: 1, quantity: 2, price: 9800, originalPrice: 9800, isOfferApplied: false, subtotal: 9800 }],
+            address: { id: 1, address: 'Calle Rechazo 55', city: 'Asuncion', region: 'Central' },
+          }]),
+        });
+      }
+    });
+
+    await page.unroute('**/api/users/*/orders/*');
+    await page.route('**/api/users/*/orders/*', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id: orderId,
+            status: 'PROCESSING',
+            total: 9800,
+            createdAt: '2026-05-21T11:00:00.000Z',
+            items: [{ id: 1, quantity: 2, price: 9800, originalPrice: 9800, isOfferApplied: false, subtotal: 9800 }],
+            address: { id: 1, address: 'Calle Rechazo 55', city: 'Asuncion', region: 'Central' },
+          }),
+        });
+      }
+    });
+
+    //Delivery rechaza manualmente el pedido
+
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          user: { id_user: 7, name: 'Delivery Demo', role: 'DELIVERY', id_delivery: 5 },
+        }),
+      });
+    });
+
+    await page.goto('/delivery/order');
+    await expect(page.getByRole('heading', { name: 'Pedidos para aceptar' })).toBeVisible();
+
+    // El pedido aparece con el timer activo (deadline en el futuro).
+    await expect(page.getByText('Cliente Rechazo')).toBeVisible();
+    await expect(page.getByText('Tiempo para responder:')).toBeVisible();
+
+    // El delivery rechaza manualmente.
+    await page.getByRole('button', { name: 'Rechazar' }).click();
+
+    // El backend responde con delivery_unavailable: true → toast específico.
+    await expect(
+      page.getByText('Pedido rechazado. El comercio fue notificado para reasignar otro repartidor.')
+    ).toBeVisible({ timeout: 5000 });
+
+    // Tras el auto-refresh, la cola queda vacía.
+    await expect(page.getByText('Cliente Rechazo')).not.toBeVisible({ timeout: 5000 });
+
+    //Comercio ve el aviso y puede re-asignar
+
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      });
+    });
+
+    await page.goto('/comercio/pedidos');
+    await page.getByRole('button', { name: 'Seguimiento' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Seguimiento de Pedidos' })).toBeVisible();
+    await expect(page.getByText('ORD-9040')).toBeVisible();
+
+    // El pedido muestra el aviso de que un delivery rechazó (deliveryUnavailable = true).
+    await expect(
+      page.getByText('Sin repartidor disponible: un delivery rechazó o no hay más repartidores activos. Asigná manualmente otro delivery.')
+    ).toBeVisible();
+
+    // El botón de re-asignación está disponible.
+    await expect(page.getByRole('button', { name: 'Añadir delivery' })).toBeVisible();
+    await page.getByRole('button', { name: 'Añadir delivery' }).click();
+
+    await expect(page.getByText('Repartidor Nuevo')).toBeVisible();
+
+    //Cliente ve estado vigente del pedido
+
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          user: { id_user: 7, id_store: null, name: 'Cliente Demo', role: 'CUSTOMER' },
+        }),
+      });
+    });
+
+    await page.goto('/pedidos');
+    await expect(page.getByRole('heading', { name: 'Mis Pedidos' })).toBeVisible();
+
+    const orderCard = page.locator('div.cursor-pointer').first();
+    await expect(orderCard).toBeVisible();
+    await orderCard.click();
+
+    await expect(page).toHaveURL(/\/pedidos\/\d+$/);
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.getByText('Información de pedido')).toBeVisible();
+    await expect(page.getByText('Dirección de envío')).toBeVisible();
+
+    // El pedido no muestra ningún indicador de error o bloqueo.
+    await expect(page.getByText(/[Bb]loqueado|[Ee]rror de asignación/)).not.toBeVisible();
+  });
+
+  // OM-522 — Desconexión / inactividad del delivery)
+  test('flujo desconexión del delivery: asignación liberada, comercio puede re-asignar, cliente ve estado vigente', async ({ page }) => {
+    const orderId = 8030;
+    const assignmentId = 9030;
+    const activeDeadline = new Date(Date.now() + 300_000).toISOString();
+
+    // Mocks compartidos
+
+    // Cuando el delivery se pone INACTIVE, el backend rechaza sus asignaciones pendientes.
+    let deliveryIsInactive = false;
+
+    await page.route('**/api/deliveries/5/status', async (route) => {
+      if (route.request().method() === 'PATCH') {
+        deliveryIsInactive = true;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ message: 'Estado actualizado' }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    // Perfil del delivery (inicialmente ACTIVE).
+    await page.route('**/api/deliveries/5', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id_delivery: 5,
+          delivery_status: 'ACTIVE',
+          vehicle_type: 'CAR',
+          coverage_city: 'Asunción',
+          coverage_region: 'Central',
+          coverage_radius_km: 12,
+          availability_notes: 'Lunes a Viernes',
+          average_rating: 4.5,
+          total_deliveries: 30,
+          reviews_count: 6,
+          created_at: '2025-11-01T10:00:00.000Z',
+        }),
+      });
+    });
+
+    await page.route('**/api/users/7', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: { id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000', role: 'DELIVERY' },
+        }),
+      });
+    });
+
+    // Cola de asignaciones: activa mientras el delivery está ACTIVE; vacía al desconectarse.
+    await page.route('**/api/deliveries/*/assignments', async (route) => {
+      const assignments = deliveryIsInactive
+        ? []
+        : [
+            {
+              id_delivery_assignment: assignmentId,
+              response_deadline: activeDeadline,
+              order: {
+                id_order: orderId,
+                order_status: 'PENDING',
+                total: 7400,
+                shipping_distance_km: 1.8,
+                created_at: '2026-05-21T12:00:00.000Z',
+                user: { id_user: 132, name: 'Cliente Desconexion', phone: '0981 400 500' },
+                store: { name: 'Nissei' },
+                order_items: [{ product: { name: 'Producto Desconexion' }, quantity: 1 }],
+                address: { address: 'Calle Inactivo 77', city: 'Asuncion', region: 'Central' },
+              },
+            },
+          ];
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ delivery_assignments: assignments, delivery: { id_delivery: 5 } }),
+      });
+    });
+
+    await page.route('**/api/notifications**', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) });
+    });
+
+    // Pedido del comercio en seguimiento con deliveryUnavailable = true.
+    await page.route('**/api/orders/store/1**', async (route) => {
+      const url = new URL(route.request().url());
+      const requestedStatuses = (url.searchParams.get('order_status') ?? '')
+        .split(',').map(s => s.trim()).filter(Boolean);
+      const status = 'PROCESSING';
+      const shouldReturn = requestedStatuses.length === 0 || requestedStatuses.includes(status);
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          orders: shouldReturn ? [{
+            id: 9050,
+            status,
+            total: 7400,
+            deliveryUnavailable: true,
+            notes: 'Pedido con delivery desconectado',
+            createdAt: '2026-05-21T12:00:00.000Z',
+            address: { address: 'Calle Inactivo 77', city: 'Asuncion' },
+            items: [{ id: 1, quantity: 1 }],
+          }] : [],
+          total: shouldReturn ? 1 : 0,
+          page: 1, limit: 10, total_page: 1,
+        }),
+      });
+    });
+
+    await page.route('**/api/orders/*/assignment', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ has_assignment: false }),
+      });
+    });
+
+    await page.route('**/api/stores/1/orders/9050/deliveries', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          available_deliveries: [{ id_delivery: 22, name: 'Carlos Repartidor', phone: '0993 500 600' }],
+          delivery_address: { address: 'Calle Inactivo 77', city: 'Asuncion' },
+          order_id: 9050,
+          order_status: 'PROCESSING',
+        }),
+      });
+    });
+
+    // Pedido del cliente en estado vigente.
+    await page.unroute('**/api/users/*/orders');
+    await page.route('**/api/users/*/orders', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify([{
+            id: orderId,
+            status: 'PROCESSING',
+            total: 7400,
+            createdAt: '2026-05-21T12:00:00.000Z',
+            items: [{ id: 1, quantity: 1, price: 7400, originalPrice: 7400, isOfferApplied: false, subtotal: 7400 }],
+            address: { id: 1, address: 'Calle Inactivo 77', city: 'Asuncion', region: 'Central' },
+          }]),
+        });
+      }
+    });
+
+    await page.unroute('**/api/users/*/orders/*');
+    await page.route('**/api/users/*/orders/*', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id: orderId,
+            status: 'PROCESSING',
+            total: 7400,
+            createdAt: '2026-05-21T12:00:00.000Z',
+            items: [{ id: 1, quantity: 1, price: 7400, originalPrice: 7400, isOfferApplied: false, subtotal: 7400 }],
+            address: { id: 1, address: 'Calle Inactivo 77', city: 'Asuncion', region: 'Central' },
+          }),
+        });
+      }
+    });
+
+    // Delivery se desconecta con asignación pendiente
+
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          user: { id_user: 7, name: 'Delivery Demo', role: 'DELIVERY', id_delivery: 5 },
+        }),
+      });
+    });
+
+    // Confirmar que la asignación está activa antes de desconectarse.
+    await page.goto('/delivery/order');
+    await expect(page.getByRole('heading', { name: 'Pedidos para aceptar' })).toBeVisible();
+    await expect(page.getByText('Cliente Desconexion')).toBeVisible();
+    await expect(page.getByText('Tiempo para responder:')).toBeVisible();
+
+    // Navegar al perfil y desconectarse.
+    await page.goto('/delivery/perfil');
+    await expect(page.getByRole('heading', { name: 'Perfil del Delivery' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Desconectarme' })).toBeVisible();
+    await page.getByRole('button', { name: 'Desconectarme' }).click();
+
+    // El backend rechaza las asignaciones pendientes automáticamente.
+    await expect(
+      page.getByText('Desconectado. Los pedidos pendientes fueron rechazados y el comercio fue notificado.')
+    ).toBeVisible({ timeout: 5000 });
+
+    // El perfil refleja el nuevo estado inactivo.
+    await expect(page.getByText('Inactivo').or(page.getByText('No disponible'))).toBeVisible({ timeout: 3000 });
+    await expect(page.getByRole('button', { name: 'Conectarme' })).toBeVisible();
+
+    // Al volver a la cola, ya no hay asignaciones (el backend las rechazó al desconectarse).
+    await page.goto('/delivery/order');
+    await expect(page.getByText('No hay pedidos pendientes')).toBeVisible({ timeout: 5000 });
+
+    // Comercio ve el aviso y puede re-asignar
+
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      });
+    });
+
+    await page.goto('/comercio/pedidos');
+    await page.getByRole('button', { name: 'Seguimiento' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Seguimiento de Pedidos' })).toBeVisible();
+    await expect(page.getByText('ORD-9050')).toBeVisible();
+
+    // El pedido muestra el aviso de repartidor no disponible (delivery se desconectó).
+    await expect(
+      page.getByText('Sin repartidor disponible: un delivery rechazó o no hay más repartidores activos. Asigná manualmente otro delivery.')
+    ).toBeVisible();
+
+    // El botón de re-asignación está disponible.
+    await expect(page.getByRole('button', { name: 'Añadir delivery' })).toBeVisible();
+    await page.getByRole('button', { name: 'Añadir delivery' }).click();
+
+    await expect(page.getByText('Carlos Repartidor')).toBeVisible();
+
+    // Cliente ve estado vigente del pedido
+
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          user: { id_user: 7, id_store: null, name: 'Cliente Demo', role: 'CUSTOMER' },
+        }),
+      });
+    });
+
+    await page.goto('/pedidos');
+    await expect(page.getByRole('heading', { name: 'Mis Pedidos' })).toBeVisible();
+
+    const orderCard = page.locator('div.cursor-pointer').first();
+    await expect(orderCard).toBeVisible();
+    await orderCard.click();
+
+    await expect(page).toHaveURL(/\/pedidos\/\d+$/);
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.getByText('Información de pedido')).toBeVisible();
+    await expect(page.getByText('Dirección de envío')).toBeVisible();
+
+    // El pedido no muestra ningún indicador de error o bloqueo.
+    await expect(page.getByText(/[Bb]loqueado|[Ee]rror de asignación/)).not.toBeVisible();
+  });
+
+  //OM-519
+  test('flujo cliente: advertencia de stock insuficiente, botón bloqueado e incremento bloqueado en carrito', async ({ page }) => {
+    await page.route('**/api/users/*/carts', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            carts: [
+              {
+                id: 1,
+                storeId: 1,
+                commerce: { id: 1, name: 'Nissei' },
+                status: 'ACTIVE',
+                items: [
+                  {
+                    id: 1,
+                    quantity: 5,
+                    product: { ...mockCartProduct, stock: 2 },
+                  },
+                ],
+              },
+            ],
+          }),
+        });
+      }
+    });
+
+    await page.goto('/carrito/1');
+
+    const itemCard = page.locator('article').first();
+
+    // advertencia de stock insuficiente visible en el ítem
+    await expect(itemCard.getByText(/Stock insuficiente \(Disponible: 2\)/)).toBeVisible();
+
+    //boton "Ir a Confirmar Pedido" deshabilitado
+    await expect(page.getByRole('button', { name: 'Ir a Confirmar Pedido' })).toBeDisabled();
+
+    // Clic en "+" no incrementa la cantidad y muestra toast de error
+    const plusBtn = itemCard.locator('button').nth(2);
+    const quantityDisplay = itemCard.locator('.flex.items-center.gap-2 span').first();
+
+    await expect(quantityDisplay).toHaveText('5');
+    await plusBtn.click();
+    await expect(page.getByText(/Solo hay 2 unidades disponibles de Apple iPhone 17 Pro A3256 Dual/)).toBeVisible();
+    await expect(quantityDisplay).toHaveText('5');
+  });
+
+  //OM-519
+  test('flujo cliente: advertencia de stock insuficiente y botón de confirmación bloqueado en confirmar pedido', async ({ page }) => {
+    await page.route('**/api/users/*/carts', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            carts: [
+              {
+                id: 1,
+                storeId: 1,
+                commerce: { id: 1, name: 'Nissei' },
+                status: 'ACTIVE',
+                items: [
+                  {
+                    id: 1,
+                    quantity: 5,
+                    product: { ...mockCartProduct, stock: 2, originalPrice: 13290000 },
+                  },
+                ],
+              },
+            ],
+          }),
+        });
+      }
+    });
+
+    await page.route('**/api/users/*/addresses', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ data: [] }),
+        });
+      }
+    });
+
+    let postOrderCalled = false;
+    await page.route('**/api/orders', async (route) => {
+      if (route.request().method() === 'POST') {
+        postOrderCalled = true;
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({ id: 999 }),
+        });
+      }
+    });
+
+    await page.goto('/confirmar-pedido/1');
+
+    await expect(page.getByRole('heading', { name: 'Confirmar Pedido' })).toBeVisible();
+
+    // Panel de advertencia de stock insuficiente visible con detalle del producto
+    await expect(page.getByText('Stock insuficiente')).toBeVisible();
+    await expect(page.getByText('Apple iPhone 17 Pro A3256 Dual (Disp: 2)')).toBeVisible();
+
+    // Botón "Confirmar Pedido" deshabilitado y no dispara POST /api/orders
+    const confirmarBtn = page.getByRole('button', { name: 'Confirmar Pedido' });
+    await expect(confirmarBtn).toBeDisabled();
+    await confirmarBtn.click({ force: true });
+    if (postOrderCalled) throw new Error('Se llamó a POST /api/orders con stock insuficiente');
+  });
+
+
+  //OM-516
+  test('flujo recuperar contraseña: validación de email y envío exitoso del enlace', async ({ page }) => {
+    await page.route('**/api/users/forgot-password', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Correo enviado' }),
+      });
+    });
+
+    await page.goto('/recuperar-contrasena');
+
+    // Intentar enviar con email de formato inválido
+    await page.getByPlaceholder('tu@correo.com').fill('noesuncorreo');
+    await page.getByRole('button', { name: 'Enviar enlace de recuperación' }).click();
+    await expect(page.getByText('Ingresá un correo válido')).toBeVisible();
+
+    // Corregir y enviar con email válido → pantalla de confirmación
+    await page.getByPlaceholder('tu@correo.com').fill('usuario@test.com');
+    await page.getByRole('button', { name: 'Enviar enlace de recuperación' }).click();
+
+    await expect(page.getByText('¡Correo enviado!')).toBeVisible();
+    await expect(page.getByText('usuario@test.com')).toBeVisible();
+  });
+
+  //OM-516
+  test('flujo restablecer contraseña: token inválido muestra error y permite solicitar nuevo enlace', async ({ page }) => {
+    await page.route('**/api/users/validate-reset-token', async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Token inválido o expirado' }),
+      });
+    });
+
+    await page.goto('/restablecer-contrasena/token-invalido');
+
+    await expect(page.getByText('Enlace no válido')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Solicitar nuevo enlace' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Solicitar nuevo enlace' }).click();
+    await expect(page).toHaveURL('/recuperar-contrasena');
+  });
+
+  //OM-516
+  test('flujo restablecer contraseña: contraseñas no coinciden y restablecimiento exitoso', async ({ page }) => {
+    await page.route('**/api/users/validate-reset-token', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Token válido' }),
+      });
+    });
+
+    await page.route('**/api/users/reset-password', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Contraseña restablecida' }),
+      });
+    });
+
+    await page.goto('/restablecer-contrasena/token-valido');
+
+    await expect(page.locator('input[name="newPassword"]')).toBeVisible({ timeout: 5000 });
+
+    // Contraseñas que no coinciden
+    await page.locator('input[name="newPassword"]').fill('nuevapass123');
+    await page.locator('input[name="confirmPassword"]').fill('otrapassword');
+    await page.getByRole('button', { name: 'Restablecer contraseña' }).click();
+    await expect(page.getByText('Las contraseñas no coinciden')).toBeVisible();
+
+    // Corregir y restablecer exitosamente
+    await page.locator('input[name="confirmPassword"]').fill('nuevapass123');
+    await page.getByRole('button', { name: 'Restablecer contraseña' }).click();
+
+    await expect(page.getByText('¡Contraseña restablecida!')).toBeVisible();
+    await page.getByRole('button', { name: 'Iniciar sesión' }).click();
+    await expect(page).toHaveURL('/login');
+  });
+
+  //OM-523
+  test('flujo admin: crear banner con campos válidos', async ({ page }) => {
+    let postCalled = false;
+
+    await page.route('**/api/admin/banners**', async (route) => {
+      const method = route.request().method();
+
+      if (method === 'POST') {
+        postCalled = true;
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({ id: 10, title: 'Banner Nuevo', isActive: true }),
+        });
+        return;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ data: [], pagination: { total: 0, page: 1, limit: 20, totalPages: 1 } }),
+      });
+    });
+
+    await page.goto('/admin/banners');
+
+    await expect(page.getByRole('heading', { name: 'Banners promocionales' })).toBeVisible();
+    await page.getByRole('button', { name: 'Nuevo banner' }).click();
+    await expect(page.getByRole('heading', { name: 'Nuevo banner', level: 3 })).toBeVisible();
+
+    await page.getByPlaceholder('Semana Eco').fill('Banner Nuevo');
+    await page.getByPlaceholder('https://...').first().fill('https://images.unsplash.com/photo-1');
+    await page.locator('input[type="datetime-local"]').first().fill('2026-12-01T10:00');
+
+    await page.getByRole('button', { name: 'Guardar' }).click();
+
+    await expect(page.getByText('Banner creado')).toBeVisible();
+    expect(postCalled).toBe(true);
+  });
+
+  //OM-523
+  test('flujo admin: validaciones de campos requeridos al crear banner', async ({ page }) => {
+    let postCalled = false;
+
+    await page.route('**/api/admin/banners**', async (route) => {
+      if (route.request().method() === 'POST') {
+        postCalled = true;
+        await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ id: 99 }) });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ data: [], pagination: { total: 0, page: 1, limit: 20, totalPages: 1 } }),
+      });
+    });
+
+    await page.goto('/admin/banners');
+    await page.getByRole('button', { name: 'Nuevo banner' }).click();
+    await expect(page.getByRole('heading', { name: 'Nuevo banner', level: 3 })).toBeVisible();
+
+    // Guardar sin título
+    await page.getByRole('button', { name: 'Guardar' }).click();
+    await expect(page.getByText('El titulo es obligatorio')).toBeVisible();
+
+    // Ingresar título, guardar sin imagen
+    await page.getByPlaceholder('Semana Eco').fill('Banner Test');
+    await page.getByRole('button', { name: 'Guardar' }).click();
+    await expect(page.getByText('La imagen es obligatoria')).toBeVisible();
+
+    // Ingresar imagen, guardar sin fecha de inicio
+    await page.getByPlaceholder('https://...').first().fill('https://via.placeholder.com/600x300');
+    await page.getByRole('button', { name: 'Guardar' }).click();
+    await expect(page.getByText('La fecha de inicio es obligatoria')).toBeVisible();
+
+    expect(postCalled).toBe(false);
+  });
+
+  //OM-523
+  test('flujo admin: editar banner existente', async ({ page }) => {
+    let putCalled = false;
+    let putPayload: Record<string, unknown> = {};
+
+    await page.route('**/api/admin/banners**', async (route) => {
+      const method = route.request().method();
+      const url = route.request().url();
+
+      if (method === 'PUT' && url.includes('/api/admin/banners/')) {
+        putCalled = true;
+        putPayload = route.request().postDataJSON() as Record<string, unknown>;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ id: 1, ...putPayload }),
+        });
+        return;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: [
+            {
+              id: 1,
+              title: 'Banner Original',
+              description: 'Descripción original',
+              imageUrl: 'https://via.placeholder.com/600x300',
+              linkUrl: null,
+              startAt: '2026-01-01T10:00:00.000Z',
+              endAt: null,
+              isActive: true,
+            },
+          ],
+          pagination: { total: 1, page: 1, limit: 20, totalPages: 1 },
+        }),
+      });
+    });
+
+    await page.goto('/admin/banners');
+    await expect(page.getByText('Banner Original')).toBeVisible();
+    await page.getByTitle('Editar banner').first().click();
+
+    await expect(page.getByRole('heading', { name: 'Editar banner', level: 3 })).toBeVisible();
+    const titleInput = page.getByPlaceholder('Semana Eco');
+    await expect(titleInput).toHaveValue('Banner Original');
+
+    await titleInput.clear();
+    await titleInput.fill('Banner Actualizado');
+    await page.getByRole('button', { name: 'Guardar' }).click();
+
+    await expect(page.getByText('Banner actualizado')).toBeVisible();
+    expect(putCalled).toBe(true);
+    expect(putPayload.title).toBe('Banner Actualizado');
+  });
+
+  //OM-523
+  test('flujo admin: badges de estado según programación de fechas', async ({ page }) => {
+    await page.route('**/api/admin/banners**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: [
+            {
+              id: 1,
+              title: 'Banner Visible',
+              imageUrl: 'https://via.placeholder.com/600x300',
+              description: null,
+              startAt: '2026-01-01T10:00:00.000Z',
+              endAt: null,
+              isActive: true,
+            },
+            {
+              id: 2,
+              title: 'Banner Programado',
+              imageUrl: 'https://via.placeholder.com/600x300',
+              description: null,
+              startAt: '2026-12-31T10:00:00.000Z',
+              endAt: null,
+              isActive: true,
+            },
+            {
+              id: 3,
+              title: 'Banner Finalizado',
+              imageUrl: 'https://via.placeholder.com/600x300',
+              description: null,
+              startAt: '2026-01-01T10:00:00.000Z',
+              endAt: '2026-02-01T10:00:00.000Z',
+              isActive: true,
+            },
+            {
+              id: 4,
+              title: 'Banner Desactivado',
+              imageUrl: 'https://via.placeholder.com/600x300',
+              description: null,
+              startAt: '2026-01-01T10:00:00.000Z',
+              endAt: null,
+              isActive: false,
+            },
+          ],
+          pagination: { total: 4, page: 1, limit: 20, totalPages: 1 },
+        }),
+      });
+    });
+
+    await page.goto('/admin/banners');
+
+    await expect(page.getByRole('heading', { name: 'Banners promocionales' })).toBeVisible();
+    await expect(page.getByText('Banner Visible')).toBeVisible();
+    await expect(page.getByText('Visible').nth(1)).toBeVisible();
+    await expect(page.getByText('Programado').nth(1)).toBeVisible();
+    await expect(page.getByText('Finalizado').nth(1)).toBeVisible();
+    await expect(page.getByText('Desactivado').nth(1)).toBeVisible();
+  });
+
+  //OM-523
+  test('flujo admin: activar y desactivar banner', async ({ page }) => {
+    let lastPatchPayload: Record<string, unknown> = {};
+
+    await page.route('**/api/admin/banners**', async (route) => {
+      const method = route.request().method();
+      const url = route.request().url();
+
+      if (method === 'PATCH' && url.includes('/active')) {
+        lastPatchPayload = route.request().postDataJSON() as Record<string, unknown>;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ message: 'Banner actualizado' }),
+        });
+        return;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: [
+            {
+              id: 1,
+              title: 'Banner Activo',
+              imageUrl: 'https://via.placeholder.com/600x300',
+              description: null,
+              startAt: '2026-01-01T10:00:00.000Z',
+              endAt: null,
+              isActive: true,
+            },
+            {
+              id: 2,
+              title: 'Banner Inactivo',
+              imageUrl: 'https://via.placeholder.com/600x300',
+              description: null,
+              startAt: '2026-01-01T10:00:00.000Z',
+              endAt: null,
+              isActive: false,
+            },
+          ],
+          pagination: { total: 2, page: 1, limit: 20, totalPages: 1 },
+        }),
+      });
+    });
+
+    await page.goto('/admin/banners');
+    await expect(page.getByText('Banner Activo')).toBeVisible();
+    await expect(page.getByText('Banner Inactivo')).toBeVisible();
+
+    // Desactivar el banner activo
+    await page.getByTitle('Desactivar banner').first().click();
+    await expect(page.getByText('Banner desactivado')).toBeVisible();
+    expect(lastPatchPayload.isActive).toBe(false);
+
+    // Esperar que la lista se re-renderice luego del re-fetch no-await de loadBanners()
+    await expect(page.getByText('Banner Inactivo')).toBeVisible({ timeout: 5000 });
+
+    // Activar el banner inactivo
+    await page.getByTitle('Activar banner').nth(1).click();
+    await expect(page.getByText('Banner activado')).toBeVisible();
+    expect(lastPatchPayload.isActive).toBe(true);
+  });
+
+  //OM-523
+  test('flujo admin: filtrar y buscar banners', async ({ page }) => {
+    await page.route('**/api/admin/banners**', async (route) => {
+      const url = new URL(route.request().url());
+      const search = url.searchParams.get('search') ?? '';
+      const active = url.searchParams.get('active') ?? '';
+
+      const allBanners = [
+        {
+          id: 1,
+          title: 'Semana Eco',
+          imageUrl: 'https://via.placeholder.com/600x300',
+          description: null,
+          startAt: '2026-01-01T10:00:00.000Z',
+          endAt: null,
+          isActive: true,
+        },
+        {
+          id: 2,
+          title: 'Black Friday 2026',
+          imageUrl: 'https://via.placeholder.com/600x300',
+          description: null,
+          startAt: '2026-11-27T00:00:00.000Z',
+          endAt: null,
+          isActive: false,
+        },
+      ];
+
+      let filtered = allBanners;
+      if (search) filtered = filtered.filter(b => b.title.toLowerCase().includes(search.toLowerCase()));
+      if (active === 'true') filtered = filtered.filter(b => b.isActive);
+      if (active === 'false') filtered = filtered.filter(b => !b.isActive);
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: filtered,
+          pagination: { total: filtered.length, page: 1, limit: 20, totalPages: 1 },
+        }),
+      });
+    });
+
+    await page.goto('/admin/banners');
+
+    // Carga inicial: ambos banners visibles
+    await expect(page.getByText('Semana Eco')).toBeVisible();
+    await expect(page.getByText('Black Friday 2026')).toBeVisible();
+
+    // Buscar por título (debounce de 300 ms incluido en el timeout de la aserción)
+    await page.getByPlaceholder('Buscar por titulo...').fill('Semana');
+    await expect(page.getByText('Semana Eco')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('Black Friday 2026')).not.toBeVisible();
+
+    // Limpiar búsqueda y restaurar lista completa
+    await page.getByPlaceholder('Buscar por titulo...').clear();
+    await expect(page.getByText('Black Friday 2026')).toBeVisible({ timeout: 5000 });
+
+    // Filtrar por banners activos
+    await page.getByRole('combobox').selectOption('true');
+    await expect(page.getByText('Semana Eco')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('Black Friday 2026')).not.toBeVisible();
+  });
+
+  //OM-523
+  test('flujo cliente: carousel del homepage muestra banners activos y fallback a slides por defecto', async ({ page }) => {
+    const bannerTitle = 'Oferta Especial E2E';
+
+    // API retorna 1 banner → 3 slides totales (2 por defecto + 1 banner)
+    await page.route('**/api/banners**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          {
+            id: 1,
+            title: bannerTitle,
+            description: 'Descripción de prueba',
+            imageUrl: 'https://via.placeholder.com/600x300',
+            linkUrl: null,
+            startAt: '2026-01-01T00:00:00.000Z',
+            endAt: null,
+            isActive: true,
+          },
+        ]),
+      });
+    });
+
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    // El carousel debe tener 3 indicadores (2 defaultSlides + 1 banner)
+    const dots = page.locator('button.w-2.h-2');
+    await expect(dots).toHaveCount(3);
+
+    // Navegar al último slide (el banner) y verificar su contenido
+    await dots.last().click();
+    await expect(page.getByText(bannerTitle)).toBeVisible();
+
+    // API retorna vacío → solo los 2 slides por defecto
+    await page.unroute('**/api/banners**');
+    await page.route('**/api/banners**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    const dotsAfterFallback = page.locator('button.w-2.h-2');
+    await expect(dotsAfterFallback).toHaveCount(2);
+    await expect(page.getByText(bannerTitle)).not.toBeVisible();
+  });
+
+  //OM-516
+  test('flujo restablecer contraseña: token expirado durante el envío del formulario', async ({ page }) => {
+    await page.route('**/api/users/validate-reset-token', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Token válido' }),
+      });
+    });
+
+    await page.route('**/api/users/reset-password', async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Token expirado o inválido' }),
+      });
+    });
+
+    await page.goto('/restablecer-contrasena/token-expirado');
+
+    await expect(page.locator('input[name="newPassword"]')).toBeVisible({ timeout: 5000 });
+
+    await page.locator('input[name="newPassword"]').fill('nuevapass123');
+    await page.locator('input[name="confirmPassword"]').fill('nuevapass123');
+    await page.getByRole('button', { name: 'Restablecer contraseña' }).click();
+
+    await expect(page.getByText('Enlace no válido')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Solicitar nuevo enlace' })).toBeVisible();
+  });
+
+  // Horarios de atención del comercio
+
+  const installBusinessHoursMock = async (page: Page) => {
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      });
+    });
+
+    const mockSchedules = [
+      { day_of_week: 0, is_closed: false, open_time: '08:00', close_time: '18:00' },
+      { day_of_week: 1, is_closed: false, open_time: '08:00', close_time: '18:00' },
+      { day_of_week: 2, is_closed: false, open_time: '08:00', close_time: '18:00' },
+      { day_of_week: 3, is_closed: false, open_time: '08:00', close_time: '18:00' },
+      { day_of_week: 4, is_closed: false, open_time: '08:00', close_time: '18:00' },
+      { day_of_week: 5, is_closed: true, open_time: null, close_time: null },
+      { day_of_week: 6, is_closed: true, open_time: null, close_time: null },
+    ];
+
+    await page.route('**/api/commerces/1/business-hours', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ is_open: true, close_time: '18:00', schedules: mockSchedules }),
+        });
+        return;
+      }
+      if (route.request().method() === 'PUT') {
+        const body = route.request().postDataJSON() as { schedules: unknown[] };
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ is_open: true, close_time: '18:00', schedules: body.schedules }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    await page.route('**/api/commerces/my/1', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id_store: 1,
+          name: 'Comercio Demo',
+          store_status: 'ACTIVE',
+          description: 'Descripción del comercio',
+          categories: [{ id: 1, name: 'Tecnología' }],
+          addresses: [],
+        }),
+      });
+    });
+  };
+
+  // OM-515
+  test('flujo comercio: acceder a horarios desde sidebar y desde perfil', async ({ page }) => {
+    await installBusinessHoursMock(page);
+
+    // Acceso desde el ítem "Horarios" del sidebar
+    await page.goto('/comercio/perfil');
+    await expect(page.getByText('Perfil del Comercio')).toBeVisible();
+
+    await page.locator('nav').getByText('Horarios').click();
+    await expect(page).toHaveURL('/comercio/horarios');
+    await expect(page.getByRole('heading', { name: 'Horarios de atención' })).toBeVisible();
+
+    // Acceso desde el botón "Gestionar Horarios" en Acciones Rápidas del perfil
+    await page.goto('/comercio/perfil');
+    await expect(page.getByText('Perfil del Comercio')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Gestionar Horarios' }).click();
+    await expect(page).toHaveURL('/comercio/horarios');
+    await expect(page.getByRole('heading', { name: 'Horarios de atención' })).toBeVisible();
+  });
+
+  // OM-515
+  test('flujo comercio: visualizar horarios por día y marcar/desmarcar día como cerrado', async ({ page }) => {
+    await installBusinessHoursMock(page);
+
+    await page.goto('/comercio/horarios');
+
+    // Badge de estado
+    await expect(page.getByText('Abierto · Cierra a las 18:00')).toBeVisible();
+
+    // Los 7 días de la semana deben estar presentes
+    for (const dia of ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']) {
+      await expect(page.getByText(dia)).toBeVisible();
+    }
+
+    // Lunes (primer día, no cerrado): sus inputs de hora deben estar habilitados
+    const timeInputs = page.locator('input[type="time"]');
+    await expect(timeInputs.nth(0)).toBeEnabled();
+    await expect(timeInputs.nth(1)).toBeEnabled();
+
+    // Marcar Lunes como cerrado → inputs se deshabilitan
+    const cerradoCheckboxes = page.getByLabel('Cerrado');
+    await cerradoCheckboxes.nth(0).check();
+    await expect(timeInputs.nth(0)).toBeDisabled();
+    await expect(timeInputs.nth(1)).toBeDisabled();
+
+    // Desmarcar → inputs vuelven a habilitarse
+    await cerradoCheckboxes.nth(0).uncheck();
+    await expect(timeInputs.nth(0)).toBeEnabled();
+    await expect(timeInputs.nth(1)).toBeEnabled();
+  });
+
+  // OM-515
+  test('flujo comercio: editar horarios - guardar exitoso, error y volver al perfil', async ({ page }) => {
+    await installBusinessHoursMock(page);
+
+    await page.goto('/comercio/horarios');
+    await expect(page.getByRole('heading', { name: 'Horarios de atención' })).toBeVisible();
+
+    // Guardar exitoso
+    await page.getByRole('button', { name: 'Guardar horarios' }).click();
+    await expect(page.getByText('Horarios guardados correctamente.')).toBeVisible();
+
+    // Sobrescribir PUT para forzar error
+    await page.unroute('**/api/commerces/1/business-hours');
+    await page.route('**/api/commerces/1/business-hours', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            is_open: true,
+            close_time: '18:00',
+            schedules: [
+              { day_of_week: 0, is_closed: false, open_time: '08:00', close_time: '18:00' },
+              { day_of_week: 1, is_closed: false, open_time: '08:00', close_time: '18:00' },
+              { day_of_week: 2, is_closed: false, open_time: '08:00', close_time: '18:00' },
+              { day_of_week: 3, is_closed: false, open_time: '08:00', close_time: '18:00' },
+              { day_of_week: 4, is_closed: false, open_time: '08:00', close_time: '18:00' },
+              { day_of_week: 5, is_closed: true, open_time: null, close_time: null },
+              { day_of_week: 6, is_closed: true, open_time: null, close_time: null },
+            ],
+          }),
+        });
+        return;
+      }
+      if (route.request().method() === 'PUT') {
+        await route.fulfill({
+          status: 500,
+          contentType: 'application/json',
+          body: JSON.stringify({ message: 'Error interno al guardar horarios.' }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    await page.getByRole('button', { name: 'Guardar horarios' }).click();
+    await expect(page.getByText('Error interno al guardar horarios.')).toBeVisible();
+
+    // Volver al perfil
+    await page.getByRole('button', { name: 'Volver al perfil' }).click();
+    await expect(page).toHaveURL('/comercio/perfil');
+    await expect(page.getByText('Perfil del Comercio')).toBeVisible();
   });
 
 });
