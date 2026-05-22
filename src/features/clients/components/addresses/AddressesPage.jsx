@@ -295,14 +295,6 @@ const AddressCard = ({ address, onEdit, onDelete }) => {
     );
 };
 
-// ─── Section header (reutiliza el estilo de MyAccountPage) ──────────────────
-const SectionHeader = ({ title, rightContent }) => (
-    <div className="bg-[#f0f2f1] border border-gray-200 px-4 py-3 font-semibold text-black flex justify-between items-center rounded-sm">
-        <span className="text-[15px]">{title}</span>
-        {rightContent && <div className="text-sm font-normal">{rightContent}</div>}
-    </div>
-);
-
 // ─── Pagina Principal ────────────────────────────────────────────────────────────
 const MAX_ADDRESSES = 5;
 
@@ -433,7 +425,7 @@ export const AddressesPage = () => {
             <Navbar />
 
             <main className="max-w-[1400px] mx-auto w-full px-6 py-10">
-                <h1 className="text-[28px] font-bold text-[#2d4030] mb-8">Mi Cuenta</h1>
+                <h1 className="text-[28px] font-bold text-[#2d4030] mb-8">Libreta de direcciones</h1>
 
                 <div className="flex flex-col md:flex-row gap-8 items-start">
                     {/* Sidebar */}
@@ -444,14 +436,10 @@ export const AddressesPage = () => {
                     {/* Content */}
                     <div className="flex-1 w-full">
 
-                        {/* Header section */}
-                        <div className="bg-[#f0f2f1] border border-gray-200 px-4 py-3 rounded-sm flex justify-between items-center mb-4">
-                            <span className="font-semibold text-black text-[15px]">
-                                Libreta de direcciones
-                            </span>
-                            <span className="text-sm text-gray-500">
-                                {addresses.length}/{MAX_ADDRESSES} direcciones
-                            </span>
+                        {/* Section header */}
+                        <div className="bg-[`#f0f2f1`] border border-gray-200 px-4 py-3 rounded-sm flex justify-between items-center mb-4">
++                            <h2 className="font-semibold text-black text-[15px]">Mis direcciones</h2>
+                            <span className="text-sm text-gray-500">{addresses.length}/{MAX_ADDRESSES} direcciones</span>
                         </div>
 
                         {/* Error de carga */}
