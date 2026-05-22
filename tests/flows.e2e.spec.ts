@@ -148,7 +148,7 @@ async function setupCommonApiMocks(page: Page) {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      body: JSON.stringify({ success: true, user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
     });
   });
 
