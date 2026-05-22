@@ -997,8 +997,9 @@ test.describe('Flujos E2E de usuario final', () => {
     });
 
     await page.goto('/direcciones');
+    await page.waitForLoadState('networkidle');
 
-    await expect(page.getByRole('heading', { name: 'Mi Cuenta' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Mi Cuenta' })).toBeVisible({ timeout: 10000 });
     await expect(page.getByRole('link', { name: 'Libreta de direcciones' })).toBeVisible();
 
     await page.getByRole('button', { name: 'Agregar dirección' }).first().click();
@@ -4893,7 +4894,8 @@ test.describe('Flujos E2E de usuario final', () => {
 
     // Ir a la página de direcciones
     await page.goto('/direcciones');
-    await expect(page.getByRole('heading', { name: 'Mi Cuenta' })).toBeVisible();
+    await page.waitForLoadState('networkidle');
+    await expect(page.getByRole('heading', { name: 'Mi Cuenta' })).toBeVisible({ timeout: 10000 });
     await expect(page.getByRole('link', { name: 'Libreta de direcciones' })).toBeVisible();
 
     // Abrir modal de agregar dirección
@@ -6054,7 +6056,7 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page.locator('svg.lucide-smartphone').first()).toBeVisible();
 
     await page.getByRole('button', { name: 'Guardar Cambios' }).click();
-    await expect(page.locator('svg.lucide-smartphone')).toBeVisible();
+    await expect(page.locator('svg.lucide-smartphone').first()).toBeVisible();
     await expect(page.locator('svg.lucide-monitor')).toHaveCount(0);
   });
 
