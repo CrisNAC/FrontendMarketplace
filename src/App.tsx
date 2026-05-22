@@ -70,6 +70,8 @@ import { AdminDashboardPage } from './features/admin/pages/AdminDashboardPage';
 import { AdminModulePlaceholderPage } from './features/admin/pages/AdminModulePlaceholderPage';
 import { AdminProductsPage } from './features/admin/pages/AdminProductsPage';
 import { AdminBannersPage } from './features/admin/pages/AdminBannersPage';
+import { AdminBannerRequestsPage } from './features/admin/pages/AdminBannerRequestsPage';
+import { CommerceBannerRequestsPage } from './features/commerces/pages/CommerceBannerRequestsPage';
 import ReclamosPage from './features/admin/pages/ReclamosPage';
 import Reclamos from './features/admin/pages/Reclamos';
 import CommerceClaims from './features/commerces/pages/CommerceClaims';
@@ -262,6 +264,11 @@ function App() {
             <MyCommerceLayout><CommerceClaims /></MyCommerceLayout>
           </RequireAuth>
         } />
+        <Route path="/comercio/banners" element={
+          <RequireAuth>
+            <MyCommerceLayout><CommerceBannerRequestsPage /></MyCommerceLayout>
+          </RequireAuth>
+        } />
 
         {/* ── Área de delivery (con sidebar) ───────────────────────────── */}
         <Route path="/delivery" element={
@@ -314,6 +321,11 @@ function App() {
         <Route path="/admin/banners" element={
           <RequireAuth>
             <AdminLayout><AdminBannersPage /></AdminLayout>
+          </RequireAuth>
+        } />
+        <Route path="/admin/banner-solicitudes" element={
+          <RequireAuth>
+            <AdminLayout><AdminBannerRequestsPage /></AdminLayout>
           </RequireAuth>
         } />
         <Route path="/admin/resenas" element={

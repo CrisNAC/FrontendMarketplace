@@ -1,0 +1,301 @@
+import { useCallback, useEffect, useState } from "react";
+import { Calendar, Image, Megaphone, Plus, X } from "lucide-react";
+import toast from "react-hot-toast";
+import { apiClient } from "../services/editCommerceApi";
+import {
+  getMyBannerRequests,
+  createBannerRequest,
+  cancelBannerRequest,
+} from "../services/commerceBannerRequestsApi";
+
+const STATUS_BADGE = {
+  PENDING:  { label: "Pendiente",  color: "#92400e", bg: "#fef3c7" },
+  APPROVED: { label: "Aprobado",   color: "#15803d", bg: "#dcfce7" },
+  REJECTED: { label: "Rechazado",  color: "#991b1b", bg: "#fee2e2" },
+};
+
+const toLocalInputValue = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+};
+
+const fromLocalInputValue = (value) => {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+};
+
+// ─── Modal ────────────────────────────────────────────────────────────────────
+
+const BannerRequestModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [linkUrl, setLinkUrl] = useState("");
+  const [startAt, setStartAt] = useState("");
+  const [endAt, setEndAt] = useState("");
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setTitle(""); setDescription(""); setImageUrl(""); setLinkUrl(""); setStartAt(""); setEndAt("");
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  const inputStyle = { width: "100%", padding: "10px 12px", border: "1px solid #e5e7eb", borderRadius: "8px", fontSize: "14px", marginTop: "6px", boxSizing: "border-box" };
+  const labelStyle = { fontSize: "12px", fontWeight: "600", color: "#374151" };
+
+  const handleSubmit = () => {
+    if (!title.trim()) return toast.error("El título es obligatorio");
+    if (!imageUrl.trim()) return toast.error("La URL de imagen es obligatoria");
+    if (!startAt) return toast.error("La fecha de inicio es obligatoria");
+    onSubmit({
+      title: title.trim(),
+      description: description.trim() || null,
+      imageUrl: imageUrl.trim(),
+      linkUrl: linkUrl.trim() || null,
+      startAt: fromLocalInputValue(startAt),
+      endAt: endAt ? fromLocalInputValue(endAt) : null,
+    });
+  };
+
+  return (
+    <div
+      style={{ position: "fixed", inset: 0, zIndex: 60, backgroundColor: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
+      onClick={onClose}
+    >
+      <div
+        style={{ backgroundColor: "white", borderRadius: "16px", padding: "24px", maxWidth: "560px", width: "100%", boxShadow: "0 20px 40px rgba(0,0,0,0.15)" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+          <h3 style={{ fontSize: "18px", fontWeight: "700", margin: 0 }}>Nueva solicitud de banner</h3>
+          <button type="button" onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280" }}>
+            <X size={20} />
+          </button>
+        </div>
+        <p style={{ fontSize: "13px", color: "#6b7280", margin: "0 0 16px" }}>
+          Tu solicitud será revisada por un administrador antes de publicarse en el inicio.
+        </p>
+
+        <div style={{ display: "grid", gap: "12px" }}>
+          <div>
+            <label style={labelStyle}>Título</label>
+            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ej: Oferta de temporada" maxLength={100} style={inputStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>Descripción (opcional)</label>
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Texto breve que acompañará el banner" rows={2} style={{ ...inputStyle, resize: "vertical" }} />
+          </div>
+          <div>
+            <label style={labelStyle}>URL de imagen</label>
+            <input type="text" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." style={inputStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>URL de destino (opcional)</label>
+            <input type="text" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} placeholder="https://..." style={inputStyle} />
+          </div>
+          <div style={{ display: "grid", gap: "12px", gridTemplateColumns: "1fr 1fr" }}>
+            <div>
+              <label style={labelStyle}>Fecha de inicio</label>
+              <input type="datetime-local" value={startAt} onChange={(e) => setStartAt(e.target.value)} style={inputStyle} />
+            </div>
+            <div>
+              <label style={labelStyle}>Fecha de fin (opcional)</label>
+              <input type="datetime-local" value={endAt} onChange={(e) => setEndAt(e.target.value)} style={inputStyle} />
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "20px" }}>
+          <button type="button" onClick={onClose} disabled={isSubmitting}
+            style={{ padding: "8px 18px", borderRadius: "8px", border: "1px solid #d1d5db", background: "white", fontSize: "14px", cursor: isSubmitting ? "not-allowed" : "pointer" }}>
+            Cancelar
+          </button>
+          <button type="button" onClick={handleSubmit} disabled={isSubmitting}
+            style={{ padding: "8px 18px", borderRadius: "8px", border: "none", background: "var(--primary-dark)", color: "white", fontSize: "14px", fontWeight: "600", cursor: isSubmitting ? "not-allowed" : "pointer", opacity: isSubmitting ? 0.7 : 1 }}>
+            {isSubmitting ? "Enviando..." : "Enviar solicitud"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── Card de solicitud ────────────────────────────────────────────────────────
+
+const RequestCard = ({ req, onCancel }) => {
+  const badge = STATUS_BADGE[req.status] ?? STATUS_BADGE.PENDING;
+  const isPending = req.status === "PENDING";
+
+  return (
+    <div style={{
+      backgroundColor: "white", borderRadius: "14px", padding: "16px 20px",
+      boxShadow: "0 1px 4px rgba(0,0,0,0.07)", marginBottom: "12px",
+      borderLeft: isPending ? "3px solid var(--primary-dark)" : "3px solid transparent",
+    }}>
+      <div style={{ display: "flex", gap: "16px", alignItems: "flex-start" }}>
+        {/* Miniatura */}
+        <div style={{ width: "72px", height: "52px", borderRadius: "8px", border: "1px solid #e5e7eb", overflow: "hidden", backgroundColor: "#f3f4f6", flexShrink: 0 }}>
+          <img src={req.imageUrl} alt={req.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        </div>
+
+        {/* Info principal */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ margin: "0 0 2px", fontWeight: "700", fontSize: "15px", color: "#111827" }}>{req.title}</p>
+          {req.description && (
+            <p style={{ margin: "0 0 6px", fontSize: "13px", color: "#6b7280" }}>{req.description}</p>
+          )}
+          <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
+            <span style={{ fontSize: "12px", color: "#6b7280", display: "flex", alignItems: "center", gap: "4px" }}>
+              <Calendar size={12} />
+              {req.startAt ? new Date(req.startAt).toLocaleDateString("es-PY") : "—"}
+              {req.endAt ? ` → ${new Date(req.endAt).toLocaleDateString("es-PY")}` : ""}
+            </span>
+            <span style={{ fontSize: "12px", color: "#9ca3af" }}>
+              Enviada {new Date(req.createdAt).toLocaleDateString("es-PY", { day: "numeric", month: "short", year: "numeric" })}
+            </span>
+          </div>
+          {req.status === "REJECTED" && req.rejectionReason && (
+            <p style={{ margin: "8px 0 0", fontSize: "12px", color: "#991b1b", backgroundColor: "#fee2e2", padding: "6px 10px", borderRadius: "6px", display: "inline-block" }}>
+              Motivo de rechazo: {req.rejectionReason}
+            </p>
+          )}
+        </div>
+
+        {/* Badge + acción */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "10px", flexShrink: 0 }}>
+          <span style={{ padding: "3px 12px", borderRadius: "20px", fontSize: "11px", fontWeight: "700", color: badge.color, backgroundColor: badge.bg }}>
+            {badge.label}
+          </span>
+          {isPending && (
+            <button type="button" onClick={() => onCancel(req.id)}
+              style={{ padding: "6px 14px", borderRadius: "8px", border: "1px solid #fecdd3", background: "white", color: "#dc2626", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}>
+              Cancelar
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── Página ───────────────────────────────────────────────────────────────────
+
+export const CommerceBannerRequestsPage = () => {
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [storeId, setStoreId] = useState(null);
+  const [storeName, setStoreName] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const loadRequests = useCallback(async (sid) => {
+    try {
+      const data = await getMyBannerRequests(sid);
+      setRequests(data);
+    } catch {
+      toast.error("No se pudieron cargar las solicitudes");
+    }
+  }, []);
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const sessionRes = await apiClient.get("/api/session/user-session");
+        const sid = sessionRes.data?.user?.id_store;
+        const name = sessionRes.data?.user?.store_name ?? "";
+        if (!sid) { toast.error("No tenés un comercio registrado"); return; }
+        setStoreId(sid);
+        setStoreName(name);
+        await loadRequests(sid);
+      } catch {
+        toast.error("Error al cargar la sesión");
+      } finally {
+        setLoading(false);
+      }
+    };
+    init();
+  }, [loadRequests]);
+
+  const handleSubmit = async (payload) => {
+    setIsSubmitting(true);
+    try {
+      await createBannerRequest(storeId, storeName, payload);
+      toast.success("Solicitud enviada — será revisada por un administrador");
+      setIsModalOpen(false);
+      await loadRequests(storeId);
+    } catch {
+      toast.error("No se pudo enviar la solicitud");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCancel = async (requestId) => {
+    if (!window.confirm("¿Cancelar esta solicitud?")) return;
+    try {
+      await cancelBannerRequest(storeId, requestId);
+      setRequests((prev) => prev.filter((r) => r.id !== requestId));
+      toast.success("Solicitud cancelada");
+    } catch (e) {
+      toast.error(e?.message ?? "No se pudo cancelar la solicitud");
+    }
+  };
+
+  if (loading) return <p style={{ color: "#6b7280", padding: "16px" }}>Cargando...</p>;
+
+  const pendingCount = requests.filter((r) => r.status === "PENDING").length;
+
+  return (
+    <>
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "24px", gap: "16px", flexWrap: "wrap" }}>
+        <div>
+          <h4 style={{ fontWeight: "600", margin: "0 0 4px 0" }}>Banners promocionales</h4>
+          <p style={{ color: "#6b7280", margin: 0, fontSize: "14px" }}>
+            Solicitá la publicación de un banner en la página principal.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setIsModalOpen(true)}
+          style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "10px 16px", backgroundColor: "var(--primary-dark)", color: "white", border: "none", borderRadius: "10px", cursor: "pointer", fontSize: "14px", fontWeight: "600" }}
+        >
+          <Plus size={16} /> Nueva solicitud
+        </button>
+      </div>
+
+      {/* Aviso pendientes */}
+      {pendingCount > 0 && (
+        <div style={{ backgroundColor: "#fffbeb", border: "1px solid #fde68a", borderRadius: "10px", padding: "12px 16px", marginBottom: "20px", fontSize: "13px", color: "#92400e" }}>
+          Tenés <strong>{pendingCount}</strong> solicitud{pendingCount !== 1 ? "es" : ""} pendiente{pendingCount !== 1 ? "s" : ""} de revisión.
+        </div>
+      )}
+
+      {/* Lista de solicitudes */}
+      {requests.length === 0 ? (
+        <div style={{ backgroundColor: "white", borderRadius: "16px", padding: "48px 20px", textAlign: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}>
+          <Megaphone size={40} color="#d1d5db" style={{ marginBottom: "12px" }} />
+          <p style={{ fontSize: "15px", fontWeight: "600", color: "#374151", margin: "0 0 4px" }}>No tenés solicitudes todavía</p>
+          <p style={{ fontSize: "13px", color: "#9ca3af", margin: 0 }}>
+            Hacé clic en <strong>Nueva solicitud</strong> para comenzar.
+          </p>
+        </div>
+      ) : (
+        requests.map((req) => (
+          <RequestCard key={req.id} req={req} onCancel={handleCancel} />
+        ))
+      )}
+
+      <BannerRequestModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleSubmit}
+        isSubmitting={isSubmitting}
+      />
+    </>
+  );
+};
