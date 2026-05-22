@@ -152,6 +152,33 @@ async function setupCommonApiMocks(page: Page) {
     });
   });
 
+  // Navbar: carrito y notificaciones se disparan en cada página autenticada.
+  // Sin estos mocks, las requests llegan al backend real en CI y pueden
+  // recibir 401 → el interceptor de apiClient redirige a /login.
+  await page.route('**/api/users/*/carts', async (route) => {
+    if (route.request().method() === 'GET') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ carts: [] }),
+      });
+      return;
+    }
+    await route.fallback();
+  });
+
+  await page.route('**/api/notifications', async (route) => {
+    if (route.request().method() === 'GET') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ notifications: [] }),
+      });
+      return;
+    }
+    await route.fallback();
+  });
+
   await page.route('**/api/categories/products**', async (route) => {
     await route.fulfill({
       status: 200,
