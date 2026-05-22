@@ -217,11 +217,10 @@ export default function Wishlist() {
               <div className="bg-[#F3F5F4] border border-[#C7D6CF] rounded-xl p-10 text-center">
                 <p className="text-[18px] text-[#4f615b] font-medium">No tenés listas creadas</p>
                 <p className="text-[14px] text-gray-500 mt-2">
-                  Creá una lista y empezá a guardar{" "}
+                  {"Creá una lista y empezá a guardar "}
                   <button className="underline text-[#2d4030]" onClick={() => navigate("/busqueda")}>
                     productos
-                  </button>
-                  .
+                  </button>.
                 </p>
               </div>
             ) : (

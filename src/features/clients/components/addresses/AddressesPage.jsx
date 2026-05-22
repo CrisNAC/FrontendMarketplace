@@ -437,8 +437,8 @@ export const AddressesPage = () => {
                     <div className="flex-1 w-full">
 
                         {/* Section header */}
-                        <div className="bg-[#f0f2f1] border border-gray-200 px-4 py-3 rounded-sm flex justify-between items-center mb-4">
-                            <span className="font-semibold text-black text-[15px]">Mis direcciones</span>
+                        <div className="bg-[`#f0f2f1`] border border-gray-200 px-4 py-3 rounded-sm flex justify-between items-center mb-4">
++                            <h2 className="font-semibold text-black text-[15px]">Mis direcciones</h2>
                             <span className="text-sm text-gray-500">{addresses.length}/{MAX_ADDRESSES} direcciones</span>
                         </div>
 

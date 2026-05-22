@@ -27,6 +27,7 @@ export default function WishlistSummaryCard({
               value={newListName}
               onChange={(e) => onListNameChange(e.target.value)}
               placeholder="Nombre de la lista"
+              aria-label="Nombre de la nueva lista"
               className="border border-[#C7D6CF] rounded-full px-4 py-1.5 text-[13px] bg-white focus:outline-none focus:ring-2 focus:ring-[#8BB2A1] w-56"
               maxLength={50}
             />
