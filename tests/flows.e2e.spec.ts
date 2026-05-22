@@ -1,4 +1,4 @@
-import { test, expect, Page, Route } from '@playwright/test';
+﻿import { test, expect, Page, Route } from '@playwright/test';
 
 type Store = {
   id_store: number;
@@ -961,16 +961,6 @@ test.describe('Flujos E2E de usuario final', () => {
   });
 
   test('flujo direcciones: agregar nueva dirección del usuario', async ({ page }) => {
-    // Esta pantalla exige `success: true` en user-session.
-    await page.unroute('**/api/session/user-session');
-    await page.route('**/api/session/user-session', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ success: true, user: { id_user: 7, id_store: 1, name: 'Cliente Demo' } }),
-      });
-    });
-
     let addresses = [
       {
         id_address: 1,
@@ -1347,7 +1337,6 @@ test.describe('Flujos E2E de usuario final', () => {
   });
 
   test('flujo cliente: reportar producto y comentario', async ({ page }) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -1510,7 +1499,6 @@ test.describe('Flujos E2E de usuario final', () => {
   //OM-479
   test('flujo comercio: aceptar pedido pendiente y moverlo a seguimiento', async ({ page }) => {
     // Restaurar sesión de SELLER al inicio del test
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -1553,7 +1541,6 @@ test.describe('Flujos E2E de usuario final', () => {
   //OM-479
   test('flujo comercio: rechazar pedido pendiente', async ({ page }) => {
     // Restaurar sesión de SELLER al inicio del test
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -1590,7 +1577,6 @@ test.describe('Flujos E2E de usuario final', () => {
   //OM-479
   test("flujo comercio: reflejar pedido entregado en historial", async ({ page }) => {
     // Restaurar sesión de SELLER al inicio del test
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -1634,7 +1620,6 @@ test.describe('Flujos E2E de usuario final', () => {
   //OM-479
   test('flujo comercio: validar botones deshabilitados durante acción', async ({ page }) => {
     // Restaurar sesión de SELLER al inicio del test
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -1696,7 +1681,6 @@ test.describe('Flujos E2E de usuario final', () => {
   //OM-479
   test('flujo comercio: manejo de errores en aceptar/rechazar', async ({ page }) => {
     // Restaurar sesión de SELLER al inicio del test
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -1751,7 +1735,6 @@ test.describe('Flujos E2E de usuario final', () => {
   //OM-485
   // Mostrar ventana de calificación del delivery al iniciar sesión.
   test('flujo cliente: mostrar ventana de calificación del delivery al iniciar sesión', async ({ page }) => {
-    await page.unroute('**/api/session');
     await page.route('**/api/session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -1760,7 +1743,6 @@ test.describe('Flujos E2E de usuario final', () => {
       });
     });
 
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -1793,7 +1775,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
   //OM-485
   test('flujo cliente: calificar delivery desde la ventana emergente', async ({ page }) => {
-    await page.unroute('**/api/session');
     await page.route('**/api/session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -1802,7 +1783,6 @@ test.describe('Flujos E2E de usuario final', () => {
       });
     });
 
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -1847,7 +1827,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
   //OM-485
   test('flujo cliente: cerrar la ventana de calificación sin enviar', async ({ page }) => {
-    await page.unroute('**/api/session');
     await page.route('**/api/session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -1856,7 +1835,6 @@ test.describe('Flujos E2E de usuario final', () => {
       });
     });
 
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -1905,7 +1883,6 @@ test.describe('Flujos E2E de usuario final', () => {
     let deliveryRegistered = false;
 
     // Session usada en login
-    await page.unroute('**/api/session');
     await page.route('**/api/session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -1915,7 +1892,6 @@ test.describe('Flujos E2E de usuario final', () => {
     });
 
     // session/user-session debe cambiar su role dinámicamente según deliveryRegistered
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       const user = deliveryRegistered
         ? { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'Cliente Demo' }
@@ -2010,7 +1986,6 @@ test.describe('Flujos E2E de usuario final', () => {
   //OM-497
   test('flujo delivery: visualizar sidebar del panel', async ({ page }) => {
     // Session como DELIVERY
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ user: { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'Delivery Demo' } }) });
     });
@@ -2035,7 +2010,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
   //OM-486
   test('flujo cliente: abrir modal de delivery desde el navbar', async ({ page }) => {
-    await page.unroute('**/api/session');
     await page.route('**/api/session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -2044,7 +2018,6 @@ test.describe('Flujos E2E de usuario final', () => {
       });
     });
 
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -2091,7 +2064,6 @@ test.describe('Flujos E2E de usuario final', () => {
   test('flujo cliente: validar formulario y registrar como delivery', async ({ page }) => {
     let deliveryRegistered = false;
 
-    await page.unroute('**/api/session');
     await page.route('**/api/session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -2100,7 +2072,6 @@ test.describe('Flujos E2E de usuario final', () => {
       });
     });
 
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       const user = deliveryRegistered
         ? { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'Cliente Demo', email: 'cliente@test.com' }
@@ -2214,7 +2185,6 @@ test.describe('Flujos E2E de usuario final', () => {
   });
   test('flujo delivery: visualizar datos en mi perfil', async ({ page }) => {
     // Session DELIVERY con id_delivery
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ user: { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'Delivery Demo', email: 'delivery@test.com' } }) });
     });
@@ -2256,7 +2226,6 @@ test.describe('Flujos E2E de usuario final', () => {
   // OM-325
   // Toggle de estado del delivery
   test('flujo delivery: activar disponibilidad', async ({ page }) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ user: { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'Delivery Demo' } }) });
     });
@@ -2309,7 +2278,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-325
   test('flujo delivery: desactivar disponibilidad', async ({ page }) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ user: { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'Delivery Demo' } }) });
     });
@@ -2363,7 +2331,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-325
   test('flujo delivery: manejo de error al cambiar estado', async ({ page }) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ user: { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'Delivery Demo' } }) });
     });
@@ -2409,7 +2376,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-325
   test('flujo delivery: prevenir concurrencia con bloqueo de boton', async ({ page }) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ user: { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'Delivery Demo' } }) });
     });
@@ -2488,7 +2454,6 @@ test.describe('Flujos E2E de usuario final', () => {
       responseBody?: Record<string, unknown>;
     },
   ) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -2722,7 +2687,6 @@ test.describe('Flujos E2E de usuario final', () => {
   // OM-323: Gestionar perfil y datos de contacto del delivery
   //  Navegar a editar perfil
   test('flujo delivery: navegar a editar perfil desde pantalla de perfil', async ({ page }) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -2773,7 +2737,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-323
   test('flujo delivery: formulario de edición prellenado con datos actuales', async ({ page }) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -2823,7 +2786,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-323
   test('flujo delivery: upload de foto de perfil con vista previa', async ({ page }) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -2877,7 +2839,6 @@ test.describe('Flujos E2E de usuario final', () => {
     let putCalled = false;
     let putBody: DeliveryPutBody | null = null;
 
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -2978,7 +2939,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-323
   test('flujo delivery: validar campos obligatorios del perfil', async ({ page }) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -3043,7 +3003,6 @@ test.describe('Flujos E2E de usuario final', () => {
   test('flujo delivery: manejo de error al guardar perfil y estados de carga', async ({ page }) => {
     let putRequestCount = 0;
 
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -3128,7 +3087,6 @@ test.describe('Flujos E2E de usuario final', () => {
       total: number;
     },
   ) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -3539,7 +3497,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-488
   test('flujo delivery: Ver historial de pedidos', async ({ page }) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -3577,7 +3534,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-488
   test('flujo delivery: Paginación funciona correctamente', async ({ page }) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -3619,7 +3575,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-488
   test('flujo delivery: Filtrado por periodo y por estado', async ({ page }) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -3658,7 +3613,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-488
   test('flujo delivery: Estado vacío y manejo de error/carga', async ({ page }) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -3780,7 +3734,6 @@ test.describe('Flujos E2E de usuario final', () => {
         avgRating: 4.8,
       };
 
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -4184,7 +4137,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
   test('flujo comercio: Listar deliveries elegibles y mostrarlos en modal', async ({ page }) => {
     // Restaurar sesión de SELLER
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -4245,7 +4197,6 @@ test.describe('Flujos E2E de usuario final', () => {
   //Asignar delivery desde modal y POST /api/assignments
   test('flujo comercio: Asignar delivery desde modal con exito', async ({ page }) => {
     // Restaurar sesión SELLER
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -4318,7 +4269,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-489
   test('flujo comercio: Sin deliveries disponibles muestra mensaje sin deliveries disponibles y boton Asignar desactivado', async ({ page }) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -4372,7 +4322,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-490
   test('flujo delivery: finalizar pedido activo', async ({ page }) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -4469,7 +4418,6 @@ test.describe('Flujos E2E de usuario final', () => {
     const productId = 101;
 
 
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -4527,7 +4475,6 @@ test.describe('Flujos E2E de usuario final', () => {
   test('flujo comercio: Validar stock inválido en edición', async ({ page }) => {
     const productId = 101;
 
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -4765,7 +4712,6 @@ test.describe('Flujos E2E de usuario final', () => {
       await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ message: 'should not be called' }) });
     });
 
-    await page.unroute('**/api/session');
     let loginCalled = false;
     await page.route('**/api/session', async (route) => {
       loginCalled = true;
@@ -4829,7 +4775,6 @@ test.describe('Flujos E2E de usuario final', () => {
     });
 
     // Mock sesión como SELLER
-    await page.unroute('**/api/session');
     await page.route('**/api/session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -4837,7 +4782,6 @@ test.describe('Flujos E2E de usuario final', () => {
         body: JSON.stringify({ token: 'fake-token', user: { id_user: 7, role: 'SELLER', id_store: 1 } }),
       });
     });
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -4896,16 +4840,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
   //OM-506
   test('flujo cliente: Campos inválidos al agregar dirección', async ({ page }) => {
-    // Mock session como CUSTOMER
-    await page.unroute('**/api/session/user-session');
-    await page.route('**/api/session/user-session', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ success: true, user: { id_user: 7, id_store: 1, name: 'Cliente Demo' } }),
-      });
-    });
-
     // Mock addresses endpoint y detectar POST
     await page.unroute('**/api/users/*/addresses**');
     let postCalled = false;
@@ -4974,7 +4908,6 @@ test.describe('Flujos E2E de usuario final', () => {
     });
 
     // Mock sesión como CUSTOMER (CommerceCreationForm lee /api/session/user-session)
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -5081,7 +5014,6 @@ test.describe('Flujos E2E de usuario final', () => {
     });
 
     // Mock sesión como SELLER (tiene id_store = 1)
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -5171,7 +5103,6 @@ test.describe('Flujos E2E de usuario final', () => {
   //OM-506
   test('flujo admin: Campos inválidos al editar categoria en admin', async ({ page }) => {
     // Mock session como ADMIN
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -5253,7 +5184,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
   //OM-506
   test('flujo cliente: Campos inválidos al comentar producto', async ({ page }) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -5638,7 +5568,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
   //OM-521
   test('flujo cliente: Customer sin comercio intenta acceder a comercio, este redirige a crear comercio', async ({ page }) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -5686,7 +5615,6 @@ test.describe('Flujos E2E de usuario final', () => {
   // OM-521
   test('flujo comercio: usuario SELLER intenta acceder a crear comercio, pero redirige a panel de comercio y muestra toast', async ({ page }) => {
     // Sesión como SELLER
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -5917,7 +5845,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
   //Om-508
   test('flujo admin: crear categoria con icono, persistir en tabla, editar icono y ver detalle', async ({ page }) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -6228,7 +6155,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
     // Delivery ve la asignación como expirada 
 
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -6253,7 +6179,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
     //Comercio puede re-asignar el pedido
 
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -6276,7 +6201,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
     //Cliente ve estado vigente del pedido
 
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -6451,7 +6375,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
     //Delivery rechaza manualmente el pedido
 
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -6483,7 +6406,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
     //Comercio ve el aviso y puede re-asignar
 
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -6511,7 +6433,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
     //Cliente ve estado vigente del pedido
 
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -6714,7 +6635,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
     // Delivery se desconecta con asignación pendiente
 
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -6753,7 +6673,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
     // Comercio ve el aviso y puede re-asignar
 
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -6781,7 +6700,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
     // Cliente ve estado vigente del pedido
 
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
@@ -7415,7 +7333,6 @@ test.describe('Flujos E2E de usuario final', () => {
   // Horarios de atención del comercio
 
   const installBusinessHoursMock = async (page: Page) => {
-    await page.unroute('**/api/session/user-session');
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
