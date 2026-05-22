@@ -52,16 +52,17 @@ const NotificationsPage = () => {
     }, []);
 
     return (
-        <div className="flex gap-6 p-6 max-w-5xl mx-auto">
-            <aside className="w-56 shrink-0">
+        <div className="max-w-[1400px] mx-auto w-full px-6 py-10">
+            <h1 className="text-[28px] font-bold text-[#2d4030] mb-8">
+                Notificaciones
+            </h1>
+
+            <div className="flex flex-col md:flex-row gap-8 items-start">
+            <aside className="w-full md:w-[280px] shrink-0">
                 <SidebarClientProfile />
             </aside>
 
-            <main className="flex-1">
-                <h1 className="text-2xl font-bold text-[#2d4030] mb-4">
-                    Notificaciones
-                </h1>
-
+            <main className="flex-1 w-full">
                 {loading ? (
                     <p className="text-gray-500">Cargando...</p>
                 ) : notifications.length === 0 ? (
@@ -99,6 +100,7 @@ const NotificationsPage = () => {
                     </ul>
                 )}
             </main>
+            </div>
         </div>
     );
 };
