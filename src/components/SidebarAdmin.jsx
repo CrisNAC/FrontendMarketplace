@@ -16,6 +16,7 @@ import {
 
 const NAV_ITEMS = [
     { label: "Dashboard",               icon: LayoutDashboard, route: "/admin/dashboard" },
+    { label: "Banners promocionales",   icon: Flag,            route: "/admin/banners" },
     { label: "Gestión de Usuarios",     icon: Users,           route: "/admin/usuarios" },
     { label: "Comercios por Aprobar",   icon: Store,           route: "/admin/comercios-pendientes" },
     { label: "Moderación de Productos", icon: Package,         route: "/admin/productos" },

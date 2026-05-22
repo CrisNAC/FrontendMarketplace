@@ -49,6 +49,7 @@ describe("ConfirmarPedido", () => {
                   originalPrice: 120000,
                   offerPrice: 100000,
                   isOffer: true,
+                  stock: 5,
                 },
               },
             ],

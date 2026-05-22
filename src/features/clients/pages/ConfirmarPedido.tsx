@@ -45,6 +45,7 @@ type BackendCart = {
       originalPrice?: number | null;
       offerPrice?: number | null;
       isOffer: boolean;
+      stock?: number;
     };
   }>;
 };
@@ -272,6 +273,11 @@ export default function ConfirmarPedido() {
     : Number(shippingQuote?.shipping_cost ?? 0);
 
   const total = subtotal - discount + shipping;
+
+  const outOfStockItems = useMemo(() => {
+    if (!cart) return [];
+    return cart.items.filter(item => (item.product?.stock ?? 0) < item.quantity);
+  }, [cart]);
 
   const handleConfirmOrder = async () => {
   if (submitLockRef.current) return;
@@ -603,12 +609,26 @@ export default function ConfirmarPedido() {
                     </span>
                   </div>
 
+                  {outOfStockItems.length > 0 && (
+                    <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                      <p className="font-semibold mb-1">⚠️ Stock insuficiente</p>
+                      <ul className="list-disc pl-4 text-xs">
+                        {outOfStockItems.map((item) => (
+                          <li key={item.id}>
+                            {item.product?.name ?? "Producto"} (Disp: {item.product?.stock ?? 0})
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
                   <button
                     type="button"
                     onClick={handleConfirmOrder}
                     disabled={
                       isSubmitting ||
-                      (requiresAddress && (addresses.length === 0 || shippingQuoteStatus !== "ready"))
+                      (requiresAddress && (addresses.length === 0 || shippingQuoteStatus !== "ready")) ||
+                      outOfStockItems.length > 0
                     }
                     className="mt-4 w-full rounded-lg bg-[#5B7B6D] py-2 text-sm font-medium text-white shadow-sm transition-all duration-150 hover:bg-[#4e6a5e] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
                   >

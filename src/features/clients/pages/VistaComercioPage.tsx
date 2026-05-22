@@ -19,6 +19,8 @@ type Store = {
     total_reviews?: number | null;
     open_time?: string | null;
     close_time?: string | null;
+    is_open?: boolean;
+    categories?: Array<{ id?: number; name: string }>;
     store_category?: { id_store_category: number; name: string };
     status?: boolean;
     addresses?: Array<{
@@ -56,7 +58,6 @@ type StoreProduct = {
     price: string | number;
     image_url?: string | null;
     visible?: boolean;
-    product_category?: { id_product_category: number; name: string };
 };
 
 type StoreProductsResponse =
@@ -207,7 +208,14 @@ export const VistaComercioPage = () => {
     }, [storeId, selectedCategoryId, priceRange.max, priceRange.min, appliedSearch]);
 
     const headerName = store?.name || storeName || "Comercio";
-    const headerCategory = store?.store_category?.name || "Comercio";
+    const headerCategory = (() => {
+        const names = Array.isArray(store?.categories)
+            ? store.categories.map((c) => c.name?.trim()).filter(Boolean)
+            : [];
+        if (names.length > 0) return names.join(" · ");
+        const fallback = store?.store_category?.name?.trim();
+        return fallback || "Comercio";
+    })();
     const mainAddress = store?.addresses?.[0];
     const addressText = [mainAddress?.address, mainAddress?.city, mainAddress?.region]
         .filter(Boolean)
@@ -258,7 +266,7 @@ export const VistaComercioPage = () => {
             <CommerceProfileHeader
                 name={headerName}
                 category={headerCategory}
-                isOpen={Boolean(store?.status)}
+                isOpen={Boolean(store?.is_open)}
                 rating={Number(store?.average_rating ?? 0)}
                 reviews={Number(store?.total_reviews ?? 0)}
                 closesAt={closesAt}

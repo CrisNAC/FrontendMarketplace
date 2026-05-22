@@ -128,9 +128,13 @@ export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
     try {
       await becomeDelivery(parsed.data.vehicleType, parsed.data.phone);
       window.dispatchEvent(new Event("deliveryRegistered"));
+      await getCurrentUserForDeliveryForm();
       toast.success("Listo: ahora sos delivery.");
-      onSuccess?.();
-      onClose?.();
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        onClose?.();
+      }
     } catch (err) {
       setError(getBackendErrorMessage(err, "No se pudo completar el registro como delivery."));
     } finally {
@@ -166,7 +170,7 @@ export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
           {loading && <p className="mt-6 text-sm text-slate-600">Cargando…</p>}
 
           {!loading && (
-            <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
+            <form className="mt-6 space-y-5" onSubmit={handleSubmit} noValidate>
               <div>
                 <label htmlFor="delivery-phone" className="block text-sm font-medium text-slate-700 mb-1.5">
                   Teléfono / WhatsApp
@@ -264,3 +268,4 @@ export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
 }
 
 export default BecomeDeliveryModal;
+

@@ -26,13 +26,20 @@ export const createDeliveryAssignment = async (fk_order, fk_delivery) => {
 };
 
 /**
- * Verifica si un pedido ya tiene un delivery asignado.
- * GET /api/orders/:orderId/assignment
+ * Verifica si un pedido tiene una asignación activa (pendiente o aceptada).
+ * GET /api/assignments/orders/:orderId/assignments
  */
 export const checkOrderAssignment = async (orderId) => {
   try {
-    const res = await apiClient.get(`/api/orders/${orderId}/assignment`);
-    return res.data; // { has_assignment: boolean, delivery: {...} }
+    const res = await apiClient.get(`/api/assignments/orders/${orderId}/assignments`);
+    const assignments = Array.isArray(res.data) ? res.data : [];
+    const active = assignments.find(
+      (a) => a.assignment_status === "PENDING" || a.assignment_status === "ACCEPTED"
+    );
+    return {
+      has_assignment: Boolean(active),
+      assignment_status: active?.assignment_status ?? null,
+    };
   } catch (err) {
     if (err.response?.status === 404) {
       return { has_assignment: false };

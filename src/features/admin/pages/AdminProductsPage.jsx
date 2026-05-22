@@ -82,9 +82,21 @@ const ProductDetailModal = ({ isOpen, product, onClose, onApprove, onReject, isS
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
               <DetailRow label="Precio" value={`Gs. ${Number(product.price ?? 0).toLocaleString("es-PY")}`} />
               <DetailRow label="Visible en tienda" value={product.visible ? "Sí" : "No"} />
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <Tag size={13} color="#6b7280" />
-                <DetailRow label="Categoría" value={product.category?.name} />
+              <div style={{ display: "flex", alignItems: "flex-start", gap: "6px", gridColumn: "1 / -1" }}>
+                <Tag size={13} color="#6b7280" style={{ marginTop: "16px", flexShrink: 0 }} />
+                <div>
+                  <p style={{ margin: "0 0 4px", fontSize: "12px", color: "#6b7280" }}>Categorías</p>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
+                    {product.categories?.length > 0
+                      ? product.categories.map((cat) => (
+                          <span key={cat.id} style={{ padding: "2px 8px", borderRadius: "999px", fontSize: "12px", fontWeight: "500", backgroundColor: "#e0e7ff", color: "#3730a3" }}>
+                            {cat.name}
+                          </span>
+                        ))
+                      : <span style={{ fontSize: "14px", fontWeight: "500", color: "#111827" }}>—</span>
+                    }
+                  </div>
+                </div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <Store size={13} color="#6b7280" />
@@ -273,7 +285,6 @@ const ProductRow = ({ product, onViewDetail, onApprove, onReject, isSubmitting }
         <p style={{ margin: "0 0 2px", fontWeight: "600", fontSize: "13px", color: "#111827" }}>
           Gs. {Number(product.price ?? 0).toLocaleString("es-PY")}
         </p>
-        <p style={{ margin: 0, fontSize: "12px", color: "#6b7280" }}>{product.category?.name ?? "—"}</p>
       </div>
 
       <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>

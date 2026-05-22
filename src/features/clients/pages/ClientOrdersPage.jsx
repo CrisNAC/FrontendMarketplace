@@ -67,37 +67,40 @@ export const ClientOrdersPage = () => {
   }));
 
   return (
-    <div>
+    <div className="min-h-screen flex flex-col">
       <Navbar />
-      <h3 className="p-2 ms-5 mt-2 font-bold">Mis Pedidos</h3>
 
-      <div className="grid grid-cols-[250px_1fr] min-h-screen gap-x-15">
-        <div className="p-3 w-80">
-          <SidebarClientProfile />
+      <main className="max-w-[1400px] mx-auto w-full px-6 py-10">
+        <h1 className="text-[28px] font-bold text-[#2d4030] mb-8">Mis Pedidos</h1>
+
+        <div className="flex flex-col md:flex-row gap-8 items-start">
+          <aside className="w-full md:w-[280px] shrink-0">
+            <SidebarClientProfile />
+          </aside>
+
+          <div className="flex-1 w-full">
+            {loading && (
+              <p className="text-gray-500">Cargando pedidos...</p>
+            )}
+
+            {!loading && error && (
+              <p className="text-red-500">{error}</p>
+            )}
+
+            {!loading && !error && mappedOrders.length === 0 && (
+              <p className="text-gray-500">No tenés pedidos aún.</p>
+            )}
+
+            {!loading && !error && mappedOrders.map((order) => (
+              <OrderCard
+                key={order.id}
+                order={order}
+                onClick={() => handleCardClick(order.id)}
+              />
+            ))}
+          </div>
         </div>
-
-        <div className="p-6">
-          {loading && (
-            <p className="text-gray-500">Cargando pedidos...</p>
-          )}
-
-          {!loading && error && (
-            <p className="text-red-500">{error}</p>
-          )}
-
-          {!loading && !error && mappedOrders.length === 0 && (
-            <p className="text-gray-500">No tenés pedidos aún.</p>
-          )}
-
-          {!loading && !error && mappedOrders.map((order) => (
-            <OrderCard
-              key={order.id}
-              order={order}
-              onClick={() => handleCardClick(order.id)}
-            />
-          ))}
-        </div>
-      </div>
+      </main>
     </div>
   );
 };

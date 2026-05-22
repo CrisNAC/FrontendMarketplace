@@ -17,7 +17,7 @@ export const ServerErrorPage = () => {
           <button onClick={() => window.location.reload()} className="btn btn-secondary">
             Reintentar
           </button>
-          <button onClick={() => navigate('/homepage')} className="btn btn-primary">
+          <button onClick={() => navigate('/')} className="btn btn-primary">
             Ir al inicio
           </button>
         </div>

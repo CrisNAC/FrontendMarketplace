@@ -61,7 +61,7 @@ function Stars({ rating }) {
 function ProductCard({ product, onView, onEdit, onDelete }) {
     const [imgError, setImgError] = useState(false);
     const isVisible = isProductVisible(product);
-    const categoryName = product.product_category?.name ?? product.category?.name ?? null;
+    const productCategories = Array.isArray(product.categories) ? product.categories : [];
     // el back ahora devuelve image_url directamente en el producto
     const imageUrl = product.image_url ?? product.imageUrl ?? null;
 
@@ -112,7 +112,13 @@ function ProductCard({ product, onView, onEdit, onDelete }) {
                         ({product.total_reviews ?? 0} reseñas)
                     </span>
                 </div>
-                {categoryName && <CategoryPill name={categoryName} />}
+                {productCategories.length > 0 && (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
+                        {productCategories.map((cat, i) => (
+                            <CategoryPill key={cat.id ?? i} name={cat.name} />
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* Botones */}
@@ -219,6 +225,7 @@ function DeleteModal({ product, isDeleting, onConfirm, onCancel, deleteError }) 
 export function CommerceProductsPage() {
     const navigate = useNavigate();
     const [products, setProducts] = useState([]);
+    const [store, setStore] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [search, setSearch] = useState("");
@@ -238,7 +245,10 @@ export function CommerceProductsPage() {
                 const res = await commerceApiClient.get(`/api/commerces/${idStore}`);
                 const loadedProducts = res.data?.products ?? [];
                 console.log("Primer producto del comercio:", JSON.stringify(loadedProducts[0], null, 2));
-                if (active) setProducts(loadedProducts);
+                if (active) {
+                    setProducts(loadedProducts);
+                    setStore(res.data);
+                }
             } catch (err) {
                 if (active) setError(err.response?.data?.message || err.message || "No se pudieron cargar los productos.");
             } finally {
@@ -249,12 +259,20 @@ export function CommerceProductsPage() {
         return () => { active = false; };
     }, []);
 
-    // Categorías únicas para el filtro
+    // Categorías únicas para el filtro (de todos los productos, no solo la primera)
     const categories = useMemo(() => {
         const seen = new Set();
-        return products
-            .map(p => p.product_category?.name ?? p.category?.name ?? null)
-            .filter(name => name && !seen.has(name) && seen.add(name));
+        const result = [];
+        for (const p of products) {
+            const cats = Array.isArray(p.categories) ? p.categories : [];
+            for (const cat of cats) {
+                if (cat?.name && !seen.has(cat.name)) {
+                    seen.add(cat.name);
+                    result.push(cat.name);
+                }
+            }
+        }
+        return result;
     }, [products]);
 
     // Productos filtrados
@@ -266,8 +284,8 @@ export function CommerceProductsPage() {
                 filterStatus === "all" ||
                 (filterStatus === "active" && isVisible) ||
                 (filterStatus === "hidden" && !isVisible);
-            const catName = p.product_category?.name ?? p.category?.name ?? "";
-            const matchesCategory = filterCategory === "all" || catName === filterCategory;
+            const productCats = Array.isArray(p.categories) ? p.categories : [];
+            const matchesCategory = filterCategory === "all" || productCats.some(cat => cat?.name === filterCategory);
             return matchesSearch && matchesStatus && matchesCategory;
         });
     }, [products, search, filterStatus, filterCategory]);
@@ -291,6 +309,8 @@ export function CommerceProductsPage() {
 
     if (loading) return <p style={{ color: "#6b7280", padding: "16px" }}>Cargando...</p>;
 
+    const isStoreActive = store?.store_status === 'ACTIVE';
+
     const selectStyle = {
         padding: "6px 10px", borderRadius: "8px", fontSize: "12px", fontWeight: "500",
         border: "1px solid #e5e7eb", backgroundColor: "white", color: "#374151",
@@ -307,14 +327,16 @@ export function CommerceProductsPage() {
                         Administrá tu catálogo de productos de forma sencilla
                     </p>
                 </div>
-                <button type="button" onClick={() => navigate("/comercio/productos/nuevo")} style={{
-                    display: "flex", alignItems: "center", gap: "6px",
-                    backgroundColor: "var(--primary-dark)", color: "white",
-                    border: "none", borderRadius: "8px", padding: "8px 16px",
-                    fontSize: "13px", fontWeight: "500", cursor: "pointer",
-                }}>
-                    <Plus size={14} /> Nuevo Producto
-                </button>
+                {isStoreActive && (
+                    <button type="button" onClick={() => navigate("/comercio/productos/nuevo")} style={{
+                        display: "flex", alignItems: "center", gap: "6px",
+                        backgroundColor: "var(--primary-dark)", color: "white",
+                        border: "none", borderRadius: "8px", padding: "8px 16px",
+                        fontSize: "13px", fontWeight: "500", cursor: "pointer",
+                    }}>
+                        <Plus size={14} /> Nuevo Producto
+                    </button>
+                )}
             </div>
 
             {error && (
@@ -377,7 +399,7 @@ export function CommerceProductsPage() {
                             ? "No se encontraron productos con esos filtros."
                             : "Aún no tenés productos."}
                     </p>
-                    {!search && filterStatus === "all" && filterCategory === "all" && (
+                    {!search && filterStatus === "all" && filterCategory === "all" && isStoreActive && (
                         <button type="button" onClick={() => navigate("/comercio/productos/nuevo")} style={{
                             marginTop: "12px", padding: "8px 16px",
                             backgroundColor: "var(--primary-dark)", color: "white",
