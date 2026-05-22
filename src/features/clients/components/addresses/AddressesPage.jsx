@@ -25,7 +25,7 @@ const useSession = () => {
         axios
             .get(`${API_BASE}/api/session/user-session`, { withCredentials: true })
             .then(({ data }) => {
-                if (data.success) setUserId(data.user.id_user);
+                if (data?.user?.id_user) setUserId(data.user.id_user);
             })
             .catch(() => setUserId(null))
             .finally(() => setSessionLoading(false));
