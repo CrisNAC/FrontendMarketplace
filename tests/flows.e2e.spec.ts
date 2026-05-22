@@ -6963,6 +6963,384 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page).toHaveURL('/login');
   });
 
+  //OM-523
+  test('flujo admin: crear banner con campos válidos', async ({ page }) => {
+    let postCalled = false;
+
+    await page.route('**/api/admin/banners**', async (route) => {
+      const method = route.request().method();
+
+      if (method === 'POST') {
+        postCalled = true;
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({ id: 10, title: 'Banner Nuevo', isActive: true }),
+        });
+        return;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ data: [], pagination: { total: 0, page: 1, limit: 20, totalPages: 1 } }),
+      });
+    });
+
+    await page.goto('/admin/banners');
+
+    await expect(page.getByRole('heading', { name: 'Banners promocionales' })).toBeVisible();
+    await page.getByRole('button', { name: 'Nuevo banner' }).click();
+    await expect(page.getByRole('heading', { name: 'Nuevo banner', level: 3 })).toBeVisible();
+
+    await page.getByPlaceholder('Semana Eco').fill('Banner Nuevo');
+    await page.getByPlaceholder('https://...').first().fill('https://images.unsplash.com/photo-1');
+    await page.locator('input[type="datetime-local"]').first().fill('2026-12-01T10:00');
+
+    await page.getByRole('button', { name: 'Guardar' }).click();
+
+    await expect(page.getByText('Banner creado')).toBeVisible();
+    expect(postCalled).toBe(true);
+  });
+
+  //OM-523
+  test('flujo admin: validaciones de campos requeridos al crear banner', async ({ page }) => {
+    let postCalled = false;
+
+    await page.route('**/api/admin/banners**', async (route) => {
+      if (route.request().method() === 'POST') {
+        postCalled = true;
+        await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ id: 99 }) });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ data: [], pagination: { total: 0, page: 1, limit: 20, totalPages: 1 } }),
+      });
+    });
+
+    await page.goto('/admin/banners');
+    await page.getByRole('button', { name: 'Nuevo banner' }).click();
+    await expect(page.getByRole('heading', { name: 'Nuevo banner', level: 3 })).toBeVisible();
+
+    // Guardar sin título
+    await page.getByRole('button', { name: 'Guardar' }).click();
+    await expect(page.getByText('El titulo es obligatorio')).toBeVisible();
+
+    // Ingresar título, guardar sin imagen
+    await page.getByPlaceholder('Semana Eco').fill('Banner Test');
+    await page.getByRole('button', { name: 'Guardar' }).click();
+    await expect(page.getByText('La imagen es obligatoria')).toBeVisible();
+
+    // Ingresar imagen, guardar sin fecha de inicio
+    await page.getByPlaceholder('https://...').first().fill('https://via.placeholder.com/600x300');
+    await page.getByRole('button', { name: 'Guardar' }).click();
+    await expect(page.getByText('La fecha de inicio es obligatoria')).toBeVisible();
+
+    expect(postCalled).toBe(false);
+  });
+
+  //OM-523
+  test('flujo admin: editar banner existente', async ({ page }) => {
+    let putCalled = false;
+    let putPayload: Record<string, unknown> = {};
+
+    await page.route('**/api/admin/banners**', async (route) => {
+      const method = route.request().method();
+      const url = route.request().url();
+
+      if (method === 'PUT' && url.includes('/api/admin/banners/')) {
+        putCalled = true;
+        putPayload = route.request().postDataJSON() as Record<string, unknown>;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ id: 1, ...putPayload }),
+        });
+        return;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: [
+            {
+              id: 1,
+              title: 'Banner Original',
+              description: 'Descripción original',
+              imageUrl: 'https://via.placeholder.com/600x300',
+              linkUrl: null,
+              startAt: '2026-01-01T10:00:00.000Z',
+              endAt: null,
+              isActive: true,
+            },
+          ],
+          pagination: { total: 1, page: 1, limit: 20, totalPages: 1 },
+        }),
+      });
+    });
+
+    await page.goto('/admin/banners');
+    await expect(page.getByText('Banner Original')).toBeVisible();
+    await page.getByTitle('Editar banner').first().click();
+
+    await expect(page.getByRole('heading', { name: 'Editar banner', level: 3 })).toBeVisible();
+    const titleInput = page.getByPlaceholder('Semana Eco');
+    await expect(titleInput).toHaveValue('Banner Original');
+
+    await titleInput.clear();
+    await titleInput.fill('Banner Actualizado');
+    await page.getByRole('button', { name: 'Guardar' }).click();
+
+    await expect(page.getByText('Banner actualizado')).toBeVisible();
+    expect(putCalled).toBe(true);
+    expect(putPayload.title).toBe('Banner Actualizado');
+  });
+
+  //OM-523
+  test('flujo admin: badges de estado según programación de fechas', async ({ page }) => {
+    await page.route('**/api/admin/banners**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: [
+            {
+              id: 1,
+              title: 'Banner Visible',
+              imageUrl: 'https://via.placeholder.com/600x300',
+              description: null,
+              startAt: '2026-01-01T10:00:00.000Z',
+              endAt: null,
+              isActive: true,
+            },
+            {
+              id: 2,
+              title: 'Banner Programado',
+              imageUrl: 'https://via.placeholder.com/600x300',
+              description: null,
+              startAt: '2026-12-31T10:00:00.000Z',
+              endAt: null,
+              isActive: true,
+            },
+            {
+              id: 3,
+              title: 'Banner Finalizado',
+              imageUrl: 'https://via.placeholder.com/600x300',
+              description: null,
+              startAt: '2026-01-01T10:00:00.000Z',
+              endAt: '2026-02-01T10:00:00.000Z',
+              isActive: true,
+            },
+            {
+              id: 4,
+              title: 'Banner Desactivado',
+              imageUrl: 'https://via.placeholder.com/600x300',
+              description: null,
+              startAt: '2026-01-01T10:00:00.000Z',
+              endAt: null,
+              isActive: false,
+            },
+          ],
+          pagination: { total: 4, page: 1, limit: 20, totalPages: 1 },
+        }),
+      });
+    });
+
+    await page.goto('/admin/banners');
+
+    await expect(page.getByRole('heading', { name: 'Banners promocionales' })).toBeVisible();
+    await expect(page.getByText('Banner Visible')).toBeVisible();
+    await expect(page.getByText('Visible').nth(1)).toBeVisible();
+    await expect(page.getByText('Programado').nth(1)).toBeVisible();
+    await expect(page.getByText('Finalizado').nth(1)).toBeVisible();
+    await expect(page.getByText('Desactivado').nth(1)).toBeVisible();
+  });
+
+  //OM-523
+  test('flujo admin: activar y desactivar banner', async ({ page }) => {
+    let lastPatchPayload: Record<string, unknown> = {};
+
+    await page.route('**/api/admin/banners**', async (route) => {
+      const method = route.request().method();
+      const url = route.request().url();
+
+      if (method === 'PATCH' && url.includes('/active')) {
+        lastPatchPayload = route.request().postDataJSON() as Record<string, unknown>;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ message: 'Banner actualizado' }),
+        });
+        return;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: [
+            {
+              id: 1,
+              title: 'Banner Activo',
+              imageUrl: 'https://via.placeholder.com/600x300',
+              description: null,
+              startAt: '2026-01-01T10:00:00.000Z',
+              endAt: null,
+              isActive: true,
+            },
+            {
+              id: 2,
+              title: 'Banner Inactivo',
+              imageUrl: 'https://via.placeholder.com/600x300',
+              description: null,
+              startAt: '2026-01-01T10:00:00.000Z',
+              endAt: null,
+              isActive: false,
+            },
+          ],
+          pagination: { total: 2, page: 1, limit: 20, totalPages: 1 },
+        }),
+      });
+    });
+
+    await page.goto('/admin/banners');
+    await expect(page.getByText('Banner Activo')).toBeVisible();
+    await expect(page.getByText('Banner Inactivo')).toBeVisible();
+
+    // Desactivar el banner activo
+    await page.getByTitle('Desactivar banner').first().click();
+    await expect(page.getByText('Banner desactivado')).toBeVisible();
+    expect(lastPatchPayload.isActive).toBe(false);
+
+    // Esperar que la lista se re-renderice luego del re-fetch no-await de loadBanners()
+    await expect(page.getByText('Banner Inactivo')).toBeVisible({ timeout: 5000 });
+
+    // Activar el banner inactivo
+    await page.getByTitle('Activar banner').nth(1).click();
+    await expect(page.getByText('Banner activado')).toBeVisible();
+    expect(lastPatchPayload.isActive).toBe(true);
+  });
+
+  //OM-523
+  test('flujo admin: filtrar y buscar banners', async ({ page }) => {
+    await page.route('**/api/admin/banners**', async (route) => {
+      const url = new URL(route.request().url());
+      const search = url.searchParams.get('search') ?? '';
+      const active = url.searchParams.get('active') ?? '';
+
+      const allBanners = [
+        {
+          id: 1,
+          title: 'Semana Eco',
+          imageUrl: 'https://via.placeholder.com/600x300',
+          description: null,
+          startAt: '2026-01-01T10:00:00.000Z',
+          endAt: null,
+          isActive: true,
+        },
+        {
+          id: 2,
+          title: 'Black Friday 2026',
+          imageUrl: 'https://via.placeholder.com/600x300',
+          description: null,
+          startAt: '2026-11-27T00:00:00.000Z',
+          endAt: null,
+          isActive: false,
+        },
+      ];
+
+      let filtered = allBanners;
+      if (search) filtered = filtered.filter(b => b.title.toLowerCase().includes(search.toLowerCase()));
+      if (active === 'true') filtered = filtered.filter(b => b.isActive);
+      if (active === 'false') filtered = filtered.filter(b => !b.isActive);
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: filtered,
+          pagination: { total: filtered.length, page: 1, limit: 20, totalPages: 1 },
+        }),
+      });
+    });
+
+    await page.goto('/admin/banners');
+
+    // Carga inicial: ambos banners visibles
+    await expect(page.getByText('Semana Eco')).toBeVisible();
+    await expect(page.getByText('Black Friday 2026')).toBeVisible();
+
+    // Buscar por título (debounce de 300 ms incluido en el timeout de la aserción)
+    await page.getByPlaceholder('Buscar por titulo...').fill('Semana');
+    await expect(page.getByText('Semana Eco')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('Black Friday 2026')).not.toBeVisible();
+
+    // Limpiar búsqueda y restaurar lista completa
+    await page.getByPlaceholder('Buscar por titulo...').clear();
+    await expect(page.getByText('Black Friday 2026')).toBeVisible({ timeout: 5000 });
+
+    // Filtrar por banners activos
+    await page.getByRole('combobox').selectOption('true');
+    await expect(page.getByText('Semana Eco')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('Black Friday 2026')).not.toBeVisible();
+  });
+
+  //OM-523
+  test('flujo cliente: carousel del homepage muestra banners activos y fallback a slides por defecto', async ({ page }) => {
+    const bannerTitle = 'Oferta Especial E2E';
+
+    // API retorna 1 banner → 3 slides totales (2 por defecto + 1 banner)
+    await page.route('**/api/banners**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          {
+            id: 1,
+            title: bannerTitle,
+            description: 'Descripción de prueba',
+            imageUrl: 'https://via.placeholder.com/600x300',
+            linkUrl: null,
+            startAt: '2026-01-01T00:00:00.000Z',
+            endAt: null,
+            isActive: true,
+          },
+        ]),
+      });
+    });
+
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    // El carousel debe tener 3 indicadores (2 defaultSlides + 1 banner)
+    const dots = page.locator('button.w-2.h-2');
+    await expect(dots).toHaveCount(3);
+
+    // Navegar al último slide (el banner) y verificar su contenido
+    await dots.last().click();
+    await expect(page.getByText(bannerTitle)).toBeVisible();
+
+    // API retorna vacío → solo los 2 slides por defecto
+    await page.unroute('**/api/banners**');
+    await page.route('**/api/banners**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    const dotsAfterFallback = page.locator('button.w-2.h-2');
+    await expect(dotsAfterFallback).toHaveCount(2);
+    await expect(page.getByText(bannerTitle)).not.toBeVisible();
+  });
+
   //OM-516
   test('flujo restablecer contraseña: token expirado durante el envío del formulario', async ({ page }) => {
     await page.route('**/api/users/validate-reset-token', async (route) => {
