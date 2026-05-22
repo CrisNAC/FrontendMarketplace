@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { Calendar, Image, Megaphone, Plus, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Calendar, Megaphone, Plus, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { apiClient } from "../services/editCommerceApi";
 import {
@@ -9,9 +9,10 @@ import {
 } from "../services/commerceBannerRequestsApi";
 
 const STATUS_BADGE = {
-  PENDING:  { label: "Pendiente",  color: "#92400e", bg: "#fef3c7" },
-  APPROVED: { label: "Aprobado",   color: "#15803d", bg: "#dcfce7" },
-  REJECTED: { label: "Rechazado",  color: "#991b1b", bg: "#fee2e2" },
+  PENDING:   { label: "Pendiente",  color: "#92400e", bg: "#fef3c7" },
+  APPROVED:  { label: "Aprobado",   color: "#15803d", bg: "#dcfce7" },
+  REJECTED:  { label: "Rechazado",  color: "#991b1b", bg: "#fee2e2" },
+  CANCELLED: { label: "Cancelada",  color: "#6b7280", bg: "#f3f4f6" },
 };
 
 const toLocalInputValue = (value) => {
@@ -36,11 +37,22 @@ const BannerRequestModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
   const [linkUrl, setLinkUrl] = useState("");
   const [startAt, setStartAt] = useState("");
   const [endAt, setEndAt] = useState("");
+  const firstInputRef = useRef(null);
 
   useEffect(() => {
     if (!isOpen) return;
     setTitle(""); setDescription(""); setImageUrl(""); setLinkUrl(""); setStartAt(""); setEndAt("");
+    // Mover foco al primer campo al abrir
+    setTimeout(() => firstInputRef.current?.focus(), 0);
   }, [isOpen]);
+
+  // Cerrar con Escape
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKey = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -51,6 +63,10 @@ const BannerRequestModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
     if (!title.trim()) return toast.error("El título es obligatorio");
     if (!imageUrl.trim()) return toast.error("La URL de imagen es obligatoria");
     if (!startAt) return toast.error("La fecha de inicio es obligatoria");
+    // Fix 4: validar que fin sea posterior al inicio
+    if (endAt && fromLocalInputValue(endAt) <= fromLocalInputValue(startAt)) {
+      return toast.error("La fecha de fin debe ser posterior a la de inicio");
+    }
     onSubmit({
       title: title.trim(),
       description: description.trim() || null,
@@ -62,17 +78,22 @@ const BannerRequestModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
   };
 
   return (
+    // Fix 5: accesibilidad de diálogo
     <div
+      role="presentation"
       style={{ position: "fixed", inset: 0, zIndex: 60, backgroundColor: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title-commerce"
         style={{ backgroundColor: "white", borderRadius: "16px", padding: "24px", maxWidth: "560px", width: "100%", boxShadow: "0 20px 40px rgba(0,0,0,0.15)" }}
         onClick={(e) => e.stopPropagation()}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-          <h3 style={{ fontSize: "18px", fontWeight: "700", margin: 0 }}>Nueva solicitud de banner</h3>
-          <button type="button" onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280" }}>
+          <h3 id="modal-title-commerce" style={{ fontSize: "18px", fontWeight: "700", margin: 0 }}>Nueva solicitud de banner</h3>
+          <button type="button" onClick={onClose} aria-label="Cerrar modal" style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280" }}>
             <X size={20} />
           </button>
         </div>
@@ -80,31 +101,32 @@ const BannerRequestModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
           Tu solicitud será revisada por un administrador antes de publicarse en el inicio.
         </p>
 
+        {/* Fix 6: htmlFor + id en todos los campos */}
         <div style={{ display: "grid", gap: "12px" }}>
           <div>
-            <label style={labelStyle}>Título</label>
-            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ej: Oferta de temporada" maxLength={100} style={inputStyle} />
+            <label htmlFor="req-title" style={labelStyle}>Título</label>
+            <input ref={firstInputRef} id="req-title" type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ej: Oferta de temporada" maxLength={100} style={inputStyle} />
           </div>
           <div>
-            <label style={labelStyle}>Descripción (opcional)</label>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Texto breve que acompañará el banner" rows={2} style={{ ...inputStyle, resize: "vertical" }} />
+            <label htmlFor="req-description" style={labelStyle}>Descripción (opcional)</label>
+            <textarea id="req-description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Texto breve que acompañará el banner" rows={2} style={{ ...inputStyle, resize: "vertical" }} />
           </div>
           <div>
-            <label style={labelStyle}>URL de imagen</label>
-            <input type="text" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." style={inputStyle} />
+            <label htmlFor="req-image-url" style={labelStyle}>URL de imagen</label>
+            <input id="req-image-url" type="text" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." style={inputStyle} />
           </div>
           <div>
-            <label style={labelStyle}>URL de destino (opcional)</label>
-            <input type="text" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} placeholder="https://..." style={inputStyle} />
+            <label htmlFor="req-link-url" style={labelStyle}>URL de destino (opcional)</label>
+            <input id="req-link-url" type="text" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} placeholder="https://..." style={inputStyle} />
           </div>
           <div style={{ display: "grid", gap: "12px", gridTemplateColumns: "1fr 1fr" }}>
             <div>
-              <label style={labelStyle}>Fecha de inicio</label>
-              <input type="datetime-local" value={startAt} onChange={(e) => setStartAt(e.target.value)} style={inputStyle} />
+              <label htmlFor="req-start-at" style={labelStyle}>Fecha de inicio</label>
+              <input id="req-start-at" type="datetime-local" value={startAt} onChange={(e) => setStartAt(e.target.value)} style={inputStyle} />
             </div>
             <div>
-              <label style={labelStyle}>Fecha de fin (opcional)</label>
-              <input type="datetime-local" value={endAt} onChange={(e) => setEndAt(e.target.value)} style={inputStyle} />
+              <label htmlFor="req-end-at" style={labelStyle}>Fecha de fin (opcional)</label>
+              <input id="req-end-at" type="datetime-local" value={endAt} onChange={(e) => setEndAt(e.target.value)} style={inputStyle} />
             </div>
           </div>
         </div>
@@ -137,12 +159,10 @@ const RequestCard = ({ req, onCancel }) => {
       borderLeft: isPending ? "3px solid var(--primary-dark)" : "3px solid transparent",
     }}>
       <div style={{ display: "flex", gap: "16px", alignItems: "flex-start" }}>
-        {/* Miniatura */}
         <div style={{ width: "72px", height: "52px", borderRadius: "8px", border: "1px solid #e5e7eb", overflow: "hidden", backgroundColor: "#f3f4f6", flexShrink: 0 }}>
           <img src={req.imageUrl} alt={req.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         </div>
 
-        {/* Info principal */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{ margin: "0 0 2px", fontWeight: "700", fontSize: "15px", color: "#111827" }}>{req.title}</p>
           {req.description && (
@@ -165,7 +185,6 @@ const RequestCard = ({ req, onCancel }) => {
           )}
         </div>
 
-        {/* Badge + acción */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "10px", flexShrink: 0 }}>
           <span style={{ padding: "3px 12px", borderRadius: "20px", fontSize: "11px", fontWeight: "700", color: badge.color, backgroundColor: badge.bg }}>
             {badge.label}
@@ -207,7 +226,13 @@ export const CommerceBannerRequestsPage = () => {
         const sessionRes = await apiClient.get("/api/session/user-session");
         const sid = sessionRes.data?.user?.id_store;
         const name = sessionRes.data?.user?.store_name ?? "";
-        if (!sid) { toast.error("No tenés un comercio registrado"); return; }
+        // Fix 7: si no hay comercio, dejar storeId null y no seguir
+        if (!sid) {
+          toast.error("No tenés un comercio registrado");
+          setStoreId(null);
+          setLoading(false);
+          return;
+        }
         setStoreId(sid);
         setStoreName(name);
         await loadRequests(sid);
@@ -221,6 +246,8 @@ export const CommerceBannerRequestsPage = () => {
   }, [loadRequests]);
 
   const handleSubmit = async (payload) => {
+    // Fix 7: guard de storeId
+    if (!storeId) { toast.error("No se encontró un comercio asociado"); return; }
     setIsSubmitting(true);
     try {
       await createBannerRequest(storeId, storeName, payload);
@@ -235,10 +262,15 @@ export const CommerceBannerRequestsPage = () => {
   };
 
   const handleCancel = async (requestId) => {
+    // Fix 7: guard de storeId
+    if (!storeId) { toast.error("No se encontró un comercio asociado"); return; }
     if (!window.confirm("¿Cancelar esta solicitud?")) return;
     try {
+      // Fix 8: cancelar actualiza estado CANCELLED, no borra
       await cancelBannerRequest(storeId, requestId);
-      setRequests((prev) => prev.filter((r) => r.id !== requestId));
+      setRequests((prev) =>
+        prev.map((r) => r.id === requestId ? { ...r, status: "CANCELLED" } : r)
+      );
       toast.success("Solicitud cancelada");
     } catch (e) {
       toast.error(e?.message ?? "No se pudo cancelar la solicitud");
@@ -251,7 +283,6 @@ export const CommerceBannerRequestsPage = () => {
 
   return (
     <>
-      {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "24px", gap: "16px", flexWrap: "wrap" }}>
         <div>
           <h4 style={{ fontWeight: "600", margin: "0 0 4px 0" }}>Banners promocionales</h4>
@@ -262,20 +293,19 @@ export const CommerceBannerRequestsPage = () => {
         <button
           type="button"
           onClick={() => setIsModalOpen(true)}
-          style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "10px 16px", backgroundColor: "var(--primary-dark)", color: "white", border: "none", borderRadius: "10px", cursor: "pointer", fontSize: "14px", fontWeight: "600" }}
+          disabled={!storeId}
+          style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "10px 16px", backgroundColor: "var(--primary-dark)", color: "white", border: "none", borderRadius: "10px", cursor: storeId ? "pointer" : "not-allowed", fontSize: "14px", fontWeight: "600", opacity: storeId ? 1 : 0.5 }}
         >
           <Plus size={16} /> Nueva solicitud
         </button>
       </div>
 
-      {/* Aviso pendientes */}
       {pendingCount > 0 && (
         <div style={{ backgroundColor: "#fffbeb", border: "1px solid #fde68a", borderRadius: "10px", padding: "12px 16px", marginBottom: "20px", fontSize: "13px", color: "#92400e" }}>
           Tenés <strong>{pendingCount}</strong> solicitud{pendingCount !== 1 ? "es" : ""} pendiente{pendingCount !== 1 ? "s" : ""} de revisión.
         </div>
       )}
 
-      {/* Lista de solicitudes */}
       {requests.length === 0 ? (
         <div style={{ backgroundColor: "white", borderRadius: "16px", padding: "48px 20px", textAlign: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}>
           <Megaphone size={40} color="#d1d5db" style={{ marginBottom: "12px" }} />

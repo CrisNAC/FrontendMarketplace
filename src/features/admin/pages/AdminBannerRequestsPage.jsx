@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Calendar, Image, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { getAllBannerRequests, reviewBannerRequest } from "../../commerces/services/commerceBannerRequestsApi";
@@ -11,39 +11,59 @@ const cardStyle = {
 };
 
 const STATUS_BADGE = {
-  PENDING:  { label: "Pendiente",  color: "#1d4ed8", bg: "#dbeafe" },
-  APPROVED: { label: "Aprobado",   color: "#15803d", bg: "#dcfce7" },
-  REJECTED: { label: "Rechazado",  color: "#b91c1c", bg: "#fee2e2" },
+  PENDING:   { label: "Pendiente",  color: "#1d4ed8", bg: "#dbeafe" },
+  APPROVED:  { label: "Aprobado",   color: "#15803d", bg: "#dcfce7" },
+  REJECTED:  { label: "Rechazado",  color: "#b91c1c", bg: "#fee2e2" },
+  CANCELLED: { label: "Cancelada",  color: "#6b7280", bg: "#f3f4f6" },
 };
 
 const RejectModal = ({ isOpen, onClose, onConfirm, isSubmitting }) => {
   const [reason, setReason] = useState("");
+  const textareaRef = useRef(null);
 
   useEffect(() => {
-    if (isOpen) setReason("");
+    if (!isOpen) return;
+    setReason("");
+    setTimeout(() => textareaRef.current?.focus(), 0);
   }, [isOpen]);
+
+  // Fix 2: cerrar con Escape
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKey = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
   return (
+    // Fix 2: semántica de diálogo
     <div
+      role="presentation"
       style={{ position: "fixed", inset: 0, zIndex: 60, backgroundColor: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title-reject"
         style={{ backgroundColor: "white", borderRadius: "16px", padding: "24px", maxWidth: "440px", width: "100%", boxShadow: "0 20px 40px rgba(0,0,0,0.15)" }}
         onClick={(e) => e.stopPropagation()}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-          <h3 style={{ fontSize: "18px", fontWeight: "700", margin: 0 }}>Rechazar solicitud</h3>
-          <button type="button" onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280" }}>
+          <h3 id="modal-title-reject" style={{ fontSize: "18px", fontWeight: "700", margin: 0 }}>Rechazar solicitud</h3>
+          <button type="button" onClick={onClose} aria-label="Cerrar modal" style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280" }}>
             <X size={20} />
           </button>
         </div>
 
+        {/* Fix 3: htmlFor + id para asociar label con textarea */}
         <div>
-          <label style={{ fontSize: "12px", fontWeight: "600", color: "#374151" }}>Motivo de rechazo (opcional)</label>
+          <label htmlFor="reject-reason" style={{ fontSize: "12px", fontWeight: "600", color: "#374151" }}>Motivo de rechazo (opcional)</label>
           <textarea
+            ref={textareaRef}
+            id="reject-reason"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="Explicá brevemente el motivo..."

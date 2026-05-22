@@ -11,6 +11,7 @@ import './index.css'
  */
 import { setNavigate } from './lib/apiClient';
 import { RequireAuth } from './components/auth/RequireAuth';
+import { RequireAdmin } from './components/auth/RequireAdmin';
 import { NotFoundPage } from './pages/errors/NotFoundPage';
 import { ForbiddenPage } from './pages/errors/ForbiddenPage';
 import { ServerErrorPage } from './pages/errors/ServerErrorPage';
@@ -304,79 +305,79 @@ function App() {
 
         {/* ── Área de administración (con sidebar) ──────────────────────── */}
         <Route path="/admin" element={
-          <RequireAuth>
+          <RequireAdmin>
             <Navigate to="/admin/dashboard" replace />
-          </RequireAuth>
+          </RequireAdmin>
         } />
         <Route path="/admin/dashboard" element={
-          <RequireAuth>
+          <RequireAdmin>
             <AdminLayout><AdminDashboardPage /></AdminLayout>
-          </RequireAuth>
+          </RequireAdmin>
         } />
         <Route path="/admin/productos" element={
-          <RequireAuth>
+          <RequireAdmin>
             <AdminLayout><AdminProductsPage /></AdminLayout>
-          </RequireAuth>
+          </RequireAdmin>
         } />
         <Route path="/admin/banners" element={
-          <RequireAuth>
+          <RequireAdmin>
             <AdminLayout><AdminBannersPage /></AdminLayout>
-          </RequireAuth>
+          </RequireAdmin>
         } />
         <Route path="/admin/banner-solicitudes" element={
-          <RequireAuth>
+          <RequireAdmin>
             <AdminLayout><AdminBannerRequestsPage /></AdminLayout>
-          </RequireAuth>
+          </RequireAdmin>
         } />
         <Route path="/admin/resenas" element={
-          <RequireAuth>
+          <RequireAdmin>
             <AdminLayout>
               <AdminModulePlaceholderPage
                 title="Moderación de Reseñas"
                 description="Gestioná reseñas reportadas por usuarios y mantené la calidad del contenido."
               />
             </AdminLayout>
-          </RequireAuth>
+          </RequireAdmin>
         } />
         <Route path="/admin/comercios" element={
-          <RequireAuth>
+          <RequireAdmin>
             <AdminLayout>
               <AdminModulePlaceholderPage
                 title="Aprobación de Comercios"
                 description="Revisá solicitudes pendientes y aprobá comercios para operar en la plataforma."
               />
             </AdminLayout>
-          </RequireAuth>
+          </RequireAdmin>
         } />
         <Route path="/admin/usuarios" element={
-          <RequireAuth>
+          <RequireAdmin>
             <AdminLayout><AdminUsersPage /></AdminLayout>
-          </RequireAuth>
+          </RequireAdmin>
         } />
         <Route path="/admin/comercios-pendientes" element={
-          <RequireAuth>
+          <RequireAdmin>
             <AdminLayout><AdminPendingStoresPage /></AdminLayout>
-          </RequireAuth>
+          </RequireAdmin>
         } />
         <Route path="/admin/categorias" element={
-          <RequireAuth>
+          <RequireAdmin>
             <AdminLayout><AdminCategoriesPage /></AdminLayout>
-          </RequireAuth>
+          </RequireAdmin>
         } />
         <Route path="/admin/categorias/:id" element={
-          <RequireAuth>
+          <RequireAdmin>
             <AdminLayout><AdminCategoryDetailPage /></AdminLayout>
-          </RequireAuth>
+          </RequireAdmin>
         } />
         <Route path="/admin/claims" element={
-          <RequireAuth>
+          <RequireAdmin>
             <AdminLayout><Reclamos /></AdminLayout>
-          </RequireAuth>
+          </RequireAdmin>
         } />
         <Route path="/admin/reviews" element={
-          <RequireAuth>
+          <RequireAdmin>
             <AdminLayout><ReclamosPage /></AdminLayout>
-          </RequireAuth>
+          </RequireAdmin>
         } />
 
         {/* ── Páginas de error ───────────────────────────────────────────── */}

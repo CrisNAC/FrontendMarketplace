@@ -41,13 +41,15 @@ export const createBannerRequest = async (storeId, storeName, payload) => {
   return request;
 };
 
+// Fix 8: marcar como CANCELLED en lugar de borrar para preservar trazabilidad
 export const cancelBannerRequest = async (storeId, requestId) => {
   await delay();
   const all = readAll();
-  const target = all.find((r) => r.id === requestId && r.storeId === storeId);
-  if (!target) throw new Error("Solicitud no encontrada");
-  if (target.status !== "PENDING") throw new Error("Solo se pueden cancelar solicitudes pendientes");
-  writeAll(all.filter((r) => r.id !== requestId));
+  const idx = all.findIndex((r) => r.id === requestId && r.storeId === storeId);
+  if (idx === -1) throw new Error("Solicitud no encontrada");
+  if (all[idx].status !== "PENDING") throw new Error("Solo se pueden cancelar solicitudes pendientes");
+  all[idx] = { ...all[idx], status: "CANCELLED", reviewedAt: new Date().toISOString() };
+  writeAll(all);
 };
 
 // ── Admin side ───────────────────────────────────────────────────────────────
@@ -57,7 +59,11 @@ export const getAllBannerRequests = async () => {
   return readAll().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 };
 
+// Fix 9: validar estados permitidos antes de persistir
 export const reviewBannerRequest = async (requestId, { status, rejectionReason }) => {
+  if (!["APPROVED", "REJECTED"].includes(status)) {
+    throw new Error("Estado de revisión inválido");
+  }
   await delay();
   const all = readAll();
   const idx = all.findIndex((r) => r.id === requestId);
