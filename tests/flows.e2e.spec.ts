@@ -1207,6 +1207,56 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page.getByRole('img', { name: 'Logo de Tienda Demo' }).last()).toBeVisible();
   });
 
+  // OM494
+  test('flujo admin: logos de comercios en panel admin - con imagen y fallback sin logo', async ({ page }) => {
+    await page.route('**/api/admin/stores/pending**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: [
+            {
+              id_store: 301,
+              name: 'Tienda Con Logo',
+              store_category: { name: 'Tecnología' },
+              user: { name: 'Ana Pérez' },
+              email: 'ana@demo.com',
+              phone: '0981000000',
+              description: 'Comercio con logo',
+              logo: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==',
+              created_at: '2026-03-22T10:00:00.000Z',
+            },
+            {
+              id_store: 302,
+              name: 'Tienda Sin Logo',
+              store_category: { name: 'Ropa' },
+              user: { name: 'Carlos García' },
+              email: 'carlos@demo.com',
+              phone: '0982000000',
+              description: 'Comercio sin logo',
+              logo: '',
+              created_at: '2026-03-23T10:00:00.000Z',
+            },
+          ],
+          pagination: { total: 2, page: 1, limit: 20, totalPages: 1 },
+        }),
+      });
+    });
+
+    await page.goto('/admin/comercios-pendientes');
+
+    // Con logo: imagen visible en la lista
+    await expect(page.getByRole('img', { name: 'Logo de Tienda Con Logo' })).toBeVisible();
+
+    // Sin logo: no se renderiza img (usa ícono de fallback)
+    await expect(page.getByRole('img', { name: 'Logo de Tienda Sin Logo' })).not.toBeVisible();
+
+    // Abrir modal de la tienda con logo: imagen visible en lista y dentro del modal
+    await page.getByRole('button', { name: 'Evaluar' }).first().click();
+    await expect(page.getByText('Detalles del Comercio')).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Logo de Tienda Con Logo' })).toHaveCount(2);
+  });
+
   test('flujo comercio: moderar reclamo de producto', async ({ page }) => {
     let currentStatus = 'PENDING';
 
@@ -6006,6 +6056,1484 @@ test.describe('Flujos E2E de usuario final', () => {
     await page.getByRole('button', { name: 'Guardar Cambios' }).click();
     await expect(page.locator('svg.lucide-smartphone')).toBeVisible();
     await expect(page.locator('svg.lucide-monitor')).toHaveCount(0);
+  });
+
+  // OM-522
+  test('flujo expiración de asignación: delivery ve cola vacía, comercio puede re-asignar, cliente ve estado vigente', async ({ page }) => {
+    const orderId = 8010;
+    const assignmentId = 9010;
+    const expiredDeadline = new Date(Date.now() - 120_000).toISOString();
+
+    //Mocks compartidos
+
+    // Cola del delivery: primera carga con asignación expirada; refetches = cola vacía.
+    // El componente lee `assignment.response_deadline` (snake_case) para detectar expiración.
+    let assignmentFetchCount = 0;
+    await page.route('**/api/deliveries/*/assignments', async (route) => {
+      assignmentFetchCount++;
+      const assignments = assignmentFetchCount === 1
+        ? [
+            {
+              id_delivery_assignment: assignmentId,
+              response_deadline: expiredDeadline,
+              order: {
+                id_order: orderId,
+                order_status: 'PENDING',
+                total: 6500,
+                shipping_distance_km: 2.5,
+                created_at: '2026-05-21T10:00:00.000Z',
+                user: { id_user: 130, name: 'Cliente Timeout', phone: '0981 000 111' },
+                store: { name: 'Nissei' },
+                order_items: [{ product: { name: 'Producto Timeout' }, quantity: 1 }],
+                address: { address: 'Calle Expirada 1', city: 'Asuncion', region: 'Central' },
+              },
+            },
+          ]
+        : [];
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ delivery_assignments: assignments, delivery: { id_delivery: 5 } }),
+      });
+    });
+
+    await page.route('**/api/assignments/orders/*/delivery-response', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ message: 'ok' }) });
+    });
+
+    // Pedido del comercio en seguimiento, sin asignación activa (expiró).
+    await page.route('**/api/orders/store/1**', async (route) => {
+      const url = new URL(route.request().url());
+      const requestedStatuses = (url.searchParams.get('order_status') ?? '')
+        .split(',').map(s => s.trim()).filter(Boolean);
+      const status = 'PROCESSING';
+      const shouldReturn = requestedStatuses.length === 0 || requestedStatuses.includes(status);
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          orders: shouldReturn ? [{
+            id: 9030,
+            status,
+            total: 6500,
+            notes: 'Pedido sin delivery por timeout',
+            createdAt: '2026-05-21T10:00:00.000Z',
+            address: { address: 'Calle Expirada 1', city: 'Asuncion' },
+            items: [{ id: 1, quantity: 1 }],
+          }] : [],
+          total: shouldReturn ? 1 : 0,
+          page: 1, limit: 10, total_page: 1,
+        }),
+      });
+    });
+
+    await page.route('**/api/orders/*/assignment', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ has_assignment: false }),
+      });
+    });
+
+    await page.route('**/api/stores/1/orders/9030/deliveries', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          available_deliveries: [{ id_delivery: 20, name: 'Nuevo Repartidor', phone: '0991 222333' }],
+          delivery_address: { address: 'Calle Expirada 1', city: 'Asuncion' },
+          order_id: 9030,
+          order_status: 'PROCESSING',
+        }),
+      });
+    });
+
+    // Pedido del cliente con estado vigente post-reasignación.
+    await page.unroute('**/api/users/*/orders');
+    await page.route('**/api/users/*/orders', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify([{
+            id: orderId,
+            status: 'PROCESSING',
+            total: 6500,
+            createdAt: '2026-05-21T10:00:00.000Z',
+            items: [{ id: 1, quantity: 1, price: 6500, originalPrice: 6500, isOfferApplied: false, subtotal: 6500 }],
+            address: { id: 1, address: 'Calle Expirada 1', city: 'Asuncion', region: 'Central' },
+          }]),
+        });
+      }
+    });
+
+    await page.unroute('**/api/users/*/orders/*');
+    await page.route('**/api/users/*/orders/*', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id: orderId,
+            status: 'PROCESSING',
+            total: 6500,
+            createdAt: '2026-05-21T10:00:00.000Z',
+            items: [{ id: 1, quantity: 1, price: 6500, originalPrice: 6500, isOfferApplied: false, subtotal: 6500 }],
+            address: { id: 1, address: 'Calle Expirada 1', city: 'Asuncion', region: 'Central' },
+          }),
+        });
+      }
+    });
+
+    // Delivery ve la asignación como expirada 
+
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          user: { id_user: 7, name: 'Delivery Demo', role: 'DELIVERY', id_delivery: 5 },
+        }),
+      });
+    });
+
+    await page.goto('/delivery/order');
+    await expect(page.getByRole('heading', { name: 'Pedidos para aceptar' })).toBeVisible();
+
+    // El badge muestra "El plazo para responder venció" y los botones se deshabilitan.
+    await expect(page.getByText('El plazo para responder venció')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole('button', { name: 'Aceptar' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Rechazar' })).toBeDisabled();
+
+    // Tras ~800ms el componente auto-refresca y la asignación expirada desaparece.
+    await expect(page.getByText('El plazo para responder venció')).not.toBeVisible({ timeout: 5000 });
+
+    //Comercio puede re-asignar el pedido
+
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      });
+    });
+
+    await page.goto('/comercio/pedidos');
+    await page.getByRole('button', { name: 'Seguimiento' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Seguimiento de Pedidos' })).toBeVisible();
+    await expect(page.getByText('ORD-9030')).toBeVisible();
+
+    // El pedido no está bloqueado: puede recibir una nueva asignación.
+    await expect(page.getByRole('button', { name: 'Añadir delivery' })).toBeVisible();
+    await page.getByRole('button', { name: 'Añadir delivery' }).click();
+
+    await expect(page.getByText('Nuevo Repartidor')).toBeVisible();
+
+    //Cliente ve estado vigente del pedido
+
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          user: { id_user: 7, id_store: null, name: 'Cliente Demo', role: 'CUSTOMER' },
+        }),
+      });
+    });
+
+    await page.goto('/pedidos');
+    await expect(page.getByRole('heading', { name: 'Mis Pedidos' })).toBeVisible();
+
+    const orderCard = page.locator('div.cursor-pointer').first();
+    await expect(orderCard).toBeVisible();
+    await orderCard.click();
+
+    await expect(page).toHaveURL(/\/pedidos\/\d+$/);
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.getByText('Información de pedido')).toBeVisible();
+    await expect(page.getByText('Dirección de envío')).toBeVisible();
+
+    // El pedido no muestra ningún indicador de error o bloqueo.
+    await expect(page.getByText(/[Bb]loqueado|[Ee]rror de asignación/)).not.toBeVisible();
+  });
+
+  // OM-522 — Rechazo manual de asignación de delivery
+  test('flujo rechazo manual del pedido: delivery rechaza, comercio ve aviso y puede re-asignar, cliente ve estado vigente', async ({ page }) => {
+    const orderId = 8020;
+    const assignmentId = 9020;
+    const activeDeadline = new Date(Date.now() + 300_000).toISOString(); // 5 min en el futuro
+
+    //Mocks compartidos
+
+    // Cola del delivery: primera carga con asignación activa; después del rechazo, cola vacía.
+    let assignmentFetchCount = 0;
+    await page.route('**/api/deliveries/*/assignments', async (route) => {
+      assignmentFetchCount++;
+      const assignments = assignmentFetchCount === 1
+        ? [
+            {
+              id_delivery_assignment: assignmentId,
+              response_deadline: activeDeadline,
+              order: {
+                id_order: orderId,
+                order_status: 'PENDING',
+                total: 9800,
+                shipping_distance_km: 3.1,
+                created_at: '2026-05-21T11:00:00.000Z',
+                user: { id_user: 131, name: 'Cliente Rechazo', phone: '0981 200 300' },
+                store: { name: 'Nissei' },
+                order_items: [{ product: { name: 'Producto Rechazo' }, quantity: 2 }],
+                address: { address: 'Calle Rechazo 55', city: 'Asuncion', region: 'Central' },
+              },
+            },
+          ]
+        : [];
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ delivery_assignments: assignments, delivery: { id_delivery: 5 } }),
+      });
+    });
+
+    // El backend confirma el rechazo e indica que no hay más deliveries disponibles.
+    await page.route('**/api/assignments/orders/*/delivery-response', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ message: 'ok', delivery_unavailable: true }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    // Endpoint de notificaciones que se recarga con el evento notificationsUpdated.
+    await page.route('**/api/notifications**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      });
+    });
+
+    // Pedido del comercio en seguimiento con deliveryUnavailable = true (delivery rechazó).
+    await page.route('**/api/orders/store/1**', async (route) => {
+      const url = new URL(route.request().url());
+      const requestedStatuses = (url.searchParams.get('order_status') ?? '')
+        .split(',').map(s => s.trim()).filter(Boolean);
+      const status = 'PROCESSING';
+      const shouldReturn = requestedStatuses.length === 0 || requestedStatuses.includes(status);
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          orders: shouldReturn ? [{
+            id: 9040,
+            status,
+            total: 9800,
+            deliveryUnavailable: true,
+            notes: 'Pedido con delivery rechazado',
+            createdAt: '2026-05-21T11:00:00.000Z',
+            address: { address: 'Calle Rechazo 55', city: 'Asuncion' },
+            items: [{ id: 1, quantity: 2 }],
+          }] : [],
+          total: shouldReturn ? 1 : 0,
+          page: 1, limit: 10, total_page: 1,
+        }),
+      });
+    });
+
+    await page.route('**/api/orders/*/assignment', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ has_assignment: false }),
+      });
+    });
+
+    await page.route('**/api/stores/1/orders/9040/deliveries', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          available_deliveries: [{ id_delivery: 21, name: 'Repartidor Nuevo', phone: '0992 300 400' }],
+          delivery_address: { address: 'Calle Rechazo 55', city: 'Asuncion' },
+          order_id: 9040,
+          order_status: 'PROCESSING',
+        }),
+      });
+    });
+
+    // Pedido del cliente en estado vigente post-rechazo.
+    await page.unroute('**/api/users/*/orders');
+    await page.route('**/api/users/*/orders', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify([{
+            id: orderId,
+            status: 'PROCESSING',
+            total: 9800,
+            createdAt: '2026-05-21T11:00:00.000Z',
+            items: [{ id: 1, quantity: 2, price: 9800, originalPrice: 9800, isOfferApplied: false, subtotal: 9800 }],
+            address: { id: 1, address: 'Calle Rechazo 55', city: 'Asuncion', region: 'Central' },
+          }]),
+        });
+      }
+    });
+
+    await page.unroute('**/api/users/*/orders/*');
+    await page.route('**/api/users/*/orders/*', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id: orderId,
+            status: 'PROCESSING',
+            total: 9800,
+            createdAt: '2026-05-21T11:00:00.000Z',
+            items: [{ id: 1, quantity: 2, price: 9800, originalPrice: 9800, isOfferApplied: false, subtotal: 9800 }],
+            address: { id: 1, address: 'Calle Rechazo 55', city: 'Asuncion', region: 'Central' },
+          }),
+        });
+      }
+    });
+
+    //Delivery rechaza manualmente el pedido
+
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          user: { id_user: 7, name: 'Delivery Demo', role: 'DELIVERY', id_delivery: 5 },
+        }),
+      });
+    });
+
+    await page.goto('/delivery/order');
+    await expect(page.getByRole('heading', { name: 'Pedidos para aceptar' })).toBeVisible();
+
+    // El pedido aparece con el timer activo (deadline en el futuro).
+    await expect(page.getByText('Cliente Rechazo')).toBeVisible();
+    await expect(page.getByText('Tiempo para responder:')).toBeVisible();
+
+    // El delivery rechaza manualmente.
+    await page.getByRole('button', { name: 'Rechazar' }).click();
+
+    // El backend responde con delivery_unavailable: true → toast específico.
+    await expect(
+      page.getByText('Pedido rechazado. El comercio fue notificado para reasignar otro repartidor.')
+    ).toBeVisible({ timeout: 5000 });
+
+    // Tras el auto-refresh, la cola queda vacía.
+    await expect(page.getByText('Cliente Rechazo')).not.toBeVisible({ timeout: 5000 });
+
+    //Comercio ve el aviso y puede re-asignar
+
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      });
+    });
+
+    await page.goto('/comercio/pedidos');
+    await page.getByRole('button', { name: 'Seguimiento' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Seguimiento de Pedidos' })).toBeVisible();
+    await expect(page.getByText('ORD-9040')).toBeVisible();
+
+    // El pedido muestra el aviso de que un delivery rechazó (deliveryUnavailable = true).
+    await expect(
+      page.getByText('Sin repartidor disponible: un delivery rechazó o no hay más repartidores activos. Asigná manualmente otro delivery.')
+    ).toBeVisible();
+
+    // El botón de re-asignación está disponible.
+    await expect(page.getByRole('button', { name: 'Añadir delivery' })).toBeVisible();
+    await page.getByRole('button', { name: 'Añadir delivery' }).click();
+
+    await expect(page.getByText('Repartidor Nuevo')).toBeVisible();
+
+    //Cliente ve estado vigente del pedido
+
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          user: { id_user: 7, id_store: null, name: 'Cliente Demo', role: 'CUSTOMER' },
+        }),
+      });
+    });
+
+    await page.goto('/pedidos');
+    await expect(page.getByRole('heading', { name: 'Mis Pedidos' })).toBeVisible();
+
+    const orderCard = page.locator('div.cursor-pointer').first();
+    await expect(orderCard).toBeVisible();
+    await orderCard.click();
+
+    await expect(page).toHaveURL(/\/pedidos\/\d+$/);
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.getByText('Información de pedido')).toBeVisible();
+    await expect(page.getByText('Dirección de envío')).toBeVisible();
+
+    // El pedido no muestra ningún indicador de error o bloqueo.
+    await expect(page.getByText(/[Bb]loqueado|[Ee]rror de asignación/)).not.toBeVisible();
+  });
+
+  // OM-522 — Desconexión / inactividad del delivery)
+  test('flujo desconexión del delivery: asignación liberada, comercio puede re-asignar, cliente ve estado vigente', async ({ page }) => {
+    const orderId = 8030;
+    const assignmentId = 9030;
+    const activeDeadline = new Date(Date.now() + 300_000).toISOString();
+
+    // Mocks compartidos
+
+    // Cuando el delivery se pone INACTIVE, el backend rechaza sus asignaciones pendientes.
+    let deliveryIsInactive = false;
+
+    await page.route('**/api/deliveries/5/status', async (route) => {
+      if (route.request().method() === 'PATCH') {
+        deliveryIsInactive = true;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ message: 'Estado actualizado' }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    // Perfil del delivery (inicialmente ACTIVE).
+    await page.route('**/api/deliveries/5', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id_delivery: 5,
+          delivery_status: 'ACTIVE',
+          vehicle_type: 'CAR',
+          coverage_city: 'Asunción',
+          coverage_region: 'Central',
+          coverage_radius_km: 12,
+          availability_notes: 'Lunes a Viernes',
+          average_rating: 4.5,
+          total_deliveries: 30,
+          reviews_count: 6,
+          created_at: '2025-11-01T10:00:00.000Z',
+        }),
+      });
+    });
+
+    await page.route('**/api/users/7', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: { id_user: 7, name: 'Delivery Demo', email: 'delivery@test.com', phone: '0981000000', role: 'DELIVERY' },
+        }),
+      });
+    });
+
+    // Cola de asignaciones: activa mientras el delivery está ACTIVE; vacía al desconectarse.
+    await page.route('**/api/deliveries/*/assignments', async (route) => {
+      const assignments = deliveryIsInactive
+        ? []
+        : [
+            {
+              id_delivery_assignment: assignmentId,
+              response_deadline: activeDeadline,
+              order: {
+                id_order: orderId,
+                order_status: 'PENDING',
+                total: 7400,
+                shipping_distance_km: 1.8,
+                created_at: '2026-05-21T12:00:00.000Z',
+                user: { id_user: 132, name: 'Cliente Desconexion', phone: '0981 400 500' },
+                store: { name: 'Nissei' },
+                order_items: [{ product: { name: 'Producto Desconexion' }, quantity: 1 }],
+                address: { address: 'Calle Inactivo 77', city: 'Asuncion', region: 'Central' },
+              },
+            },
+          ];
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ delivery_assignments: assignments, delivery: { id_delivery: 5 } }),
+      });
+    });
+
+    await page.route('**/api/notifications**', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) });
+    });
+
+    // Pedido del comercio en seguimiento con deliveryUnavailable = true.
+    await page.route('**/api/orders/store/1**', async (route) => {
+      const url = new URL(route.request().url());
+      const requestedStatuses = (url.searchParams.get('order_status') ?? '')
+        .split(',').map(s => s.trim()).filter(Boolean);
+      const status = 'PROCESSING';
+      const shouldReturn = requestedStatuses.length === 0 || requestedStatuses.includes(status);
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          orders: shouldReturn ? [{
+            id: 9050,
+            status,
+            total: 7400,
+            deliveryUnavailable: true,
+            notes: 'Pedido con delivery desconectado',
+            createdAt: '2026-05-21T12:00:00.000Z',
+            address: { address: 'Calle Inactivo 77', city: 'Asuncion' },
+            items: [{ id: 1, quantity: 1 }],
+          }] : [],
+          total: shouldReturn ? 1 : 0,
+          page: 1, limit: 10, total_page: 1,
+        }),
+      });
+    });
+
+    await page.route('**/api/orders/*/assignment', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ has_assignment: false }),
+      });
+    });
+
+    await page.route('**/api/stores/1/orders/9050/deliveries', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          available_deliveries: [{ id_delivery: 22, name: 'Carlos Repartidor', phone: '0993 500 600' }],
+          delivery_address: { address: 'Calle Inactivo 77', city: 'Asuncion' },
+          order_id: 9050,
+          order_status: 'PROCESSING',
+        }),
+      });
+    });
+
+    // Pedido del cliente en estado vigente.
+    await page.unroute('**/api/users/*/orders');
+    await page.route('**/api/users/*/orders', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify([{
+            id: orderId,
+            status: 'PROCESSING',
+            total: 7400,
+            createdAt: '2026-05-21T12:00:00.000Z',
+            items: [{ id: 1, quantity: 1, price: 7400, originalPrice: 7400, isOfferApplied: false, subtotal: 7400 }],
+            address: { id: 1, address: 'Calle Inactivo 77', city: 'Asuncion', region: 'Central' },
+          }]),
+        });
+      }
+    });
+
+    await page.unroute('**/api/users/*/orders/*');
+    await page.route('**/api/users/*/orders/*', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id: orderId,
+            status: 'PROCESSING',
+            total: 7400,
+            createdAt: '2026-05-21T12:00:00.000Z',
+            items: [{ id: 1, quantity: 1, price: 7400, originalPrice: 7400, isOfferApplied: false, subtotal: 7400 }],
+            address: { id: 1, address: 'Calle Inactivo 77', city: 'Asuncion', region: 'Central' },
+          }),
+        });
+      }
+    });
+
+    // Delivery se desconecta con asignación pendiente
+
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          user: { id_user: 7, name: 'Delivery Demo', role: 'DELIVERY', id_delivery: 5 },
+        }),
+      });
+    });
+
+    // Confirmar que la asignación está activa antes de desconectarse.
+    await page.goto('/delivery/order');
+    await expect(page.getByRole('heading', { name: 'Pedidos para aceptar' })).toBeVisible();
+    await expect(page.getByText('Cliente Desconexion')).toBeVisible();
+    await expect(page.getByText('Tiempo para responder:')).toBeVisible();
+
+    // Navegar al perfil y desconectarse.
+    await page.goto('/delivery/perfil');
+    await expect(page.getByRole('heading', { name: 'Perfil del Delivery' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Desconectarme' })).toBeVisible();
+    await page.getByRole('button', { name: 'Desconectarme' }).click();
+
+    // El backend rechaza las asignaciones pendientes automáticamente.
+    await expect(
+      page.getByText('Desconectado. Los pedidos pendientes fueron rechazados y el comercio fue notificado.')
+    ).toBeVisible({ timeout: 5000 });
+
+    // El perfil refleja el nuevo estado inactivo.
+    await expect(page.getByText('Inactivo').or(page.getByText('No disponible'))).toBeVisible({ timeout: 3000 });
+    await expect(page.getByRole('button', { name: 'Conectarme' })).toBeVisible();
+
+    // Al volver a la cola, ya no hay asignaciones (el backend las rechazó al desconectarse).
+    await page.goto('/delivery/order');
+    await expect(page.getByText('No hay pedidos pendientes')).toBeVisible({ timeout: 5000 });
+
+    // Comercio ve el aviso y puede re-asignar
+
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      });
+    });
+
+    await page.goto('/comercio/pedidos');
+    await page.getByRole('button', { name: 'Seguimiento' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Seguimiento de Pedidos' })).toBeVisible();
+    await expect(page.getByText('ORD-9050')).toBeVisible();
+
+    // El pedido muestra el aviso de repartidor no disponible (delivery se desconectó).
+    await expect(
+      page.getByText('Sin repartidor disponible: un delivery rechazó o no hay más repartidores activos. Asigná manualmente otro delivery.')
+    ).toBeVisible();
+
+    // El botón de re-asignación está disponible.
+    await expect(page.getByRole('button', { name: 'Añadir delivery' })).toBeVisible();
+    await page.getByRole('button', { name: 'Añadir delivery' }).click();
+
+    await expect(page.getByText('Carlos Repartidor')).toBeVisible();
+
+    // Cliente ve estado vigente del pedido
+
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          user: { id_user: 7, id_store: null, name: 'Cliente Demo', role: 'CUSTOMER' },
+        }),
+      });
+    });
+
+    await page.goto('/pedidos');
+    await expect(page.getByRole('heading', { name: 'Mis Pedidos' })).toBeVisible();
+
+    const orderCard = page.locator('div.cursor-pointer').first();
+    await expect(orderCard).toBeVisible();
+    await orderCard.click();
+
+    await expect(page).toHaveURL(/\/pedidos\/\d+$/);
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.getByText('Información de pedido')).toBeVisible();
+    await expect(page.getByText('Dirección de envío')).toBeVisible();
+
+    // El pedido no muestra ningún indicador de error o bloqueo.
+    await expect(page.getByText(/[Bb]loqueado|[Ee]rror de asignación/)).not.toBeVisible();
+  });
+
+  //OM-519
+  test('flujo cliente: advertencia de stock insuficiente, botón bloqueado e incremento bloqueado en carrito', async ({ page }) => {
+    await page.route('**/api/users/*/carts', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            carts: [
+              {
+                id: 1,
+                storeId: 1,
+                commerce: { id: 1, name: 'Nissei' },
+                status: 'ACTIVE',
+                items: [
+                  {
+                    id: 1,
+                    quantity: 5,
+                    product: { ...mockCartProduct, stock: 2 },
+                  },
+                ],
+              },
+            ],
+          }),
+        });
+      }
+    });
+
+    await page.goto('/carrito/1');
+
+    const itemCard = page.locator('article').first();
+
+    // advertencia de stock insuficiente visible en el ítem
+    await expect(itemCard.getByText(/Stock insuficiente \(Disponible: 2\)/)).toBeVisible();
+
+    //boton "Ir a Confirmar Pedido" deshabilitado
+    await expect(page.getByRole('button', { name: 'Ir a Confirmar Pedido' })).toBeDisabled();
+
+    // Clic en "+" no incrementa la cantidad y muestra toast de error
+    const plusBtn = itemCard.locator('button').nth(2);
+    const quantityDisplay = itemCard.locator('.flex.items-center.gap-2 span').first();
+
+    await expect(quantityDisplay).toHaveText('5');
+    await plusBtn.click();
+    await expect(page.getByText(/Solo hay 2 unidades disponibles de Apple iPhone 17 Pro A3256 Dual/)).toBeVisible();
+    await expect(quantityDisplay).toHaveText('5');
+  });
+
+  //OM-519
+  test('flujo cliente: advertencia de stock insuficiente y botón de confirmación bloqueado en confirmar pedido', async ({ page }) => {
+    await page.route('**/api/users/*/carts', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            carts: [
+              {
+                id: 1,
+                storeId: 1,
+                commerce: { id: 1, name: 'Nissei' },
+                status: 'ACTIVE',
+                items: [
+                  {
+                    id: 1,
+                    quantity: 5,
+                    product: { ...mockCartProduct, stock: 2, originalPrice: 13290000 },
+                  },
+                ],
+              },
+            ],
+          }),
+        });
+      }
+    });
+
+    await page.route('**/api/users/*/addresses', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ data: [] }),
+        });
+      }
+    });
+
+    let postOrderCalled = false;
+    await page.route('**/api/orders', async (route) => {
+      if (route.request().method() === 'POST') {
+        postOrderCalled = true;
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({ id: 999 }),
+        });
+      }
+    });
+
+    await page.goto('/confirmar-pedido/1');
+
+    await expect(page.getByRole('heading', { name: 'Confirmar Pedido' })).toBeVisible();
+
+    // Panel de advertencia de stock insuficiente visible con detalle del producto
+    await expect(page.getByText('Stock insuficiente')).toBeVisible();
+    await expect(page.getByText('Apple iPhone 17 Pro A3256 Dual (Disp: 2)')).toBeVisible();
+
+    // Botón "Confirmar Pedido" deshabilitado y no dispara POST /api/orders
+    const confirmarBtn = page.getByRole('button', { name: 'Confirmar Pedido' });
+    await expect(confirmarBtn).toBeDisabled();
+    await confirmarBtn.click({ force: true });
+    if (postOrderCalled) throw new Error('Se llamó a POST /api/orders con stock insuficiente');
+  });
+
+
+  //OM-516
+  test('flujo recuperar contraseña: validación de email y envío exitoso del enlace', async ({ page }) => {
+    await page.route('**/api/users/forgot-password', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Correo enviado' }),
+      });
+    });
+
+    await page.goto('/recuperar-contrasena');
+
+    // Intentar enviar con email de formato inválido
+    await page.getByPlaceholder('tu@correo.com').fill('noesuncorreo');
+    await page.getByRole('button', { name: 'Enviar enlace de recuperación' }).click();
+    await expect(page.getByText('Ingresá un correo válido')).toBeVisible();
+
+    // Corregir y enviar con email válido → pantalla de confirmación
+    await page.getByPlaceholder('tu@correo.com').fill('usuario@test.com');
+    await page.getByRole('button', { name: 'Enviar enlace de recuperación' }).click();
+
+    await expect(page.getByText('¡Correo enviado!')).toBeVisible();
+    await expect(page.getByText('usuario@test.com')).toBeVisible();
+  });
+
+  //OM-516
+  test('flujo restablecer contraseña: token inválido muestra error y permite solicitar nuevo enlace', async ({ page }) => {
+    await page.route('**/api/users/validate-reset-token', async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Token inválido o expirado' }),
+      });
+    });
+
+    await page.goto('/restablecer-contrasena/token-invalido');
+
+    await expect(page.getByText('Enlace no válido')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Solicitar nuevo enlace' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Solicitar nuevo enlace' }).click();
+    await expect(page).toHaveURL('/recuperar-contrasena');
+  });
+
+  //OM-516
+  test('flujo restablecer contraseña: contraseñas no coinciden y restablecimiento exitoso', async ({ page }) => {
+    await page.route('**/api/users/validate-reset-token', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Token válido' }),
+      });
+    });
+
+    await page.route('**/api/users/reset-password', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Contraseña restablecida' }),
+      });
+    });
+
+    await page.goto('/restablecer-contrasena/token-valido');
+
+    await expect(page.locator('input[name="newPassword"]')).toBeVisible({ timeout: 5000 });
+
+    // Contraseñas que no coinciden
+    await page.locator('input[name="newPassword"]').fill('nuevapass123');
+    await page.locator('input[name="confirmPassword"]').fill('otrapassword');
+    await page.getByRole('button', { name: 'Restablecer contraseña' }).click();
+    await expect(page.getByText('Las contraseñas no coinciden')).toBeVisible();
+
+    // Corregir y restablecer exitosamente
+    await page.locator('input[name="confirmPassword"]').fill('nuevapass123');
+    await page.getByRole('button', { name: 'Restablecer contraseña' }).click();
+
+    await expect(page.getByText('¡Contraseña restablecida!')).toBeVisible();
+    await page.getByRole('button', { name: 'Iniciar sesión' }).click();
+    await expect(page).toHaveURL('/login');
+  });
+
+  //OM-523
+  test('flujo admin: crear banner con campos válidos', async ({ page }) => {
+    let postCalled = false;
+
+    await page.route('**/api/admin/banners**', async (route) => {
+      const method = route.request().method();
+
+      if (method === 'POST') {
+        postCalled = true;
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({ id: 10, title: 'Banner Nuevo', isActive: true }),
+        });
+        return;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ data: [], pagination: { total: 0, page: 1, limit: 20, totalPages: 1 } }),
+      });
+    });
+
+    await page.goto('/admin/banners');
+
+    await expect(page.getByRole('heading', { name: 'Banners promocionales' })).toBeVisible();
+    await page.getByRole('button', { name: 'Nuevo banner' }).click();
+    await expect(page.getByRole('heading', { name: 'Nuevo banner', level: 3 })).toBeVisible();
+
+    await page.getByPlaceholder('Semana Eco').fill('Banner Nuevo');
+    await page.getByPlaceholder('https://...').first().fill('https://images.unsplash.com/photo-1');
+    await page.locator('input[type="datetime-local"]').first().fill('2026-12-01T10:00');
+
+    await page.getByRole('button', { name: 'Guardar' }).click();
+
+    await expect(page.getByText('Banner creado')).toBeVisible();
+    expect(postCalled).toBe(true);
+  });
+
+  //OM-523
+  test('flujo admin: validaciones de campos requeridos al crear banner', async ({ page }) => {
+    let postCalled = false;
+
+    await page.route('**/api/admin/banners**', async (route) => {
+      if (route.request().method() === 'POST') {
+        postCalled = true;
+        await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ id: 99 }) });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ data: [], pagination: { total: 0, page: 1, limit: 20, totalPages: 1 } }),
+      });
+    });
+
+    await page.goto('/admin/banners');
+    await page.getByRole('button', { name: 'Nuevo banner' }).click();
+    await expect(page.getByRole('heading', { name: 'Nuevo banner', level: 3 })).toBeVisible();
+
+    // Guardar sin título
+    await page.getByRole('button', { name: 'Guardar' }).click();
+    await expect(page.getByText('El titulo es obligatorio')).toBeVisible();
+
+    // Ingresar título, guardar sin imagen
+    await page.getByPlaceholder('Semana Eco').fill('Banner Test');
+    await page.getByRole('button', { name: 'Guardar' }).click();
+    await expect(page.getByText('La imagen es obligatoria')).toBeVisible();
+
+    // Ingresar imagen, guardar sin fecha de inicio
+    await page.getByPlaceholder('https://...').first().fill('https://via.placeholder.com/600x300');
+    await page.getByRole('button', { name: 'Guardar' }).click();
+    await expect(page.getByText('La fecha de inicio es obligatoria')).toBeVisible();
+
+    expect(postCalled).toBe(false);
+  });
+
+  //OM-523
+  test('flujo admin: editar banner existente', async ({ page }) => {
+    let putCalled = false;
+    let putPayload: Record<string, unknown> = {};
+
+    await page.route('**/api/admin/banners**', async (route) => {
+      const method = route.request().method();
+      const url = route.request().url();
+
+      if (method === 'PUT' && url.includes('/api/admin/banners/')) {
+        putCalled = true;
+        putPayload = route.request().postDataJSON() as Record<string, unknown>;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ id: 1, ...putPayload }),
+        });
+        return;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: [
+            {
+              id: 1,
+              title: 'Banner Original',
+              description: 'Descripción original',
+              imageUrl: 'https://via.placeholder.com/600x300',
+              linkUrl: null,
+              startAt: '2026-01-01T10:00:00.000Z',
+              endAt: null,
+              isActive: true,
+            },
+          ],
+          pagination: { total: 1, page: 1, limit: 20, totalPages: 1 },
+        }),
+      });
+    });
+
+    await page.goto('/admin/banners');
+    await expect(page.getByText('Banner Original')).toBeVisible();
+    await page.getByTitle('Editar banner').first().click();
+
+    await expect(page.getByRole('heading', { name: 'Editar banner', level: 3 })).toBeVisible();
+    const titleInput = page.getByPlaceholder('Semana Eco');
+    await expect(titleInput).toHaveValue('Banner Original');
+
+    await titleInput.clear();
+    await titleInput.fill('Banner Actualizado');
+    await page.getByRole('button', { name: 'Guardar' }).click();
+
+    await expect(page.getByText('Banner actualizado')).toBeVisible();
+    expect(putCalled).toBe(true);
+    expect(putPayload.title).toBe('Banner Actualizado');
+  });
+
+  //OM-523
+  test('flujo admin: badges de estado según programación de fechas', async ({ page }) => {
+    await page.route('**/api/admin/banners**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: [
+            {
+              id: 1,
+              title: 'Banner Visible',
+              imageUrl: 'https://via.placeholder.com/600x300',
+              description: null,
+              startAt: '2026-01-01T10:00:00.000Z',
+              endAt: null,
+              isActive: true,
+            },
+            {
+              id: 2,
+              title: 'Banner Programado',
+              imageUrl: 'https://via.placeholder.com/600x300',
+              description: null,
+              startAt: '2026-12-31T10:00:00.000Z',
+              endAt: null,
+              isActive: true,
+            },
+            {
+              id: 3,
+              title: 'Banner Finalizado',
+              imageUrl: 'https://via.placeholder.com/600x300',
+              description: null,
+              startAt: '2026-01-01T10:00:00.000Z',
+              endAt: '2026-02-01T10:00:00.000Z',
+              isActive: true,
+            },
+            {
+              id: 4,
+              title: 'Banner Desactivado',
+              imageUrl: 'https://via.placeholder.com/600x300',
+              description: null,
+              startAt: '2026-01-01T10:00:00.000Z',
+              endAt: null,
+              isActive: false,
+            },
+          ],
+          pagination: { total: 4, page: 1, limit: 20, totalPages: 1 },
+        }),
+      });
+    });
+
+    await page.goto('/admin/banners');
+
+    await expect(page.getByRole('heading', { name: 'Banners promocionales' })).toBeVisible();
+    await expect(page.getByText('Banner Visible')).toBeVisible();
+    await expect(page.getByText('Visible').nth(1)).toBeVisible();
+    await expect(page.getByText('Programado').nth(1)).toBeVisible();
+    await expect(page.getByText('Finalizado').nth(1)).toBeVisible();
+    await expect(page.getByText('Desactivado').nth(1)).toBeVisible();
+  });
+
+  //OM-523
+  test('flujo admin: activar y desactivar banner', async ({ page }) => {
+    let lastPatchPayload: Record<string, unknown> = {};
+
+    await page.route('**/api/admin/banners**', async (route) => {
+      const method = route.request().method();
+      const url = route.request().url();
+
+      if (method === 'PATCH' && url.includes('/active')) {
+        lastPatchPayload = route.request().postDataJSON() as Record<string, unknown>;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ message: 'Banner actualizado' }),
+        });
+        return;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: [
+            {
+              id: 1,
+              title: 'Banner Activo',
+              imageUrl: 'https://via.placeholder.com/600x300',
+              description: null,
+              startAt: '2026-01-01T10:00:00.000Z',
+              endAt: null,
+              isActive: true,
+            },
+            {
+              id: 2,
+              title: 'Banner Inactivo',
+              imageUrl: 'https://via.placeholder.com/600x300',
+              description: null,
+              startAt: '2026-01-01T10:00:00.000Z',
+              endAt: null,
+              isActive: false,
+            },
+          ],
+          pagination: { total: 2, page: 1, limit: 20, totalPages: 1 },
+        }),
+      });
+    });
+
+    await page.goto('/admin/banners');
+    await expect(page.getByText('Banner Activo')).toBeVisible();
+    await expect(page.getByText('Banner Inactivo')).toBeVisible();
+
+    // Desactivar el banner activo
+    await page.getByTitle('Desactivar banner').first().click();
+    await expect(page.getByText('Banner desactivado')).toBeVisible();
+    expect(lastPatchPayload.isActive).toBe(false);
+
+    // Esperar que la lista se re-renderice luego del re-fetch no-await de loadBanners()
+    await expect(page.getByText('Banner Inactivo')).toBeVisible({ timeout: 5000 });
+
+    // Activar el banner inactivo
+    await page.getByTitle('Activar banner').nth(1).click();
+    await expect(page.getByText('Banner activado')).toBeVisible();
+    expect(lastPatchPayload.isActive).toBe(true);
+  });
+
+  //OM-523
+  test('flujo admin: filtrar y buscar banners', async ({ page }) => {
+    await page.route('**/api/admin/banners**', async (route) => {
+      const url = new URL(route.request().url());
+      const search = url.searchParams.get('search') ?? '';
+      const active = url.searchParams.get('active') ?? '';
+
+      const allBanners = [
+        {
+          id: 1,
+          title: 'Semana Eco',
+          imageUrl: 'https://via.placeholder.com/600x300',
+          description: null,
+          startAt: '2026-01-01T10:00:00.000Z',
+          endAt: null,
+          isActive: true,
+        },
+        {
+          id: 2,
+          title: 'Black Friday 2026',
+          imageUrl: 'https://via.placeholder.com/600x300',
+          description: null,
+          startAt: '2026-11-27T00:00:00.000Z',
+          endAt: null,
+          isActive: false,
+        },
+      ];
+
+      let filtered = allBanners;
+      if (search) filtered = filtered.filter(b => b.title.toLowerCase().includes(search.toLowerCase()));
+      if (active === 'true') filtered = filtered.filter(b => b.isActive);
+      if (active === 'false') filtered = filtered.filter(b => !b.isActive);
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: filtered,
+          pagination: { total: filtered.length, page: 1, limit: 20, totalPages: 1 },
+        }),
+      });
+    });
+
+    await page.goto('/admin/banners');
+
+    // Carga inicial: ambos banners visibles
+    await expect(page.getByText('Semana Eco')).toBeVisible();
+    await expect(page.getByText('Black Friday 2026')).toBeVisible();
+
+    // Buscar por título (debounce de 300 ms incluido en el timeout de la aserción)
+    await page.getByPlaceholder('Buscar por titulo...').fill('Semana');
+    await expect(page.getByText('Semana Eco')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('Black Friday 2026')).not.toBeVisible();
+
+    // Limpiar búsqueda y restaurar lista completa
+    await page.getByPlaceholder('Buscar por titulo...').clear();
+    await expect(page.getByText('Black Friday 2026')).toBeVisible({ timeout: 5000 });
+
+    // Filtrar por banners activos
+    await page.getByRole('combobox').selectOption('true');
+    await expect(page.getByText('Semana Eco')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('Black Friday 2026')).not.toBeVisible();
+  });
+
+  //OM-523
+  test('flujo cliente: carousel del homepage muestra banners activos y fallback a slides por defecto', async ({ page }) => {
+    const bannerTitle = 'Oferta Especial E2E';
+
+    // API retorna 1 banner → 3 slides totales (2 por defecto + 1 banner)
+    await page.route('**/api/banners**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          {
+            id: 1,
+            title: bannerTitle,
+            description: 'Descripción de prueba',
+            imageUrl: 'https://via.placeholder.com/600x300',
+            linkUrl: null,
+            startAt: '2026-01-01T00:00:00.000Z',
+            endAt: null,
+            isActive: true,
+          },
+        ]),
+      });
+    });
+
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    // El carousel debe tener 3 indicadores (2 defaultSlides + 1 banner)
+    const dots = page.locator('button.w-2.h-2');
+    await expect(dots).toHaveCount(3);
+
+    // Navegar al último slide (el banner) y verificar su contenido
+    await dots.last().click();
+    await expect(page.getByText(bannerTitle)).toBeVisible();
+
+    // API retorna vacío → solo los 2 slides por defecto
+    await page.unroute('**/api/banners**');
+    await page.route('**/api/banners**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    const dotsAfterFallback = page.locator('button.w-2.h-2');
+    await expect(dotsAfterFallback).toHaveCount(2);
+    await expect(page.getByText(bannerTitle)).not.toBeVisible();
+  });
+
+  //OM-516
+  test('flujo restablecer contraseña: token expirado durante el envío del formulario', async ({ page }) => {
+    await page.route('**/api/users/validate-reset-token', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Token válido' }),
+      });
+    });
+
+    await page.route('**/api/users/reset-password', async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Token expirado o inválido' }),
+      });
+    });
+
+    await page.goto('/restablecer-contrasena/token-expirado');
+
+    await expect(page.locator('input[name="newPassword"]')).toBeVisible({ timeout: 5000 });
+
+    await page.locator('input[name="newPassword"]').fill('nuevapass123');
+    await page.locator('input[name="confirmPassword"]').fill('nuevapass123');
+    await page.getByRole('button', { name: 'Restablecer contraseña' }).click();
+
+    await expect(page.getByText('Enlace no válido')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Solicitar nuevo enlace' })).toBeVisible();
+  });
+
+  // Horarios de atención del comercio
+
+  const installBusinessHoursMock = async (page: Page) => {
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      });
+    });
+
+    const mockSchedules = [
+      { day_of_week: 0, is_closed: false, open_time: '08:00', close_time: '18:00' },
+      { day_of_week: 1, is_closed: false, open_time: '08:00', close_time: '18:00' },
+      { day_of_week: 2, is_closed: false, open_time: '08:00', close_time: '18:00' },
+      { day_of_week: 3, is_closed: false, open_time: '08:00', close_time: '18:00' },
+      { day_of_week: 4, is_closed: false, open_time: '08:00', close_time: '18:00' },
+      { day_of_week: 5, is_closed: true, open_time: null, close_time: null },
+      { day_of_week: 6, is_closed: true, open_time: null, close_time: null },
+    ];
+
+    await page.route('**/api/commerces/1/business-hours', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ is_open: true, close_time: '18:00', schedules: mockSchedules }),
+        });
+        return;
+      }
+      if (route.request().method() === 'PUT') {
+        const body = route.request().postDataJSON() as { schedules: unknown[] };
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ is_open: true, close_time: '18:00', schedules: body.schedules }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    await page.route('**/api/commerces/my/1', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id_store: 1,
+          name: 'Comercio Demo',
+          store_status: 'ACTIVE',
+          description: 'Descripción del comercio',
+          categories: [{ id: 1, name: 'Tecnología' }],
+          addresses: [],
+        }),
+      });
+    });
+  };
+
+  // OM-515
+  test('flujo comercio: acceder a horarios desde sidebar y desde perfil', async ({ page }) => {
+    await installBusinessHoursMock(page);
+
+    // Acceso desde el ítem "Horarios" del sidebar
+    await page.goto('/comercio/perfil');
+    await expect(page.getByText('Perfil del Comercio')).toBeVisible();
+
+    await page.locator('nav').getByText('Horarios').click();
+    await expect(page).toHaveURL('/comercio/horarios');
+    await expect(page.getByRole('heading', { name: 'Horarios de atención' })).toBeVisible();
+
+    // Acceso desde el botón "Gestionar Horarios" en Acciones Rápidas del perfil
+    await page.goto('/comercio/perfil');
+    await expect(page.getByText('Perfil del Comercio')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Gestionar Horarios' }).click();
+    await expect(page).toHaveURL('/comercio/horarios');
+    await expect(page.getByRole('heading', { name: 'Horarios de atención' })).toBeVisible();
+  });
+
+  // OM-515
+  test('flujo comercio: visualizar horarios por día y marcar/desmarcar día como cerrado', async ({ page }) => {
+    await installBusinessHoursMock(page);
+
+    await page.goto('/comercio/horarios');
+
+    // Badge de estado
+    await expect(page.getByText('Abierto · Cierra a las 18:00')).toBeVisible();
+
+    // Los 7 días de la semana deben estar presentes
+    for (const dia of ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']) {
+      await expect(page.getByText(dia)).toBeVisible();
+    }
+
+    // Lunes (primer día, no cerrado): sus inputs de hora deben estar habilitados
+    const timeInputs = page.locator('input[type="time"]');
+    await expect(timeInputs.nth(0)).toBeEnabled();
+    await expect(timeInputs.nth(1)).toBeEnabled();
+
+    // Marcar Lunes como cerrado → inputs se deshabilitan
+    const cerradoCheckboxes = page.getByLabel('Cerrado');
+    await cerradoCheckboxes.nth(0).check();
+    await expect(timeInputs.nth(0)).toBeDisabled();
+    await expect(timeInputs.nth(1)).toBeDisabled();
+
+    // Desmarcar → inputs vuelven a habilitarse
+    await cerradoCheckboxes.nth(0).uncheck();
+    await expect(timeInputs.nth(0)).toBeEnabled();
+    await expect(timeInputs.nth(1)).toBeEnabled();
+  });
+
+  // OM-515
+  test('flujo comercio: editar horarios - guardar exitoso, error y volver al perfil', async ({ page }) => {
+    await installBusinessHoursMock(page);
+
+    await page.goto('/comercio/horarios');
+    await expect(page.getByRole('heading', { name: 'Horarios de atención' })).toBeVisible();
+
+    // Guardar exitoso
+    await page.getByRole('button', { name: 'Guardar horarios' }).click();
+    await expect(page.getByText('Horarios guardados correctamente.')).toBeVisible();
+
+    // Sobrescribir PUT para forzar error
+    await page.unroute('**/api/commerces/1/business-hours');
+    await page.route('**/api/commerces/1/business-hours', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            is_open: true,
+            close_time: '18:00',
+            schedules: [
+              { day_of_week: 0, is_closed: false, open_time: '08:00', close_time: '18:00' },
+              { day_of_week: 1, is_closed: false, open_time: '08:00', close_time: '18:00' },
+              { day_of_week: 2, is_closed: false, open_time: '08:00', close_time: '18:00' },
+              { day_of_week: 3, is_closed: false, open_time: '08:00', close_time: '18:00' },
+              { day_of_week: 4, is_closed: false, open_time: '08:00', close_time: '18:00' },
+              { day_of_week: 5, is_closed: true, open_time: null, close_time: null },
+              { day_of_week: 6, is_closed: true, open_time: null, close_time: null },
+            ],
+          }),
+        });
+        return;
+      }
+      if (route.request().method() === 'PUT') {
+        await route.fulfill({
+          status: 500,
+          contentType: 'application/json',
+          body: JSON.stringify({ message: 'Error interno al guardar horarios.' }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    await page.getByRole('button', { name: 'Guardar horarios' }).click();
+    await expect(page.getByText('Error interno al guardar horarios.')).toBeVisible();
+
+    // Volver al perfil
+    await page.getByRole('button', { name: 'Volver al perfil' }).click();
+    await expect(page).toHaveURL('/comercio/perfil');
+    await expect(page.getByText('Perfil del Comercio')).toBeVisible();
   });
 
 });
