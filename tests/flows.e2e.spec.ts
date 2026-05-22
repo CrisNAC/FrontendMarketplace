@@ -128,6 +128,18 @@ const mockProducts = [
 ];
 
 async function setupCommonApiMocks(page: Page) {
+  // DEBE IR PRIMERO: al ser el primero registrado tiene la menor prioridad (LIFO).
+  // Intercepta cualquier request /api/* no mockeada para que no llegue al backend real
+  // (https://backendmarketplace-test.onrender.com en CI), que devolvería 401 y
+  // dispararía el interceptor de apiClient → _navigate('/login').
+  await page.route('**/api/**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({}),
+    });
+  });
+
   await page.route('**/api/users/register', async (route) => {
     await route.fulfill({
       status: 201,
@@ -4041,8 +4053,8 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-408
   test('flujo comercio: navegar a pantalla Agregar Delivery', async ({ page }) => {
-    await installStoreDeliveriesSearchMock(page);
     await setupCommonApiMocks(page);
+    await installStoreDeliveriesSearchMock(page);
 
     await page.goto('/comercio/delivery');
     await page.waitForLoadState('networkidle');
@@ -4056,8 +4068,8 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-408
   test('flujo comercio: búsqueda por correo en tiempo real', async ({ page }) => {
-    await installStoreDeliveriesSearchMock(page);
     await setupCommonApiMocks(page);
+    await installStoreDeliveriesSearchMock(page);
 
     await page.goto('/comercio/delivery/agregar');
     await page.waitForLoadState('networkidle');
@@ -4076,8 +4088,8 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-408
   test('flujo comercio: búsqueda por teléfono en tiempo real', async ({ page }) => {
-    await installStoreDeliveriesSearchMock(page);
     await setupCommonApiMocks(page);
+    await installStoreDeliveriesSearchMock(page);
 
     await page.goto('/comercio/delivery/agregar');
     await page.waitForLoadState('networkidle');
@@ -4094,8 +4106,8 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-408
   test('flujo comercio: tarjeta de resultado con datos completos', async ({ page }) => {
-    await installStoreDeliveriesSearchMock(page);
     await setupCommonApiMocks(page);
+    await installStoreDeliveriesSearchMock(page);
 
     await page.goto('/comercio/delivery/agregar');
     await page.waitForLoadState('networkidle');
@@ -4114,8 +4126,8 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-408
   test('flujo comercio: agregar delivery con confirmación exitosa', async ({ page }) => {
-    await installStoreDeliveriesSearchMock(page);
     await setupCommonApiMocks(page);
+    await installStoreDeliveriesSearchMock(page);
 
     await page.goto('/comercio/delivery/agregar');
     await page.waitForLoadState('networkidle');
@@ -4136,8 +4148,8 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-408
   test('flujo comercio: error al agregar delivery (ya vinculado)', async ({ page }) => {
-    await installStoreDeliveriesSearchMock(page, { linkShouldFail: true, linkErrorStatus: 409 });
     await setupCommonApiMocks(page);
+    await installStoreDeliveriesSearchMock(page, { linkShouldFail: true, linkErrorStatus: 409 });
 
     await page.goto('/comercio/delivery/agregar');
     await page.waitForLoadState('networkidle');
@@ -4151,8 +4163,8 @@ test.describe('Flujos E2E de usuario final', () => {
 
   // OM-408
   test('flujo comercio: cancelar modal de confirmación', async ({ page }) => {
-    await installStoreDeliveriesSearchMock(page);
     await setupCommonApiMocks(page);
+    await installStoreDeliveriesSearchMock(page);
 
     await page.goto('/comercio/delivery/agregar');
     await page.waitForLoadState('networkidle');
