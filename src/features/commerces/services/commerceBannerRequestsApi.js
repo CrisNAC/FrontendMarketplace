@@ -27,6 +27,14 @@ export const getMyBannerRequests = async (storeId) => {
 
 export const createBannerRequest = async (storeId, storeName, payload) => {
   await delay();
+  const {
+    title,
+    description = null,
+    imageUrl,
+    linkUrl = null,
+    startAt = null,
+    endAt = null,
+  } = payload ?? {};
   const request = {
     id: uid(),
     storeId,
@@ -35,7 +43,12 @@ export const createBannerRequest = async (storeId, storeName, payload) => {
     createdAt: new Date().toISOString(),
     reviewedAt: null,
     rejectionReason: null,
-    ...payload,
+    title,
+    description,
+    imageUrl,
+    linkUrl,
+    startAt,
+    endAt,
   };
   writeAll([...readAll(), request]);
   return request;
