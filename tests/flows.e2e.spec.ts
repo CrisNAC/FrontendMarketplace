@@ -7371,4 +7371,169 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page.getByRole('button', { name: 'Solicitar nuevo enlace' })).toBeVisible();
   });
 
+  // Horarios de atención del comercio
+
+  const installBusinessHoursMock = async (page: Page) => {
+    await page.unroute('**/api/session/user-session');
+    await page.route('**/api/session/user-session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id_user: 7, id_store: 1, name: 'Comerciante Demo' } }),
+      });
+    });
+
+    const mockSchedules = [
+      { day_of_week: 0, is_closed: false, open_time: '08:00', close_time: '18:00' },
+      { day_of_week: 1, is_closed: false, open_time: '08:00', close_time: '18:00' },
+      { day_of_week: 2, is_closed: false, open_time: '08:00', close_time: '18:00' },
+      { day_of_week: 3, is_closed: false, open_time: '08:00', close_time: '18:00' },
+      { day_of_week: 4, is_closed: false, open_time: '08:00', close_time: '18:00' },
+      { day_of_week: 5, is_closed: true, open_time: null, close_time: null },
+      { day_of_week: 6, is_closed: true, open_time: null, close_time: null },
+    ];
+
+    await page.route('**/api/commerces/1/business-hours', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ is_open: true, close_time: '18:00', schedules: mockSchedules }),
+        });
+        return;
+      }
+      if (route.request().method() === 'PUT') {
+        const body = route.request().postDataJSON() as { schedules: unknown[] };
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ is_open: true, close_time: '18:00', schedules: body.schedules }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    await page.route('**/api/commerces/my/1', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id_store: 1,
+          name: 'Comercio Demo',
+          store_status: 'ACTIVE',
+          description: 'Descripción del comercio',
+          categories: [{ id: 1, name: 'Tecnología' }],
+          addresses: [],
+        }),
+      });
+    });
+  };
+
+  // OM-515
+  test('flujo comercio: acceder a horarios desde sidebar y desde perfil', async ({ page }) => {
+    await installBusinessHoursMock(page);
+
+    // Acceso desde el ítem "Horarios" del sidebar
+    await page.goto('/comercio/perfil');
+    await expect(page.getByText('Perfil del Comercio')).toBeVisible();
+
+    await page.locator('nav').getByText('Horarios').click();
+    await expect(page).toHaveURL('/comercio/horarios');
+    await expect(page.getByRole('heading', { name: 'Horarios de atención' })).toBeVisible();
+
+    // Acceso desde el botón "Gestionar Horarios" en Acciones Rápidas del perfil
+    await page.goto('/comercio/perfil');
+    await expect(page.getByText('Perfil del Comercio')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Gestionar Horarios' }).click();
+    await expect(page).toHaveURL('/comercio/horarios');
+    await expect(page.getByRole('heading', { name: 'Horarios de atención' })).toBeVisible();
+  });
+
+  // OM-515
+  test('flujo comercio: visualizar horarios por día y marcar/desmarcar día como cerrado', async ({ page }) => {
+    await installBusinessHoursMock(page);
+
+    await page.goto('/comercio/horarios');
+
+    // Badge de estado
+    await expect(page.getByText('Abierto · Cierra a las 18:00')).toBeVisible();
+
+    // Los 7 días de la semana deben estar presentes
+    for (const dia of ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']) {
+      await expect(page.getByText(dia)).toBeVisible();
+    }
+
+    // Lunes (primer día, no cerrado): sus inputs de hora deben estar habilitados
+    const timeInputs = page.locator('input[type="time"]');
+    await expect(timeInputs.nth(0)).toBeEnabled();
+    await expect(timeInputs.nth(1)).toBeEnabled();
+
+    // Marcar Lunes como cerrado → inputs se deshabilitan
+    const cerradoCheckboxes = page.getByLabel('Cerrado');
+    await cerradoCheckboxes.nth(0).check();
+    await expect(timeInputs.nth(0)).toBeDisabled();
+    await expect(timeInputs.nth(1)).toBeDisabled();
+
+    // Desmarcar → inputs vuelven a habilitarse
+    await cerradoCheckboxes.nth(0).uncheck();
+    await expect(timeInputs.nth(0)).toBeEnabled();
+    await expect(timeInputs.nth(1)).toBeEnabled();
+  });
+
+  // OM-515
+  test('flujo comercio: editar horarios - guardar exitoso, error y volver al perfil', async ({ page }) => {
+    await installBusinessHoursMock(page);
+
+    await page.goto('/comercio/horarios');
+    await expect(page.getByRole('heading', { name: 'Horarios de atención' })).toBeVisible();
+
+    // Guardar exitoso
+    await page.getByRole('button', { name: 'Guardar horarios' }).click();
+    await expect(page.getByText('Horarios guardados correctamente.')).toBeVisible();
+
+    // Sobrescribir PUT para forzar error
+    await page.unroute('**/api/commerces/1/business-hours');
+    await page.route('**/api/commerces/1/business-hours', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            is_open: true,
+            close_time: '18:00',
+            schedules: [
+              { day_of_week: 0, is_closed: false, open_time: '08:00', close_time: '18:00' },
+              { day_of_week: 1, is_closed: false, open_time: '08:00', close_time: '18:00' },
+              { day_of_week: 2, is_closed: false, open_time: '08:00', close_time: '18:00' },
+              { day_of_week: 3, is_closed: false, open_time: '08:00', close_time: '18:00' },
+              { day_of_week: 4, is_closed: false, open_time: '08:00', close_time: '18:00' },
+              { day_of_week: 5, is_closed: true, open_time: null, close_time: null },
+              { day_of_week: 6, is_closed: true, open_time: null, close_time: null },
+            ],
+          }),
+        });
+        return;
+      }
+      if (route.request().method() === 'PUT') {
+        await route.fulfill({
+          status: 500,
+          contentType: 'application/json',
+          body: JSON.stringify({ message: 'Error interno al guardar horarios.' }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    await page.getByRole('button', { name: 'Guardar horarios' }).click();
+    await expect(page.getByText('Error interno al guardar horarios.')).toBeVisible();
+
+    // Volver al perfil
+    await page.getByRole('button', { name: 'Volver al perfil' }).click();
+    await expect(page).toHaveURL('/comercio/perfil');
+    await expect(page.getByText('Perfil del Comercio')).toBeVisible();
+  });
+
 });
