@@ -395,9 +395,9 @@ export const AdminBannersPage = () => {
                       type="button"
                       title={banner.isActive ? "Desactivar banner" : "Activar banner"}
                       onClick={() => handleToggle(banner)}
-                      style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px", borderRadius: "6px", border: "none", backgroundColor: banner.isActive ? "#fee2e2" : "#dcfce7", color: banner.isActive ? "#dc2626" : "#15803d", cursor: "pointer" }}
+                      style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px", borderRadius: "6px", border: "none", backgroundColor: banner.isActive ? "#dcfce7" : "#fee2e2", color: banner.isActive ? "#15803d" : "#dc2626", cursor: "pointer" }}
                     >
-                      {banner.isActive ? <ToggleLeft size={18} /> : <ToggleRight size={18} />}
+                      {banner.isActive ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
                     </button>
                   </div>
                 </div>
