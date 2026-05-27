@@ -28,8 +28,8 @@ const deliverySidebar = (page: Page) => page.getByRole('navigation');
 /** Título del panel (fuera de <nav>; filtra el duplicado del header móvil oculto en desktop). */
 const deliveryPanelTitle = (page: Page) => page.getByText('Panel Delivery').filter({ visible: true });
 
-/** Misma regla que BecomeDeliveryModal: al menos 8 dígitos en el teléfono enviado por PUT. */
-const isValidDeliveryPhone = (phone: string) => /^(?=(?:.*\d){8,})[\d\s+().\-]+$/.test(phone.trim());
+/** Al menos 8 dígitos en el teléfono enviado por PUT. */
+const isValidPhone = (phone: string) => /^(?=(?:.*\d){8,})[\d\s+().\-]+$/.test(phone.trim());
 
 async function fulfillUserProfilePut(route: Route, successBody: Record<string, unknown>) {
   let payload: { phone?: unknown };
@@ -39,11 +39,11 @@ async function fulfillUserProfilePut(route: Route, successBody: Record<string, u
     payload = {};
   }
   const phone = typeof payload.phone === 'string' ? payload.phone.trim() : '';
-  if (!phone || !isValidDeliveryPhone(phone)) {
+  if (!phone || !isValidPhone(phone)) {
     await route.fulfill({
       status: 400,
       contentType: 'application/json',
-      body: JSON.stringify({ error: { code: 400, message: 'phone inválido o faltante' } }),
+      body: JSON.stringify({ error: { code: 400, message: 'teléfono inválido o faltante' } }),
     });
     return;
   }
@@ -1899,7 +1899,7 @@ test.describe('Flujos E2E de usuario final', () => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ user }) });
     });
 
-    // Perfil usuario (getCurrentUserForDeliveryForm -> fetchUserProfile / actualizar teléfono)
+    // Perfil usuario (getCurrentUserForDeliveryForm -> fetchUserProfile)
     await page.route('**/api/users/7', async (route) => {
       if (route.request().method() === 'PUT') {
         await fulfillUserProfilePut(route, {
@@ -1966,8 +1966,7 @@ test.describe('Flujos E2E de usuario final', () => {
     // Modal debe estar visible
     await expect(page.getByRole('heading', { name: 'Quiero ser delivery' })).toBeVisible();
 
-    // Teléfono y vehículo
-    await page.getByPlaceholder('+54 9 11 2345-6789').fill('0981000000');
+    // Seleccionar vehículo
     await page.locator('#delivery-vehicle').selectOption('AUTOMOVIL');
 
     // Confirmar (trigger POST -> deliveryRegistered = true)
@@ -2074,8 +2073,8 @@ test.describe('Flujos E2E de usuario final', () => {
 
     await page.route('**/api/session/user-session', async (route) => {
       const user = deliveryRegistered
-        ? { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'Cliente Demo', email: 'cliente@test.com' }
-        : { id_user: 7, role: 'CUSTOMER', name: 'Cliente Demo', email: 'cliente@test.com' };
+        ? { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'Cliente Demo', email: 'cliente@test.com', phone: '0981000000' }
+        : { id_user: 7, role: 'CUSTOMER', name: 'Cliente Demo', email: 'cliente@test.com', phone: '0981000000' };
 
       await route.fulfill({
         status: 200,
@@ -2085,14 +2084,6 @@ test.describe('Flujos E2E de usuario final', () => {
     });
 
     await page.route('**/api/users/7', async (route) => {
-      if (route.request().method() === 'PUT') {
-        await fulfillUserProfilePut(route, {
-          id_user: 7,
-          name: 'Cliente Demo',
-          email: 'cliente@test.com',
-        });
-        return;
-      }
       if (route.request().method() === 'GET') {
         await route.fulfill({
           status: 200,
@@ -2106,15 +2097,6 @@ test.describe('Flujos E2E de usuario final', () => {
               role: 'CUSTOMER',
             }
           }),
-        });
-        return;
-      }
-
-      if (route.request().method() === 'PUT') {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({ success: true, data: { id_user: 7, phone: '0981000000' } }),
         });
         return;
       }
@@ -2173,7 +2155,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
     await expect(page.getByRole('heading', { name: 'Quiero ser delivery' })).toBeVisible();
 
-    await page.getByPlaceholder('+54 9 11 2345-6789').fill('0981000000');
     await page.locator('#delivery-vehicle').selectOption('AUTOMOVIL');
     await page.getByRole('button', { name: 'Confirmar' }).click();
 
