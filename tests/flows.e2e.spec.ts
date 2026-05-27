@@ -29,7 +29,7 @@ const deliverySidebar = (page: Page) => page.getByRole('navigation');
 const deliveryPanelTitle = (page: Page) => page.getByText('Panel Delivery').filter({ visible: true });
 
 /** Al menos 8 dígitos en el teléfono enviado por PUT. */
-const isValidPhone = (phone: string) => /^(?=(?:.*\d){8,})[\d\s+().\-]+$/.test(phone.trim());
+const isValidPhone = (phone: string) => /^(?=(?:.*\d){8,})[\d\s+().-]+$/.test(phone.trim());
 
 async function fulfillUserProfilePut(route: Route, successBody: Record<string, unknown>) {
   let payload: { phone?: unknown };
