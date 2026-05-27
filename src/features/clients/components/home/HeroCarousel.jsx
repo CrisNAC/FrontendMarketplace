@@ -43,7 +43,16 @@ export const HeroCarousel = ({ slides = [] }) => {
   const handleCtaClick = (cta) => {
     if (!cta) return;
     if (cta.to) { navigate(cta.to); return; }
-    if (cta.href) { window.location.href = cta.href; }
+    if (cta.href) {
+      try {
+        const url = new URL(cta.href, globalThis.location?.origin);
+        if (url.protocol === "http:" || url.protocol === "https:") {
+          globalThis.location.assign(url.toString());
+        }
+      } catch {
+      // href inválido: no navegar
+      }
+    }
   };
 
   const currentSlide = resolvedSlides[current] ?? resolvedSlides[0];
@@ -107,6 +116,8 @@ export const HeroCarousel = ({ slides = [] }) => {
             <button
               key={index}
               type="button"
+              aria-label={`Ir al slide ${index + 1}`}
+              aria-current={current === index ? "true" : undefined}
               onClick={() => setCurrent(index)}
               className={`w-2 h-2 rounded-full ${current === index ? "bg-white" : "bg-white/50"}`}
             />

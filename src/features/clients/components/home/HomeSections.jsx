@@ -95,6 +95,7 @@ export const HomeSections = () => {
   const [stores, setStores] = useState([]);
   const [storesStatus, setStoresStatus] = useState("idle");
   const [storesError, setStoresError] = useState("");
+  const [brokenStoreLogos, setBrokenStoreLogos] = useState(() => new Set());
 
   const categoriesEndpoint = useMemo(() => apiBase ? `${apiBase}/api/categories/products` : "/api/categories/products", [apiBase]);
   const offersEndpoint     = useMemo(() => apiBase ? `${apiBase}/products` : "/products", [apiBase]);
@@ -284,7 +285,8 @@ export const HomeSections = () => {
         {storesStatus === "success" && stores.length > 0 && (
           <HorizontalScroller watchKey={`${storesStatus}-${stores.length}`}>
             {stores.map((store) => {
-              const logoUrl = store.logo
+              const hasBrokenLogo = brokenStoreLogos.has(store.id_store);
+              const logoUrl = store.logo && !hasBrokenLogo
                 ? resolveApiAssetUrl(store.logo, apiBase || window.location.origin)
                 : null;
               return (
@@ -300,10 +302,13 @@ export const HomeSections = () => {
                         src={logoUrl}
                         alt={store.name}
                         className="h-full w-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.style.display = "none";
-                          e.currentTarget.parentElement.innerText = (store.name || "").slice(0, 1).toUpperCase();
-                        }}
+                        onError={() =>
+                          setBrokenStoreLogos((prev) => {
+                            const next = new Set(prev);
+                            next.add(store.id_store);
+                            return next;
+                          })
+                        }
                       />
                     ) : (
                       (store.name || "").slice(0, 1).toUpperCase()
