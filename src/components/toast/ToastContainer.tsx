@@ -1,4 +1,4 @@
-import { CheckCircle, XCircle, AlertOctagon, Info, X } from 'lucide-react'
+import { CheckCircle, XCircle, AlertCircle, Info, X } from 'lucide-react'
 import { useToast } from './useToast.ts'
 import type { ToastType } from './ToastTypes'
 
@@ -12,7 +12,7 @@ const toastStyles: Record<ToastType, string> = {
 const toastIcons: Record<ToastType, React.ElementType> = {
   success: CheckCircle,
   error: XCircle,
-  warning: AlertOctagon,
+  warning: AlertCircle,
   info: Info,
 }
 
