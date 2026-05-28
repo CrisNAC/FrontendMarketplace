@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import logo from "/src/assets/feather.png";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { fetchCartsApi, getApiBase } from "../../lib/cartApi.js";
+import { useToast } from '../toast/useToast';
 
 function sumServerCartQuantities(carts) {
   if (!Array.isArray(carts)) return 0;
@@ -32,6 +33,7 @@ const PROFILE_LINKS = [
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { showToast } = useToast()
   const profileMenuRef = useRef(null);
 
   const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
@@ -64,7 +66,6 @@ const Navbar = () => {
     } catch {
       setSessionUser(null);
     }
-    // Sin sesión: no mostrar cantidad en el ícono (el carrito local puede existir pero no se refleja en el navbar).
     setCartCount(0);
   }, []);
 
@@ -136,10 +137,10 @@ const Navbar = () => {
       setSessionUser(null);
       setCartCount(0);
       window.dispatchEvent(new Event("cartUpdated"));
-      toast.success("Sesión cerrada");
+      showToast("Sesión cerrada", "success");
       navigate("/");
     } catch {
-      toast.error("No se pudo cerrar sesión. Intentá de nuevo.");
+      showToast("No se pudo cerrar sesión. Intentá de nuevo.", "error");
     } finally {
       setLoggingOut(false);
     }
