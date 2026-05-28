@@ -1,4 +1,3 @@
-// src/components/navbar/Navbar.jsx
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ShoppingCart, User, Search, X, ChevronDown, LogOut, Menu,
