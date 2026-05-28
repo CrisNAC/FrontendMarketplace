@@ -5,7 +5,6 @@ import { useEffect } from 'react';
 import { ToastProvider } from './components/toast/ToastProvider'
 import { ToastContainer } from './components/toast/ToastContainer'
 
-
 /**
  * Infraestructura de errores
  */
