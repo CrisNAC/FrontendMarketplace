@@ -324,64 +324,6 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Categories */}
-      <div className="bg-[#E5EAE9] flex justify-center gap-[20px] py-[8px] text-[13px] font-normal">
-        <Link
-          to="/categoria/tecnologia"
-          className="!no-underline !text-[#474242] hover:!text-[#2e6b4f] transition-colors"
-        >
-          Tecnología
-        </Link>
-        <Link
-          to="/categoria/moda"
-          className="!no-underline !text-[#474242] hover:!text-[#2e6b4f] transition-colors"
-        >
-          Moda
-        </Link>
-        <Link
-          to="/categoria/coleccionables"
-          className="!no-underline !text-[#474242] hover:!text-[#2e6b4f] transition-colors"
-        >
-          Coleccionables y Arte
-        </Link>
-        <Link
-          to="/categoria/hogar"
-          className="!no-underline !text-[#474242] hover:!text-[#2e6b4f] transition-colors"
-        >
-          Hogar y Jardín
-        </Link>
-        <Link
-          to="/categoria/salud"
-          className="!no-underline !text-[#474242] hover:!text-[#2e6b4f] transition-colors"
-        >
-          Salud y Belleza
-        </Link>
-        <Link
-          to="/categoria/entretenimiento"
-          className="!no-underline !text-[#474242] hover:!text-[#2e6b4f] transition-colors"
-        >
-          Entretenimiento
-        </Link>
-        <Link
-          to="/categoria/deportes"
-          className="!no-underline !text-[#474242] hover:!text-[#2e6b4f] transition-colors"
-        >
-          Deportes
-        </Link>
-        <Link
-          to="/categoria/industrial"
-          className="!no-underline !text-[#474242] hover:!text-[#2e6b4f] transition-colors"
-        >
-          Equipo Industrial
-        </Link>
-        <Link
-          to="/ofertas"
-          className="!no-underline !text-[#952626] font-semibold hover:!text-[#b33a3a] transition-colors"
-        >
-          Ofertas
-        </Link>
-      </div>
-
     </header>
   );
 };
