@@ -122,7 +122,7 @@ export default function OrdenesComprasPage() {
               <ArrowLeft className="w-6 h-6" />
             </button>
             <h1 className="text-2xl font-bold text-[#1a1a1a] tracking-tight">
-              Ordenes de Compras
+              Carritos
             </h1>
           </div>
 
