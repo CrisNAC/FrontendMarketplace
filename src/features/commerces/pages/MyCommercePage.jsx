@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Package, Star, MessageSquare, Layers, AlertCircle, Info, Send, ArrowLeft } from "lucide-react";
 import { Topbar } from "../components/dashboard/Topbar";
 import { StatCard } from "../components/dashboard/StatCard";
+import { PageLoader } from "../../../components/PageLoader";
 import { BestRatedSection } from "../components/dashboard/BestRatedSection";
 import { MostSoldSection } from "../components/dashboard/MostSoldSection";
 import { CollectionsSection } from "../components/dashboard/CollectionsSection";
@@ -44,7 +45,7 @@ export const MyCommercePage = () => {
         fetchStore();
     }, [navigate]);
 
-    if (loading) return <p style={{ color: "#6b7280", padding: "16px" }}>Cargando...</p>;
+    if (loading) return <PageLoader />;
 
     if (error) return (
         <div style={{

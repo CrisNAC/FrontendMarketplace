@@ -4,6 +4,7 @@ import PropTypes from "prop-types";
 import { ShoppingBag, Clock, CheckCircle, XCircle, Truck, MapPin, Calendar, Filter, ChevronDown, ChevronUp, Package } from "lucide-react";
 import { Pagination } from "../../clients/components/commerceProfile/Pagination";
 import { OrderStepper } from "../../clients/components/OrderStepper";
+import { PageLoader } from "../../../components/PageLoader";
 import { apiClient as commerceApiClient } from "../services/editCommerceApi";
 import { fetchStoreOrders, updateOrderStatus, getOrderErrorMessage } from "../services/commerceOrdersApi";
 import { DeliveryAssignmentModal } from "../components/deliveryAssignment/DeliveryAssignmentModal.jsx";
@@ -707,7 +708,7 @@ export function CommerceOrdersPage() {
     ? "No tenés pedidos pendientes."
     : "No tenés pedidos en progreso.";
 
-  if (loading) return <p style={{ color: "#6b7280", padding: "16px" }}>Cargando pedidos...</p>;
+  if (loading) return <PageLoader />;
 
   return (
     <>

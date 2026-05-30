@@ -77,7 +77,9 @@ export default function PedidoConfirmadoPage() {
   if (!order) {
     return (
       <div className="min-h-screen bg-[#eef7f1]">
-        <Navbar />
+        <div className="sticky top-0 z-50">
+          <Navbar />
+        </div>
 
         <main className="mx-auto max-w-7xl px-6 py-10">
           <div className="mx-auto max-w-2xl rounded-2xl border border-[#d8e7de] bg-white p-8 text-center shadow-sm">

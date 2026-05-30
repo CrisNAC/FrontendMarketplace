@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Clock, Save, ArrowLeft } from "lucide-react";
 import { apiClient, getBackendErrorMessage } from "../services/editCommerceApi";
+import { PageLoader } from "../../../components/PageLoader";
 
 const WEEKDAYS = [
     { day_of_week: 0, label: "Lunes" },
@@ -144,7 +145,7 @@ export function StoreBusinessHoursPage() {
     };
 
     if (loading) {
-        return <p style={{ color: "#6b7280", padding: "16px" }}>Cargando horarios...</p>;
+        return <PageLoader />;
     }
 
     return (

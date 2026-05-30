@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { PageLoader } from "../../../components/PageLoader";
+import { EmptyState } from "../../../components/EmptyState";
 import toast from "react-hot-toast";
 
-import { SidebarClientProfile } from "../../../components/SidebarClientProfile";
 import WishlistItemCard from "../components/wishlist/WishlistItemCard";
 import WishlistSummaryCard from "../components/wishlist/WishlistSummaryCard";
 import { addToCartApi } from "../../../lib/cartApi";
@@ -139,13 +140,7 @@ export default function Wishlist() {
     }
   };
 
-  if (status === "loading") {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500 text-[14px]">Cargando listas de deseos...</p>
-      </div>
-    );
-  }
+  if (status === "loading") return <PageLoader />;
 
   if (status === "error") {
     return (
@@ -190,16 +185,8 @@ export default function Wishlist() {
   };
 
   return (
-    <div className="max-w-[1400px] mx-auto w-full px-6 py-10">
-      <h1 className="text-[28px] font-bold text-[#2d4030] mb-8">Lista de deseos</h1>
-
-      <div className="flex flex-col md:flex-row gap-8 items-start">
-        <aside className="w-full md:w-[280px] shrink-0">
-          <SidebarClientProfile />
-        </aside>
-
-        <div className="flex-1 w-full">
-          <WishlistSummaryCard
+    <div className="max-w-[1100px] mx-auto w-full">
+      <WishlistSummaryCard
             totalLists={wishlists.length}
             totalItems={totalItems}
             showCreateForm={showCreateForm}
@@ -214,15 +201,10 @@ export default function Wishlist() {
 
           <main className="space-y-8">
             {wishlists.length === 0 ? (
-              <div className="bg-[#F3F5F4] border border-[#C7D6CF] rounded-xl p-10 text-center">
-                <p className="text-[18px] text-[#4f615b] font-medium">No tenés listas creadas</p>
-                <p className="text-[14px] text-gray-500 mt-2">
-                  {"Creá una lista y empezá a guardar "}
-                  <button className="underline text-[#2d4030]" onClick={() => navigate("/busqueda")}>
-                    productos
-                  </button>.
-                </p>
-              </div>
+              <EmptyState
+                message="No tenés listas creadas"
+                subtitle="Creá una lista y empezá a guardar productos."
+              />
             ) : (
               wishlists.map((wishlist) => (
                 <section key={wishlist.id} className="bg-white border border-[#C7D6CF] rounded-xl p-5">
@@ -241,15 +223,10 @@ export default function Wishlist() {
                   </div>
 
                   {wishlist.items.length === 0 ? (
-                    <p className="text-[14px] text-gray-400">
-                      Esta lista está vacía.{" "}
-                      <button
-                        className="underline text-[#2f3e39]"
-                        onClick={() => navigate("/busqueda")}
-                      >
-                        Explorá productos
-                      </button>
-                    </p>
+                    <EmptyState
+                      message="Esta lista está vacía."
+                      subtitle="Explorá productos y agregálos a tu lista."
+                    />
                   ) : (
                     <div className="flex flex-col gap-4">
                       {wishlist.items.map((item) => (
@@ -266,9 +243,7 @@ export default function Wishlist() {
                 </section>
               ))
             )}
-          </main>
-        </div>
-      </div>
+      </main>
     </div>
   );
 }
