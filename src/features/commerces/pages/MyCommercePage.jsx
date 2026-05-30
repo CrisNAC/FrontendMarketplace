@@ -14,6 +14,7 @@ export const MyCommercePage = () => {
     const [dashboard, setDashboard] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [dashboardLoading, setDashboardLoading] = useState(true);
 
     useEffect(() => {
         const fetchStore = async () => {
@@ -45,12 +46,14 @@ export const MyCommercePage = () => {
                 if (dashboardRes.status === "fulfilled") {
                     setDashboard(dashboardRes.value);
                 }
-                // si el dashboard falla, la página igual se muestra sin stats
+                // Tanto si falla como si no, marcar como terminado:
+                setDashboardLoading(false);
 
             } catch (err) {
                 setError(err.response?.data?.message || "No se pudo conectar con el servidor.");
             } finally {
                 setLoading(false);
+                setDashboardLoading(false);
             }
         };
 
@@ -144,8 +147,8 @@ export const MyCommercePage = () => {
 
             {/* Secciones */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-                <BestRatedSection products={dashboard?.topRated ?? []} loading={!dashboard} />
-                <MostSoldSection products={dashboard?.topSelling ?? []} loading={!dashboard} />
+                <BestRatedSection products={dashboard?.topRated ?? []} loading={dashboardLoading} />
+                <MostSoldSection products={dashboard?.topSelling ?? []} loading={dashboardLoading} />
             </div>
         </>
     );
