@@ -7,8 +7,8 @@ import { useAddresses } from "../../../../hooks/useAddresses";
 import MapView from "../Map";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { useToast } from '../../../../components/toast/useToast'
 
-// ─── Esquema de validación ──────────────────────────────────────────────────
 const addressSchema = z.object({
   address: z.string().min(1, "La dirección es obligatoria"),
   latitude: z.number().nullable().refine((val) => val !== null, { message: "Debes seleccionar un punto en el mapa" }),
@@ -97,7 +97,6 @@ const AddressFormModal = ({ open, onClose, onSubmit, initialData, loading }) => 
     const [form, setForm] = useState(initialData ?? EMPTY_FORM);
     const [formError, setFormError] = useState(null);
 
-    // sincroniza cuando se abre con datos distintos
     useEffect(() => {
         setForm(initialData ?? EMPTY_FORM);
         setFormError(null);
@@ -295,32 +294,20 @@ const AddressCard = ({ address, onEdit, onDelete }) => {
     );
 };
 
-// ─── Pagina Principal ────────────────────────────────────────────────────────────
 const MAX_ADDRESSES = 5;
 
 export const AddressesPage = () => {
     const navigate = useNavigate();
     const { userId , sessionLoading } = useSession();
-    //const userId = user?.id_user;
+    const { showToast } = useToast()
 
     const { addresses, loading, error, createAddress, updateAddress, deleteAddress } = useAddresses(userId);
 
-    // Modal para crear/editar
     const [modalOpen, setModalOpen] = useState(false);
     const [editingAddress, setEditingAddress] = useState(null);
     const [formLoading, setFormLoading] = useState(false);
-
-    //confirm delete
     const [deleteId, setDeleteId] = useState(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
-
-    // Toast
-    const [toast, setToast] = useState({ message: "", type: "success" });
-
-    const showToast = (message, type = "success") => {
-        setToast({ message, type });
-        setTimeout(() => setToast({ message: "", type: "success" }), 4000);
-    };
 
     const handleOpenCreate = () => {
         setEditingAddress(null);
@@ -380,7 +367,6 @@ export const AddressesPage = () => {
         }
     };
 
-    // Espera a que se verifique la sesión antes de renderizar
     if (sessionLoading) {
         return (
             <div className="min-h-screen flex flex-col" >
@@ -392,7 +378,6 @@ export const AddressesPage = () => {
         );
     }
 
-    // Si la sesión ya resolvió pero no hay usuario, redirigir al login
     if (!userId) {
         return (
             <div className="min-h-screen flex flex-col">
@@ -525,13 +510,6 @@ export const AddressesPage = () => {
                 onConfirm={handleDeleteConfirm}
                 onCancel={() => setDeleteId(null)}
                 loading={deleteLoading}
-            />
-
-            {/* Toast message */}
-            <Toast
-                message={toast.message}
-                type={toast.type}
-                onClose={() => setToast({ message: "", type: "success" })}
             />
         </div>
     );

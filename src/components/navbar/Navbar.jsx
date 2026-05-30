@@ -1,4 +1,3 @@
-// src/components/navbar/Navbar.jsx
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ShoppingCart, User, Search, X, ChevronDown, LogOut, Menu,
@@ -9,6 +8,7 @@ import toast from "react-hot-toast";
 import logo from "/src/assets/feather.png";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { fetchCartsApi, getApiBase } from "../../lib/cartApi.js";
+import { useToast } from '../toast/useToast';
 
 function sumServerCartQuantities(carts) {
   if (!Array.isArray(carts)) return 0;
@@ -35,6 +35,7 @@ const NAV_LINKS_BASE = [
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { showToast } = useToast()
   const profileMenuRef = useRef(null);
   const mobileMenuRef  = useRef(null);
 
@@ -139,10 +140,10 @@ const Navbar = () => {
       setSessionUser(null);
       setCartCount(0);
       window.dispatchEvent(new Event("cartUpdated"));
-      toast.success("Sesión cerrada");
+      showToast("Sesión cerrada", "success");
       navigate("/");
     } catch {
-      toast.error("No se pudo cerrar sesión. Intentá de nuevo.");
+      showToast("No se pudo cerrar sesión. Intentá de nuevo.", "error");
     } finally {
       setLoggingOut(false);
     }
