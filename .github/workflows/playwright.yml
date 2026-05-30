@@ -8,9 +8,6 @@ jobs:
   test:
     timeout-minutes: 20
     runs-on: ubuntu-latest
-
-    env:
-      VITE_API_URL: https://backendmarketplace-test.onrender.com
       
     strategy:
       fail-fast: false

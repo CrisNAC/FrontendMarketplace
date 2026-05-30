@@ -1,5 +1,5 @@
 import apiClient from "../../../lib/apiClient";
-import { getSession, fetchUserProfile, updateUserProfile } from "../../commerces/services/editUserProfileApi";
+import { getSession, fetchUserProfile } from "../../commerces/services/editUserProfileApi";
 
 export const getCurrentUserForDeliveryForm = async () => {
   const session = await getSession();
@@ -50,11 +50,12 @@ export const becomeDelivery = async (uiVehicleType, phone) => {
     throw new Error("No hay sesión activa.");
   }
 
-  if (phone?.trim()) {
-    await updateUserProfile(userId, { phone: phone.trim() });
-  }
+  const normalizedPhone = phone?.trim() || null;
 
-  const { data } = await apiClient.post("/api/deliveries/register", { vehicleType });
+  const { data } = await apiClient.post("/api/deliveries/register", {
+    vehicleType,
+    ...(normalizedPhone ? { phone: normalizedPhone } : {}),
+  });
 
   return data;
 };

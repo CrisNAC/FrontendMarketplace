@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Clock, Save, ArrowLeft } from "lucide-react";
 import { apiClient, getBackendErrorMessage } from "../services/editCommerceApi";
 import { PageLoader } from "../../../components/PageLoader";
+import { useStoreAvailability } from "../../../hooks/useStoreAvailability";
 
 const WEEKDAYS = [
     { day_of_week: 0, label: "Lunes" },
@@ -59,8 +60,11 @@ export function StoreBusinessHoursPage() {
     const navigate = useNavigate();
     const [storeId, setStoreId] = useState(null);
     const [schedules, setSchedules] = useState(() => mergeSchedules());
-    const [isOpen, setIsOpen] = useState(false);
-    const [closeTime, setCloseTime] = useState(null);
+    const [apiAvailability, setApiAvailability] = useState({
+        is_open: false,
+        close_time: null,
+        open_time: null,
+    });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
@@ -83,8 +87,11 @@ export function StoreBusinessHoursPage() {
                 const data = res.data?.data ?? res.data;
                 setStoreId(idStore);
                 setSchedules(mergeSchedules(data?.schedules));
-                setIsOpen(Boolean(data?.is_open));
-                setCloseTime(data?.close_time ?? null);
+                setApiAvailability({
+                    is_open: Boolean(data?.is_open),
+                    close_time: data?.close_time ?? null,
+                    open_time: data?.open_time ?? null,
+                });
             } catch (err) {
                 if (active) {
                     setError(getBackendErrorMessage(err, "No se pudieron cargar los horarios."));
@@ -97,6 +104,9 @@ export function StoreBusinessHoursPage() {
         load();
         return () => { active = false; };
     }, []);
+
+    const availability = useStoreAvailability(schedules, apiAvailability);
+    const { is_open: isOpen, close_time: closeTime } = availability;
 
     const statusLabel = useMemo(() => {
         if (isOpen && closeTime) return `Abierto · Cierra a las ${closeTime}`;
@@ -134,8 +144,11 @@ export function StoreBusinessHoursPage() {
             const data = res.data?.data ?? res.data;
 
             setSchedules(mergeSchedules(data?.schedules));
-            setIsOpen(Boolean(data?.is_open));
-            setCloseTime(data?.close_time ?? null);
+            setApiAvailability({
+                is_open: Boolean(data?.is_open),
+                close_time: data?.close_time ?? null,
+                open_time: data?.open_time ?? null,
+            });
             setSuccess("Horarios guardados correctamente.");
         } catch (err) {
             setError(getBackendErrorMessage(err, "No se pudieron guardar los horarios."));

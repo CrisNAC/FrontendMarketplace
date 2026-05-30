@@ -1,4 +1,3 @@
-// src/components/navbar/Navbar.jsx
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ShoppingCart, User, Search, X, ChevronDown, LogOut, Menu,
@@ -9,6 +8,7 @@ import toast from "react-hot-toast";
 import logo from "/src/assets/feather.png";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { fetchCartsApi, getApiBase } from "../../lib/cartApi.js";
+import { useToast } from '../toast/useToast';
 
 function sumServerCartQuantities(carts) {
   if (!Array.isArray(carts)) return 0;
@@ -35,6 +35,7 @@ const NAV_LINKS_BASE = [
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { showToast } = useToast()
   const profileMenuRef = useRef(null);
   const mobileMenuRef  = useRef(null);
 
@@ -139,10 +140,10 @@ const Navbar = () => {
       setSessionUser(null);
       setCartCount(0);
       window.dispatchEvent(new Event("cartUpdated"));
-      toast.success("Sesión cerrada");
+      showToast("Sesión cerrada", "success");
       navigate("/");
     } catch {
-      toast.error("No se pudo cerrar sesión. Intentá de nuevo.");
+      showToast("No se pudo cerrar sesión. Intentá de nuevo.", "error");
     } finally {
       setLoggingOut(false);
     }
@@ -357,32 +358,7 @@ const Navbar = () => {
           ))}
         </div>
       )}
-
-      {/* ── Categories bar ── */}
-      <div className="bg-[#E5EAE9] py-[8px] overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <div className="flex gap-[16px] sm:gap-[20px] px-4 sm:px-6 lg:justify-center text-[13px] font-normal whitespace-nowrap min-w-max lg:min-w-0">
-          {[
-            { to: "/categoria/tecnologia",      label: "Tecnología" },
-            { to: "/categoria/moda",            label: "Moda" },
-            { to: "/categoria/coleccionables",  label: "Coleccionables y Arte" },
-            { to: "/categoria/hogar",           label: "Hogar y Jardín" },
-            { to: "/categoria/salud",           label: "Salud y Belleza" },
-            { to: "/categoria/entretenimiento", label: "Entretenimiento" },
-            { to: "/categoria/deportes",        label: "Deportes" },
-            { to: "/categoria/industrial",      label: "Equipo Industrial" },
-          ].map(({ to, label }) => (
-            <Link key={to} to={to}
-              className="!no-underline !text-[#474242] hover:!text-[#2e6b4f] transition-colors">
-              {label}
-            </Link>
-          ))}
-          <Link to="/ofertas"
-            className="!no-underline !text-[#952626] font-semibold hover:!text-[#b33a3a] transition-colors">
-            Ofertas
-          </Link>
-        </div>
-      </div>
-
+      
     </header>
   );
 };

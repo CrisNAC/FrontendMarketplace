@@ -21,7 +21,7 @@ const NAV_ITEMS = [
     { label: "Comercios por Aprobar",   icon: Store,           route: "/admin/comercios-pendientes" },
     { label: "Moderación de Productos", icon: Package,         route: "/admin/productos" },
     { label: "Moderación de Reseñas",   icon: MessageSquare,   route: "/admin/reviews"},    
-    { label: "Gestión de Categorías",   icon: Tag,             route: "/admin/categorias" },
+    { label: "Categorías y Etiquetas", icon: Tag,             route: "/admin/categorias" },
 ];
 
 export const SidebarAdmin = ({ collapsed, onToggle }) => {

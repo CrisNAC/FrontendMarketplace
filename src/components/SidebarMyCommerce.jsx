@@ -4,7 +4,6 @@ import { useLogout } from "../hooks/useLogout";
 import {
     LayoutDashboard,
     Package,
-    Layers,
     Truck,
     Store,
     Clock,
@@ -13,7 +12,6 @@ import {
     LogOut,
     ChevronLeft,
     ChevronRight,
-    HelpCircle,
 } from "lucide-react";
 
 export const SidebarMyCommerce = ({ collapsed, onToggle }) => {
@@ -24,7 +22,6 @@ export const SidebarMyCommerce = ({ collapsed, onToggle }) => {
     const NAV_ITEMS = [
         { label: "Dashboard",     icon: LayoutDashboard, route: "/comercio" },
         { label: "Productos",     icon: Package,         route: "/comercio/productos" },
-        { label: "Colecciones",   icon: Layers,          route: "/colecciones" },
         { label: "Mis Pedidos",   icon: ShoppingBag,     route: "/comercio/pedidos" },
         { label: "Reclamos",      icon: Flag,            route: "/comercio/claims" },
         { label: "Delivery",      icon: Truck,           route: "/comercio/delivery" },
@@ -104,25 +101,6 @@ export const SidebarMyCommerce = ({ collapsed, onToggle }) => {
                     );
                 })}
             </nav>
-
-            {/* Help box */}
-            {!collapsed && (
-                <div style={{
-                    backgroundColor: "var(--primary)",
-                    borderRadius: "10px",
-                    padding: "12px",
-                    marginTop: "16px",
-                    color: "white",
-                }}>
-                    <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
-                        <HelpCircle size={14} />
-                        <span style={{ fontSize: "13px", fontWeight: "bold" }}>¿Necesitas ayuda?</span>
-                    </div>
-                    <p style={{ fontSize: "12px", margin: 0, opacity: 0.9 }}>
-                        Consulta nuestra guía para comercios o contacta soporte.
-                    </p>
-                </div>
-            )}
         </div>
     );
 };
