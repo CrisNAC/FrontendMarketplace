@@ -3,10 +3,18 @@ import { z } from "zod";
 import { X } from "lucide-react";
 import toast from "react-hot-toast";
 import { becomeDelivery, getCurrentUserForDeliveryForm } from "../services/deliveryApi";
-import { getBackendErrorMessage } from "../../commerces/services/editUserProfileApi";
+import {
+  getBackendErrorMessage,
+  DELIVERY_PHONE_MESSAGE,
+  DELIVERY_PHONE_REGEX,
+} from "../../commerces/services/editUserProfileApi";
 
 const formSchema = z.object({
   vehicleType: z.enum(["BICICLETA", "MOTOCICLETA", "AUTOMOVIL", "A_PIE"]),
+  phone: z
+    .string()
+    .trim()
+    .regex(DELIVERY_PHONE_REGEX, DELIVERY_PHONE_MESSAGE),
 });
 
 const VEHICLE_TYPE_LABELS = {
@@ -38,6 +46,7 @@ export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
   const [profileUser, setProfileUser] = useState(null);
   const [isAlreadyDelivery, setIsAlreadyDelivery] = useState(false);
   const [vehicleType, setVehicleType] = useState("MOTOCICLETA");
+  const [phone, setPhone] = useState("");
 
   useEffect(() => {
     if (!open) return;
@@ -54,6 +63,7 @@ export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
         setUserId(uid);
         const resolved = resolveProfileUser(profile, su);
         setProfileUser(resolved);
+        setPhone((resolved.phone ?? "").replace(/\D/g, "").slice(0, 10));
         setIsAlreadyDelivery(resolved.role === "DELIVERY" || su?.role === "DELIVERY");
       } catch (err) {
         if (!mounted) return;
@@ -74,6 +84,7 @@ export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
       setError("");
       setFieldErrors({});
       setVehicleType("MOTOCICLETA");
+      setPhone("");
     }
   }, [open]);
 
@@ -82,7 +93,7 @@ export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const parsed = formSchema.safeParse({ vehicleType });
+    const parsed = formSchema.safeParse({ vehicleType, phone });
     if (!parsed.success) {
       const next = {};
       for (const issue of parsed.error.issues) {
@@ -110,12 +121,17 @@ export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
       return;
     }
 
+    if (!parsed.data.phone) {
+      setError("El teléfono es obligatorio.");
+      return;
+    }
+
     setSaving(true);
     setError("");
     setFieldErrors({});
 
     try {
-      await becomeDelivery(parsed.data.vehicleType);
+      await becomeDelivery(parsed.data.vehicleType, parsed.data.phone);
       window.dispatchEvent(new Event("deliveryRegistered"));
       await getCurrentUserForDeliveryForm();
       toast.success("Listo: ahora sos delivery.");
@@ -153,13 +169,39 @@ export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
             Quiero ser delivery
           </h2>
           <p className="mt-2 text-sm text-slate-600 leading-relaxed">
-            Indicá el <strong>tipo de vehículo</strong>. El nombre y el correo son los de tu cuenta.
+            Indicá tu <strong>teléfono</strong> (10 dígitos, sin +) y el <strong>tipo de vehículo</strong>.
+            El nombre y el correo son los de tu cuenta.
           </p>
 
           {loading && <p className="mt-6 text-sm text-slate-600">Cargando…</p>}
 
           {!loading && (
             <form className="mt-6 space-y-5" onSubmit={handleSubmit} noValidate>
+              <div>
+                <label htmlFor="become-delivery-phone" className="block text-sm font-medium text-slate-700 mb-1.5">
+                  Teléfono (WhatsApp)
+                </label>
+                <input
+                  id="become-delivery-phone"
+                  type="tel"
+                  inputMode="numeric"
+                  autoComplete="tel"
+                  maxLength={10}
+                  value={phone}
+                  onChange={(e) => {
+                    setPhone(e.target.value.replace(/\D/g, "").slice(0, 10));
+                    setFieldErrors((prev) => ({ ...prev, phone: undefined }));
+                    setError("");
+                  }}
+                  disabled={saving || isAlreadyDelivery}
+                  placeholder="09xxxxxxxx"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/90 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-[#769482]/45 focus:bg-white focus:ring-2 focus:ring-[#769482]/18 disabled:opacity-60"
+                />
+                {fieldErrors.phone && (
+                  <p className="mt-1 text-xs text-red-600">{fieldErrors.phone}</p>
+                )}
+              </div>
+
               <div>
                 <label htmlFor="delivery-vehicle" className="block text-sm font-medium text-slate-700 mb-1.5">
                   Tipo de vehículo

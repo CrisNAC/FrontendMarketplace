@@ -7,6 +7,7 @@ import { CategoryFilterSidebar } from "../components/commerceProfile/CategoryFil
 import { CommerceProfileHeader } from "../components/commerceProfile/CommerceProfileHeader";
 import { FeaturedProducts } from "../components/commerceProfile/FeaturedProducts";
 import { Pagination } from "../components/commerceProfile/Pagination";
+import { useStoreAvailability } from "../../../hooks/useStoreAvailability";
 
 type Store = {
     id_store: number;
@@ -20,6 +21,12 @@ type Store = {
     open_time?: string | null;
     close_time?: string | null;
     is_open?: boolean;
+    business_hours?: Array<{
+        day_of_week: number;
+        is_closed?: boolean;
+        open_time?: string | null;
+        close_time?: string | null;
+    }>;
     categories?: Array<{ id?: number; name: string }>;
     store_category?: { id_store_category: number; name: string };
     status?: boolean;
@@ -224,9 +231,16 @@ export const VistaComercioPage = () => {
     const longitude = mainAddress?.longitude;
 
     const resolvedLogo = resolveApiAssetUrl(store?.logo ?? null, apiBase || "http://localhost:3000");
+
+    const availability = useStoreAvailability(store?.business_hours, {
+        is_open: store?.is_open,
+        close_time: store?.close_time ?? null,
+        open_time: store?.open_time ?? null,
+    });
+
     const closesAt =
-        store?.close_time != null && String(store.close_time).trim() !== ""
-            ? String(store.close_time).trim()
+        availability.close_time != null && String(availability.close_time).trim() !== ""
+            ? String(availability.close_time).trim()
             : "";
 
     const hasValidCoords =
@@ -266,7 +280,7 @@ export const VistaComercioPage = () => {
             <CommerceProfileHeader
                 name={headerName}
                 category={headerCategory}
-                isOpen={Boolean(store?.is_open)}
+                isOpen={availability.is_open}
                 rating={Number(store?.average_rating ?? 0)}
                 reviews={Number(store?.total_reviews ?? 0)}
                 closesAt={closesAt}

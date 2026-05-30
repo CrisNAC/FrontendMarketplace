@@ -9,7 +9,11 @@ import {
     UI_VEHICLE_LABELS,
     getCurrentUserForDeliveryForm,
 } from "../../clients/services/deliveryApi";
-import { getBackendErrorMessage } from "../../commerces/services/editUserProfileApi";
+import {
+    getBackendErrorMessage,
+    DELIVERY_PHONE_MESSAGE,
+    DELIVERY_PHONE_REGEX,
+} from "../../commerces/services/editUserProfileApi";
 
 const VEHICLE_OPTIONS = Object.entries(UI_VEHICLE_LABELS);
 
@@ -261,6 +265,10 @@ export function DeliveryEditProfilePage() {
     const handleSave = async () => {
         if (!name.trim()) { setError("El nombre es obligatorio."); return; }
         if (!phone.trim()) { setError("El teléfono es obligatorio."); return; }
+        if (!DELIVERY_PHONE_REGEX.test(phone.trim())) {
+            setError(DELIVERY_PHONE_MESSAGE);
+            return;
+        }
         if (!deliveryId) { setError("No se encontró el ID del delivery."); return; }
 
         setSaving(true);
@@ -360,12 +368,16 @@ export function DeliveryEditProfilePage() {
                                     <input
                                         id="delivery-phone"
                                         type="tel"
+                                        inputMode="numeric"
+                                        autoComplete="tel"
+                                        maxLength={10}
                                         value={phone}
-                                        onChange={e => setPhone(e.target.value)}
+                                        onChange={e => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
                                         disabled={saving}
                                         placeholder="09xxxxxxxx"
                                         style={{ ...s.input, ...(saving ? s.inputReadonly : {}) }}
                                     />
+                                    <p style={s.fieldNote}>10 dígitos, sin + ni espacios.</p>
                                 </div>
 
                                 {/* Tipo de vehículo */}
