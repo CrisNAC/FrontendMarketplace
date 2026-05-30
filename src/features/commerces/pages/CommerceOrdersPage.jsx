@@ -23,8 +23,9 @@ const STATUS_LABELS = {
   CANCELLED:  "Cancelado",
 };
 
-const NEXT_STATUS = {
-  PROCESSING: "SHIPPED",
+const getNextStatus = (order) => {
+  if (order.status !== "PROCESSING") return null;
+  return order.address ? "SHIPPED" : "DELIVERED";
 };
 
 export function timeAgo(dateStr) {
@@ -351,7 +352,8 @@ function TrackingOrderCard({
   const [showDetail, setShowDetail] = useState(false);
   const stepperEstado = STATUS_LABELS[order.status] ?? order.status;
   const isPickup      = !order.address;
-  const canAdvance    = isPickup && !!NEXT_STATUS[order.status];
+  const nextStatus    = isPickup ? getNextStatus(order) : null;
+  const canAdvance    = Boolean(nextStatus);
   const showDelivery  = order.status === "PROCESSING" && !isPickup;
   const isBusy        = isRejecting || isActioning || isDelegating;
   const itemCount     = order.items?.length ?? 0;
@@ -389,12 +391,12 @@ function TrackingOrderCard({
             />
           )}
           {canAdvance && (
-            <button type="button" onClick={() => onAdvance(order.id, order.status)} disabled={isBusy} style={{
+            <button type="button" onClick={() => onAdvance(order)} disabled={isBusy} style={{
               display: "flex", alignItems: "center", gap: "5px", padding: "7px 14px", borderRadius: "8px",
               backgroundColor: "var(--primary-dark)", color: "white", border: "none", fontSize: "13px", fontWeight: "600",
               cursor: isBusy ? "not-allowed" : "pointer", opacity: isBusy ? 0.6 : 1,
             }}>
-              <Truck size={14} /> Marcar como Enviado
+              <Truck size={14} /> Marcar como Entregado
             </button>
           )}
         </div>
@@ -675,9 +677,9 @@ export function CommerceOrdersPage() {
   };
 
   const handleReject  = (id) => handleStatusUpdate(id, "CANCELLED", "reject");
-  const handleAdvance = (id, currentStatus) => {
-    const next = NEXT_STATUS[currentStatus];
-    if (next) handleStatusUpdate(id, next, "advance");
+  const handleAdvance = (order) => {
+    const next = getNextStatus(order);
+    if (next) handleStatusUpdate(order.id, next, "advance");
   };
   const handleDelegate          = (order) => setDelegatingOrder(order);
   const handleAssignmentSuccess = () => loadOrders(storeId);
