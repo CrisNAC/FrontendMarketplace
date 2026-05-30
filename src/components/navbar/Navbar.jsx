@@ -358,32 +358,7 @@ const Navbar = () => {
           ))}
         </div>
       )}
-
-      {/* ── Categories bar ── */}
-      <div className="bg-[#E5EAE9] py-[8px] overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <div className="flex gap-[16px] sm:gap-[20px] px-4 sm:px-6 lg:justify-center text-[13px] font-normal whitespace-nowrap min-w-max lg:min-w-0">
-          {[
-            { to: "/categoria/tecnologia",      label: "Tecnología" },
-            { to: "/categoria/moda",            label: "Moda" },
-            { to: "/categoria/coleccionables",  label: "Coleccionables y Arte" },
-            { to: "/categoria/hogar",           label: "Hogar y Jardín" },
-            { to: "/categoria/salud",           label: "Salud y Belleza" },
-            { to: "/categoria/entretenimiento", label: "Entretenimiento" },
-            { to: "/categoria/deportes",        label: "Deportes" },
-            { to: "/categoria/industrial",      label: "Equipo Industrial" },
-          ].map(({ to, label }) => (
-            <Link key={to} to={to}
-              className="!no-underline !text-[#474242] hover:!text-[#2e6b4f] transition-colors">
-              {label}
-            </Link>
-          ))}
-          <Link to="/ofertas"
-            className="!no-underline !text-[#952626] font-semibold hover:!text-[#b33a3a] transition-colors">
-            Ofertas
-          </Link>
-        </div>
-      </div>
-
+      
     </header>
   );
 };
