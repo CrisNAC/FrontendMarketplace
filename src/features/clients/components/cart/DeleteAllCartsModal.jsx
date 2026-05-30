@@ -20,11 +20,11 @@ export function DeleteAllCartsModal({ userId, totalCarts, totalItems, onClose, o
         `${apiBase}/api/users/${userId}/carts`,
         { withCredentials: true }
       );
-      toast.success("Todas las órdenes fueron eliminadas correctamente");
+      toast.success("Todos los carritos fueron eliminados correctamente");
       onSuccess?.();
       onClose();
     } catch (err) {
-      const message = err?.response?.data?.message || "No se pudo eliminar las órdenes";
+      const message = err?.response?.data?.message || "No se pudo eliminar los carritos";
       setError(message);
       console.error("Error eliminando carritos:", err);
     } finally {
@@ -33,8 +33,8 @@ export function DeleteAllCartsModal({ userId, totalCarts, totalItems, onClose, o
   };
 
   const warnings = [
-    `¿Estás seguro de que deseas eliminar TODAS tus órdenes de compra?`,
-    `• Se eliminarán ${totalCarts} ${totalCarts === 1 ? "orden" : "órdenes"}`,
+    `¿Estás seguro de que deseas eliminar TODOS tus carritos?`,
+    `• Se eliminarán ${totalCarts} ${totalCarts === 1 ? "carrito" : "carritos"}`,
     `• Contiene ${totalItems} ${totalItems === 1 ? "producto" : "productos"} en total`,
     `• Esta acción no se puede deshacer`,
   ];
@@ -42,10 +42,10 @@ export function DeleteAllCartsModal({ userId, totalCarts, totalItems, onClose, o
   return (
     <ConfirmationModal
       isOpen={Boolean(userId)}
-      title="Eliminar todas las órdenes"
+      title="Eliminar todos los carritos"
       subtitle="Acción masiva"
       warnings={warnings}
-      description="Todos los productos de tus órdenes se eliminarán permanentemente."
+      description="Todos los productos de tus carritos se eliminarán permanentemente."
       onClose={onClose}
       onConfirm={handleDeleteAll}
       confirmText="Eliminar todas"
