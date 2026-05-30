@@ -1535,7 +1535,7 @@ test.describe('Flujos E2E de usuario final', () => {
     await page.getByRole('button', { name: 'Seguimiento' }).click();
     await expect(page.getByRole('heading', { name: 'Seguimiento de Pedidos' })).toBeVisible();
     await expect(page.getByText('ORD-9001')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Marcar como Enviado' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Marcar como Entregado' })).toBeVisible();
   });
 
   //OM-479
