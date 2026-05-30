@@ -66,6 +66,14 @@ export default function PedidoConfirmadoPage() {
     });
   };
 
+  const formatStatus = (status?: string) => {
+    if (!status) return "—";
+
+    if (status.toLowerCase() === "pending") return "PENDIENTE";
+
+    return status.toUpperCase();
+  };
+
   const shippingLabel =
     shippingMethod === "pickup" ? "Retiro en Local" : "Envío Estándar";
 
@@ -79,7 +87,7 @@ export default function PedidoConfirmadoPage() {
       <div className="min-h-screen bg-[#eef7f1]">
         <Navbar />
 
-        <main className="mx-auto max-w-7xl px-6 py-10">
+        <main className="mx-auto max-w-7xl px-6 py-6">
           <div className="mx-auto max-w-2xl rounded-2xl border border-[#d8e7de] bg-white p-8 text-center shadow-sm">
             <h1 className="text-2xl font-bold text-[#2b3b35]">
               No se encontró información del pedido
@@ -107,7 +115,7 @@ export default function PedidoConfirmadoPage() {
 
       <main className="mx-auto max-w-7xl px-6 py-10">
         <div className="mx-auto max-w-3xl">
-          <section className="mb-8 text-center">
+          <section className="mb-6 text-center">
             <div className="mb-3 flex justify-center">
               <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-[#35c36b] bg-[#ecfff3]">
                 <CheckCircle2 className="h-10 w-10 text-[#35c36b]" />
@@ -122,7 +130,7 @@ export default function PedidoConfirmadoPage() {
             </p>
           </section>
 
-          <section className="mb-5 rounded-2xl border border-[#d8e7de] bg-white p-6 shadow-sm">
+          <section className="mb-4 rounded-2xl border border-[#d8e7de] bg-white p-5 shadow-sm">
             <div className="grid gap-6 sm:grid-cols-2">
               <div>
                 <p className="text-xs font-medium text-[#94a39d]">
@@ -143,7 +151,7 @@ export default function PedidoConfirmadoPage() {
               </div>
             </div>
 
-            <div className="my-5 border-t border-[#e5efea]" />
+            <div className="my-4 border-t border-[#e5efea]" />
 
             <h2 className="mb-4 text-sm font-bold text-[#2f3d38]">
               Resumen del Pedido
@@ -186,8 +194,8 @@ export default function PedidoConfirmadoPage() {
             </div>
           </section>
 
-          <section className="mb-5 grid gap-4 md:grid-cols-2">
-            <div className="rounded-2xl border border-[#d8e7de] bg-white p-5 shadow-sm">
+          <section className="mb-4 grid gap-4 md:grid-cols-2">
+            <div className="rounded-2xl border border-[#d8e7de] bg-white p-4 shadow-sm">
               <h3 className="mb-4 text-sm font-bold text-[#2f3d38]">
                 {order.address ? "Dirección de Entrega" : "Método de Entrega"}
               </h3>
@@ -209,7 +217,7 @@ export default function PedidoConfirmadoPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-[#d8e7de] bg-white p-5 shadow-sm">
+            <div className="rounded-2xl border border-[#d8e7de] bg-white p-4 shadow-sm">
               <h3 className="mb-4 text-sm font-bold text-[#2f3d38]">
                 Información de Envío
               </h3>
@@ -217,19 +225,19 @@ export default function PedidoConfirmadoPage() {
               <div className="space-y-3 text-sm text-[#7f8f88]">
                 <p>{shippingLabel}</p>
                 <p>{shippingEta}</p>
-                <p>Estado: {order.status}</p>
+                <p>Estado: {formatStatus(order.status)}</p>
               </div>
             </div>
           </section>
 
-          <section className="mb-5 rounded-2xl border border-[#d8e7de] bg-white p-5 shadow-sm">
+          <section className="mb-4 rounded-2xl border border-[#d8e7de] bg-white p-4 shadow-sm">
             <h3 className="mb-4 text-sm font-bold text-[#2f3d38]">Productos</h3>
 
             <div className="divide-y divide-[#e8f0eb]">
               {order.items.map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-start justify-between gap-4 py-3"
+                  className="flex items-start justify-between gap-4 py-2"
                 >
                   <div>
                     
@@ -255,7 +263,7 @@ export default function PedidoConfirmadoPage() {
           </section>
 
           {order.notes && (
-            <section className="mb-5 rounded-2xl border border-[#d8e7de] bg-white p-5 shadow-sm">
+            <section className="mb-4 rounded-2xl border border-[#d8e7de] bg-white p-4 shadow-sm">
               <h3 className="mb-3 text-sm font-bold text-[#2f3d38]">
                 Notas del Pedido
               </h3>
@@ -263,7 +271,7 @@ export default function PedidoConfirmadoPage() {
             </section>
           )}
 
-          <section className="mb-5 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <section className="mb-4 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <button
               type="button"
               onClick={() => navigate("/pedidos")}
