@@ -1,6 +1,7 @@
 //DetalleProducto.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { ProductDetailSkeleton } from "../../../components/ProductDetailSkeleton";
 import { PageLoader } from "../../../components/PageLoader";
 import toast from "react-hot-toast";
 import { ArrowLeft, MoreVertical } from "lucide-react";
@@ -434,7 +435,11 @@ export default function DetalleProducto() {
   const productDescription = product?.description || "";
   const inStock = product?.quantity == null ? null : Number(product.quantity) > 0;
 
-  if (status === "loading") return <PageLoader />;
+  if (status === "loading") return (
+    <div className="max-w-7xl mx-auto w-full px-6 py-6">
+      <ProductDetailSkeleton />
+    </div>
+  );
 
   return (
     <>

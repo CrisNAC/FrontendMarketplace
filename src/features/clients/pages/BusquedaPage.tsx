@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { SearchFilterSidebar } from "../components/search/SearchFilterSidebar";
 import { SearchProductCard } from "../components/search/SearchProductCard";
 import { Pagination } from "../components/commerceProfile/Pagination";
+import { SearchProductCardSkeleton } from "../../../components/SearchProductCardSkeleton";
 
 type BackendProduct = {
     id_product: number;
@@ -324,7 +325,11 @@ export const BusquedaPage = ({ query = "Todos los Productos" }: Props) => {
                 </div>
 
                 {status === "loading" && (
-                    <div style={{ color: "#6b7280" }}>Cargando productos...</div>
+                    [0, 1, 2, 3].map((col) => (
+                        <div key={col} style={{ display: "flex", flexDirection: "column", flex: 1, gap: "29px" }}>
+                            {[0, 1, 2].map((i) => <SearchProductCardSkeleton key={i} />)}
+                        </div>
+                    ))
                 )}
                 {status === "error" && (
                     <div style={{ color: "#dc2626" }}>
@@ -334,7 +339,7 @@ export const BusquedaPage = ({ query = "Todos los Productos" }: Props) => {
                 {status === "success" && products.length === 0 && (
                     <div style={{ color: "#6b7280" }}>No hay productos para ese filtro.</div>
                 )}
-                {columns.map((col, colIdx) => (
+                {status === "success" && columns.map((col, colIdx) => (
                     <div
                         key={colIdx}
                         style={{ display: "flex", flexDirection: "column", flex: 1, gap: "29px" }}
