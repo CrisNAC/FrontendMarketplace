@@ -14,6 +14,8 @@ export function ConfirmationModal({
   isLoading,
   error,
   icon: Icon,
+  variant,
+  loadingText,
 }) {
   const [deleting, setDeleting] = useState(false);
   const dialogRef = useRef(null);
@@ -80,7 +82,7 @@ export function ConfirmationModal({
   const btnPrimary = {
     padding: "9px 20px",
     borderRadius: "10px",
-    backgroundColor: "#dc2626",
+    backgroundColor: variant === "confirm" ? "#16a34a" : "#dc2626",
     color: "white",
     border: "none",
     fontSize: "14px",
@@ -115,7 +117,7 @@ export function ConfirmationModal({
   };
 
   const buttonContent = isLoading || deleting
-    ? <><Loader size={14} /> {isLoading ? "Cargando..." : "Eliminando..."}</>
+    ? <><Loader size={14} /> {isLoading ? "Cargando..." : (loadingText ?? "Procesando...")}</>
     : <>{Icon && <Icon size={14} />} {confirmText}</>;
 
   if (!isOpen) return null;
@@ -268,6 +270,8 @@ ConfirmationModal.propTypes = {
   isLoading: PropTypes.bool,
   error: PropTypes.string,
   icon: PropTypes.elementType,
+  variant: PropTypes.oneOf(["danger", "confirm"]),
+  loadingText: PropTypes.string,
 };
 
 ConfirmationModal.defaultProps = {
@@ -277,4 +281,6 @@ ConfirmationModal.defaultProps = {
   isLoading: false,
   error: null,
   icon: null,
+  variant: "danger",
+  loadingText: "Procesando...",
 };

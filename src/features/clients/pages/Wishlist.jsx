@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Trash2, ShoppingCart } from "lucide-react";
 import { PageLoader } from "../../../components/PageLoader";
 import { EmptyState } from "../../../components/EmptyState";
+import { ConfirmationModal } from "../components/cart/ConfirmationModal";
 import toast from "react-hot-toast";
 
 import WishlistItemCard from "../components/wishlist/WishlistItemCard";
@@ -26,6 +28,10 @@ export default function Wishlist() {
   const [creatingList, setCreatingList] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [addingAllToCart, setAddingAllToCart] = useState(false);
+
+  const [deleteModal, setDeleteModal] = useState({ open: false, id: null, name: "" });
+  const [removeModal, setRemoveModal] = useState({ open: false, wishlistId: null, item: null });
+  const [addAllModal, setAddAllModal] = useState(false);
 
   const totalItems = wishlists.reduce((acc, w) => acc + (w.items?.length ?? 0), 0);
 
@@ -84,19 +90,28 @@ export default function Wishlist() {
     }
   };
 
-  const handleDeleteList = async (wishlistId, wishlistName) => {
-    if (!window.confirm(`¿Eliminár la lista "${wishlistName}"? Esta acción no se puede deshacer.`)) return;
+  const handleDeleteList = (wishlistId, wishlistName) => {
+    setDeleteModal({ open: true, id: wishlistId, name: wishlistName });
+  };
+
+  const doDeleteList = async () => {
     try {
-      await deleteWishlist(userId, wishlistId);
-      setWishlists((prev) => prev.filter((w) => w.id !== wishlistId));
+      await deleteWishlist(userId, deleteModal.id);
+      setWishlists((prev) => prev.filter((w) => w.id !== deleteModal.id));
+      setDeleteModal({ open: false, id: null, name: "" });
       toast.success("Lista eliminada");
     } catch {
       toast.error("No se pudo eliminar la lista");
     }
   };
 
-  const handleRemoveItem = async (wishlistId, item) => {
+  const handleRemoveItem = (wishlistId, item) => {
     if (!item?.product?.id) return toast.error("Producto inválido");
+    setRemoveModal({ open: true, wishlistId, item });
+  };
+
+  const doRemoveItem = async () => {
+    const { wishlistId, item } = removeModal;
     try {
       await removeWishlistItem(userId, wishlistId, item.product.id);
       setWishlists((prev) =>
@@ -106,6 +121,7 @@ export default function Wishlist() {
             : w
         )
       );
+      setRemoveModal({ open: false, wishlistId: null, item: null });
       toast.success("Producto eliminado de la lista");
     } catch {
       toast.error("No se pudo eliminar el producto");
@@ -150,9 +166,20 @@ export default function Wishlist() {
     );
   }
 
-  const handleAddAllToCart = async () => {
+  const handleAddAllToCart = () => {
     const allItems = wishlists.flatMap((w) => w.items.map((i) => ({ ...i, wishlistId: w.id })));
     if (!allItems.length || addingAllToCart) return;
+    setAddAllModal(true);
+  };
+
+  const confirmAddAllToCart = () => {
+    setAddAllModal(false);
+    doAddAllToCart();
+  };
+
+  const doAddAllToCart = async () => {
+    const allItems = wishlists.flatMap((w) => w.items.map((i) => ({ ...i, wishlistId: w.id })));
+    if (!allItems.length) return;
     setAddingAllToCart(true);
     try {
       for (const item of allItems) {
@@ -244,6 +271,43 @@ export default function Wishlist() {
               ))
             )}
       </main>
+
+      <ConfirmationModal
+        isOpen={deleteModal.open}
+        title="Eliminar lista"
+        subtitle={`"${deleteModal.name}"`}
+        warnings={[
+          "Esta acción no se puede deshacer.",
+          "Se eliminarán todos los productos guardados en esta lista.",
+        ]}
+        confirmText="Eliminar lista"
+        loadingText="Eliminando..."
+        onClose={() => setDeleteModal({ open: false, id: null, name: "" })}
+        onConfirm={doDeleteList}
+        icon={Trash2}
+      />
+
+      <ConfirmationModal
+        isOpen={removeModal.open}
+        title="Quitar producto"
+        description="¿Querés quitar este producto de la lista?"
+        confirmText="Quitar"
+        loadingText="Quitando..."
+        onClose={() => setRemoveModal({ open: false, wishlistId: null, item: null })}
+        onConfirm={doRemoveItem}
+        icon={Trash2}
+      />
+
+      <ConfirmationModal
+        isOpen={addAllModal}
+        title="Agregar todo al carrito"
+        description={`Se agregarán ${totalItems} producto${totalItems !== 1 ? "s" : ""} al carrito y serán quitados de tus listas.`}
+        confirmText="Agregar todo"
+        variant="confirm"
+        onClose={() => setAddAllModal(false)}
+        onConfirm={confirmAddAllToCart}
+        icon={ShoppingCart}
+      />
     </div>
   );
 }
