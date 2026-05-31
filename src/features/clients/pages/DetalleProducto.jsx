@@ -484,7 +484,7 @@ export default function DetalleProducto() {
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-16 items-start">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-start">
 
             {/* Imagen del producto */}
             <div className="flex justify-center">
@@ -492,12 +492,12 @@ export default function DetalleProducto() {
                 <img
                   src={product.imageUrl}
                   alt={productName}
-                  className="w-[400px] object-contain rounded-2xl"
+                  className="w-full max-w-[400px] object-contain rounded-2xl"
                   draggable={false}
                   onError={(e) => { e.currentTarget.style.display = "none"; }}
                 />
               ) : (
-                <div className="w-[400px] h-[400px] flex items-center justify-center rounded-2xl bg-gray-100 text-gray-400 text-sm">
+                <div className="w-full max-w-[400px] aspect-square flex items-center justify-center rounded-2xl bg-gray-100 text-gray-400 text-sm">
                   Sin imagen
                 </div>
               )}

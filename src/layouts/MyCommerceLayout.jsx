@@ -6,7 +6,7 @@ export const MyCommerceLayout = ({ children }) => {
 
     return (
         <div style={{ display: "flex", flexDirection: "row", backgroundColor: "var(--background-soft)", minHeight: "100vh" }}>
-            <div style={{ position: "sticky", top: 0, height: "100vh", flexShrink: 0 }}>
+            <div style={{ position: "sticky", top: 0, height: "100vh", flexShrink: 0, overflow: "hidden" }}>
                 <SidebarMyCommerce
                     collapsed={collapsed}
                     onToggle={() => setCollapsed((p) => !p)}
