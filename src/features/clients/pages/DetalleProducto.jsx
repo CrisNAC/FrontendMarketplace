@@ -1,6 +1,7 @@
 //DetalleProducto.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { PageLoader } from "../../../components/PageLoader";
 import toast from "react-hot-toast";
 import { ArrowLeft, MoreVertical } from "lucide-react";
 import axios from "axios";
@@ -433,6 +434,8 @@ export default function DetalleProducto() {
   const productDescription = product?.description || "";
   const inStock = product?.quantity == null ? null : Number(product.quantity) > 0;
 
+  if (status === "loading") return <PageLoader />;
+
   return (
     <>
       <div className="min-h-screen flex flex-col">
@@ -523,7 +526,6 @@ export default function DetalleProducto() {
                 </span>
               )}
 
-              {status === "loading" && <div className="mt-3 text-[12px] text-gray-500">Cargando producto...</div>}
               {status === "error" && <div className="mt-3 text-[12px] text-red-600">No se pudo cargar el producto{error ? `: ${error}` : "."}</div>}
               {!productId && <div className="mt-3 text-[12px] text-gray-500">No se especificó un producto. Volvé a la búsqueda y elegí uno.</div>}
 
@@ -700,7 +702,7 @@ export default function DetalleProducto() {
             </p>
 
             {loadingWishlists ? (
-              <p className="text-[13px] text-gray-400 text-center py-4">Cargando listas...</p>
+              <PageLoader />
             ) : (
               <div className="max-h-[220px] overflow-y-auto flex flex-col gap-2 mb-4">
                 {wishlists.length === 0 ? (

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Check, ChevronLeft, ChevronRight, Loader2, User, X } from "lucide-react";
+import { PageLoader } from "../../components/PageLoader";
 import toast from "react-hot-toast";
 import {
   fetchFilteredProductReports,
@@ -194,12 +195,7 @@ export default function ProductClaimsPanel({ canResolve = false, embedded = fals
         </select>
       </div>
 
-      {loading && (
-        <div className="flex items-center gap-2 text-gray-600 py-8 justify-center">
-          <Loader2 className="animate-spin" size={22} />
-          Cargando reclamos…
-        </div>
-      )}
+      {loading && <PageLoader />}
 
       {!loading && error && (
         <p className="text-red-600 text-sm py-4">{error}</p>

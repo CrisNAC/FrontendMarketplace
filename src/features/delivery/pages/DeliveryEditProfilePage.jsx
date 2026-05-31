@@ -1,6 +1,7 @@
 // src/features/clients/pages/DeliveryEditProfilePage.jsx
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Loader2 } from "lucide-react";
+import { PageLoader } from "../../../components/PageLoader";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import {
@@ -290,20 +291,16 @@ export function DeliveryEditProfilePage() {
 
     const displayedAvatar = avatarPreview ?? avatarUrl;
 
+    if (loading) return <PageLoader />;
+
     return (
         <div className="mx-auto w-full max-w-[820px] px-1 sm:px-2">
             <main className="px-3 py-4 sm:px-6 sm:py-8 md:px-10 md:py-8">
-                {loading && (
-                    <div style={{ display: "flex", justifyContent: "center", padding: "80px 0" }}>
-                        <Loader2 size={28} color="#9ca3af" style={{ animation: "spin 1s linear infinite" }} />
-                    </div>
-                )}
-
-                {!loading && error && !deliveryId && (
+                {error && !deliveryId && (
                     <div style={s.errorBox}>{error}</div>
                 )}
 
-                {!loading && deliveryId && (
+                {deliveryId && (
                     <div style={s.card}>
 
                         {/* ── Header ── */}
@@ -487,7 +484,7 @@ export function DeliveryEditProfilePage() {
                                     disabled={saving}
                                 >
                                     {saving && (
-                                        <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />
+                                        <Loader2 size={14} className="animate-spin" />
                                     )}
                                     {saving ? "Guardando…" : "Actualizar Perfil"}
                                 </button>
@@ -497,7 +494,6 @@ export function DeliveryEditProfilePage() {
                 )}
             </main>
 
-            <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
         </div>
     );
 }
