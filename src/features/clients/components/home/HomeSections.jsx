@@ -3,7 +3,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { SearchProductCard } from "../search/SearchProductCard";
-import { SearchProductCardSkeleton } from "../../../../components/SearchProductCardSkeleton";
+import { ProductCardSkeleton } from "../../../../components/ProductCardSkeleton";
 import { CategoryIcon } from "../../../admin/components/CategoryIconPicker";
 
 const scrollerArrowClass =
@@ -243,7 +243,7 @@ export const HomeSections = () => {
 
         {offersStatus === "loading" && (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 xl:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, i) => <SearchProductCardSkeleton key={i} />)}
+            {Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={i} variant="search" />)}
           </div>
         )}
         {offersStatus === "error" && (
