@@ -2,7 +2,6 @@ import { useState } from "react";
 import { ArrowLeft, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
-  CreationResultModal,
   CategoryRequestModal,
   Toggle,
   ProductCategorySelector,

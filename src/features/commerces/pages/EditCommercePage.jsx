@@ -191,6 +191,7 @@ function StatRow({ label, children }) {
 
 export function EditCommercePage() {
     const navigate = useNavigate();
+    const { showToast } = useToast();
 
     const {
         formData, logoPreview, logoFile, validationErrors, categories,
