@@ -1,14 +1,12 @@
-// src/features/commerces/pages/EditCommercePage.jsx
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Save, X } from "lucide-react";
 import { Spinner } from "../../../components/Spinner";
-import { CreationResultModal } from "../components/createProduct/CreationResultModal";
-import { useEditCommerce } from "../hooks/useEditCommerce";
 import MapView from "../../clients/components/Map";
 import { PageLoader } from "../../../components/PageLoader";
+import { useEditCommerce } from "@/features/commerces/hooks";
+import { useToast } from "@/hooks";
 
-// ─── Estilos compartidos ──────────────────────────────────────────────────────
 const card = {
     backgroundColor: "white",
     borderRadius: "16px",
@@ -51,7 +49,6 @@ const inputErrorStyle = {
 
 const errorMsg = { fontSize: "12px", color: "#dc2626", marginTop: "4px" };
 
-// ─── Sub-componentes ──────────────────────────────────────────────────────────
 function Field({ label, required, error, children }) {
     return (
         <div style={{ marginBottom: "14px" }}>
@@ -192,25 +189,21 @@ function StatRow({ label, children }) {
     );
 }
 
-// ─── Página principal ─────────────────────────────────────────────────────────
 export function EditCommercePage() {
     const navigate = useNavigate();
 
     const {
         formData, logoPreview, logoFile, validationErrors, categories,
-        isLoadingInitialData, isSubmitting, isFormDisabled,
-        loadError, successToast, errorModal, closeErrorModal,
+        isLoadingInitialData, isSubmitting, isFormDisabled, loadError,
         onFieldChange, onLocationChange, onLogoFileChange, removeLogo,
         handleSubmit, errorRef,
-    } = useEditCommerce();
-
-    // Redirigir a perfil 1.5s después de guardar exitosamente
-    useEffect(() => {
-        if (successToast) {
-            const timer = setTimeout(() => navigate("/comercio/perfil"), 1500);
-            return () => clearTimeout(timer);
-        }
-    }, [successToast]);
+    } = useEditCommerce({
+        onSuccess: (msg) => {
+            showToast(msg, 'success');
+            setTimeout(() => navigate("/comercio/perfil"), 1500);
+        },
+        onError: (msg) => showToast(msg, 'error'),
+    });
 
     if (isLoadingInitialData) return (<PageLoader />);
 
@@ -225,7 +218,6 @@ export function EditCommercePage() {
 
     return (
         <>
-            {/* ── Header ─────────────────────────────────────────────────── */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "24px" }}>
                 <div>
                     <h4 style={{ fontWeight: "600", margin: "0 0 4px 0" }}>Perfil del Comercio</h4>
@@ -267,13 +259,8 @@ export function EditCommercePage() {
                 </div>
             </div>
 
-            {/* ── Grid ──────────────────────────────────────────────────── */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: "20px", alignItems: "start" }}>
-
-                {/* Columna izquierda */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-
-                    {/* Información Básica */}
                     <div style={card}>
                         <h6 style={sectionTitle}>Información Básica</h6>
 
@@ -293,7 +280,6 @@ export function EditCommercePage() {
                             />
                         </Field>
 
-                        {/* Categorías como chips + multicheckbox */}
                         <div style={{ marginBottom: "14px" }}>
                             <label style={labelStyle}>Categorías del Comercio *</label>
 
@@ -307,7 +293,6 @@ export function EditCommercePage() {
                         </div>
                     </div>
 
-                    {/* Información de Contacto */}
                     <div style={card}>
                         <h6 style={sectionTitle}>Información de Contacto</h6>
 
@@ -416,16 +401,11 @@ export function EditCommercePage() {
                     </div>
                 </div>
 
-                {/* Columna derecha */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-
-                    {/* Imágenes */}
                     <div style={card}>
                         <h6 style={sectionTitle}>Imágenes del Comercio</h6>
-
                         <label style={labelStyle}>Logo</label>
 
-                        {/* preview del logo actual o del archivo seleccionado */}
                         {logoPreview ? (
                             <div style={{ position: "relative", marginBottom: "8px" }}>
                                 <img
@@ -448,7 +428,6 @@ export function EditCommercePage() {
                             </div>
                         )}
 
-                        {/* selector de archivo — reemplaza el campo de URL */}
                         <label style={{
                             display: "inline-flex", alignItems: "center", gap: "6px",
                             backgroundColor: "#6b9080", color: "white",
@@ -476,7 +455,6 @@ export function EditCommercePage() {
                         {validationErrors.logoUrl && <p style={errorMsg}>{validationErrors.logoUrl}</p>}
 
                         <label style={{ ...labelStyle, marginTop: "16px" }}>Banner</label>
-                        {/* Banner: campo reservado para sprint futuro, aún no persiste en el backend */}
                         <input
                             name="bannerUrl"
                             disabled
@@ -485,7 +463,6 @@ export function EditCommercePage() {
                         />
                     </div>
 
-                    {/* Estadísticas - solo lectura, datos reales cuando el backend los provea */}
                     <div style={card}>
                         <h6 style={sectionTitle}>Estadísticas</h6>
                         <StatRow label="Calificación:">
@@ -501,30 +478,6 @@ export function EditCommercePage() {
                     </div>
                 </div>
             </div>
-
-            {/* Toast de éxito */}
-            {successToast && (
-                <div style={{
-                    position: "fixed", bottom: "24px", right: "24px", zIndex: 1000,
-                    backgroundColor: "#f0fdf4", border: "1px solid #bbf7d0",
-                    borderRadius: "10px", padding: "12px 20px",
-                    color: "#15803d", fontSize: "14px", fontWeight: "500",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                }}>
-                    ✓ Comercio actualizado exitosamente
-                </div>
-            )}
-
-            {/* Modal de error del backend */}
-            {errorModal.isOpen && (
-                <CreationResultModal
-                    isOpen={errorModal.isOpen}
-                    title={errorModal.title}
-                    message={errorModal.message}
-                    type="error"
-                    onClose={closeErrorModal}
-                />
-            )}
         </>
     );
 }

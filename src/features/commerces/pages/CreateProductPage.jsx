@@ -1,16 +1,19 @@
 import { useState } from "react";
 import { ArrowLeft, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { CreationResultModal } from "../components/createProduct/CreationResultModal";
-import { CategoryRequestModal } from "../components/createProduct/CategoryRequestModal";
-import Toggle from "../components/createProduct/Toggle";
-import { ProductCategorySelector } from "../components/createProduct/ProductCategorySelector";
+import {
+  CreationResultModal,
+  CategoryRequestModal,
+  Toggle,
+  ProductCategorySelector,
+} from "@/features/commerces/components";
 import {
   MAX_TAGS,
   MAX_VISIBLE_TAG_SUGGESTIONS,
   useCreateProduct,
-} from "../hooks/useCreateProduct";
-import { useCategoryRequest } from "../hooks/useCategoryRequest";
+  useCategoryRequest,
+} from "@/features/commerces/hooks";
+import { useToast } from "@/hooks";
 
 const inputClassName =
   "mb-3 w-full rounded-[10px] border border-[#d2d8d4] bg-[#f0f2f1] px-3 py-2 text-[14px] text-[#1f2e27] outline-none transition focus:border-[#8fb6a3] focus:ring-4 focus:ring-[rgba(107,144,128,0.16)] disabled:cursor-not-allowed disabled:opacity-60";
@@ -23,6 +26,8 @@ const cardTitleClassName =
 
 export default function CreateProductPage() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
+
   const {
     formData,
     categories,
@@ -33,21 +38,20 @@ export default function CreateProductPage() {
     showAllTagSuggestions,
     validationErrors,
     loadError,
-    resultModal,
     isLoadingInitialData,
     isSubmitting,
     isFormDisabled,
     imageFile,
     setFormData,
     setShowAllTagSuggestions,
-    closeModal,
     onFieldChange,
     onImageFileChange,
     toggleTag,
     handleSubmit,
-  } = useCreateProduct();
-
-  // ── Modal de solicitud de categoría ──────────────────────────────────────
+  } = useCreateProduct({
+    onSuccess: (msg) => showToast(msg, 'success'),
+    onError: (msg) => showToast(msg, 'error'),
+  });
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
   const {
@@ -68,7 +72,6 @@ export default function CreateProductPage() {
 
   const handleCategoryRequestSuccess = () => {
     if (categoryRequestResultModal.variant === "success") {
-      // Resetear el selector de categorías al estado inicial
       setFormData((prev) => ({ ...prev, categoryIds: [] }));
       setIsCategoryModalOpen(false);
       resetCategoryRequestForm();
@@ -181,7 +184,7 @@ export default function CreateProductPage() {
                 error={validationErrors.categoryIds}
                 label="Categorías *"
               />
-              {/* ── Solicitar nueva categoría ── */}
+
               <button
                 type="button"
                 onClick={() => setIsCategoryModalOpen(true)}
@@ -249,11 +252,10 @@ export default function CreateProductPage() {
                       key={tag.id}
                       type="button"
                       onClick={() => toggleTag(tag)}
-                      className={`rounded-full border px-2.5 py-1 text-xs font-semibold transition ${
-                        isSelected
-                          ? "border-emerald-400 bg-emerald-100 text-emerald-800"
-                          : "border-[#b8d4c7] bg-[#eef7f2] text-[#356852] hover:bg-[#dff0e8]"
-                      }`}
+                      className={`rounded-full border px-2.5 py-1 text-xs font-semibold transition ${isSelected
+                        ? "border-emerald-400 bg-emerald-100 text-emerald-800"
+                        : "border-[#b8d4c7] bg-[#eef7f2] text-[#356852] hover:bg-[#dff0e8]"
+                        }`}
                       disabled={
                         isFormDisabled ||
                         (!isSelected && selectedTags.length >= MAX_TAGS)
@@ -287,12 +289,8 @@ export default function CreateProductPage() {
         </section>
 
         <aside className="flex flex-col gap-5">
-
-          {/* ── Imagen del Producto ── */}
           <section className={cardClassName}>
             <h2 className={cardTitleClassName}>Imagen del Producto</h2>
-
-            {/* Preview: muestra la imagen seleccionada antes de crear el producto */}
             {imageFile ? (
               <div className="relative overflow-hidden rounded-[10px] border border-[#d2d8d4] bg-[#f0f2f1] mb-3">
                 <img
@@ -301,7 +299,6 @@ export default function CreateProductPage() {
                   className="h-[160px] w-full object-cover"
                   onError={(e) => { e.currentTarget.style.display = "none"; }}
                 />
-                {/* Botón para quitar la imagen seleccionada */}
                 <button
                   type="button"
                   onClick={() => onImageFileChange(null)}
@@ -318,7 +315,6 @@ export default function CreateProductPage() {
               </div>
             )}
 
-            {/* Selector de archivo — reemplaza el campo de URL */}
             <label className={`cursor-pointer inline-flex items-center gap-2 bg-[#6b9080] text-white px-4 py-2 rounded-[10px] text-[13px] font-semibold hover:bg-[#5a7d6d] transition ${isFormDisabled ? "opacity-60 cursor-not-allowed pointer-events-none" : ""}`}>
               Seleccionar imagen
               <input
@@ -345,9 +341,8 @@ export default function CreateProductPage() {
               <div>
                 <p className={`${labelClassName} mb-0.5`}>Estado</p>
                 <p
-                  className={`mb-0 text-[13px] font-semibold ${
-                    formData.isVisible ? "text-emerald-700" : "text-slate-600"
-                  }`}
+                  className={`mb-0 text-[13px] font-semibold ${formData.isVisible ? "text-emerald-700" : "text-slate-600"
+                    }`}
                 >
                   {formData.isVisible ? "Visible para clientes" : "No visible"}
                 </p>
@@ -367,11 +362,10 @@ export default function CreateProductPage() {
             </div>
 
             <div
-              className={`mt-3.5 rounded-[10px] px-3 py-2.5 text-[13px] font-semibold ${
-                formData.isVisible
-                  ? "bg-emerald-100 text-emerald-700"
-                  : "bg-slate-100 text-slate-700"
-              }`}
+              className={`mt-3.5 rounded-[10px] px-3 py-2.5 text-[13px] font-semibold ${formData.isVisible
+                ? "bg-emerald-100 text-emerald-700"
+                : "bg-slate-100 text-slate-700"
+                }`}
             >
               {formData.isVisible
                 ? "Los clientes pueden ver y comprar este producto."
@@ -399,21 +393,6 @@ export default function CreateProductPage() {
         </div>
       </form>
 
-      <CreationResultModal
-        isOpen={resultModal.isOpen}
-        variant={resultModal.variant}
-        title={resultModal.title}
-        message={resultModal.message}
-        closeLabel={resultModal.variant === "success" ? "Ver mis productos" : "Cerrar"}
-        onClose={() => {
-          closeModal();
-          if (resultModal.variant === "success") {
-            navigate("/comercio/productos");
-          }
-        }}
-      />
-
-      {/* ── Modal de solicitud de categoría ── */}
       <CategoryRequestModal
         isOpen={isCategoryModalOpen}
         onClose={handleCloseCategoryModal}
