@@ -6,6 +6,7 @@ import { Spinner } from "../../../components/Spinner";
 import { CreationResultModal } from "../components/createProduct/CreationResultModal";
 import { useEditCommerce } from "../hooks/useEditCommerce";
 import MapView from "../../clients/components/Map";
+import { PageLoader } from "../../../components/PageLoader";
 
 // ─── Estilos compartidos ──────────────────────────────────────────────────────
 const card = {
@@ -211,11 +212,7 @@ export function EditCommercePage() {
         }
     }, [successToast]);
 
-    if (isLoadingInitialData) return (
-        <div style={{ display: "flex", justifyContent: "center", padding: "48px" }}>
-            <Spinner size="8" />
-        </div>
-    );
+    if (isLoadingInitialData) return (<PageLoader />);
 
     if (loadError) return (
         <div style={{

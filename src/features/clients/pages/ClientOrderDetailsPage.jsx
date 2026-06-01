@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { PageLoader } from '../../../components/PageLoader';
 import axios from 'axios';
-import { SidebarClientProfile } from '../../../components/SidebarClientProfile';
-import Navbar from '../../../components/navbar/Navbar';
 import { formatGuarani } from '../../../lib/formatGuarani.js';
 
 // ─── API client ───────────────────────────────────────────────────────────────
@@ -143,23 +142,14 @@ export const ClientOrderDetailsPage = () => {
     fetchOrder();
   }, [orderId]);
 
-  if (loading) return <div><Navbar /><p className="p-6 text-gray-500">Cargando pedido...</p></div>;
-  if (error || !order) return <div><Navbar /><p className="p-6 text-red-500">{error || 'Pedido no encontrado'}</p></div>;
+  if (loading) return <PageLoader />;
+  if (error || !order) return <p className="p-6 text-red-500">{error || 'Pedido no encontrado'}</p>;
 
   const statusConfig  = STATUS_CONFIG[order.status] ?? { label: order.status, classes: 'border-gray-400 text-gray-600' };
   const subtotalTotal = order?.items?.reduce((acc, item) => acc + Number(item.subtotal), 0) ?? 0;
 
   return (
-    <div>
-      <Navbar />
-      <h3 className="p-2 ms-5 mt-2 font-bold">Mis Pedidos</h3>
-
-      <div className="grid grid-cols-[250px_1fr] min-h-screen gap-x-20">
-        <div className="p-3 w-80">
-          <SidebarClientProfile />
-        </div>
-
-        <div className="mb-5">
+    <div className="max-w-[1100px] mx-auto w-full mb-5">
           {/* Cabecera del pedido */}
           <div className="flex justify-between items-center mb-2 bg-white p-3 rounded-lg me-2">
             <div>
@@ -234,8 +224,6 @@ export const ClientOrderDetailsPage = () => {
               Volver
             </button>
           </div>
-        </div>
-      </div>
     </div>
   );
 };

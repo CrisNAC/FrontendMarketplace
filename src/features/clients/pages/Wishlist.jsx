@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Trash2, ShoppingCart } from "lucide-react";
+import { PageLoader } from "../../../components/PageLoader";
+import { EmptyState } from "../../../components/EmptyState";
+import { ConfirmationModal } from "../components/cart/ConfirmationModal";
 import toast from "react-hot-toast";
 
-import { SidebarClientProfile } from "../../../components/SidebarClientProfile";
 import WishlistItemCard from "../components/wishlist/WishlistItemCard";
 import WishlistSummaryCard from "../components/wishlist/WishlistSummaryCard";
 import { addToCartApi } from "../../../lib/cartApi";
@@ -25,6 +28,10 @@ export default function Wishlist() {
   const [creatingList, setCreatingList] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [addingAllToCart, setAddingAllToCart] = useState(false);
+
+  const [deleteModal, setDeleteModal] = useState({ open: false, id: null, name: "" });
+  const [removeModal, setRemoveModal] = useState({ open: false, wishlistId: null, item: null });
+  const [addAllModal, setAddAllModal] = useState(false);
 
   const totalItems = wishlists.reduce((acc, w) => acc + (w.items?.length ?? 0), 0);
 
@@ -83,19 +90,28 @@ export default function Wishlist() {
     }
   };
 
-  const handleDeleteList = async (wishlistId, wishlistName) => {
-    if (!window.confirm(`¿Eliminár la lista "${wishlistName}"? Esta acción no se puede deshacer.`)) return;
+  const handleDeleteList = (wishlistId, wishlistName) => {
+    setDeleteModal({ open: true, id: wishlistId, name: wishlistName });
+  };
+
+  const doDeleteList = async () => {
     try {
-      await deleteWishlist(userId, wishlistId);
-      setWishlists((prev) => prev.filter((w) => w.id !== wishlistId));
+      await deleteWishlist(userId, deleteModal.id);
+      setWishlists((prev) => prev.filter((w) => w.id !== deleteModal.id));
+      setDeleteModal({ open: false, id: null, name: "" });
       toast.success("Lista eliminada");
     } catch {
       toast.error("No se pudo eliminar la lista");
     }
   };
 
-  const handleRemoveItem = async (wishlistId, item) => {
+  const handleRemoveItem = (wishlistId, item) => {
     if (!item?.product?.id) return toast.error("Producto inválido");
+    setRemoveModal({ open: true, wishlistId, item });
+  };
+
+  const doRemoveItem = async () => {
+    const { wishlistId, item } = removeModal;
     try {
       await removeWishlistItem(userId, wishlistId, item.product.id);
       setWishlists((prev) =>
@@ -105,6 +121,7 @@ export default function Wishlist() {
             : w
         )
       );
+      setRemoveModal({ open: false, wishlistId: null, item: null });
       toast.success("Producto eliminado de la lista");
     } catch {
       toast.error("No se pudo eliminar el producto");
@@ -139,13 +156,7 @@ export default function Wishlist() {
     }
   };
 
-  if (status === "loading") {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500 text-[14px]">Cargando listas de deseos...</p>
-      </div>
-    );
-  }
+  if (status === "loading") return <PageLoader />;
 
   if (status === "error") {
     return (
@@ -155,9 +166,20 @@ export default function Wishlist() {
     );
   }
 
-  const handleAddAllToCart = async () => {
+  const handleAddAllToCart = () => {
     const allItems = wishlists.flatMap((w) => w.items.map((i) => ({ ...i, wishlistId: w.id })));
     if (!allItems.length || addingAllToCart) return;
+    setAddAllModal(true);
+  };
+
+  const confirmAddAllToCart = () => {
+    setAddAllModal(false);
+    doAddAllToCart();
+  };
+
+  const doAddAllToCart = async () => {
+    const allItems = wishlists.flatMap((w) => w.items.map((i) => ({ ...i, wishlistId: w.id })));
+    if (!allItems.length) return;
     setAddingAllToCart(true);
     try {
       for (const item of allItems) {
@@ -190,16 +212,8 @@ export default function Wishlist() {
   };
 
   return (
-    <div className="max-w-[1400px] mx-auto w-full px-6 py-10">
-      <h1 className="text-[28px] font-bold text-[#2d4030] mb-8">Lista de deseos</h1>
-
-      <div className="flex flex-col md:flex-row gap-8 items-start">
-        <aside className="w-full md:w-[280px] shrink-0">
-          <SidebarClientProfile />
-        </aside>
-
-        <div className="flex-1 w-full">
-          <WishlistSummaryCard
+    <div className="max-w-[1100px] mx-auto w-full">
+      <WishlistSummaryCard
             totalLists={wishlists.length}
             totalItems={totalItems}
             showCreateForm={showCreateForm}
@@ -214,15 +228,10 @@ export default function Wishlist() {
 
           <main className="space-y-8">
             {wishlists.length === 0 ? (
-              <div className="bg-[#F3F5F4] border border-[#C7D6CF] rounded-xl p-10 text-center">
-                <p className="text-[18px] text-[#4f615b] font-medium">No tenés listas creadas</p>
-                <p className="text-[14px] text-gray-500 mt-2">
-                  {"Creá una lista y empezá a guardar "}
-                  <button className="underline text-[#2d4030]" onClick={() => navigate("/busqueda")}>
-                    productos
-                  </button>.
-                </p>
-              </div>
+              <EmptyState
+                message="No tenés listas creadas"
+                subtitle="Creá una lista y empezá a guardar productos."
+              />
             ) : (
               wishlists.map((wishlist) => (
                 <section key={wishlist.id} className="bg-white border border-[#C7D6CF] rounded-xl p-5">
@@ -241,15 +250,10 @@ export default function Wishlist() {
                   </div>
 
                   {wishlist.items.length === 0 ? (
-                    <p className="text-[14px] text-gray-400">
-                      Esta lista está vacía.{" "}
-                      <button
-                        className="underline text-[#2f3e39]"
-                        onClick={() => navigate("/busqueda")}
-                      >
-                        Explorá productos
-                      </button>
-                    </p>
+                    <EmptyState
+                      message="Esta lista está vacía."
+                      subtitle="Explorá productos y agregálos a tu lista."
+                    />
                   ) : (
                     <div className="flex flex-col gap-4">
                       {wishlist.items.map((item) => (
@@ -266,9 +270,44 @@ export default function Wishlist() {
                 </section>
               ))
             )}
-          </main>
-        </div>
-      </div>
+      </main>
+
+      <ConfirmationModal
+        isOpen={deleteModal.open}
+        title="Eliminar lista"
+        subtitle={`"${deleteModal.name}"`}
+        warnings={[
+          "Esta acción no se puede deshacer.",
+          "Se eliminarán todos los productos guardados en esta lista.",
+        ]}
+        confirmText="Eliminar lista"
+        loadingText="Eliminando..."
+        onClose={() => setDeleteModal({ open: false, id: null, name: "" })}
+        onConfirm={doDeleteList}
+        icon={Trash2}
+      />
+
+      <ConfirmationModal
+        isOpen={removeModal.open}
+        title="Quitar producto"
+        description="¿Querés quitar este producto de la lista?"
+        confirmText="Quitar"
+        loadingText="Quitando..."
+        onClose={() => setRemoveModal({ open: false, wishlistId: null, item: null })}
+        onConfirm={doRemoveItem}
+        icon={Trash2}
+      />
+
+      <ConfirmationModal
+        isOpen={addAllModal}
+        title="Agregar todo al carrito"
+        description={`Se agregarán ${totalItems} producto${totalItems !== 1 ? "s" : ""} al carrito y serán quitados de tus listas.`}
+        confirmText="Agregar todo"
+        variant="confirm"
+        onClose={() => setAddAllModal(false)}
+        onConfirm={confirmAddAllToCart}
+        icon={ShoppingCart}
+      />
     </div>
   );
 }

@@ -8,6 +8,7 @@ import {
   Trash2,
   User,
 } from "lucide-react";
+import { PageLoader } from "../../components/PageLoader";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import {
@@ -193,12 +194,7 @@ export default function ReviewReportsPanel({ embedded = false }) {
         </select>
       </div>
 
-      {loading && (
-        <div className="flex items-center gap-2 text-gray-600 py-8 justify-center">
-          <Loader2 className="animate-spin" size={22} />
-          Cargando reportes…
-        </div>
-      )}
+      {loading && <PageLoader />}
 
       {!loading && error && (
         <p className="text-red-600 text-sm py-4">{error}</p>

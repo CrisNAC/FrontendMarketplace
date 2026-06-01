@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Store, Eye, Check, X, AlertTriangle } from "lucide-react";
 import { fetchPendingStores, approveStore, rejectStore } from "../services/adminUsersApi";
 import toast from "react-hot-toast";
+import { PageLoader } from "../../../components/PageLoader";
 
 const cardStyle = {
   backgroundColor: "var(--background-white)",
@@ -269,7 +270,7 @@ export const AdminPendingStoresPage = () => {
         {errorPending && <div style={{ padding: "12px", backgroundColor: "#fee2e2", borderRadius: "8px", color: "#dc2626", fontSize: "13px", marginBottom: "16px" }}>{errorPending}</div>}
 
         {loadingPending ? (
-          <div style={{ textAlign: "center", padding: "40px 0", color: "#9ca3af", fontSize: "14px" }}>Cargando comercios pendientes...</div>
+          <PageLoader />
         ) : pendingStores.length === 0 ? (
           <div style={{ textAlign: "center", padding: "60px 0", color: "#9ca3af", fontSize: "14px" }}>
             <Check size={40} color="#d1d5db" style={{ margin: "0 auto 10px" }} />

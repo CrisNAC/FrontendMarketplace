@@ -26,7 +26,9 @@ export const CreateCommercePage = () => {
 
     return (
         <div>
-            <Navbar />
+            <div className="sticky top-0 z-50">
+                <Navbar />
+            </div>
             <div className="flex justify-center w-full mt-3 mb-3">
                 <div className="w-full max-w-2xl bg-white p-8 rounded-md shadow-md ">
                     <p className="text-xl text-gray-900 font-bold">Crear Comercio</p>

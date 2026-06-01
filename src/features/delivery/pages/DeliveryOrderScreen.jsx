@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { MapPin, Package, Store, Clock, Phone, Timer } from "lucide-react";
+import { PageLoader } from "../../../components/PageLoader";
 import toast from "react-hot-toast";
 import { formatGuarani } from "../../../lib/formatGuarani";
 import {
@@ -247,9 +248,7 @@ const handleDecision = async (orderId, action) => {
           </div>
         )}
 
-        {!gateReason && loading ? (
-          <p className="py-10 text-center text-sm text-slate-600">Cargando pedidos…</p>
-        ) : null}
+        {!gateReason && loading ? <PageLoader /> : null}
 
         {!gateReason && !loading && cards.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-12 text-center shadow-sm sm:px-6 sm:py-16">

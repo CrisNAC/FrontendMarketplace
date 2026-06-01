@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Calendar, Image, Pencil, Plus, Search, ToggleLeft, ToggleRight, X } from "lucide-react";
+import { PageLoader } from "../../../components/PageLoader";
 import toast from "react-hot-toast";
 import {
   createAdminBanner,
@@ -308,7 +309,7 @@ export const AdminBannersPage = () => {
         <button
           type="button"
           onClick={handleCreate}
-          style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "10px 16px", backgroundColor: "#15803d", color: "white", border: "none", borderRadius: "10px", cursor: "pointer", fontSize: "14px", fontWeight: "600" }}
+          style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "10px 16px", backgroundColor: "var(--primary-dark)", color: "white", border: "none", borderRadius: "10px", cursor: "pointer", fontSize: "14px", fontWeight: "600" }}
         >
           <Plus size={16} /> Nuevo banner
         </button>
@@ -346,11 +347,7 @@ export const AdminBannersPage = () => {
           </div>
         )}
 
-        {loading && (
-          <div style={{ textAlign: "center", padding: "40px 0", color: "#9ca3af", fontSize: "14px" }}>
-            Cargando banners...
-          </div>
-        )}
+        {loading && <PageLoader />}
 
         {emptyState && (
           <div style={{ textAlign: "center", padding: "60px 0", color: "#9ca3af", fontSize: "14px" }}>

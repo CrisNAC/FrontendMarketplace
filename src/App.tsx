@@ -21,6 +21,7 @@ const isDev = import.meta.env.DEV;
  * Layouts
  */
 import { AdminLayout } from './layouts/AdminLayout';
+import { ClientLayout } from './layouts/ClientLayout';
 import { MyCommerceLayout } from './layouts/MyCommerceLayout';
 import { VistaComercioLayout } from './layouts/VistaComercioLayout';
 import { CommentsLayout } from './layouts/CommentsLayout';
@@ -111,19 +112,33 @@ function App() {
           <Route path="/recuperar-contrasena" element={<ForgotPasswordPage />} />
           <Route path="/restablecer-contrasena/:token" element={<ResetPasswordPage />} />
 
-          <Route path="/perfil" element={<RequireAuth><MyAccountPage /></RequireAuth>} />
-          <Route path="/mi-perfil" element={<RequireAuth><EditClientProfile /></RequireAuth>} />
-          <Route path="/cambiar-contrasena" element={<RequireAuth><ChangePassword /></RequireAuth>} />
-
-          <Route path="/notificaciones" element={
+          <Route path="/perfil" element={
             <RequireAuth>
-              <VistaComercioLayout>
-                <NotificationsPage />
-              </VistaComercioLayout>
+              <ClientLayout title="Mi Cuenta"><MyAccountPage /></ClientLayout>
+            </RequireAuth>
+          } />
+          <Route path="/mi-perfil" element={
+            <RequireAuth>
+              <ClientLayout title="Editar Perfil"><EditClientProfile /></ClientLayout>
+            </RequireAuth>
+          } />
+          <Route path="/cambiar-contrasena" element={
+            <RequireAuth>
+              <ClientLayout title="Cambiar Contraseña"><ChangePassword /></ClientLayout>
             </RequireAuth>
           } />
 
-          <Route path='/direcciones' element={<RequireAuth><AddressesPage /></RequireAuth>} />
+          <Route path="/notificaciones" element={
+            <RequireAuth>
+              <ClientLayout title="Notificaciones"><NotificationsPage /></ClientLayout>
+            </RequireAuth>
+          } />
+
+          <Route path='/direcciones' element={
+            <RequireAuth>
+              <ClientLayout title="Libreta de direcciones"><AddressesPage /></ClientLayout>
+            </RequireAuth>
+          } />
 
           <Route path="/comparar" element={<PriceComparisonPage />} />
 
@@ -145,13 +160,21 @@ function App() {
           } />
           <Route path="/crear-comercio" element={<RequireAuth><CreateCommercePage /></RequireAuth>} />
 
-          <Route path="/pedidos" element={<RequireAuth><ClientOrdersPage /></RequireAuth>} />
-          <Route path="/pedidos/:orderId" element={<RequireAuth><ClientOrderDetailsPage /></RequireAuth>} />
+          <Route path="/pedidos" element={
+            <RequireAuth>
+              <ClientLayout title="Mis Pedidos"><ClientOrdersPage /></ClientLayout>
+            </RequireAuth>
+          } />
+          <Route path="/pedidos/:orderId" element={
+            <RequireAuth>
+              <ClientLayout title="Mis Pedidos"><ClientOrderDetailsPage /></ClientLayout>
+            </RequireAuth>
+          } />
           <Route path="/" element={<HomePage />} />
           <Route path="/quiero-ser-delivery" element={<RequireAuth><BecomeDeliveryPage /></RequireAuth>} />
           <Route path="/wishlist" element={
             <RequireAuth>
-              <VistaComercioLayout><Wishlist /></VistaComercioLayout>
+              <ClientLayout title="Lista de deseos"><Wishlist /></ClientLayout>
             </RequireAuth>
           } />
           <Route path="/carrito" element={

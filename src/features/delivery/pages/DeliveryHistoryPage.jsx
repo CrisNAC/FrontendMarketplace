@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight, Filter, Search } from "lucide-react";
+import { PageLoader } from "../../../components/PageLoader";
 import { getSession } from "../../commerces/services/editUserProfileApi";
 import { getDeliveryOrderHistory, getBackendErrorMessage } from "../services/deliveryOrdersApi";
 
@@ -253,9 +254,7 @@ export default function DeliveryHistoryPage() {
 
             <section className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
               {loading ? (
-                <p className="p-8 text-center text-sm text-slate-600">
-                  Cargando historial…
-                </p>
+                <PageLoader />
               ) : content.length === 0 ? (
                 <p className="p-8 text-center text-sm text-slate-600">
                   No hay pedidos que coincidan con los filtros.

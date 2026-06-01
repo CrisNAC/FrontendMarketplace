@@ -107,7 +107,9 @@ export const HomePage = () => {
 
   return (
     <div className="bg-white">
-      <Navbar />
+      <div className="sticky top-0 z-50">
+        <Navbar />
+      </div>
       <HeroCarousel slides={combinedSlides} />
       <HomeSections />
       <SellerCTA />

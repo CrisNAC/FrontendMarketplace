@@ -4,6 +4,7 @@ import PropTypes from "prop-types";
 import { ShoppingBag, Clock, CheckCircle, XCircle, Truck, MapPin, Calendar, Filter, ChevronDown, ChevronUp, Package } from "lucide-react";
 import { Pagination } from "../../clients/components/commerceProfile/Pagination";
 import { OrderStepper } from "../../clients/components/OrderStepper";
+import { PageLoader } from "../../../components/PageLoader";
 import { apiClient as commerceApiClient } from "../services/editCommerceApi";
 import { fetchStoreOrders, updateOrderStatus, getOrderErrorMessage } from "../services/commerceOrdersApi";
 import { DeliveryAssignmentModal } from "../components/deliveryAssignment/DeliveryAssignmentModal.jsx";
@@ -534,7 +535,7 @@ function HistoryTab({ storeId }) {
         <div style={{ backgroundColor: "#fff1f2", border: "1px solid #fecdd3", borderRadius: "10px", padding: "12px 16px", color: "#be123c", fontSize: "14px", marginBottom: "16px" }}>{error}</div>
       )}
 
-      {loading && <p style={{ color: "#6b7280", padding: "16px" }}>Cargando historial...</p>}
+      {loading && <PageLoader />}
 
       {!loading && visibleOrders.length === 0 && (
         <div style={{ backgroundColor: "white", borderRadius: "16px", padding: "48px 20px", textAlign: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}>
@@ -709,7 +710,7 @@ export function CommerceOrdersPage() {
     ? "No tenés pedidos pendientes."
     : "No tenés pedidos en progreso.";
 
-  if (loading) return <p style={{ color: "#6b7280", padding: "16px" }}>Cargando pedidos...</p>;
+  if (loading) return <PageLoader />;
 
   return (
     <>
