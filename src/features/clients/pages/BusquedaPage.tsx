@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { SearchFilterSidebar } from "../components/search/SearchFilterSidebar";
 import { SearchProductCard } from "../components/search/SearchProductCard";
 import { Pagination } from "../components/commerceProfile/Pagination";
-import { SearchProductCardSkeleton } from "../../../components/SearchProductCardSkeleton";
+import { ProductCardSkeleton } from "../../../components/ProductCardSkeleton";
 
 type BackendProduct = {
     id_product: number;
@@ -327,7 +327,7 @@ export const BusquedaPage = ({ query = "Todos los Productos" }: Props) => {
                 {status === "loading" && (
                     [0, 1, 2, 3].map((col) => (
                         <div key={col} style={{ display: "flex", flexDirection: "column", flex: 1, gap: "29px" }}>
-                            {[0, 1, 2].map((i) => <SearchProductCardSkeleton key={i} />)}
+                            {[0, 1, 2].map((i) => <ProductCardSkeleton key={i} variant="search" />)}
                         </div>
                     ))
                 )}

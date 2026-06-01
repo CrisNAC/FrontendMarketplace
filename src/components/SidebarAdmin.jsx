@@ -38,7 +38,7 @@ export const SidebarAdmin = ({ collapsed, onToggle }) => {
         <div style={{
             width: collapsed ? "60px" : "260px",
             backgroundColor: "var(--primary-dark)",
-            minHeight: "100vh",
+            height: "100%",
             display: "flex",
             flexDirection: "column",
             padding: "12px 8px",
@@ -70,7 +70,7 @@ export const SidebarAdmin = ({ collapsed, onToggle }) => {
             </div>
 
             {/* Nav items */}
-            <nav style={{ display: "flex", flexDirection: "column", gap: "4px", flex: 1 }}>
+            <nav style={{ display: "flex", flexDirection: "column", gap: "4px", flex: 1, overflowY: "auto" }}>
                 {NAV_ITEMS.map(({ label, icon: Icon, route, disabled }) => {
                     const isActive = active === label;
                     return (
