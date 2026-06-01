@@ -133,10 +133,6 @@ export const ClientOrderDetailsPage = () => {
   const statusConfig  = STATUS_CONFIG[order.status] ?? { label: order.status, classes: 'border-gray-400 text-gray-600' };
   const subtotalTotal = order?.items?.reduce((acc, item) => acc + Number(item.subtotal), 0) ?? 0;
 
-  // Dirección de envío — fallback para retiro en tienda
-  const shippingAddressText = order.address 
-    ? `${order.address.address}, ${order.address.city}, ${order.address.region}`
-    : 'Retiro en tienda';
 
   return (
     <div>
