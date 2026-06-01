@@ -1,4 +1,3 @@
-// src/features/commerces/services/commerceDeliveryApi.js
 import axios from "axios";
 import { apiClient } from "./editCommerceApi";
 

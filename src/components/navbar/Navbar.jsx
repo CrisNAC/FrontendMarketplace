@@ -1,14 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import axios from "axios";
 import {
   ShoppingCart, User, Search, X, ChevronDown, LogOut, Menu,
 } from "lucide-react";
 import { NotificationBellDropdown } from "../notifications/NotificationBellDropdown";
-import axios from "axios";
-import toast from "react-hot-toast";
 import logo from "/src/assets/feather.png";
-import { Link, useLocation, useNavigate } from "react-router-dom";
 import { fetchCartsApi, getApiBase } from "../../lib/cartApi.js";
-import { useToast } from '../toast/useToast';
+import { useToast } from '@/hooks';
 
 function sumServerCartQuantities(carts) {
   if (!Array.isArray(carts)) return 0;
@@ -89,13 +88,11 @@ const Navbar = () => {
     };
   }, [refreshCartAndSession]);
 
-  // Close dropdowns on route change
   useEffect(() => {
     setProfileOpen(false);
     setMobileMenuOpen(false);
   }, [location.pathname]);
 
-  // Close profile dropdown on outside click
   useEffect(() => {
     const onPointerDown = (e) => {
       if (profileMenuRef.current && !profileMenuRef.current.contains(e.target)) {
@@ -106,7 +103,6 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", onPointerDown);
   }, []);
 
-  // Close mobile menu on outside click
   useEffect(() => {
     if (!mobileMenuOpen) return;
     const onPointerDown = (e) => {
@@ -149,7 +145,6 @@ const Navbar = () => {
     }
   };
 
-  // Dynamic nav links (depend on session)
   const navLinks = useMemo(() => {
     const links = [...NAV_LINKS_BASE];
     if (isLoggedIn) {
@@ -166,18 +161,14 @@ const Navbar = () => {
 
   return (
     <header className="w-full border-b border-gray-200 shadow-sm font-sans">
-
-      {/* ── Top bar ── */}
       <div className="bg-[#A4C3B2]">
         <div className="flex items-center justify-between px-4 sm:px-6 lg:px-[30px] py-[10px] gap-3">
 
-          {/* Logo */}
           <Link to="/" className="flex items-center gap-[6px] !no-underline flex-shrink-0">
             <img src={logo} alt="Logo" className="w-[28px] sm:w-[30px] h-auto" />
             <span className="font-medium text-[15px] sm:text-[16px] text-white">Open Market</span>
           </Link>
 
-          {/* Desktop nav links */}
           <nav className="hidden lg:flex gap-[20px] font-normal text-[14px]">
             {navLinks.map((link) => (
               <Link
@@ -196,7 +187,6 @@ const Navbar = () => {
             ))}
           </nav>
 
-          {/* Desktop search */}
           <div className="hidden lg:flex items-center gap-[12px] flex-1 max-w-[600px]">
             <div className="flex items-center bg-white rounded-full px-[12px] py-[4px] w-full relative">
               <input
@@ -225,7 +215,6 @@ const Navbar = () => {
             </button>
           </div>
 
-          {/* Icons (always visible) */}
           <div className="flex gap-2 sm:gap-[15px] items-center flex-shrink-0">
             {isLoggedIn && (
               <NotificationBellDropdown
@@ -294,7 +283,6 @@ const Navbar = () => {
               )}
             </div>
 
-            {/* Hamburger — mobile/tablet only */}
             <button
               type="button"
               className="lg:hidden flex items-center justify-center p-1.5 rounded-full hover:bg-black/10 text-white transition-colors"
@@ -307,7 +295,6 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Mobile search bar */}
         <div className="lg:hidden px-4 pb-3 flex gap-2">
           <div className="flex items-center bg-white rounded-full px-3 py-[5px] flex-1">
             <input
@@ -337,7 +324,6 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* ── Mobile menu (nav links) ── */}
       {mobileMenuOpen && (
         <div ref={mobileMenuRef} className="lg:hidden bg-[#8FAF9F] border-t border-[#7a9d8d] px-4 py-3 flex flex-col gap-1 z-50">
           {navLinks.map((link) => (
