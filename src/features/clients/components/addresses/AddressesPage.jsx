@@ -7,7 +7,7 @@ import { useAddresses } from "../../../../hooks/useAddresses";
 import MapView from "../Map";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { useToast } from '../../../../components/toast/useToast'
+import { useToast } from '@/hooks'
 
 const addressSchema = z.object({
   address: z.string().min(1, "La dirección es obligatoria"),

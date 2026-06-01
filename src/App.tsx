@@ -2,8 +2,7 @@ import './App.css'
 import './index.css'
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
-import { ToastProvider } from './components/toast/ToastProvider'
-import { ToastContainer } from './components/toast/ToastContainer'
+import { ToastProvider, ToastContainer } from '@/components/toast'
 
 /**
  * Infraestructura de errores
@@ -20,12 +19,14 @@ const isDev = import.meta.env.DEV;
 /**
  * Layouts
  */
-import { AdminLayout } from './layouts/AdminLayout';
-import { ClientLayout } from './layouts/ClientLayout';
-import { MyCommerceLayout } from './layouts/MyCommerceLayout';
-import { VistaComercioLayout } from './layouts/VistaComercioLayout';
-import { CommentsLayout } from './layouts/CommentsLayout';
-import { DeliveryLayout } from './layouts/DeliveryLayout';
+import { 
+  AdminLayout,
+  ClientLayout,
+  MyCommerceLayout,
+  VistaComercioLayout, 
+  CommentsLayout,
+  DeliveryLayout,
+} from './layouts';
 
 /**
  * Pages
