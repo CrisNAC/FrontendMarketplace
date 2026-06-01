@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Search, ShoppingCart, Store, Shield, Truck, Eye } from "lucide-react";
 import { fetchAdminUsers } from "../services/adminUsersApi";
+import { PageLoader } from "../../../components/PageLoader";
 
 // ── Mapeos de rol y estado ─────────────────────────────────────────────────
 
@@ -167,9 +168,7 @@ export const AdminUsersPage = () => {
         )}
 
         {loading ? (
-          <div style={{ textAlign: "center", padding: "40px 0", color: "#9ca3af", fontSize: "14px" }}>
-            Cargando usuarios...
-          </div>
+          <PageLoader />
         ) : users.length === 0 ? (
           <div style={{ textAlign: "center", padding: "40px 0", color: "#9ca3af", fontSize: "14px" }}>
             No se encontraron usuarios con los filtros seleccionados.

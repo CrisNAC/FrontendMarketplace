@@ -1,6 +1,7 @@
 // src/features/delivery/pages/DeliveryOrdersPage.jsx
 import { useState, useEffect } from 'react';
-import { MapPin, CheckCircle, Clock, AlertCircle, Loader, Truck } from 'lucide-react';
+import { MapPin, CheckCircle, Clock, AlertCircle, Loader2, Truck } from 'lucide-react';
+import { PageLoader } from '../../../components/PageLoader';
 import { getActiveDeliveryAssignments, completeDeliveryAssignment } from '../services/deliveryAssignmentsApi';
 import { getCurrentUserForDeliveryForm } from '../../clients/services/deliveryApi';
 
@@ -57,22 +58,7 @@ export function DeliveryOrdersPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div>
-        <div style={{ marginBottom: '24px' }}>
-          <h4 style={{ fontWeight: '600', margin: '0 0 8px 0' }}>Mis Pedidos en Curso</h4>
-          <p style={{ color: '#6b7280', margin: 0, fontSize: '14px' }}>
-            Pedidos que estás repartiendo en este momento
-          </p>
-        </div>
-        <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '40px', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#6b7280' }}>
-          <Loader size={18} className="animate-spin" />
-          <span>Cargando pedidos...</span>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <PageLoader />;
 
   if (error) {
     return (
@@ -214,7 +200,7 @@ export function DeliveryOrdersPage() {
                   >
                     {isCompleting ? (
                       <>
-                        <Loader size={12} className="animate-spin" />
+                        <Loader2 size={12} className="animate-spin" />
                         Finalizando...
                       </>
                     ) : (

@@ -126,14 +126,14 @@ export const CommentsPage = () => {
   };
 
   return (
-    <div className="min-h-screen p-0" style={{ background: '#F5F5F5' }}>
-      <div className="max-w-6xl mx-auto min-h-screen">
-        <div className="px-6 py-4 flex items-center gap-4">
+    <div className="flex-1 min-h-0 flex flex-col" style={{ background: '#F5F5F5' }}>
+      <div className="max-w-6xl mx-auto w-full flex flex-col flex-1 min-h-0">
+        <div className="px-6 py-4 flex items-center gap-4 shrink-0">
           <ArrowLeft className="w-6 h-6 cursor-pointer" onClick={() => navigate(-1)} />
           <h1 className="text-2xl font-bold">Comentarios</h1>
         </div>
 
-        <div className="grid grid-cols-[300px_1fr] gap-6 px-6 pb-8">
+        <div className="grid grid-cols-[300px_1fr] gap-6 px-6 pb-6 flex-1 min-h-0">
           <aside className="flex flex-col gap-4">
             <div className="bg-white border border-gray-200 rounded-lg">
               <RatingsDistribution ratings={ratings} averageRating={stats?.averageRating ?? 0} />
@@ -157,7 +157,7 @@ export const CommentsPage = () => {
             </button>
           </aside>
 
-          <main className="flex flex-col gap-0">
+          <main className="flex flex-col gap-0 overflow-y-auto">
             {loading && (
               <p className="text-gray-500 text-sm">Cargando reseñas...</p>
             )}

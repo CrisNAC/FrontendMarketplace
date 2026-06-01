@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { User, Mail, Phone, MapPin, Map, Star, Truck, Calendar, Activity, Clock, Edit, Power } from "lucide-react";
 import toast from "react-hot-toast";
 import { getCurrentUserForDeliveryForm, getDeliveryProfile, updateDeliveryStatus, UI_VEHICLE_LABELS } from "../../clients/services/deliveryApi";
+import { PageLoader } from "../../../components/PageLoader";
 import { getBackendErrorMessage } from "../../commerces/services/editUserProfileApi";
 
 // ─── Estilos compartidos ──────────────────────────────────────────────────────
@@ -144,7 +145,7 @@ export function DeliveryProfilePage() {
         }
     };
 
-    if (loading) return <p style={{ color: "#6b7280", padding: "16px" }}>Cargando perfil...</p>;
+    if (loading) return <PageLoader />;
 
     if (error) return (
         <div style={{ backgroundColor: "#fff1f2", border: "1px solid #fecdd3", borderRadius: "10px", padding: "12px 16px", color: "#be123c", fontSize: "14px" }}>

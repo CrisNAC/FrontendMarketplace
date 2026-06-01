@@ -1,6 +1,7 @@
 // src/features/admin/pages/AdminCategoriesPage.jsx
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { PageLoader } from "../../../components/PageLoader";
 import { z } from "zod";
 import { CategoryIcon, IconPicker } from "../components/CategoryIconPicker";
 import {
@@ -657,7 +658,7 @@ function TagsTab() {
                 {error && <div style={{ padding: "12px", backgroundColor: "#fee2e2", borderRadius: "8px", color: "#dc2626", fontSize: "13px", marginBottom: "16px" }}>{error}</div>}
 
                 {loading ? (
-                    <div style={{ textAlign: "center", padding: "40px 0", color: "#9ca3af", fontSize: "14px" }}>Cargando etiquetas...</div>
+                    <PageLoader />
                 ) : tags.length === 0 ? (
                     <div style={{ textAlign: "center", padding: "40px 0", color: "#9ca3af", fontSize: "14px" }}>
                         <Tag size={32} style={{ marginBottom: "8px", opacity: 0.4 }} />
@@ -949,7 +950,7 @@ export const AdminCategoriesPage = () => {
                         {error && <div style={{ padding: "12px", backgroundColor: "#fee2e2", borderRadius: "8px", color: "#dc2626", fontSize: "13px", marginBottom: "16px" }}>{error}</div>}
 
                         {loading ? (
-                            <div style={{ textAlign: "center", padding: "40px 0", color: "#9ca3af", fontSize: "14px" }}>Cargando categorías...</div>
+                            <PageLoader />
                         ) : categories.length === 0 ? (
                             <div style={{ textAlign: "center", padding: "40px 0", color: "#9ca3af", fontSize: "14px" }}>No se encontraron categorías con los filtros seleccionados.</div>
                         ) : (
@@ -988,7 +989,7 @@ export const AdminCategoriesPage = () => {
                     {requestsError && <div style={{ padding: "12px", backgroundColor: "#fee2e2", borderRadius: "8px", color: "#dc2626", fontSize: "13px", marginBottom: "16px" }}>{requestsError}</div>}
 
                     {requestsLoading ? (
-                        <div style={{ textAlign: "center", padding: "40px 0", color: "#9ca3af", fontSize: "14px" }}>Cargando solicitudes...</div>
+                        <PageLoader />
                     ) : requests.length === 0 ? (
                         <div style={{ textAlign: "center", padding: "40px 0", color: "#9ca3af", fontSize: "14px" }}>
                             <CheckCircle size={32} style={{ marginBottom: "8px", opacity: 0.4 }} />

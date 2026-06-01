@@ -6,6 +6,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { getApiBase } from "../../../lib/cartApi";
 import { formatGuarani } from "../../../lib/formatGuarani.js";
+import { PageLoader } from "../../../components/PageLoader";
 
 type CartItem = {
   id: number;
@@ -183,11 +184,13 @@ export const CartPage = () => {
   }, [cartItems]);
 
   return (
-    <div className="min-h-screen bg-[#edf6f0]">
-      <Navbar />
+    <div className="h-screen overflow-hidden flex flex-col bg-[#edf6f0]">
+      <div className="shrink-0">
+        <Navbar />
+      </div>
 
-      <main className="mx-auto max-w-7xl px-6 py-10">
-        <div className="mb-6 flex items-center gap-4">
+      <main className="flex-1 min-h-0 flex flex-col overflow-hidden mx-auto max-w-7xl px-6 w-full">
+        <div className="shrink-0 pt-10 mb-6 flex items-center gap-4">
           <ArrowLeft
             className="h-6 w-6 cursor-pointer text-[#1f2f2a]"
             onClick={() => navigate(-1)}
@@ -197,11 +200,7 @@ export const CartPage = () => {
           </h1>
         </div>
 
-        {status === "loading" && (
-          <div className="rounded-2xl border border-[#d7e8dd] bg-white/70 p-6 shadow-sm">
-            <p className="text-sm text-gray-500">Cargando carrito...</p>
-          </div>
-        )}
+        {status === "loading" && (<PageLoader />)}
 
         {status === "error" && (
           <div className="rounded-2xl border border-[#d7e8dd] bg-white/70 p-6 shadow-sm">
@@ -216,8 +215,8 @@ export const CartPage = () => {
         )}
 
         {status === "ready" && (
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-            <section className="space-y-4 lg:col-span-2">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 flex-1 min-h-0 pb-6">
+            <section className="space-y-4 lg:col-span-2 overflow-y-auto">
               {cartItems.length === 0 ? (
                 <div className="rounded-2xl border border-[#d7e8dd] bg-white/70 p-6 shadow-sm">
                   <p className="text-sm text-gray-500">Tu carrito está vacío.</p>
@@ -321,7 +320,7 @@ export const CartPage = () => {
               )}
             </section>
 
-            <aside className="space-y-5">
+            <aside className="space-y-5 overflow-y-auto">
               <div className="rounded-2xl border border-[#d7e8dd] bg-white/70 p-5 shadow-sm">
                 <h3 className="mb-5 text-xl font-bold text-[#344d45]">
                   Resumen del pedido

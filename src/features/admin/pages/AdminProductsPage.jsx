@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Search, Package, Flag, Eye, Check, X, AlertTriangle, Store, Tag, Calendar } from "lucide-react";
+import { PageLoader } from "../../../components/PageLoader";
 import toast from "react-hot-toast";
 import { fetchAdminProducts, approveProduct, rejectProduct } from "../services/adminProductsApi";
 
@@ -481,9 +482,7 @@ export const AdminProductsPage = () => {
         )}
 
         {loading ? (
-          <div style={{ textAlign: "center", padding: "40px 0", color: "#9ca3af", fontSize: "14px" }}>
-            Cargando productos...
-          </div>
+          <PageLoader />
         ) : products.length === 0 ? (
           <div style={{ textAlign: "center", padding: "60px 0", color: "#9ca3af", fontSize: "14px" }}>
             <Check size={40} color="#d1d5db" style={{ margin: "0 auto 10px", display: "block" }} />

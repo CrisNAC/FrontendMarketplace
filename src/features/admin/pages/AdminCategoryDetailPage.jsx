@@ -4,6 +4,7 @@ import { CategoryIcon } from "../components/CategoryIconPicker";
 import { CategoryEditModal } from "../components/CategoryEditModal";
 import { ArrowLeft, Package, Pencil } from "lucide-react";
 import { fetchAdminCategoryById, fetchCategoriesWithProducts, updateAdminCategory } from "../services/adminCategoriesApi";
+import { PageLoader } from "../../../components/PageLoader";
 
 const cardStyle = {
     backgroundColor: "var(--background-white)",
@@ -82,11 +83,7 @@ export const AdminCategoryDetailPage = () => {
 
     const renderProducts = () => {
         if (loadingProd) {
-            return (
-                <div style={{ textAlign: "center", padding: "40px 0", color: "#9ca3af", fontSize: "14px" }}>
-                    Cargando productos...
-                </div>
-            );
+            return <PageLoader />;
         }
 
         if (productError) {
@@ -257,7 +254,7 @@ export const AdminCategoryDetailPage = () => {
         );
     };
 
-    if (loadingCat) return <p style={{ color: "#6b7280", padding: "16px" }}>Cargando...</p>;
+    if (loadingCat) return <PageLoader />;
     if (error && !category) return (
         <div style={{ backgroundColor: "#fff1f2", border: "1px solid #fecdd3", borderRadius: "10px", padding: "12px 16px", color: "#be123c", fontSize: "14px" }}>
             {error}
