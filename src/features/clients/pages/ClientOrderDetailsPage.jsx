@@ -152,7 +152,7 @@ export const ClientOrderDetailsPage = () => {
           {/* Cabecera del pedido */}
           <div className="flex justify-between items-center mb-2 bg-white p-3 rounded-lg me-2">
             <div>
-              <p className="text-lg font-bold">Pedido N° {order.id}</p>
+              <p className="text-lg font-bold">Pedido N° {order.orderNumber}</p>
               <p className="text-sm text-gray-600">Fecha de pedido: {formatDate(order.createdAt)}</p>
             </div>
             <span className={`border px-3 py-1 rounded-sm text-sm ${statusConfig.classes}`}>

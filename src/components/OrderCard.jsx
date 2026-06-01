@@ -41,10 +41,10 @@ export const OrderCard = ({ order, onClick }) => {
         {/* Aca se renderiza el icono del estado del pedido */}
         {iconosEstado[order.estado] || iconosEstado["Pendiente"]}
 
-        {/* id y fecha del pedido*/}
+        {/* orderNumber y fecha del pedido */}
         <div>
           <p className="text-base font-semibold mb-1">
-            {order.id}
+            {order.orderNumber}
           </p>
           <p className="text-gray-500 text-sm">
             {order.fecha}

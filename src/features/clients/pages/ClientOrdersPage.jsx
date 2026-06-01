@@ -60,11 +60,12 @@ export const ClientOrdersPage = () => {
 
   // Transforma la respuesta del backend al shape que espera <OrderCard>
   const mappedOrders = orders.map((o) => ({
-    id:       o.id,
-    total:    Number(o.total),
-    estado:   STATUS_LABEL[o.status] ?? o.status,
-    fecha:    formatDate(o.createdAt),
-    cantidad: o.items?.length ?? 0,
+    id:          o.id,
+    orderNumber: o.orderNumber,
+    total:       Number(o.total),
+    estado:      STATUS_LABEL[o.status] ?? o.status,
+    fecha:       formatDate(o.createdAt),
+    cantidad:    o.items?.length ?? 0,
   }));
 
   return (
