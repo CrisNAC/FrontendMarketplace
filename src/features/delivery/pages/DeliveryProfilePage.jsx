@@ -1,13 +1,11 @@
-// src/features/delivery/pages/DeliveryProfilePage.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { User, Mail, Phone, MapPin, Map, Star, Truck, Calendar, Activity, Clock, Edit, Power } from "lucide-react";
-import toast from "react-hot-toast";
 import { getCurrentUserForDeliveryForm, getDeliveryProfile, updateDeliveryStatus, UI_VEHICLE_LABELS } from "../../clients/services/deliveryApi";
 import { PageLoader } from "../../../components/PageLoader";
 import { getBackendErrorMessage } from "../../commerces/services/editUserProfileApi";
+import { useToast } from "@/hooks";
 
-// ─── Estilos compartidos ──────────────────────────────────────────────────────
 const card = {
     backgroundColor: "white",
     borderRadius: "16px",
@@ -36,7 +34,6 @@ const valueStyle = {
     lineHeight: "1.5",
 };
 
-// ─── Sub-componentes ──────────────────────────────────────────────────────────
 function InfoRow({ icon: Icon, value, iconColor = "#6b9080" }) {
     return (
         <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
@@ -55,7 +52,6 @@ function StatRow({ label, children }) {
     );
 }
 
-// ─── Página principal ─────────────────────────────────────────────────────────
 export function DeliveryProfilePage() {
     const navigate = useNavigate();
     const [profile, setProfile] = useState(null);
@@ -63,6 +59,7 @@ export function DeliveryProfilePage() {
     const [error, setError] = useState("");
     const [updatingStatus, setUpdatingStatus] = useState(false);
     const [sessionUser, setSessionUser] = useState(null);
+    const { showToast } = useToast();
 
     useEffect(() => {
         let active = true;
@@ -95,7 +92,6 @@ export function DeliveryProfilePage() {
                         vehicle_type: deliveryProfile?.vehicle_type ? (UI_VEHICLE_LABELS[deliveryProfile.vehicle_type] || deliveryProfile.vehicle_type) : "N/A",
                         delivery_status: deliveryProfile?.delivery_status || "INACTIVE",
                         coverage_city: (() => {
-                            // Since the backend does not expose an `is_primary` field, we use addresses[0] directly
                             const addresses = userProfile?.addresses || [];
                             const primaryAddress = addresses[0];
                             return primaryAddress?.city || "N/A";
@@ -117,7 +113,7 @@ export function DeliveryProfilePage() {
 
     const handleToggleAvailability = async () => {
         if (!profile?.id_delivery) {
-            toast.error("No se encontró tu ID de delivery");
+            showToast("No se encontró tu ID de delivery", "error");
             return;
         }
 
@@ -132,14 +128,14 @@ export function DeliveryProfilePage() {
             }));
 
             if (newStatus === "INACTIVE") {
-                toast.success("Desconectado. Los pedidos pendientes fueron rechazados y el comercio fue notificado.");
+                showToast("Desconectado. Los pedidos pendientes fueron rechazados y el comercio fue notificado.", "success");
                 window.dispatchEvent(new Event("notificationsUpdated"));
             } else {
-                toast.success("¡Conectado! Ahora recibirás pedidos");
+                showToast("¡Conectado! Ahora recibirás pedidos", "success");
             }
         } catch (err) {
             console.error("Error al cambiar estado:", err);
-            toast.error("No se pudo cambiar tu estado. Intenta nuevamente.");
+            showToast("No se pudo cambiar tu estado. Intenta nuevamente.", "error");
         } finally {
             setUpdatingStatus(false);
         }
@@ -160,7 +156,6 @@ export function DeliveryProfilePage() {
 
     return (
         <>
-            {/* ── Header con Toggle de Disponibilidad ─────────────────────── */}
             <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center">
                     <div style={{ width: "48px", height: "48px", borderRadius: "50%", overflow: "hidden", backgroundColor: "#e5e7eb", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -186,7 +181,6 @@ export function DeliveryProfilePage() {
                 </div>
 
                 <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
-                    {/* Botón de conectar/desconectar */}
                     <button
                         type="button"
                         onClick={handleToggleAvailability}
@@ -222,7 +216,6 @@ export function DeliveryProfilePage() {
                         {updatingStatus ? "..." : isActive ? "Desconectarme" : "Conectarme"}
                     </button>
 
-                    {/* Botón de editar perfil */}
                     <button
                         type="button"
                         onClick={() => navigate("/delivery/perfil/editar")}
@@ -246,10 +239,7 @@ export function DeliveryProfilePage() {
                 </div>
             </div>
 
-            {/* ── Grid ──────────────────────────────────────────────────────── */}
             <div className="grid grid-cols-1 items-start gap-5 md:grid-cols-[1fr_280px]">
-
-                {/* Columna izquierda */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                     <div style={card}>
                         <h6 style={sectionTitle}>Datos Personales</h6>
@@ -273,7 +263,6 @@ export function DeliveryProfilePage() {
                     </div>
                 </div>
 
-                {/* Columna derecha */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                     <div style={card}>
                         <h6 style={sectionTitle}>Vehículo</h6>

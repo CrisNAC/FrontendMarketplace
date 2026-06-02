@@ -37,16 +37,19 @@ vi.mock('../features/commerces/services/editUserProfileApi', () => ({
     getBackendErrorMessage: (_err, fallback) => fallback,
 }))
 
-vi.mock('react-hot-toast', () => ({
-    default: { success: vi.fn(), error: vi.fn() },
-}))
+const mockShowToast = vi.fn();
+
+vi.mock('@/hooks', () => ({
+  useToast: () => ({
+    showToast: mockShowToast,
+  }),
+}));
 
 import {
     getCurrentUserForDeliveryForm,
     getDeliveryProfile,
     updateMyDelivery,
 } from '../features/clients/services/deliveryApi'
-import toast from 'react-hot-toast'
 
 // ─── Datos de prueba ──────────────────────────────────────────────────────────
 const mockSession = {
@@ -280,7 +283,7 @@ describe('DeliveryEditProfilePage', () => {
             fireEvent.click(screen.getByText('Actualizar Perfil'))
 
             await waitFor(() => {
-                expect(toast.success).toHaveBeenCalledWith('Perfil actualizado correctamente.')
+                expect(mockShowToast).toHaveBeenCalledWith('Perfil actualizado correctamente.', 'success')
                 expect(mockNavigate).toHaveBeenCalledWith('/delivery/perfil')
             })
         })

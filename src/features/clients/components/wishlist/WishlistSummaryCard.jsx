@@ -1,4 +1,4 @@
-export default function WishlistSummaryCard({
+export function WishlistSummaryCard({
   totalLists,
   totalItems,
   showCreateForm,

@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Calendar, Image, Pencil, Plus, Search, ToggleLeft, ToggleRight, X } from "lucide-react";
-import { PageLoader } from "../../../components/PageLoader";
-import toast from "react-hot-toast";
+import { PageLoader } from "@/components/PageLoader";
 import {
   createAdminBanner,
   fetchAdminBanners,
   toggleAdminBanner,
   updateAdminBanner,
-} from "../services/adminBannersApi";
+} from "@/features/admin/services"; 
+import { useToast } from "@/hooks";
 
 const cardStyle = {
   backgroundColor: "var(--background-white)",
@@ -51,7 +51,7 @@ const buildScheduleBadge = (banner) => {
   return { label: "Visible", color: "#15803d", bg: "#dcfce7" };
 };
 
-const BannerFormModal = ({ isOpen, initialData, onClose, onSubmit, isSubmitting }) => {
+const BannerFormModal = ({ isOpen, initialData, onClose, onSubmit, isSubmitting, showToast }) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [imageUrl, setImageUrl] = useState("");
@@ -75,15 +75,15 @@ const BannerFormModal = ({ isOpen, initialData, onClose, onSubmit, isSubmitting 
 
   const handleSubmit = () => {
     if (!title.trim()) {
-      toast.error("El titulo es obligatorio");
+      showToast("El titulo es obligatorio", "error");
       return;
     }
     if (!imageUrl.trim()) {
-      toast.error("La imagen es obligatoria");
+      showToast("La imagen es obligatoria", "error");
       return;
     }
     if (!startAt) {
-      toast.error("La fecha de inicio es obligatoria");
+      showToast("La fecha de inicio es obligatoria", "error");
       return;
     }
 
@@ -270,16 +270,16 @@ export const AdminBannersPage = () => {
     try {
       if (editingBanner) {
         await updateAdminBanner(editingBanner.id, payload);
-        toast.success("Banner actualizado");
+        showToast("Banner actualizado", "success");
       } else {
         await createAdminBanner(payload);
-        toast.success("Banner creado");
+        showToast("Banner creado", "success");
       }
       setIsModalOpen(false);
       setEditingBanner(null);
       loadBanners(page);
     } catch (err) {
-      toast.error(err?.response?.data?.error?.message || "No se pudo guardar el banner");
+      showToast(err?.response?.data?.error?.message || "No se pudo guardar el banner", "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -288,10 +288,10 @@ export const AdminBannersPage = () => {
   const handleToggle = async (banner) => {
     try {
       await toggleAdminBanner(banner.id, !banner.isActive);
-      toast.success(banner.isActive ? "Banner desactivado" : "Banner activado");
+      showToast(banner.isActive ? "Banner desactivado" : "Banner activado", "success");
       loadBanners(page);
     } catch (err) {
-      toast.error(err?.response?.data?.error?.message || "No se pudo actualizar el banner");
+      showToast(err?.response?.data?.error?.message || "No se pudo actualizar el banner", "error");
     }
   };
 
@@ -418,6 +418,7 @@ export const AdminBannersPage = () => {
         onClose={() => { setIsModalOpen(false); setEditingBanner(null); }}
         onSubmit={handleSubmit}
         isSubmitting={isSubmitting}
+        showToast={showToast}
       />
     </div>
   );

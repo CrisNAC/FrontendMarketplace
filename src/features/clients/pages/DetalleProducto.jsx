@@ -1,29 +1,22 @@
-//DetalleProducto.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ProductDetailSkeleton } from "../../../components/ProductDetailSkeleton";
-import { PageLoader } from "../../../components/PageLoader";
-import toast from "react-hot-toast";
 import { ArrowLeft, MoreVertical } from "lucide-react";
+import { ProductDetailSkeleton, PageLoader } from "@/components";
 import axios from "axios";
-import apiClient from "../../../lib/apiClient";
-import RelatedProducts from "../components/products/RelatedProducts.jsx";
+import { apiClient, addToCartApi, mergeCartResponseFromApi, formatGuarani } from "@/lib";
+import RelatedProducts from "@/features/clients/components/products/RelatedProducts.jsx";
 import {
   getWishlists,
   createWishlist,
   addWishlistItem,
-} from "../services/wishlistService";
-import { addToCartApi } from "../../../lib/cartApi";
-import { mergeCartResponseFromApi } from "../../../lib/cartLocalStorage";
-import { formatGuarani } from "../../../lib/formatGuarani.js";
-import {
   REPORT_REASON_LABELS,
   fetchPendingProductReport,
   fetchProductReportReasons,
   hasLocalReportForProduct,
   rememberLocalReport,
   submitProductReport,
-} from "../services/productReportApi.js";
+} from "@/features/clients/services";
+import { useToast } from "@/hooks";
 
 function apiErrorMessage(data) {
   if (!data) return null;
@@ -83,6 +76,7 @@ const VERDE = "#8BB2A1";
 
 export default function DetalleProducto() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const { id } = useParams();
   const productId = id ? Number(id) : null;
 
@@ -105,7 +99,6 @@ export default function DetalleProducto() {
   const [sessionUserId, setSessionUserId] = useState(null);
   const [sessionRole, setSessionRole] = useState(null);
   const [sessionChecked, setSessionChecked] = useState(false);
-  /** true hasta saber si el usuario ya tiene reporte pendiente (evita mostrar ⋯ antes de tiempo). */
   const [checkingReport, setCheckingReport] = useState(true);
   const [hasPendingReport, setHasPendingReport] = useState(false);
 
@@ -259,7 +252,7 @@ export default function DetalleProducto() {
         rememberLocalReport(sessionUserId, productId);
         setHasPendingReport(true);
         setReportModalOpen(false);
-        toast.success("Gracias por tu reporte. Lo revisaremos pronto.");
+        showToast("Gracias por tu reporte. Lo revisaremos pronto.", "success");
         return;
       }
 
@@ -278,7 +271,7 @@ export default function DetalleProducto() {
       }
 
       const msg = apiErrorMessage(res.data);
-      toast.error(msg ? String(msg) : "No se pudo enviar el reporte");
+      showToast(msg ? String(msg) : "No se pudo enviar el reporte", "error");
     } catch (e) {
       const code = e?.response?.status;
       const msg = apiErrorMessage(e?.response?.data);
@@ -286,7 +279,7 @@ export default function DetalleProducto() {
         setReportModalError(msg || "Ya enviaste un reporte para este producto.");
         return;
       }
-      toast.error(msg ? String(msg) : "No se pudo enviar el reporte");
+      showToast(msg ? String(msg) : "No se pudo enviar el reporte", "error");
     } finally {
       setSubmittingReport(false);
     }
@@ -300,7 +293,7 @@ export default function DetalleProducto() {
       const sessionRes = await apiClient.get("/api/session/user-session");
       const uid = sessionRes.data?.user?.id_user;
       if (!uid) {
-        toast.error("Iniciá sesión para agregar a tu lista de deseos");
+        showToast("Iniciá sesión para agregar a tu lista de deseos", "error");
         setWishlistModalOpen(false);
         return;
       }
@@ -308,7 +301,7 @@ export default function DetalleProducto() {
       const lists = await getWishlists(uid);
       setWishlists(lists);
     } catch {
-      toast.error("No se pudieron cargar las listas");
+      showToast("No se pudieron cargar las listas", "error");
       setWishlistModalOpen(false);
     } finally {
       setLoadingWishlists(false);
@@ -318,31 +311,31 @@ export default function DetalleProducto() {
   const handleAddToWishlist = async (wishlistId) => {
     try {
       await addWishlistItem(sessionUserId, wishlistId, productId, cantidad);
-      toast.success("Producto agregado a la lista");
+      showToast("Producto agregado a la lista", "success");
       setWishlistModalOpen(false);
     } catch {
-      toast.error("No se pudo agregar el producto");
+      showToast("No se pudo agregar el producto", "error");
     }
   };
 
   const handleCreateAndAdd = async () => {
     const name = newListName.trim();
-    if (!name) return toast.error("Ingresá un nombre para la lista");
+    if (!name) return showToast("Ingresá un nombre para la lista", "error");
     setCreatingList(true);
     try {
       const newList = await createWishlist(sessionUserId, name);
       try {
         await addWishlistItem(sessionUserId, newList.id, productId, cantidad);
-        toast.success(`Producto agregado a "${name}"`);
+        showToast(`Producto agregado a "${name}"`, "success");
         setWishlistModalOpen(false);
         setNewListName("");
       } catch {
-        toast.error("No se pudo agregar el producto a la lista");
+        showToast("No se pudo agregar el producto a la lista", "error");
         const lists = await getWishlists(sessionUserId);
         setWishlists(lists);
       }
     } catch {
-      toast.error("No se pudo crear la lista");
+      showToast("No se pudo crear la lista", "error");
     } finally {
       setCreatingList(false);
     }
@@ -351,7 +344,7 @@ export default function DetalleProducto() {
   const agregarAlCarrito = async () => {
     if (addingToCart || !productId) return;
     if (product?.quantity != null && Number(product.quantity) <= 0) {
-      toast.error("Este producto no tiene stock disponible");
+      showToast("Este producto no tiene stock disponible", "error");
       return;
     }
 
@@ -364,22 +357,22 @@ export default function DetalleProducto() {
       const userId = sessionRes.data?.user?.id_user;
 
       if (!userId) {
-        toast.error("Iniciá sesión para agregar al carrito");
+        showToast("Iniciá sesión para agregar al carrito", "error");
         return;
       }
 
       const cart = await addToCartApi(userId, { productId, quantity: cantidad });
       mergeCartResponseFromApi(cart);
-      toast.success("Producto agregado al carrito");
+      showToast("Producto agregado al carrito", "success");
     } catch (e) {
       const code = e?.response?.status;
       const msg = e?.response?.data?.message;
       if (code === 401) {
-        toast.error("Iniciá sesión para agregar al carrito");
+        showToast("Iniciá sesión para agregar al carrito", "error");
       } else if (msg) {
-        toast.error(String(msg));
+        showToast(String(msg), "error");
       } else {
-        toast.error("No se pudo agregar al carrito");
+        showToast("No se pudo agregar al carrito", "error");
       }
     } finally {
       setAddingToCart(false);
@@ -485,8 +478,6 @@ export default function DetalleProducto() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-start">
-
-            {/* Imagen del producto */}
             <div className="flex justify-center">
               {product?.imageUrl ? (
                 <img
@@ -594,7 +585,6 @@ export default function DetalleProducto() {
             </div>
           </div>
 
-          {/* ✅ RelatedProducts AGREGADO */}
           {status === "success" && Boolean(productId) && (
             <RelatedProducts productId={productId} limit={8} />
           )}

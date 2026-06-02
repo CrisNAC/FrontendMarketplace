@@ -1,8 +1,7 @@
-// src/features/delivery/components/ActiveDeliveriesSection.jsx
 import { useState, useEffect } from 'react';
 import { MapPin, Phone, CheckCircle, Clock, AlertCircle, Loader } from 'lucide-react';
 import { getActiveDeliveryAssignments, completeDeliveryAssignment } from '../services/deliveryAssignmentsApi';
-import toast from 'react-hot-toast';
+import { useToast } from "@/hooks";
 
 const card = {
   backgroundColor: 'white',
@@ -53,6 +52,7 @@ export function ActiveDeliveriesSection({ deliveryId }) {
   const [loading, setLoading] = useState(true);
   const [completing, setCompleting] = useState(null);
   const [error, setError] = useState('');
+  const { showToast } = useToast();
 
   useEffect(() => {
     let active = true;
@@ -82,12 +82,11 @@ export function ActiveDeliveriesSection({ deliveryId }) {
     setCompleting(assignmentId);
     try {
       await completeDeliveryAssignment(assignmentId);
-      // Remover del listado local
       setAssignments(prev => prev.filter(a => a.id_delivery_assignment !== assignmentId));
-      toast.success('Pedido marcado como entregado');
+      showToast('Pedido marcado como entregado', 'success');
     } catch (err) {
       console.error('Error completando entrega:', err);
-      // El error ya se mostró via toast en el API
+      showToast('Error al marcar el pedido como entregado', 'error');
     } finally {
       setCompleting(null);
     }
@@ -150,7 +149,6 @@ export function ActiveDeliveriesSection({ deliveryId }) {
                 gap: '8px',
               }}
             >
-              {/* Header: Pedido y Status */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
                   <p style={{ margin: 0, fontWeight: '600', fontSize: '14px', color: '#111827' }}>
@@ -166,7 +164,6 @@ export function ActiveDeliveriesSection({ deliveryId }) {
                 </span>
               </div>
 
-              {/* Info del Cliente */}
               {order.user && (
                 <div style={{ backgroundColor: 'white', padding: '8px', borderRadius: '8px', fontSize: '13px' }}>
                   <p style={{ margin: '0 0 4px 0', color: '#6b7280', fontWeight: '500' }}>Cliente:</p>
@@ -180,7 +177,6 @@ export function ActiveDeliveriesSection({ deliveryId }) {
                 </div>
               )}
 
-              {/* Monto Total */}
               <div style={{ backgroundColor: 'white', padding: '8px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '12px', color: '#6b7280', fontWeight: '500' }}>Total a cobrar:</span>
                 <span style={{ fontSize: '14px', fontWeight: '700', color: '#111827' }}>
@@ -188,7 +184,6 @@ export function ActiveDeliveriesSection({ deliveryId }) {
                 </span>
               </div>
 
-              {/* Botones de Acción */}
               <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
                 <button
                   onClick={() => handleCompleteDelivery(assignment.id_delivery_assignment, order.id_order)}

@@ -1,12 +1,10 @@
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { Minus, Plus, Trash2, ArrowLeft } from "lucide-react";
-import Navbar from "../../../components/navbar/Navbar";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
-import { useToast } from "../../../components/toast/useToast";
-import { getApiBase, removeCartItemApi, updateCartItemQuantityApi } from "../../../lib/cartApi";
-import { formatGuarani } from "../../../lib/formatGuarani.js";
-import { PageLoader } from "../../../components/PageLoader";
+import { getApiBase, removeCartItemApi, updateCartItemQuantityApi, formatGuarani } from "@/lib";
+import { Navbar, PageLoader } from "@/components";
+import { useToast } from "@/hooks";
 import { ConfirmationModal } from "../components/cart/ConfirmationModal";
 
 type CartItem = {
@@ -122,10 +120,11 @@ export const CartPage = () => {
 
       setCartItems(mappedItems);
       setStatus("ready");
-    } catch (error: any) {
-      const code = error?.response?.status;
+    } catch (error: unknown) {
+  const err = error as { response?: { status?: number; data?: { message?: string } } };
 
-      if (code === 401) {
+
+      if (err.response?.status === 401) {
         setStatus("unauthorized");
         showToast("Iniciá sesión para ver tu carrito", "error");
         navigate("/login");
@@ -133,9 +132,9 @@ export const CartPage = () => {
       }
 
       setStatus("error");
-      showToast(error?.response?.data?.message || "No se pudo cargar el carrito", "error");
+      showToast(err.response?.data?.message || "No se pudo cargar el carrito", "error");
     }
-  }, [apiBase, cartId, navigate]);
+  }, [apiBase, cartId, navigate, showToast]);
 
   useEffect(() => {
     loadCart();
