@@ -47,3 +47,8 @@ export const updateAdminCategory = async (id, payload) => {
 export const deleteAdminCategory = async (id) => {
     await apiClient.delete(`${BASE}/${id}`);
 };
+
+export const processAdminCategoryRequest = async (id, decision) => {
+    const { data } = await apiClient.patch(`${BASE}/${id}`, { decision });
+    return data;
+};
