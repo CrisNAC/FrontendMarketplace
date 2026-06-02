@@ -90,7 +90,7 @@ export const CommentsPage = () => {
       showToast('¡Reseña enviada exitosamente!', 'success');
     } catch (error) {
       const data = error.response?.data;
-      const message = data?.errors?.auth?.messsage || data?.message || 'No se pudo enviar la reseña.';
+      const message = data?.errors?.auth?.message || data?.message || 'No se pudo enviar la reseña.';
       showToast(message, 'error');
     }
   };
