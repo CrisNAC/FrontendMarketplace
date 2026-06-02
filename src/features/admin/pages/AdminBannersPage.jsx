@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Calendar, Image, Pencil, Plus, Search, ToggleLeft, ToggleRight, X } from "lucide-react";
-import { PageLoader } from "../../../components/PageLoader";
+import { PageLoader } from "@/components/PageLoader";
 import {
   createAdminBanner,
   fetchAdminBanners,
