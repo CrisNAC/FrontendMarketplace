@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { MapPin, Package, Store, Clock, Phone, Timer } from "lucide-react";
-import { PageLoader } from "../../../components/PageLoader";
-import toast from "react-hot-toast";
-import { formatGuarani } from "../../../lib/formatGuarani";
+import { PageLoader } from "@/components";
+import { formatGuarani } from "@/lib";
 import {
   loadDeliveryDashboard,
   getBackendErrorMessage,
   respondToDeliveryOrder,
 } from "../services/deliveryOrdersApi";
+import { useToast } from "@/hooks";
 
 const STORE_STATUS_LABEL = {
   ACTIVE: "Activo",
@@ -94,19 +94,19 @@ function mapAssignmentToCard(assignment, fallbackStore) {
   const customerUser = order.user ?? null;
   const customer = customerUser
     ? {
-        id: customerUser.id_user,
-        name: customerUser.name?.trim() || "Cliente",
-        phone: customerUser.phone?.trim() || null,
-        avatarUrl: resolveCustomerAvatarUrl(customerUser),
-        initials: customerInitials(customerUser.name),
-      }
+      id: customerUser.id_user,
+      name: customerUser.name?.trim() || "Cliente",
+      phone: customerUser.phone?.trim() || null,
+      avatarUrl: resolveCustomerAvatarUrl(customerUser),
+      initials: customerInitials(customerUser.name),
+    }
     : {
-        id: null,
-        name: "Cliente",
-        phone: null,
-        avatarUrl: null,
-        initials: "?",
-      };
+      id: null,
+      name: "Cliente",
+      phone: null,
+      avatarUrl: null,
+      initials: "?",
+    };
 
   return {
     assignmentId: assignment.id_delivery_assignment,
@@ -131,6 +131,7 @@ export default function DeliveryOrderScreen() {
   const [actingId, setActingId] = useState(null);
   const [gateReason, setGateReason] = useState(null);
   const [, setNowTick] = useState(Date.now());
+  const { showToast } = useToast();
 
   const loadOffers = useCallback(async () => {
     try {
@@ -155,7 +156,7 @@ export default function DeliveryOrderScreen() {
         .filter(Boolean);
       setCards(mapped);
     } catch (err) {
-      toast.error(getBackendErrorMessage(err, "No se pudieron cargar los pedidos."));
+      showToast(getBackendErrorMessage(err, "No se pudieron cargar los pedidos."), "error");
       setCards([]);
     } finally {
       setLoading(false);
@@ -172,7 +173,7 @@ export default function DeliveryOrderScreen() {
   }, [setNowTick]);
 
   useEffect(() => {
-     const deadlines = cards
+    const deadlines = cards
       .map((c) => (c.responseDeadline ? new Date(c.responseDeadline).getTime() : null))
       .filter((ts) => Number.isFinite(ts));
     if (deadlines.length === 0) return undefined;
@@ -187,26 +188,21 @@ export default function DeliveryOrderScreen() {
   }, [cards, loadOffers]);
 
 
-const handleDecision = async (orderId, action) => {
+  const handleDecision = async (orderId, action) => {
     try {
       setActingId(orderId);
       const result = await respondToDeliveryOrder(orderId, action);
       if (action === "ACCEPT") {
-        toast.success("Pedido aceptado.");
+        showToast("Pedido aceptado.", "success");
       } else if (result?.delivery_unavailable) {
-        toast.success("Pedido rechazado. El comercio fue notificado para reasignar otro repartidor.");
+        showToast("Pedido rechazado. El comercio fue notificado para reasignar otro repartidor.", "success");
       } else {
-        toast.success("Pedido rechazado.");
+        showToast("Pedido rechazado.", "success");
       }
       window.dispatchEvent(new Event("notificationsUpdated"));
       await loadOffers();
     } catch (err) {
-      toast.error(
-        getBackendErrorMessage(
-          err,
-          action === "ACCEPT" ? "No se pudo aceptar el pedido." : "No se pudo rechazar el pedido."
-        )
-      );
+      showToast(getBackendErrorMessage(err, "No se pudieron cargar los pedidos."), "error");
     } finally {
       setActingId(null);
     }
@@ -339,11 +335,10 @@ const handleDecision = async (orderId, action) => {
 
                       {o.responseDeadline ? (
                         <div
-                          className={`mt-3 flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold ${
-                            expired
+                          className={`mt-3 flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold ${expired
                               ? "border-amber-200 bg-amber-50 text-amber-900"
                               : "border-[#719783]/30 bg-[#F3FAF7] text-[#102A43]"
-                          }`}
+                            }`}
                         >
                           <Timer className="h-4 w-4 shrink-0" />
                           <span>
