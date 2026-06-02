@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import Navbar from '../../../components/navbar/Navbar';
-import { formatGuarani } from '../../../lib/formatGuarani.js';
+import { Navbar } from "@/components";
+import { formatGuarani } from "@/lib";
 
 export default function PriceComparisonPage() {
     const location = useLocation();

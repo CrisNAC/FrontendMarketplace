@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import Navbar from "../../../components/navbar/Navbar";
-import BecomeDeliveryModal from "../components/BecomeDeliveryModal";
+import { Navbar } from "@/components";
+import { BecomeDeliveryModal } from "../components/BecomeDeliveryModal";
 import { useToast } from "@/hooks";
 
 /**

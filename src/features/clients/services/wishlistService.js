@@ -1,4 +1,4 @@
-import apiClient from '@/lib';
+import { apiClient } from '@/lib';
 
 const base = (userId) => `/api/users/${userId}/wishlists`;
 

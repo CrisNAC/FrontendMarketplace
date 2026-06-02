@@ -3,7 +3,7 @@ import toast from "react-hot-toast";
 import { HeroCarousel, defaultSlides } from "../components/home/HeroCarousel";
 import { HomeSections } from "../components/home/HomeSections";
 import { SellerCTA } from "../components/home/SellerCTA";
-import Navbar from "../../../components/navbar/Navbar";
+import { Navbar } from "@/components";
 import DeliveryRatingPromptModal from "../components/orders/DeliveryRatingPromptModal";
 import { getSession } from "../../commerces/services/editUserProfileApi";
 import { fetchActiveBanners } from "../services/bannerApi";

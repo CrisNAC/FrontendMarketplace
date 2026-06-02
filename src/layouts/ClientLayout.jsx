@@ -1,5 +1,4 @@
-import Navbar from "../components/navbar/Navbar";
-import { SidebarClientProfile } from "../components/SidebarClientProfile";
+import { Navbar, SidebarClientProfile } from "@/components";
 
 export const ClientLayout = ({ children, title }) => {
   return (

@@ -1,3 +1,5 @@
+export { Navbar } from "./navbar/Navbar";
+
 export { EmptyState } from "./EmptyState";
 export { OrderCard } from "./OrderCard";
 export { PageLoader } from "./PageLoader";

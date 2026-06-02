@@ -1,7 +1,7 @@
-import Navbar from "../../../components/navbar/Navbar";
-import { formatGuarani } from "../../../lib/formatGuarani.js";
 import { CheckCircle2 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { Navbar } from "@/components";
+import { formatGuarani } from "@/lib";
 
 type OrderItem = {
   id: number;

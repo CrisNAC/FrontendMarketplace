@@ -262,5 +262,3 @@ export function BecomeDeliveryModal({ open, onClose, onSuccess, showToast }) {
     </div>
   );
 }
-
-export default BecomeDeliveryModal;
