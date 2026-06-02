@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../../components/navbar/Navbar";
 import BecomeDeliveryModal from "../components/BecomeDeliveryModal";
+import { useToast } from "@/hooks";
 
 /**
  * Pantalla mínima: navbar + modal “Quiero ser delivery”.
@@ -8,6 +9,7 @@ import BecomeDeliveryModal from "../components/BecomeDeliveryModal";
  */
 export const BecomeDeliveryPage = () => {
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   return (
     <div className="min-h-screen bg-[#f7f9f8]">
@@ -16,6 +18,7 @@ export const BecomeDeliveryPage = () => {
         open
         onClose={() => navigate("/", { replace: true })}
         onSuccess={() => navigate("/delivery/perfil", { replace: true })}
+        showToast={showToast}
       />
     </div>
   );

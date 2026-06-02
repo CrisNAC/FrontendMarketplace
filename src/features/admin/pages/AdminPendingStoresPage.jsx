@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Store, Eye, Check, X, AlertTriangle } from "lucide-react";
 import { fetchPendingStores, approveStore, rejectStore } from "@/features/admin/services";
 import { PageLoader } from "@/components/PageLoader";
+import { useToast } from "@/hooks";
 
 const cardStyle = {
   backgroundColor: "var(--background-white)",
