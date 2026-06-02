@@ -31,7 +31,7 @@ const NAV_LINKS_BASE = [
   { to: "/ofertas",  label: "Ofertas", highlight: "red" },
 ];
 
-const Navbar = () => {
+export const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { showToast } = useToast()
@@ -348,5 +348,3 @@ const Navbar = () => {
     </header>
   );
 };
-
-export default Navbar;

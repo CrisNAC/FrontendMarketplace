@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Check,
   ChevronLeft,
@@ -8,13 +9,12 @@ import {
   Trash2,
   User,
 } from "lucide-react";
-import { PageLoader } from "../../components/PageLoader";
-import { useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
+import { PageLoader } from "@/components";
 import {
   fetchFilteredReviewReports,
   resolveReviewReport,
-} from "../../lib/reviewReportsApi";
+} from "@/lib";
+import { useToast } from "@/hooks";
 
 const STATUS_OPTIONS = [
   { value: "", label: "Todos los estados" },
@@ -59,6 +59,7 @@ function formatDate(iso) {
 
 export default function ReviewReportsPanel({ embedded = false }) {
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   const [items, setItems] = useState([]);
   const [meta, setMeta] = useState({
@@ -143,17 +144,19 @@ export default function ReviewReportsPanel({ embedded = false }) {
     try {
       await resolveReviewReport(reportId, { decision });
 
-      toast.success(
+      showToast(
         decision === "KEEP_REVIEW"
           ? "Reporte descartado. La reseña sigue visible."
-          : "La reseña fue ocultada. El comentario desaparecerá del producto."
+          : "La reseña fue ocultada. El comentario desaparecerá del producto.",
+        "success"
       );
 
       await load();
     } catch (err) {
-      toast.error(
+      showToast(
         err?.response?.data?.error?.message ||
-          "No se pudo actualizar el reporte."
+          "No se pudo actualizar el reporte.",
+        "error"
       );
     } finally {
       setActingId(null);

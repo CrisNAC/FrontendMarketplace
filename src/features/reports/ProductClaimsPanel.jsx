@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { Check, ChevronLeft, ChevronRight, Loader2, User, X } from "lucide-react";
 import { PageLoader } from "../../components/PageLoader";
-import toast from "react-hot-toast";
 import {
   fetchFilteredProductReports,
   updateProductReport,
-} from "../../lib/productReportsApi";
+} from "@/lib";
+import { useToast } from "@/hooks";
 
 const STATUS_OPTIONS = [
   { value: "", label: "Todos los estados" },
@@ -47,6 +47,7 @@ function formatDate(iso) {
  * @param {boolean} [props.embedded] — menos padding si va dentro de otra tarjeta
  */
 export default function ProductClaimsPanel({ canResolve = false, embedded = false }) {
+  const { showToast } = useToast();
   const [items, setItems] = useState([]);
   const [meta, setMeta] = useState({
     total: 0,
@@ -114,12 +115,12 @@ export default function ProductClaimsPanel({ canResolve = false, embedded = fals
     setSavingId(id);
     try {
       await updateProductReport(id, { report_status: "IN_PROGRESS" });
-      toast.success("Reclamo marcado en curso");
+      showToast("Reclamo marcado en curso", "success");
       await load();
     } catch (err) {
-      toast.error(
+      showToast(
         err?.response?.data?.error?.message || "No se pudo actualizar"
-      );
+      , "error");
     } finally {
       setSavingId(null);
     }
@@ -128,7 +129,7 @@ export default function ProductClaimsPanel({ canResolve = false, embedded = fals
   const handleClose = async (id, report_status) => {
     const note = (closeNotes[id] || "").trim();
     if (!note) {
-      toast.error(
+      showToast(
         report_status === "RESOLVED"
           ? "Agregá una nota explicando cómo se resolvió"
           : "Agregá una nota explicando el rechazo"
@@ -138,7 +139,7 @@ export default function ProductClaimsPanel({ canResolve = false, embedded = fals
     setSavingId(id);
     try {
       await updateProductReport(id, { report_status, notes: note });
-      toast.success(
+      showToast(
         report_status === "RESOLVED" ? "Reclamo resuelto" : "Reclamo rechazado"
       );
       setCloseNotes((prev) => {
@@ -148,9 +149,9 @@ export default function ProductClaimsPanel({ canResolve = false, embedded = fals
       });
       await load();
     } catch (err) {
-      toast.error(
+      showToast(
         err?.response?.data?.error?.message || "No se pudo actualizar"
-      );
+      , "error");
     } finally {
       setSavingId(null);
     }

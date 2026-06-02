@@ -3,7 +3,7 @@ import { Star, X } from "lucide-react";
 
 const stars = [1, 2, 3, 4, 5];
 
-const DeliveryRatingPromptModal = ({
+export const DeliveryRatingPromptModal = ({
   isOpen,
   pendingReviews,
   submitting,
@@ -127,5 +127,3 @@ const DeliveryRatingPromptModal = ({
     </div>
   );
 };
-
-export default DeliveryRatingPromptModal;

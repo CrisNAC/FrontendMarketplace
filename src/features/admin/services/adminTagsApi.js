@@ -5,19 +5,19 @@ const BASE = '/api/admin/tags';
 // POST /api/admin/tags — acepta { name }
 export const createAdminTag = async (name) => {
     const { data } = await apiClient.post(BASE, { name });
-    return data; // { id, name, status, createdAt }
+    return data; 
 };
 
 // GET /api/admin/tags
 export const fetchAdminTags = async () => {
     const { data } = await apiClient.get(BASE);
-    return data; // [{ id, name, status, productCount, createdAt, updatedAt }]
+    return data; 
 };
 
 // PATCH /api/admin/tags/:id — acepta { name }
 export const updateAdminTag = async (id, name) => {
     const { data } = await apiClient.patch(`${BASE}/${id}`, { name });
-    return data; // { id, name, status, createdAt, updatedAt }
+    return data; 
 };
 
 // DELETE /api/admin/tags/:id

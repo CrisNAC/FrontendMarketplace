@@ -1,6 +1,5 @@
-// src/components/SidebarMyCommerce.jsx
 import { useNavigate, useLocation } from "react-router-dom";
-import { useLogout } from "../hooks/useLogout";
+import { useLogout } from "@/hooks";
 import {
     LayoutDashboard,
     Package,

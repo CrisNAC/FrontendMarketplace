@@ -1,15 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Trash2, ShoppingCart } from "lucide-react";
-import { PageLoader } from "../../../components/PageLoader";
-import { EmptyState } from "../../../components/EmptyState";
-import { ConfirmationModal } from "../components/cart/ConfirmationModal";
-import toast from "react-hot-toast";
-
-import WishlistItemCard from "../components/wishlist/WishlistItemCard";
-import WishlistSummaryCard from "../components/wishlist/WishlistSummaryCard";
-import { addToCartApi } from "../../../lib/cartApi";
-import { mergeCartResponseFromApi } from "../../../lib/cartLocalStorage";
+import { PageLoader, EmptyState } from "@/components";
+import { ConfirmationModal } from "@/features/clients/components/cart";
+import { WishlistItemCard, WishlistSummaryCard } from "@/features/clients/components/wishlist";
+import { addToCartApi, mergeCartResponseFromApi } from "@/lib";
 import {
   getWishlists,
   getWishlistItems,
@@ -17,9 +12,11 @@ import {
   deleteWishlist,
   removeWishlistItem,
 } from "../services/wishlistService";
+import { useToast } from "@/hooks";
 
 export default function Wishlist() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   const [status, setStatus] = useState("loading");
   const [userId, setUserId] = useState(null);
@@ -46,10 +43,10 @@ export default function Wishlist() {
       );
       setWishlists(withItems);
     } catch {
-      toast.error("No se pudieron cargar las listas");
+      showToast("No se pudieron cargar las listas", "error");
       setStatus("error");
     }
-  }, []);
+  }, [showToast]);
 
   useEffect(() => {
     const init = async () => {
@@ -59,7 +56,7 @@ export default function Wishlist() {
         );
         const uid = res.data?.user?.id_user;
         if (!uid) {
-          toast.error("Iniciá sesión para ver tu lista de deseos");
+          showToast("Iniciá sesión para ver tu lista de deseos", "error");
           navigate("/login");
           return;
         }
@@ -75,16 +72,16 @@ export default function Wishlist() {
 
   const handleCreateList = async () => {
     const name = newListName.trim();
-    if (!name) return toast.error("Ingresá un nombre para la lista");
+    if (!name) return showToast("Ingresá un nombre para la lista", "error");
     setCreatingList(true);
     try {
       await createWishlist(userId, name);
       setNewListName("");
       setShowCreateForm(false);
       await loadWishlists(userId);
-      toast.success("Lista creada");
+      showToast("Lista creada", "success");
     } catch {
-      toast.error("No se pudo crear la lista");
+      showToast("No se pudo crear la lista", "error");
     } finally {
       setCreatingList(false);
     }
@@ -99,14 +96,14 @@ export default function Wishlist() {
       await deleteWishlist(userId, deleteModal.id);
       setWishlists((prev) => prev.filter((w) => w.id !== deleteModal.id));
       setDeleteModal({ open: false, id: null, name: "" });
-      toast.success("Lista eliminada");
+      showToast("Lista eliminada", "success");
     } catch {
-      toast.error("No se pudo eliminar la lista");
+      showToast("No se pudo eliminar la lista", "error");
     }
   };
 
   const handleRemoveItem = (wishlistId, item) => {
-    if (!item?.product?.id) return toast.error("Producto inválido");
+    if (!item?.product?.id) return showToast("Producto inválido", "error");
     setRemoveModal({ open: true, wishlistId, item });
   };
 
@@ -122,14 +119,14 @@ export default function Wishlist() {
         )
       );
       setRemoveModal({ open: false, wishlistId: null, item: null });
-      toast.success("Producto eliminado de la lista");
+      showToast("Producto eliminado de la lista", "success");
     } catch {
-      toast.error("No se pudo eliminar el producto");
+      showToast("No se pudo eliminar el producto", "error");
     }
   };
 
   const handleAddToCart = async (wishlistId, item) => {
-    if (!item?.product?.id) return toast.error("Producto inválido");
+    if (!item?.product?.id) return showToast("Producto inválido", "error");
     try {
       const cart = await addToCartApi(userId, {
         productId: item.product.id,
@@ -144,14 +141,14 @@ export default function Wishlist() {
             : w
         )
       );
-      toast.success("Agregado al carrito");
+      showToast("Agregado al carrito", "success");
     } catch (e) {
       const code = e?.response?.status;
       if (code === 401) {
-        toast.error("Iniciá sesión para usar el carrito");
+        showToast("Iniciá sesión para usar el carrito", "error");
         navigate("/login");
       } else {
-        toast.error("No se pudo agregar al carrito");
+        showToast("No se pudo agregar al carrito", "error");
       }
     }
   };
@@ -197,14 +194,14 @@ export default function Wishlist() {
           )
         );
       }
-      toast.success("Todos los productos agregados al carrito");
+      showToast("Todos los productos agregados al carrito", "success");
     } catch (e) {
       const code = e?.response?.status;
       if (code === 401) {
-        toast.error("Iniciá sesión para usar el carrito");
+        showToast("Iniciá sesión para usar el carrito", "error");
         navigate("/login");
       } else {
-        toast.error("No se pudieron agregar todos los productos");
+        showToast("No se pudieron agregar todos los productos", "error");
       }
     } finally {
       setAddingAllToCart(false);

@@ -1,12 +1,10 @@
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { Minus, Plus, Trash2, ArrowLeft } from "lucide-react";
-import Navbar from "../../../components/navbar/Navbar";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
-import toast from "react-hot-toast";
-import { getApiBase } from "../../../lib/cartApi";
-import { formatGuarani } from "../../../lib/formatGuarani.js";
-import { PageLoader } from "../../../components/PageLoader";
+import { getApiBase, formatGuarani } from "@/lib";
+import { Navbar, PageLoader } from "@/components";
+import { useToast } from "@/hooks";
 
 type CartItem = {
   id: number;
@@ -47,6 +45,7 @@ type BackendCart = {
 
 export const CartPage = () => {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const { cartId } = useParams();
   const apiBase = getApiBase() || "http://localhost:3000";
 
@@ -60,7 +59,7 @@ export const CartPage = () => {
 
       if (!cartId) {
         setStatus("error");
-        toast.error("Carrito inválido");
+        showToast("Carrito inválido", "error");
         return;
       }
 
@@ -72,7 +71,7 @@ export const CartPage = () => {
 
       if (!userId) {
         setStatus("unauthorized");
-        toast.error("Iniciá sesión para ver tu carrito");
+        showToast("Iniciá sesión para ver tu carrito", "error");
         navigate("/login");
         return;
       }
@@ -91,7 +90,7 @@ export const CartPage = () => {
         setCartItems([]);
         setCartName("Carrito de Compras");
         setStatus("error");
-        toast.error("Carrito no encontrado");
+        showToast("Carrito no encontrado", "error");
         return;
       }
 
@@ -118,20 +117,21 @@ export const CartPage = () => {
 
       setCartItems(mappedItems);
       setStatus("ready");
-    } catch (error: any) {
-      const code = error?.response?.status;
+    } catch (error: unknown) {
+  const err = error as { response?: { status?: number; data?: { message?: string } } };
 
-      if (code === 401) {
+
+      if (err.response?.status === 401) {
         setStatus("unauthorized");
-        toast.error("Iniciá sesión para ver tu carrito");
+        showToast("Iniciá sesión para ver tu carrito", "error");
         navigate("/login");
         return;
       }
 
       setStatus("error");
-      toast.error(error?.response?.data?.message || "No se pudo cargar el carrito");
+      showToast(err.response?.data?.message || "No se pudo cargar el carrito", "error");
     }
-  }, [apiBase, cartId, navigate]);
+  }, [apiBase, cartId, navigate, showToast]);
 
   useEffect(() => {
     loadCart();
@@ -143,7 +143,7 @@ export const CartPage = () => {
         if (item.id !== id) return item;
 
         if (type === "inc" && item.quantity >= item.stock) {
-          toast.error(`Solo hay ${item.stock} unidades disponibles de ${item.name}`);
+          showToast(`Solo hay ${item.stock} unidades disponibles de ${item.name}`, "error");
           return item;
         }
 
