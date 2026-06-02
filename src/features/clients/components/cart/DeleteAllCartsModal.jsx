@@ -18,7 +18,6 @@ export function DeleteAllCartsModal({ userId, totalCarts, totalItems, onClose, o
         `${apiBase}/api/users/${userId}/carts`,
         { withCredentials: true }
       );
-      showToast("Todos los carritos fueron eliminados correctamente", "success");
       onSuccess?.();
       onClose();
     } catch (err) {

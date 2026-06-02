@@ -2,8 +2,7 @@ import { useState } from "react";
 import PropTypes from "prop-types";
 import { Trash2 } from "lucide-react";
 import axios from "axios";
-import toast from "react-hot-toast";
-import { getApiBase } from "../../../../lib/cartApi";
+import { getApiBase } from "@/lib";
 import { ConfirmationModal } from "./ConfirmationModal";
 
 export function DeleteCartModal({ cartId, userId, storeName, itemCount, onClose, onSuccess }) {
@@ -19,7 +18,6 @@ export function DeleteCartModal({ cartId, userId, storeName, itemCount, onClose,
         `${apiBase}/api/users/${userId}/cart/${cartId}`,
         { withCredentials: true }
       );
-      toast.success("Carrito eliminado correctamente");
       onSuccess?.();
       onClose();
     } catch (err) {

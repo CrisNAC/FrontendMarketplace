@@ -96,11 +96,13 @@ export default function OrdenesComprasPage() {
 
   const handleDeleteCartSuccess = () => {
     setDeleteCartModal(null);
+    showToast("Carrito eliminado correctamente", "success");
     loadCarts();
   };
 
   const handleDeleteAllCartsSuccess = () => {
     setDeleteAllCartsModal(false);
+    showToast("Todos los carritos fueron eliminados correctamente", "success");
     loadCarts();
   };
 
