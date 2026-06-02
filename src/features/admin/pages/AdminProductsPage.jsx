@@ -1,10 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Search, Package, Flag, Eye, Check, X, AlertTriangle, Store, Tag, Calendar } from "lucide-react";
 import { PageLoader } from "../../../components/PageLoader";
-import toast from "react-hot-toast";
 import { fetchAdminProducts, approveProduct, rejectProduct } from "../services/adminProductsApi";
-
-// ── Constantes de UI ───────────────────────────────────────────────────────
 
 const cardStyle = {
   backgroundColor: "var(--background-white)",
@@ -18,8 +15,6 @@ const APPROVAL_STATUS = {
   ACTIVE:   { label: "aprobado",   color: "#15803d", bg: "#dcfce7" },
   REJECTED: { label: "rechazado",  color: "#dc2626", bg: "#fee2e2" },
 };
-
-// ── Modal de detalle ───────────────────────────────────────────────────────
 
 const ProductDetailModal = ({ isOpen, product, onClose, onApprove, onReject, isSubmitting }) => {
   if (!isOpen || !product) return null;
@@ -44,7 +39,6 @@ const ProductDetailModal = ({ isOpen, product, onClose, onApprove, onReject, isS
         style={{ backgroundColor: "white", borderRadius: "16px", padding: "24px", maxWidth: "560px", width: "100%", boxShadow: "0 20px 40px rgba(0,0,0,0.15)", maxHeight: "90vh", display: "flex", flexDirection: "column" }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
           <h3 style={{ fontSize: "20px", fontWeight: "700", margin: 0 }}>Detalle del Producto</h3>
           <button type="button" onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280" }}>
@@ -52,10 +46,7 @@ const ProductDetailModal = ({ isOpen, product, onClose, onApprove, onReject, isS
           </button>
         </div>
 
-        {/* Contenido scrollable */}
         <div style={{ overflowY: "auto", paddingRight: "4px", flex: 1 }}>
-
-          {/* Imagen + nombre + estado */}
           <div style={{ display: "flex", gap: "16px", marginBottom: "24px" }}>
             <div style={{ width: "72px", height: "72px", borderRadius: "10px", border: "1px solid #e5e7eb", backgroundColor: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
               {imageUrl
@@ -71,13 +62,11 @@ const ProductDetailModal = ({ isOpen, product, onClose, onApprove, onReject, isS
             </div>
           </div>
 
-          {/* Descripción */}
           <div style={{ marginBottom: "20px" }}>
             <p style={{ margin: "0 0 6px", fontSize: "13px", fontWeight: "600", color: "#374151", borderBottom: "1px solid #f3f4f6", paddingBottom: "4px" }}>Descripción</p>
             <p style={{ margin: 0, fontSize: "14px", color: "#4b5563", lineHeight: "1.6" }}>{product.description || "Sin descripción."}</p>
           </div>
 
-          {/* Datos del producto */}
           <div style={{ marginBottom: "20px" }}>
             <p style={{ margin: "0 0 10px", fontSize: "13px", fontWeight: "600", color: "#374151", borderBottom: "1px solid #f3f4f6", paddingBottom: "4px" }}>Datos del producto</p>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
@@ -113,7 +102,6 @@ const ProductDetailModal = ({ isOpen, product, onClose, onApprove, onReject, isS
             </div>
           </div>
 
-          {/* Reportes */}
           <div style={{ marginBottom: product.rejectionReason ? "20px" : "0" }}>
             <p style={{ margin: "0 0 10px", fontSize: "13px", fontWeight: "600", color: "#374151", borderBottom: "1px solid #f3f4f6", paddingBottom: "4px" }}>
               Reportes
@@ -142,7 +130,6 @@ const ProductDetailModal = ({ isOpen, product, onClose, onApprove, onReject, isS
             )}
           </div>
 
-          {/* Motivo de rechazo (si aplica) */}
           {product.rejectionReason && (
             <div>
               <p style={{ margin: "0 0 10px", fontSize: "13px", fontWeight: "600", color: "#374151", borderBottom: "1px solid #f3f4f6", paddingBottom: "4px" }}>
@@ -155,7 +142,6 @@ const ProductDetailModal = ({ isOpen, product, onClose, onApprove, onReject, isS
           )}
         </div>
 
-        {/* Footer con acciones — solo para PENDING */}
         {isPending && (
           <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end", borderTop: "1px solid #f3f4f6", paddingTop: "20px", marginTop: "20px" }}>
             <button
@@ -181,9 +167,7 @@ const ProductDetailModal = ({ isOpen, product, onClose, onApprove, onReject, isS
   );
 };
 
-// ── Modal de rechazo ───────────────────────────────────────────────────────
-
-const RejectModal = ({ isOpen, productName, onClose, onConfirm, isSubmitting }) => {
+const RejectModal = ({ isOpen, productName, onClose, onConfirm, isSubmitting, showToast }) => {
   const [reason, setReason] = useState("");
 
   useEffect(() => {
@@ -194,7 +178,7 @@ const RejectModal = ({ isOpen, productName, onClose, onConfirm, isSubmitting }) 
 
   const handleConfirm = () => {
     if (!reason.trim()) {
-      toast.error("El motivo es obligatorio");
+      showToast("El motivo es obligatorio", "error");
       return;
     }
     onConfirm(reason.trim());
@@ -237,8 +221,6 @@ const RejectModal = ({ isOpen, productName, onClose, onConfirm, isSubmitting }) 
     </div>
   );
 };
-
-// ── Fila de producto ───────────────────────────────────────────────────────
 
 const ProductRow = ({ product, onViewDetail, onApprove, onReject, isSubmitting }) => {
   const statusConfig = APPROVAL_STATUS[product.approvalStatus] ?? APPROVAL_STATUS.PENDING;
@@ -326,8 +308,6 @@ const ProductRow = ({ product, onViewDetail, onApprove, onReject, isSubmitting }
   );
 };
 
-// ── Componente principal ───────────────────────────────────────────────────
-
 export const AdminProductsPage = () => {
   const [products,   setProducts]   = useState([]);
   const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 20, totalPages: 1 });
@@ -344,14 +324,12 @@ export const AdminProductsPage = () => {
   const [isRejectOpen,    setIsRejectOpen]    = useState(false);
   const [isSubmitting,    setIsSubmitting]    = useState(false);
 
-  // ── Debounce del buscador ──────────────────────────────────────────────
+  const { showToast } = useToast();
 
   useEffect(() => {
     const id = setTimeout(() => setSearch(searchInput), 300);
     return () => clearTimeout(id);
   }, [searchInput]);
-
-  // ── Carga de datos ─────────────────────────────────────────────────────
 
   const loadProducts = useCallback(async (currentPage) => {
     setLoading(true);
@@ -367,17 +345,13 @@ export const AdminProductsPage = () => {
     }
   }, [search, approvalStatus]);
 
-  // Un solo efecto para el fetch; loadProducts cambia cuando cambian search/approvalStatus.
   useEffect(() => {
     loadProducts(page);
   }, [page, loadProducts]);
 
-  // Resetea a página 1 cuando cambian los filtros; el efecto de arriba ejecuta el fetch.
   useEffect(() => {
     setPage(1);
   }, [search, approvalStatus]);
-
-  // ── Acciones ───────────────────────────────────────────────────────────
 
   const handleViewDetail = (product) => {
     setSelectedProduct(product);
@@ -388,12 +362,12 @@ export const AdminProductsPage = () => {
     setIsSubmitting(true);
     try {
       await approveProduct(product.id);
-      toast.success(`"${product.name}" aprobado exitosamente`);
+      showToast(`"${product.name}" aprobado exitosamente`, "success");
       setIsDetailOpen(false);
       setSelectedProduct(null);
       loadProducts(page);
     } catch (err) {
-      toast.error(err?.response?.data?.error?.message || "Error al aprobar el producto");
+      showToast(err?.response?.data?.error?.message || "Error al aprobar el producto", "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -410,18 +384,16 @@ export const AdminProductsPage = () => {
     setIsSubmitting(true);
     try {
       await rejectProduct(selectedProduct.id, reason);
-      toast.success(`"${selectedProduct.name}" rechazado`);
+      showToast(`"${selectedProduct.name}" rechazado`, "success");
       setIsRejectOpen(false);
       setSelectedProduct(null);
       loadProducts(page);
     } catch (err) {
-      toast.error(err?.response?.data?.error?.message || "Error al rechazar el producto");
+      showToast(err?.response?.data?.error?.message || "Error al rechazar el producto", "error");
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  // ── Render ─────────────────────────────────────────────────────────────
 
   return (
     <div style={{ maxWidth: "1100px", paddingBottom: "40px" }}>
@@ -432,7 +404,6 @@ export const AdminProductsPage = () => {
         </p>
       </div>
 
-      {/* Filtros */}
       <div style={{ ...cardStyle, marginBottom: "16px" }}>
         <p style={{ margin: "0 0 12px", fontWeight: "600", fontSize: "14px" }}>Filtros</p>
         <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
@@ -459,7 +430,6 @@ export const AdminProductsPage = () => {
         </div>
       </div>
 
-      {/* Lista */}
       <div style={cardStyle}>
         <div style={{ display: "flex", alignItems: "flex-start", gap: "10px", marginBottom: "16px" }}>
           <div style={{ width: "40px", height: "40px", borderRadius: "8px", backgroundColor: "#fef3c7", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -512,7 +482,6 @@ export const AdminProductsPage = () => {
         )}
       </div>
 
-      {/* Modal de detalle */}
       <ProductDetailModal
         isOpen={isDetailOpen && !isRejectOpen}
         product={selectedProduct}
@@ -522,13 +491,13 @@ export const AdminProductsPage = () => {
         isSubmitting={isSubmitting}
       />
 
-      {/* Modal de rechazo */}
       <RejectModal
         isOpen={isRejectOpen}
         productName={selectedProduct?.name ?? ""}
         onClose={() => { setIsRejectOpen(false); setIsDetailOpen(false); setSelectedProduct(null); }}
         onConfirm={handleRejectConfirm}
         isSubmitting={isSubmitting}
+        showToast={showToast}
       />
     </div>
   );
