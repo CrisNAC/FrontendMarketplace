@@ -13,7 +13,7 @@ import { PageLoader } from "@/components";
 import {
   fetchFilteredReviewReports,
   resolveReviewReport,
-} from "@App/lib";
+} from "@/lib";
 import { useToast } from "@/hooks";
 
 const STATUS_OPTIONS = [
