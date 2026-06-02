@@ -56,6 +56,7 @@ export const CartPage = () => {
   const [cartName, setCartName] = useState("Carrito de Compras");
   const [status, setStatus] = useState<"loading" | "ready" | "error" | "unauthorized">("loading");
   const [itemToDelete, setItemToDelete] = useState<CartItem | null>(null);
+  const [loadingItemIds, setLoadingItemIds] = useState<Set<number>>(new Set());
 
   const loadCart = useCallback(async () => {
     try {
@@ -141,6 +142,8 @@ export const CartPage = () => {
   }, [loadCart]);
 
   const updateQuantity = async (id: number, type: "inc" | "dec") => {
+    if (loadingItemIds.has(id)) return;
+
     const item = cartItems.find((i) => i.id === id);
     if (!item) return;
 
@@ -152,6 +155,7 @@ export const CartPage = () => {
     const newQuantity =
       type === "inc" ? item.quantity + 1 : Math.max(1, item.quantity - 1);
 
+    setLoadingItemIds((prev) => new Set(prev).add(id));
     try {
       await updateCartItemQuantityApi(id, newQuantity);
       setCartItems((prev) =>
@@ -159,6 +163,12 @@ export const CartPage = () => {
       );
     } catch (error: any) {
       showToast(error?.response?.data?.message || "No se pudo actualizar la cantidad", "error");
+    } finally {
+      setLoadingItemIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
     }
   };
 
@@ -303,7 +313,8 @@ export const CartPage = () => {
                               <div className="mt-2 flex items-center gap-2">
                                 <button
                                   onClick={() => updateQuantity(item.id, "dec")}
-                                  className="flex h-7 w-7 items-center justify-center rounded-full bg-[#eef4f1] text-[#4e6a60] transition hover:bg-[#dbe9e2]"
+                                  disabled={loadingItemIds.has(item.id)}
+                                  className="flex h-7 w-7 items-center justify-center rounded-full bg-[#eef4f1] text-[#4e6a60] transition hover:bg-[#dbe9e2] disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   <Minus size={14} />
                                 </button>
@@ -314,7 +325,8 @@ export const CartPage = () => {
 
                                 <button
                                   onClick={() => updateQuantity(item.id, "inc")}
-                                  className="flex h-7 w-7 items-center justify-center rounded-full bg-[#eef4f1] text-[#4e6a60] transition hover:bg-[#dbe9e2]"
+                                  disabled={loadingItemIds.has(item.id)}
+                                  className="flex h-7 w-7 items-center justify-center rounded-full bg-[#eef4f1] text-[#4e6a60] transition hover:bg-[#dbe9e2] disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   <Plus size={14} />
                                 </button>
@@ -390,7 +402,7 @@ export const CartPage = () => {
           "• Esta acción no se puede deshacer",
         ]}
         onClose={() => setItemToDelete(null)}
-        onConfirm={() => removeItem(itemToDelete!.id)}
+        onConfirm={() => { if (itemToDelete) removeItem(itemToDelete.id); }}
         confirmText="Eliminar producto"
         icon={Trash2}
       />
