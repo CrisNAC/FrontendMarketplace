@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { X } from "lucide-react";
-import toast from "react-hot-toast";
 import { becomeDelivery, getCurrentUserForDeliveryForm } from "../services/deliveryApi";
 import {
   getBackendErrorMessage,
