@@ -1,4 +1,3 @@
-// src/features/clients/components/home/SellerCTA.jsx
 import { useNavigate } from "react-router-dom";
 
 export const SellerCTA = () => {

@@ -1,12 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import toast from "react-hot-toast";
-import { HeroCarousel, defaultSlides } from "../components/home/HeroCarousel";
-import { HomeSections } from "../components/home/HomeSections";
-import { SellerCTA } from "../components/home/SellerCTA";
+import { HeroCarousel, defaultSlides, HomeSections, SellerCTA } from "@/features/clients/components/home";
 import { Navbar } from "@/components";
-import DeliveryRatingPromptModal from "../components/orders/DeliveryRatingPromptModal";
+import { DeliveryRatingPromptModal } from "@/features/clients/components/orders/DeliveryRatingPromptModal";
 import { getSession } from "../../commerces/services/editUserProfileApi";
-import { fetchActiveBanners } from "../services/bannerApi";
+import { fetchActiveBanners } from "@/features/clients/services";
 import {
   createDeliveryReview,
   getBackendErrorMessage,

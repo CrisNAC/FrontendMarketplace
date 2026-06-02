@@ -1,4 +1,3 @@
-// src/features/clients/components/home/HomeSections.jsx
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";

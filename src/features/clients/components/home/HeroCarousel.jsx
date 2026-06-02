@@ -1,4 +1,3 @@
-// src/features/clients/components/home/HeroCarousel.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -62,16 +61,11 @@ export const HeroCarousel = ({ slides = [] }) => {
   return (
     <div className="w-full px-4 mt-6 sm:mt-10 flex justify-center">
       <div className="w-full max-w-[1254px] rounded-[20px] sm:rounded-[30px] overflow-hidden shadow-lg relative">
-
-        {/* Mobile: stacked layout, Desktop: side by side */}
         <div className="flex flex-col sm:flex-row sm:h-[334px]">
-
-          {/* Image — top on mobile, right on desktop */}
           <div className="w-full h-[180px] sm:hidden">
             <img src={imageUrl} alt="Slide" className="w-full h-full object-cover" />
           </div>
 
-          {/* Left: text + CTAs */}
           <div className="w-full sm:w-1/2 bg-[#8BB2A1] text-white flex flex-col justify-center px-6 py-8 sm:px-16 sm:py-0">
             <h2 className="text-lg sm:text-2xl font-bold mb-3 sm:mb-4" style={{ fontWeight: "bold" }}>
               {currentSlide?.title}
@@ -104,13 +98,11 @@ export const HeroCarousel = ({ slides = [] }) => {
             )}
           </div>
 
-          {/* Right: image — hidden on mobile, visible on sm+ */}
           <div className="hidden sm:block sm:w-1/2">
             <img src={imageUrl} alt="Slide" className="w-full h-full object-cover" />
           </div>
         </div>
 
-        {/* Indicators */}
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">
           {resolvedSlides.map((_, index) => (
             <button
