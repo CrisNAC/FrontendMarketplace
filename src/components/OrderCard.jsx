@@ -1,5 +1,5 @@
-import { formatGuarani } from '../lib/formatGuarani.js';
-import { OrderStepper } from '../features/clients/components/OrderStepper'
+import { formatGuarani } from '@/lib';
+import { OrderStepper } from '@/features/clients/components/OrderStepper'
 import { Truck, CheckCircle, AlertCircle, Clock, Package } from 'lucide-react';
 
 const iconosEstado = {
@@ -32,16 +32,10 @@ const iconosEstado = {
 
 export const OrderCard = ({ order, onClick }) => {
   return (
-    
     <div onClick={onClick} className="flex justify-between items-center border border-gray-200 rounded-lg p-1 mb-3 bg-white shadow-sm gap-4 cursor-pointer hover:bg-slate-50 hover:border-blue-400 hover:shadow-md transition-all duration-200">
-      
-      {/* Agrupamos el icono con los textos a la izquierda */}
       <div className="flex items-center ms-2 gap-4">
-        
-        {/* Aca se renderiza el icono del estado del pedido */}
         {iconosEstado[order.estado] || iconosEstado["Pendiente"]}
 
-        {/* orderNumber y fecha del pedido */}
         <div>
           <p className="text-base font-semibold mb-1">
             {order.orderNumber}
@@ -52,12 +46,10 @@ export const OrderCard = ({ order, onClick }) => {
         </div>
       </div>
 
-      {/* Estado del pedido */}
       <div className="flex-1 max-w-[50%] px-4 hidden md:block">
         <OrderStepper estado={order.estado} />
       </div>
 
-      {/* Cantidad del producto y el total */}
       <div className="text-right me-2 shrink-0">
         <p className="text-sm mb-1 text-gray-600">{order.cantidad} producto(s)</p>
         <p className="text-lg font-bold">{formatGuarani(order.total)}</p>
