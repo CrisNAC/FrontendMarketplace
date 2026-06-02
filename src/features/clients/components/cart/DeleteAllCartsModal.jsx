@@ -2,7 +2,7 @@ import { useState } from "react";
 import PropTypes from "prop-types";
 import { Trash2 } from "lucide-react";
 import axios from "axios";
-import { getApiBase } from "@/features/clients/components/cart"; 
+import { getApiBase } from "@/lib"; 
 import { ConfirmationModal } from "./ConfirmationModal";
 
 export function DeleteAllCartsModal({ userId, totalCarts, totalItems, onClose, onSuccess }) {

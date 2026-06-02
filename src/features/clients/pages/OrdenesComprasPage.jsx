@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import axios from "axios";
 import { fetchCartsApi, getApiBase, formatGuarani } from "@/lib";
-import { DeleteCartModal, DeleteAllCartsModal } from "@/features/components/cart";
+import { DeleteCartModal, DeleteAllCartsModal } from "@/features/clients/components/cart";
 import { useToast } from "@/hooks";
 
 function itemSubtotal(unitPrice, qty) {
