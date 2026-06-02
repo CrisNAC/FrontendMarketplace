@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageLoader } from "../../../components/PageLoader";
+import { useToast } from "@/hooks";
 import { z } from "zod";
 import { CategoryIcon, IconPicker } from "../components/CategoryIconPicker";
 import {
@@ -12,7 +13,7 @@ import PropTypes from "prop-types";
 import { CategoryEditModal } from "../components/CategoryEditModal";
 import {
     fetchCategoriesWithProducts, updateAdminCategory,
-    deleteAdminCategory, createAdminCategory,
+    deleteAdminCategory, createAdminCategory, processAdminCategoryRequest,
 } from "../services/adminCategoriesApi";
 import {
     fetchAdminTags, createAdminTag,
@@ -584,6 +585,7 @@ DeleteTagModal.propTypes = {
 
 // ─── PESTAÑA DE ETIQUETAS ─────────────────────────────────────────────────────
 function TagsTab() {
+    const { showToast } = useToast();
     const [tags, setTags] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -611,11 +613,13 @@ function TagsTab() {
         const created = await createAdminTag(name);
         setShowCreateModal(false);
         setTags(prev => [...prev, { ...created, productCount: 0 }].sort((a, b) => a.name.localeCompare(b.name)));
+        showToast("Etiqueta creada correctamente", "success");
     };
 
     const handleSaveEdit = async (id, name) => {
         const updated = await updateAdminTag(id, name);
         setTags(prev => prev.map(t => t.id === id ? { ...t, ...updated } : t).sort((a, b) => a.name.localeCompare(b.name)));
+        showToast("Etiqueta actualizada correctamente", "success");
     };
 
     const handleDeleteConfirm = async () => {
@@ -626,6 +630,7 @@ function TagsTab() {
             await deleteAdminTag(tagToDelete.id);
             setTags(prev => prev.filter(t => t.id !== tagToDelete.id));
             setTagToDelete(null);
+            showToast("Etiqueta eliminada", "success");
         } catch (err) {
             setDeleteError(err?.response?.data?.message ?? "No se pudo eliminar la etiqueta.");
         } finally {
@@ -682,6 +687,7 @@ function TagsTab() {
 
 // ─── PÁGINA PRINCIPAL ─────────────────────────────────────────────────────────
 export const AdminCategoriesPage = () => {
+    const { showToast } = useToast();
     const [activeTab, setActiveTab] = useState("categories");
 
     const [categories, setCategories] = useState([]);
@@ -737,7 +743,7 @@ export const AdminCategoriesPage = () => {
         setRequestsLoading(true);
         setRequestsError(null);
         try {
-            const result = await fetchCategoriesWithProducts({ status: false, categoryPage: currentPage, categoryLimit: 20, productLimit: 0 });
+            const result = await fetchCategoriesWithProducts({ visible: "false", categoryPage: currentPage, categoryLimit: 20, productLimit: 0 });
             setRequests(result.data);
             setRequestPagination({ categoryTotal: result.categoryTotal, categoryTotalPages: result.categoryTotalPages });
         } catch (err) {
@@ -749,6 +755,7 @@ export const AdminCategoriesPage = () => {
 
     useEffect(() => { setPage(1); }, [search, filterVisible]);
     useEffect(() => { load(page); }, [load, page]);
+    useEffect(() => { loadRequests(1); }, [loadRequests]);
     useEffect(() => { if (activeTab === "requests") loadRequests(requestPage); }, [activeTab, requestPage, loadRequests]);
     useEffect(() => {
         if (activeTab === "requests") setActionError("");
@@ -790,12 +797,13 @@ export const AdminCategoriesPage = () => {
         setIsActioning(true);
         setActionError("");
         try {
-            await updateAdminCategory(requestToApprove.id, { status: true, visible: true });
+            await processAdminCategoryRequest(requestToApprove.id, "approve");
             setRequests(prev => prev.filter(r => r.id !== requestToApprove.id));
             setRequestPagination(prev => ({ ...prev, categoryTotal: Math.max(0, prev.categoryTotal - 1) }));
             setRequestToApprove(null);
             await load(page);
             if (requestPage > 1 && requests.length === 1) setRequestPage(prev => prev - 1);
+            showToast("Categoría aprobada correctamente", "success");
         } catch (err) {
             setActionError(err?.response?.data?.message ?? "No se pudo aprobar la solicitud.");
         } finally {
@@ -808,11 +816,12 @@ export const AdminCategoriesPage = () => {
         setIsActioning(true);
         setActionError("");
         try {
-            await deleteAdminCategory(requestToReject.id);
+            await processAdminCategoryRequest(requestToReject.id, "reject");
             setRequests(prev => prev.filter(r => r.id !== requestToReject.id));
             setRequestPagination(prev => ({ ...prev, categoryTotal: Math.max(0, prev.categoryTotal - 1) }));
             setRequestToReject(null);
             if (requestPage > 1 && requests.length === 1) setRequestPage(prev => prev - 1);
+            showToast("Solicitud rechazada", "success");
         } catch (err) {
             setActionError(err?.response?.data?.message ?? "No se pudo rechazar la solicitud.");
         } finally {
@@ -906,18 +915,7 @@ export const AdminCategoriesPage = () => {
                         </button>
                     </div>
 
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "20px" }}>
-                        {[
-                            { label: "Total de Categorías", value: pagination.categoryTotal },
-                            { label: "Categorías Visibles", value: categories.filter(c => c.visible).length },
-                            { label: "Categorías Ocultas", value: hiddenCount },
-                        ].map(({ label, value }) => (
-                            <div key={label} style={{ ...cardStyle, textAlign: "center" }}>
-                                <p style={{ margin: "0 0 4px", fontSize: "13px", color: "#6b7280" }}>{label}</p>
-                                <p style={{ margin: 0, fontSize: "28px", fontWeight: "700" }}>{value}</p>
-                            </div>
-                        ))}
-                    </div>
+
 
                     <div style={{ ...cardStyle, marginBottom: "16px" }}>
                         <p style={{ margin: "0 0 12px", fontWeight: "600", fontSize: "14px" }}>Buscar Categorías</p>
@@ -931,7 +929,6 @@ export const AdminCategoriesPage = () => {
                                     value={search}
                                     onChange={e => setSearch(e.target.value)}
                                     style={{ width: "100%", paddingLeft: "32px", paddingRight: "12px", paddingTop: "8px", paddingBottom: "8px", border: "1px solid #e5e7eb", borderRadius: "8px", fontSize: "13px", outline: "none", boxSizing: "border-box" }}
-                                Aminities
                                 />
                             </div>
                             <label htmlFor="filter-visible" style={{ display: "none" }}>Filtrar por visibilidad</label>

@@ -214,6 +214,7 @@ const BannerFormModal = ({ isOpen, initialData, onClose, onSubmit, isSubmitting,
 };
 
 export const AdminBannersPage = () => {
+  const { showToast } = useToast();
   const [banners, setBanners] = useState([]);
   const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 20, totalPages: 1 });
   const [loading, setLoading] = useState(true);
