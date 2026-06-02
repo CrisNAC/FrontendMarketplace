@@ -1,10 +1,8 @@
-// src/features/clients/components/DeleteAllCartsModal.jsx
 import { useState } from "react";
 import PropTypes from "prop-types";
 import { Trash2 } from "lucide-react";
 import axios from "axios";
-import toast from "react-hot-toast";
-import { getApiBase } from "../../../../lib/cartApi";
+import { getApiBase } from "@/features/clients/components/cart"; 
 import { ConfirmationModal } from "./ConfirmationModal";
 
 export function DeleteAllCartsModal({ userId, totalCarts, totalItems, onClose, onSuccess }) {
@@ -20,7 +18,7 @@ export function DeleteAllCartsModal({ userId, totalCarts, totalItems, onClose, o
         `${apiBase}/api/users/${userId}/carts`,
         { withCredentials: true }
       );
-      toast.success("Todos los carritos fueron eliminados correctamente");
+      showToast("Todos los carritos fueron eliminados correctamente", "success");
       onSuccess?.();
       onClose();
     } catch (err) {

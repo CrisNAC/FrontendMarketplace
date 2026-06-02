@@ -1,4 +1,3 @@
-// src/features/clients/components/cart/DeleteCartModal.jsx
 import { useState } from "react";
 import PropTypes from "prop-types";
 import { Trash2 } from "lucide-react";

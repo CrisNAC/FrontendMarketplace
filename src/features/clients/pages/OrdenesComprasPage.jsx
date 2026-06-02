@@ -1,13 +1,10 @@
-// src/features/clients/pages/OrdenesComprasPage.jsx
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import axios from "axios";
-import toast from "react-hot-toast";
-import { fetchCartsApi, getApiBase } from "../../../lib/cartApi";
-import { formatGuarani } from "../../../lib/formatGuarani.js";
-import { DeleteCartModal } from "../components/cart/DeleteCartModal.jsx";
-import { DeleteAllCartsModal } from "../components/cart/DeleteAllCartsModal.jsx";
+import { fetchCartsApi, getApiBase, formatGuarani } from "@/lib";
+import { DeleteCartModal, DeleteAllCartsModal } from "@/features/components/cart";
+import { useToast } from "@/hooks";
 
 function itemSubtotal(unitPrice, qty) {
   const u = Number(unitPrice);
@@ -25,6 +22,8 @@ export default function OrdenesComprasPage() {
   const [userId, setUserId] = useState(null);
   const [deleteCartModal, setDeleteCartModal] = useState(null);
   const [deleteAllCartsModal, setDeleteAllCartsModal] = useState(false);
+
+  const { showToast } = useToast();
 
   const loadCarts = useCallback(async () => {
     try {
@@ -49,11 +48,11 @@ export default function OrdenesComprasPage() {
         setCarts([]);
         setUserId(null);
         setStatus("unauthorized");
-        toast.error("Iniciá sesión para ver tu carrito");
+        showToast("Iniciá sesión para ver tu carrito", "error");
         navigate("/login");
       } else {
         setStatus("error");
-        toast.error("No se pudo cargar el carrito");
+        showToast("No se pudo cargar el carrito", "error");
       }
     }
   }, [apiBase, navigate]);
