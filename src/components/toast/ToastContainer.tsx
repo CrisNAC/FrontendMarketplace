@@ -1,5 +1,5 @@
 import { CheckCircle, XCircle, AlertCircle, Info, X } from 'lucide-react'
-import { useToast } from './useToast.ts'
+import { useToast } from '../../hooks/useToast.ts'
 import type { ToastType } from './ToastTypes'
 
 const toastStyles: Record<ToastType, string> = {

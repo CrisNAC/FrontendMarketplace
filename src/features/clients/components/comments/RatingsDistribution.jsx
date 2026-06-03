@@ -13,7 +13,6 @@ export const RatingsDistribution = ({ ratings = {}, averageRating = 0 }) => { //
 
   return (
     <div className="bg-transparent px-4 pt-4 pb-2">
-      {/* Promedio - inline: ★★★★☆ 4.4 de 5 */}
       <div className="mb-2 pb-2 border-b border-gray-200">
         <div className="flex items-center gap-0.5 mb-0.5">
           {[...Array(5)].map((_, i) => (
@@ -34,7 +33,6 @@ export const RatingsDistribution = ({ ratings = {}, averageRating = 0 }) => { //
         </div>
       </div>
 
-      {/* Barras de distribución - compactas */}
       <div className="flex flex-col gap-1">
         {[5, 4, 3, 2, 1].map((stars) => {
           const percentage = totalRatings > 0 ? (ratingData[stars] / totalRatings) * 100 : 0;
@@ -59,7 +57,6 @@ export const RatingsDistribution = ({ ratings = {}, averageRating = 0 }) => { //
         })}
       </div>
 
-      {/* Cómo funcionan las opiniones */}
       <details className="mt-3 pt-2">
         <summary className="text-xs text-blue-600 cursor-pointer list-none flex items-center justify-between leading-snug">
           <span>Cómo funcionan las opiniones y<br />calificaciones de clientes</span>

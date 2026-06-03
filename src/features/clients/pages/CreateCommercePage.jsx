@@ -1,32 +1,36 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
-import Navbar from "../../../components/navbar/Navbar";
-import { CommerceCreationForm } from "../components/CommerceCreationForm";
-import apiClient from "../../../lib/apiClient.js";
+import { Navbar } from "@/components";
+import { CommerceCreationForm } from "@/features/clients/components/CommerceCreationForm";
+import { apiClient } from "@/lib";
+import { useToast } from "@/hooks";
 
 export const CreateCommercePage = () => {
     const navigate = useNavigate();
+    const { showToast } = useToast();
 
     useEffect(() => {
         const checkRole = async () => {
             const { data } = await apiClient.get("/api/session/user-session");
             if (data?.user?.role === "SELLER") {
-                toast("Ya tenés un comercio registrado.", { icon: "🏪" });
+                showToast("Ya tenés un comercio registrado. 🏪", "info");
                 navigate("/comercio", { replace: true });
             }
         };
 
         checkRole().catch((error) => {
-            // apiClient ya maneja errores HTTP
-            // Solo se redirige a /error/500 si es un error sin respuesta del servidor
-            if (!error?.response) navigate("/error/500", { replace: true });
+            if (!error?.response) {
+                showToast("Error al verificar el rol del usuario.", "error");
+                navigate("/error/500", { replace: true });
+            }
         });
-    }, [navigate]);
+    }, [navigate, showToast]);
 
     return (
         <div>
-            <Navbar />
+            <div className="sticky top-0 z-50">
+                <Navbar />
+            </div>
             <div className="flex justify-center w-full mt-3 mb-3">
                 <div className="w-full max-w-2xl bg-white p-8 rounded-md shadow-md ">
                     <p className="text-xl text-gray-900 font-bold">Crear Comercio</p>

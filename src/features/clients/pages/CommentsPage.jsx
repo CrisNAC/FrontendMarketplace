@@ -1,16 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { RatingsDistribution } from '../components/comments/RatingsDistribution';
-import { CommentsList } from '../components/comments/CommentsList';
-import { AddReviewModal } from '../components/comments/AddReviewModal';
-import { ReportModal } from '../components/comments/ReportModal';
+import { RatingsDistribution, CommentsList, AddReviewModal, ReportModal } from '@/features/clients/components/comments';
 import { ArrowLeft } from "lucide-react";
-import apiClient from "../../../lib/apiClient";
-import { reportProductReview } from "../../../lib/reviewReportsApi";
-import toast from 'react-hot-toast';
+import { apiClient, reportProductReview } from "@/lib";
+import { useToast } from "@/hooks";
 
 export const CommentsPage = () => {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [showModal, setShowModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [selectedComment, setSelectedComment] = useState(null);
@@ -90,11 +87,11 @@ export const CommentsPage = () => {
       setComments([newComment, ...comments]);
       setShowModal(false);
       await fetchReviews();
-      toast.success('¡Reseña enviada exitosamente!');
+      showToast('¡Reseña enviada exitosamente!', 'success');
     } catch (error) {
       const data = error.response?.data;
-      const message = data?.errors?.auth?.messsage || data?.message || 'No se pudo enviar la reseña.';
-      toast.error(message);
+      const message = data?.errors?.auth?.message || data?.message || 'No se pudo enviar la reseña.';
+      showToast(message, 'error');
     }
   };
 
@@ -111,7 +108,7 @@ export const CommentsPage = () => {
       setReportedReviewIds((prev) =>
         prev.includes(selectedComment.id) ? prev : [...prev, selectedComment.id]
       );
-      toast.success('Reporte enviado. Gracias por ayudarnos a mejorar la comunidad.');
+      showToast('Reporte enviado. Gracias por ayudarnos a mejorar la comunidad.', 'success');
       setShowReportModal(false);
       setSelectedComment(null);
     } catch (err) {
@@ -119,21 +116,21 @@ export const CommentsPage = () => {
         err?.response?.data?.error?.message ||
         err?.response?.data?.message ||
         'No se pudo enviar el reporte.';
-      toast.error(message);
+      showToast(message, 'error');
     } finally {
       setReportSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen p-0" style={{ background: '#F5F5F5' }}>
-      <div className="max-w-6xl mx-auto min-h-screen">
-        <div className="px-6 py-4 flex items-center gap-4">
+    <div className="flex-1 min-h-0 flex flex-col" style={{ background: '#F5F5F5' }}>
+      <div className="max-w-6xl mx-auto w-full flex flex-col flex-1 min-h-0">
+        <div className="px-6 py-4 flex items-center gap-4 shrink-0">
           <ArrowLeft className="w-6 h-6 cursor-pointer" onClick={() => navigate(-1)} />
           <h1 className="text-2xl font-bold">Comentarios</h1>
         </div>
 
-        <div className="grid grid-cols-[300px_1fr] gap-6 px-6 pb-8">
+        <div className="grid grid-cols-[300px_1fr] gap-6 px-6 pb-6 flex-1 min-h-0">
           <aside className="flex flex-col gap-4">
             <div className="bg-white border border-gray-200 rounded-lg">
               <RatingsDistribution ratings={ratings} averageRating={stats?.averageRating ?? 0} />
@@ -157,7 +154,7 @@ export const CommentsPage = () => {
             </button>
           </aside>
 
-          <main className="flex flex-col gap-0">
+          <main className="flex flex-col gap-0 overflow-y-auto">
             {loading && (
               <p className="text-gray-500 text-sm">Cargando reseñas...</p>
             )}

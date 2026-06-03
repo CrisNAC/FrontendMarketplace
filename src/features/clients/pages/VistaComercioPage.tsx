@@ -8,6 +8,7 @@ import { CommerceProfileHeader } from "../components/commerceProfile/CommercePro
 import { FeaturedProducts } from "../components/commerceProfile/FeaturedProducts";
 import { Pagination } from "../components/commerceProfile/Pagination";
 import { useStoreAvailability } from "../../../hooks/useStoreAvailability";
+import { ProductCardSkeleton } from "../../../components/ProductCardSkeleton";
 
 type Store = {
     id_store: number;
@@ -312,7 +313,13 @@ export const VistaComercioPage = () => {
                         setPage(1);
                     }}
                 />
-                {status === "loading" && <div style={{ color: "#6b7280" }}>Cargando productos...</div>}
+                {status === "loading" && (
+                    <div style={{ flexGrow: 1 }}>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(0, 1fr))", gap: "12px" }}>
+                            {Array.from({ length: 10 }).map((_, i) => <ProductCardSkeleton key={i} />)}
+                        </div>
+                    </div>
+                )}
                 {status === "error" && (
                     <div style={{ color: "#dc2626" }}>{error}</div>
                 )}

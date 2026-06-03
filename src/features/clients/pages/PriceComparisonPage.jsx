@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import Navbar from '../../../components/navbar/Navbar';
-import { formatGuarani } from '../../../lib/formatGuarani.js';
+import { Navbar } from "@/components";
+import { formatGuarani } from "@/lib";
 
 export default function PriceComparisonPage() {
     const location = useLocation();
@@ -59,19 +59,21 @@ export default function PriceComparisonPage() {
     const productName = data?.product?.name || search || "Producto";
 
     return (
-        <div className="min-h-screen flex flex-col">
-            <Navbar />
-            <main className="max-w-7xl mx-auto w-full px-6 py-6">
+        <div className="h-screen overflow-hidden flex flex-col">
+            <div className="shrink-0">
+                <Navbar />
+            </div>
+            <main className="flex-1 min-h-0 flex flex-col overflow-hidden max-w-7xl mx-auto w-full px-6">
                 {/* Título */}
-                <div className="flex items-center gap-4 mb-8">
+                <div className="shrink-0 flex items-center gap-4 py-6">
                     <ArrowLeft className="w-6 h-6 cursor-pointer" onClick={() => navigate(-1)} />
                     <h1 className="text-2xl font-bold">Ofertas: {productName}</h1>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 flex-1 min-h-0 pb-6">
 
                     {/* Columna Izquierda — imagen de referencia */}
-                    <div className="lg:col-span-5 flex flex-col items-center">
+                    <div className="lg:col-span-5 flex flex-col items-center overflow-y-auto">
                         <div className="bg-white rounded-[40px] p-6 shadow-sm w-full aspect-square flex items-center justify-center mb-6 overflow-hidden">
                             {offers[0]?.image_url ? (
                                 <img
@@ -106,22 +108,24 @@ export default function PriceComparisonPage() {
                     </div>
 
                     {/* Columna Derecha — lista de ofertas */}
-                    <div className="lg:col-span-7">
-                        <h2 className="text-xl font-bold mb-2 text-gray-700">
-                            {offers.length > 0
-                                ? `Encontramos ${offers.length} ofertas`
-                                : "Sin ofertas para este producto"}
-                        </h2>
-                        {status === "loading" && (
-                            <p className="text-sm text-gray-500 mb-4">Cargando ofertas...</p>
-                        )}
-                        {status === "error" && (
-                            <p className="text-sm text-red-600 mb-4">
-                                No se pudo cargar la comparación{error ? `: ${error}` : "."}
-                            </p>
-                        )}
+                    <div className="lg:col-span-7 flex flex-col min-h-0">
+                        <div className="shrink-0">
+                            <h2 className="text-xl font-bold mb-2 text-gray-700">
+                                {offers.length > 0
+                                    ? `Encontramos ${offers.length} ofertas`
+                                    : "Sin ofertas para este producto"}
+                            </h2>
+                            {status === "loading" && (
+                                <p className="text-sm text-gray-500 mb-4">Cargando ofertas...</p>
+                            )}
+                            {status === "error" && (
+                                <p className="text-sm text-red-600 mb-4">
+                                    No se pudo cargar la comparación{error ? `: ${error}` : "."}
+                                </p>
+                            )}
+                        </div>
 
-                        <div className="space-y-4">
+                        <div className="space-y-4 overflow-y-auto flex-1 min-h-0">
                             {offers.map((offer, idx) => (
                                 <div
                                     key={offer.productId ?? idx}

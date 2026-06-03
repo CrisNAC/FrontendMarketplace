@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { z } from 'zod';
 
-// ─── Esquema de validación ──────────────────────────────────────────────────
 const commentSchema = z.object({
   rating: z.number().min(1, "Debes seleccionar una calificación").max(5, "Calificación inválida"),
   title: z.string().trim().min(1, "El título es obligatorio").max(100, "El título no puede superar 100 caracteres"),
@@ -47,8 +46,6 @@ export const CommentForm = ({ onSubmit = () => {} }) => {
     };
 
     onSubmit(comment);
-
-    // Resetear formulario
     setRating(5);
     setTitle('');
     setContent('');
@@ -71,7 +68,6 @@ export const CommentForm = ({ onSubmit = () => {} }) => {
       )}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
-        {/* Calificación */}
         <div className="flex flex-col gap-2">
           <label htmlFor="rating" className="text-sm font-semibold text-gray-800">
             Calificación:
@@ -100,7 +96,6 @@ export const CommentForm = ({ onSubmit = () => {} }) => {
           </div>
         </div>
 
-        {/* Título */}
         <div className="flex flex-col gap-2">
           <label htmlFor="title" className="text-sm font-semibold text-gray-800">
             Título de tu comentario:
@@ -126,7 +121,6 @@ export const CommentForm = ({ onSubmit = () => {} }) => {
           </span>
         </div>
 
-        {/* Contenido */}
         <div className="flex flex-col gap-2">
           <label htmlFor="content" className="text-sm font-semibold text-gray-800">
             Tu comentario:
@@ -152,7 +146,6 @@ export const CommentForm = ({ onSubmit = () => {} }) => {
           </span>
         </div>
 
-        {/* Botón */}
         <button 
           type="submit" 
           className="px-4 py-2 bg-teal-600 text-white rounded font-semibold cursor-pointer transition-all hover:bg-teal-700 active:translate-y-0.5"

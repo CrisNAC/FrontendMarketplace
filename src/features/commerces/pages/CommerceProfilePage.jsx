@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Edit, Mail, Phone, MapPin, Calendar, Star, Zap, Image, Trash2, AlertTriangle, Globe, Instagram, Music2, ToggleLeft, ToggleRight, Clock } from "lucide-react";
 import { apiClient, getBackendErrorMessage, updateStoreStatus } from "../services/editCommerceApi";
+import { PageLoader } from "../../../components/PageLoader";
 
 // ─── Estilos compartidos ──────────────────────────────────────────────────────
 const card = {
@@ -232,7 +233,7 @@ export function CommerceProfilePage() {
         }
     };
 
-    if (loading) return <p style={{ color: "#6b7280", padding: "16px" }}>Cargando...</p>;
+    if (loading) return <PageLoader />;
 
     if (error) return (
         <div style={{ backgroundColor: "#fff1f2", border: "1px solid #fecdd3", borderRadius: "10px", padding: "12px 16px", color: "#be123c", fontSize: "14px" }}>

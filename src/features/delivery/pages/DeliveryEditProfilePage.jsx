@@ -1,23 +1,22 @@
-// src/features/clients/pages/DeliveryEditProfilePage.jsx
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Loader2 } from "lucide-react";
-import toast from "react-hot-toast";
+import { PageLoader } from "@/components";
 import { useNavigate } from "react-router-dom";
 import {
     getDeliveryProfile,
     updateMyDelivery,
     UI_VEHICLE_LABELS,
     getCurrentUserForDeliveryForm,
-} from "../../clients/services/deliveryApi";
+} from "@/features/clients/services";
 import {
     getBackendErrorMessage,
     DELIVERY_PHONE_MESSAGE,
     DELIVERY_PHONE_REGEX,
 } from "../../commerces/services/editUserProfileApi";
+import { useToast } from "@/hooks";
 
 const VEHICLE_OPTIONS = Object.entries(UI_VEHICLE_LABELS);
 
-// ─── Estilos ─────────────
 const s = {
     card: {
         backgroundColor: "white",
@@ -188,13 +187,11 @@ export function DeliveryEditProfilePage() {
     const navigate = useNavigate();
     const fileInputRef = useRef(null);
 
-    // Datos del delivery
     const [deliveryId, setDeliveryId] = useState(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
-
-    // Campos del formulario
+    
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [phone, setPhone] = useState("");
@@ -204,7 +201,6 @@ export function DeliveryEditProfilePage() {
     const [avatarFile, setAvatarFile] = useState(null);
     const [avatarPreview, setAvatarPreview] = useState(null);
 
-    // ── Carga inicial usando session (id_delivery) + getDeliveryProfile ──────
     useEffect(() => {
         let mounted = true;
         const load = async () => {
@@ -230,7 +226,6 @@ export function DeliveryEditProfilePage() {
                 const delivery = await getDeliveryProfile(id);
                 if (!mounted) return;
 
-                // Preferir datos del perfil de usuario; fallback a session
                 setName(delivery.user?.name ?? profile?.name ?? sessionUser?.name ?? "");
                 setEmail(delivery.user?.email ?? profile?.email ?? sessionUser?.email ?? "");
                 setPhone(delivery.user?.phone ?? profile?.phone ?? sessionUser?.phone ?? "");
@@ -250,7 +245,6 @@ export function DeliveryEditProfilePage() {
         return () => { mounted = false; };
     }, [navigate]);
 
-    // ── Avatar ────────────────────────────────────────────────────────────────
     const handleAvatarChange = (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -258,10 +252,8 @@ export function DeliveryEditProfilePage() {
         setAvatarPreview(URL.createObjectURL(file));
     };
 
-    // ── Cancelar ──────────────────────────────────────────────────────────────
     const handleCancel = () => navigate("/delivery/perfil");
 
-    // ── Guardar ───────────────────────────────────────────────────────────────
     const handleSave = async () => {
         if (!name.trim()) { setError("El nombre es obligatorio."); return; }
         if (!phone.trim()) { setError("El teléfono es obligatorio."); return; }
@@ -279,7 +271,7 @@ export function DeliveryEditProfilePage() {
                 { name: name.trim(), phone: phone.trim(), vehicleType },
                 avatarFile ?? undefined,
             );
-            toast.success("Perfil actualizado correctamente.");
+            showToast("Perfil actualizado correctamente.", "success");
             navigate("/delivery/perfil");
         } catch (err) {
             setError(getBackendErrorMessage(err, "No se pudo guardar el perfil."));
@@ -290,23 +282,17 @@ export function DeliveryEditProfilePage() {
 
     const displayedAvatar = avatarPreview ?? avatarUrl;
 
+    if (loading) return <PageLoader />;
+
     return (
         <div className="mx-auto w-full max-w-[820px] px-1 sm:px-2">
             <main className="px-3 py-4 sm:px-6 sm:py-8 md:px-10 md:py-8">
-                {loading && (
-                    <div style={{ display: "flex", justifyContent: "center", padding: "80px 0" }}>
-                        <Loader2 size={28} color="#9ca3af" style={{ animation: "spin 1s linear infinite" }} />
-                    </div>
-                )}
-
-                {!loading && error && !deliveryId && (
+                {error && !deliveryId && (
                     <div style={s.errorBox}>{error}</div>
                 )}
 
-                {!loading && deliveryId && (
+                {deliveryId && (
                     <div style={s.card}>
-
-                        {/* ── Header ── */}
                         <div
                             style={s.cardHeader}
                             className="!px-4 !py-4 sm:!px-8 sm:!py-6"
@@ -325,13 +311,10 @@ export function DeliveryEditProfilePage() {
                             </div>
                         </div>
 
-                        {/* ── Body ── */}
                         <div style={s.cardBody} className="!px-4 !py-5 sm:!px-8 sm:!py-8">
                             {error && <div style={s.errorBox}>{error}</div>}
 
                             <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-x-7 md:gap-y-5">
-
-                                {/* Nombre */}
                                 <div>
                                     <label htmlFor="delivery-name" style={s.label}>
                                         Nombre completo <span style={s.required}>*</span>
@@ -347,7 +330,6 @@ export function DeliveryEditProfilePage() {
                                     />
                                 </div>
 
-                                {/* Email (solo lectura) */}
                                 <div>
                                     <label htmlFor="delivery-email" style={s.label}>Email de Contacto</label>
                                     <input
@@ -360,7 +342,6 @@ export function DeliveryEditProfilePage() {
                                     <p style={s.fieldNote}>El correo no se puede modificar desde aquí.</p>
                                 </div>
 
-                                {/* Teléfono */}
                                 <div>
                                     <label htmlFor="delivery-phone" style={s.label}>
                                         Teléfono <span style={s.required}>*</span>
@@ -380,7 +361,6 @@ export function DeliveryEditProfilePage() {
                                     <p style={s.fieldNote}>10 dígitos, sin + ni espacios.</p>
                                 </div>
 
-                                {/* Tipo de vehículo */}
                                 <div>
                                     <label htmlFor="vehicle-type" style={s.label}>
                                         Tipo de vehículo <span style={s.required}>*</span>
@@ -398,7 +378,6 @@ export function DeliveryEditProfilePage() {
                                     </select>
                                 </div>
 
-                                {/* Ciudad (Dirección base) */}
                                 <div>
                                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
                                         <label htmlFor="delivery-city" style={{ ...s.label, marginBottom: 0 }}>
@@ -425,8 +404,6 @@ export function DeliveryEditProfilePage() {
                             </div>
 
                             <hr style={s.divider} />
-
-                            {/* ── Foto de perfil (igual al bloque "Logo" del form de comercio) ── */}
                             <div>
                                 <label htmlFor="delivery-avatar" style={s.label}>Foto de perfil</label>
                                 <p style={{ ...s.fieldNote, marginBottom: "10px" }}>
@@ -465,7 +442,6 @@ export function DeliveryEditProfilePage() {
                                 </div>
                             </div>
 
-                            {/* ── Botones ── */}
                             <div
                                 style={s.footer}
                                 className="flex-col-reverse items-stretch gap-2 sm:flex-row sm:items-center sm:justify-end"
@@ -487,7 +463,7 @@ export function DeliveryEditProfilePage() {
                                     disabled={saving}
                                 >
                                     {saving && (
-                                        <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />
+                                        <Loader2 size={14} className="animate-spin" />
                                     )}
                                     {saving ? "Guardando…" : "Actualizar Perfil"}
                                 </button>
@@ -497,7 +473,6 @@ export function DeliveryEditProfilePage() {
                 )}
             </main>
 
-            <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
         </div>
     );
 }

@@ -1,5 +1,6 @@
 // src/features/commerces/pages/CommerceProductsPage.jsx
 import { useState, useEffect, useMemo } from "react";
+import { PageLoader } from "../../../components/PageLoader";
 import { useNavigate } from "react-router-dom";
 import { Plus, Search, Eye, Pencil, Trash2, Star, AlertTriangle } from "lucide-react";
 import { apiClient as commerceApiClient } from "../services/editCommerceApi";
@@ -307,7 +308,7 @@ export function CommerceProductsPage() {
         }
     };
 
-    if (loading) return <p style={{ color: "#6b7280", padding: "16px" }}>Cargando...</p>;
+    if (loading) return <PageLoader />;
 
     const isStoreActive = store?.store_status === 'ACTIVE';
 
@@ -369,7 +370,7 @@ export function CommerceProductsPage() {
                 </div>
 
                 <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <span style={{ fontSize: "12px", color: "#6b7280", whiteSpace: "nowrap" }}>🔽 Estado:</span>
+                    <span style={{ fontSize: "12px", color: "#6b7280", whiteSpace: "nowrap" }}>Estado:</span>
                     <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={selectStyle}>
                         <option value="all">Todos</option>
                         <option value="active">Activo</option>
@@ -378,7 +379,7 @@ export function CommerceProductsPage() {
                 </div>
 
                 <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <span style={{ fontSize: "12px", color: "#6b7280", whiteSpace: "nowrap" }}>🔽 Categoría:</span>
+                    <span style={{ fontSize: "12px", color: "#6b7280", whiteSpace: "nowrap" }}>Categoría:</span>
                     <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} style={selectStyle}>
                         <option value="all">Todas</option>
                         {categories.map(cat => (
@@ -390,11 +391,8 @@ export function CommerceProductsPage() {
 
             {/* Grid de cards */}
             {filteredProducts.length === 0 ? (
-                <div style={{
-                    backgroundColor: "white", borderRadius: "16px", padding: "48px 20px",
-                    textAlign: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
-                }}>
-                    <p style={{ fontSize: "15px", fontWeight: "600", color: "#374151", margin: "0 0 6px 0" }}>
+                <div className="bg-[#F3F5F4] border border-[#C7D6CF] rounded-xl p-10 text-center">
+                    <p className="text-[18px] text-[#4f615b] font-medium">
                         {search || filterStatus !== "all" || filterCategory !== "all"
                             ? "No se encontraron productos con esos filtros."
                             : "Aún no tenés productos."}
