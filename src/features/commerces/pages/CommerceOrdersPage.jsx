@@ -354,7 +354,7 @@ function TrackingOrderCard({
   const stepperEstado = STATUS_LABELS[order.status] ?? order.status;
   const isPickup      = !order.address;
   const nextStatus    = getNextStatus(order);
-  const canAdvance    = Boolean(nextStatus);
+  const canAdvance    = Boolean(nextStatus) && (isPickup || isAssigned);
   const showDelivery  = order.status === "PROCESSING" && !isPickup;
   const isBusy        = isRejecting || isActioning || isDelegating;
   const itemCount     = order.items?.length ?? 0;
