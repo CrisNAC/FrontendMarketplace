@@ -353,7 +353,7 @@ function TrackingOrderCard({
   const [showDetail, setShowDetail] = useState(false);
   const stepperEstado = STATUS_LABELS[order.status] ?? order.status;
   const isPickup      = !order.address;
-  const nextStatus    = isPickup ? getNextStatus(order) : null;
+  const nextStatus    = getNextStatus(order);
   const canAdvance    = Boolean(nextStatus);
   const showDelivery  = order.status === "PROCESSING" && !isPickup;
   const isBusy        = isRejecting || isActioning || isDelegating;
@@ -397,7 +397,7 @@ function TrackingOrderCard({
               backgroundColor: "var(--primary-dark)", color: "white", border: "none", fontSize: "13px", fontWeight: "600",
               cursor: isBusy ? "not-allowed" : "pointer", opacity: isBusy ? 0.6 : 1,
             }}>
-              <Truck size={14} /> Marcar como Entregado
+              <Truck size={14} /> {nextStatus === "SHIPPED" ? "Marcar como Enviado" : "Marcar como Entregado"}
             </button>
           )}
         </div>
