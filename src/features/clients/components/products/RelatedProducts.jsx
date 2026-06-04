@@ -1,10 +1,8 @@
-//RelatedProducts.jsx
 import PropTypes from "prop-types";
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import apiClient from "../../../../lib/apiClient";
-import { formatGuarani } from "../../../../lib/formatGuarani";
+import { apiClient, formatGuarani } from "@/lib";
 
 /**
  * Componente de carrusel de productos relacionados.

@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { Store, Eye, Check, X, AlertTriangle } from "lucide-react";
-import { fetchPendingStores, approveStore, rejectStore } from "../services/adminUsersApi";
-import toast from "react-hot-toast";
+import { fetchPendingStores, approveStore, rejectStore } from "@/features/admin/services";
+import { PageLoader } from "@/components/PageLoader";
+import { useToast } from "@/hooks";
 
 const cardStyle = {
   backgroundColor: "var(--background-white)",
@@ -51,19 +52,17 @@ const getStoreCategories = (store) => {
     return store.categories;
   }
 
-  return store?.store_category ? [store.store_category] : []; //En el caso de comercios antiguos con relación 1 a 1 de Categoria
+  return store?.store_category ? [store.store_category] : []; 
 };
 
-// ── Modales para Comercios ─────────────────────────────────────────────────
-
-const RejectReasonModal = ({ isOpen, onClose, onConfirm, isSubmitting }) => {
+const RejectReasonModal = ({ isOpen, onClose, onConfirm, isSubmitting, showToast }) => {
   const [reason, setReason] = useState("");
 
   if (!isOpen) return null;
 
   const handleSubmit = () => {
     if (!reason.trim()) {
-      toast.error("El motivo es obligatorio");
+      showToast("El motivo es obligatorio", "error");
       return;
     }
     onConfirm(reason);
@@ -169,8 +168,6 @@ const StoreDetailsModal = ({ isOpen, store, onClose, onApprove, onReject, isSubm
   );
 };
 
-// ── Componente principal ───────────────────────────────────────────────────
-
 export const AdminPendingStoresPage = () => {
   const [pendingStores, setPendingStores] = useState([]);
   const [pendingPagination, setPendingPagination] = useState({ total: 0, page: 1, limit: 20, totalPages: 1 });
@@ -178,12 +175,13 @@ export const AdminPendingStoresPage = () => {
   const [loadingPending, setLoadingPending] = useState(false);
   const [errorPending, setErrorPending] = useState(null);
 
-  // Estado modales
   const [selectedStore, setSelectedStore] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isRejectOpen, setIsRejectOpen] = useState(false);
   const [isSubmittingAct, setIsSubmittingAct] = useState(false);
 
+  const { showToast } = useToast();
+  
   const loadPendingStores = useCallback(async (currentPage) => {
     setLoadingPending(true);
     setErrorPending(null);
@@ -207,12 +205,12 @@ export const AdminPendingStoresPage = () => {
     setIsSubmittingAct(true);
     try {
       await approveStore(selectedStore.id_store);
-      toast.success("Comercio aprobado exitosamente");
+      showToast("Comercio aprobado exitosamente", "success");
       setIsDetailsOpen(false);
       setSelectedStore(null);
       loadPendingStores(pendingPage);
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Error al aprobar comercio");
+      showToast(err?.response?.data?.message || "Error al aprobar comercio", "error");
     } finally {
       setIsSubmittingAct(false);
     }
@@ -223,13 +221,13 @@ export const AdminPendingStoresPage = () => {
     setIsSubmittingAct(true);
     try {
       await rejectStore(selectedStore.id_store, reason);
-      toast.success("Comercio rechazado");
+      showToast("Comercio rechazado", "success");
       setIsRejectOpen(false);
       setIsDetailsOpen(false);
       setSelectedStore(null);
       loadPendingStores(pendingPage);
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Error al rechazar comercio");
+      showToast(err?.response?.data?.message || "Error al rechazar comercio", "error");
     } finally {
       setIsSubmittingAct(false);
     }
@@ -247,7 +245,6 @@ export const AdminPendingStoresPage = () => {
 
   return (
     <div style={{ maxWidth: "1100px", paddingBottom: "40px" }}>
-      {/* Encabezado */}
       <div style={{ marginBottom: "24px" }}>
         <h1 style={{ margin: 0 }}>Comercios por Aprobar</h1>
         <p style={{ margin: "4px 0 0", fontSize: "14px", color: "#6b7280" }}>
@@ -269,7 +266,7 @@ export const AdminPendingStoresPage = () => {
         {errorPending && <div style={{ padding: "12px", backgroundColor: "#fee2e2", borderRadius: "8px", color: "#dc2626", fontSize: "13px", marginBottom: "16px" }}>{errorPending}</div>}
 
         {loadingPending ? (
-          <div style={{ textAlign: "center", padding: "40px 0", color: "#9ca3af", fontSize: "14px" }}>Cargando comercios pendientes...</div>
+          <PageLoader />
         ) : pendingStores.length === 0 ? (
           <div style={{ textAlign: "center", padding: "60px 0", color: "#9ca3af", fontSize: "14px" }}>
             <Check size={40} color="#d1d5db" style={{ margin: "0 auto 10px" }} />
@@ -317,7 +314,6 @@ export const AdminPendingStoresPage = () => {
         )}
       </div>
 
-      {/* Modals */}
       <StoreDetailsModal
         isOpen={isDetailsOpen && !isRejectOpen}
         store={selectedStore}
@@ -332,6 +328,7 @@ export const AdminPendingStoresPage = () => {
         onClose={() => setIsRejectOpen(false)}
         onConfirm={handleRejectConfirm}
         isSubmitting={isSubmittingAct}
+        showToast={showToast}
       />
     </div>
   );

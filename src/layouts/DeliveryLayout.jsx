@@ -74,7 +74,7 @@ export const DeliveryLayout = ({ children }) => {
             <div
                 className={[
                     "flex shrink-0 transition-transform duration-200 ease-out",
-                    "fixed inset-y-0 left-0 z-[60] md:relative md:z-auto md:translate-x-0",
+                    "fixed inset-y-0 left-0 z-[60] md:sticky md:top-0 md:h-screen md:z-auto md:translate-x-0",
                     !isDesktop && !mobileNavOpen ? "-translate-x-full" : "translate-x-0",
                 ].join(" ")}
             >

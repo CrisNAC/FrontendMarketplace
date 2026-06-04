@@ -82,7 +82,6 @@ const pickReason = (entity) => {
   );
 };
 
-/** Reportes de producto por usuarios (GET /api/reports/products/filtered). */
 const getProductReportsPendingCount = async () => {
   try {
     const { data } = await apiClient.get(

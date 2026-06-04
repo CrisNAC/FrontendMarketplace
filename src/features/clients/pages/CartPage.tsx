@@ -1,11 +1,11 @@
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { Minus, Plus, Trash2, ArrowLeft } from "lucide-react";
-import Navbar from "../../../components/navbar/Navbar";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
-import toast from "react-hot-toast";
-import { getApiBase } from "../../../lib/cartApi";
-import { formatGuarani } from "../../../lib/formatGuarani.js";
+import { getApiBase, removeCartItemApi, updateCartItemQuantityApi, formatGuarani } from "@/lib";
+import { Navbar, PageLoader } from "@/components";
+import { useToast } from "@/hooks";
+import { ConfirmationModal } from "../components/cart/ConfirmationModal";
 
 type CartItem = {
   id: number;
@@ -49,9 +49,12 @@ export const CartPage = () => {
   const { cartId } = useParams();
   const apiBase = getApiBase() || "http://localhost:3000";
 
+  const { showToast } = useToast();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [cartName, setCartName] = useState("Carrito de Compras");
   const [status, setStatus] = useState<"loading" | "ready" | "error" | "unauthorized">("loading");
+  const [itemToDelete, setItemToDelete] = useState<CartItem | null>(null);
+  const [loadingItemIds, setLoadingItemIds] = useState<Set<number>>(new Set());
 
   const loadCart = useCallback(async () => {
     try {
@@ -59,7 +62,7 @@ export const CartPage = () => {
 
       if (!cartId) {
         setStatus("error");
-        toast.error("Carrito inválido");
+        showToast("Carrito inválido", "error");
         return;
       }
 
@@ -71,7 +74,7 @@ export const CartPage = () => {
 
       if (!userId) {
         setStatus("unauthorized");
-        toast.error("Iniciá sesión para ver tu carrito");
+        showToast("Iniciá sesión para ver tu carrito", "error");
         navigate("/login");
         return;
       }
@@ -90,7 +93,7 @@ export const CartPage = () => {
         setCartItems([]);
         setCartName("Carrito de Compras");
         setStatus("error");
-        toast.error("Carrito no encontrado");
+        showToast("Carrito no encontrado", "error");
         return;
       }
 
@@ -117,45 +120,67 @@ export const CartPage = () => {
 
       setCartItems(mappedItems);
       setStatus("ready");
-    } catch (error: any) {
-      const code = error?.response?.status;
+    } catch (error: unknown) {
+  const err = error as { response?: { status?: number; data?: { message?: string } } };
 
-      if (code === 401) {
+
+      if (err.response?.status === 401) {
         setStatus("unauthorized");
-        toast.error("Iniciá sesión para ver tu carrito");
+        showToast("Iniciá sesión para ver tu carrito", "error");
         navigate("/login");
         return;
       }
 
       setStatus("error");
-      toast.error(error?.response?.data?.message || "No se pudo cargar el carrito");
+      showToast(err.response?.data?.message || "No se pudo cargar el carrito", "error");
     }
-  }, [apiBase, cartId, navigate]);
+  }, [apiBase, cartId, navigate, showToast]);
 
   useEffect(() => {
     loadCart();
   }, [loadCart]);
 
-  const updateQuantity = (id: number, type: "inc" | "dec") => {
-    setCartItems((prev) =>
-      prev.map((item) => {
-        if (item.id !== id) return item;
+  const updateQuantity = async (id: number, type: "inc" | "dec") => {
+    if (loadingItemIds.has(id)) return;
 
-        if (type === "inc" && item.quantity >= item.stock) {
-          toast.error(`Solo hay ${item.stock} unidades disponibles de ${item.name}`);
-          return item;
-        }
+    const item = cartItems.find((i) => i.id === id);
+    if (!item) return;
 
-        const newQuantity =
-          type === "inc" ? item.quantity + 1 : Math.max(1, item.quantity - 1);
+    if (type === "inc" && item.quantity >= item.stock) {
+      showToast(`Solo hay ${item.stock} unidades disponibles de ${item.name}`, "error");
+      return;
+    }
 
-        return { ...item, quantity: newQuantity };
-      })
-    );
+    const newQuantity =
+      type === "inc" ? item.quantity + 1 : Math.max(1, item.quantity - 1);
+
+    setLoadingItemIds((prev) => new Set(prev).add(id));
+    try {
+      await updateCartItemQuantityApi(id, newQuantity);
+      setCartItems((prev) =>
+        prev.map((i) => (i.id === id ? { ...i, quantity: newQuantity } : i))
+      );
+    } catch (error: any) {
+      showToast(error?.response?.data?.message || "No se pudo actualizar la cantidad", "error");
+    } finally {
+      setLoadingItemIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
   };
 
-  const removeItem = (id: number) => {
-    setCartItems((prev) => prev.filter((item) => item.id !== id));
+  const removeItem = async (id: number) => {
+    try {
+      await removeCartItemApi(id);
+      setCartItems((prev) => prev.filter((item) => item.id !== id));
+      showToast("Producto eliminado del carrito", "success");
+    } catch (error: any) {
+      showToast(error?.response?.data?.message || "No se pudo eliminar el producto", "error");
+    } finally {
+      setItemToDelete(null);
+    }
   };
 
   const getFinalPrice = (item: CartItem) => {
@@ -183,11 +208,13 @@ export const CartPage = () => {
   }, [cartItems]);
 
   return (
-    <div className="min-h-screen bg-[#edf6f0]">
-      <Navbar />
+    <div className="h-screen overflow-hidden flex flex-col bg-[#edf6f0]">
+      <div className="shrink-0">
+        <Navbar />
+      </div>
 
-      <main className="mx-auto max-w-7xl px-6 py-10">
-        <div className="mb-6 flex items-center gap-4">
+      <main className="flex-1 min-h-0 flex flex-col overflow-hidden mx-auto max-w-7xl px-6 w-full">
+        <div className="shrink-0 pt-10 mb-6 flex items-center gap-4">
           <ArrowLeft
             className="h-6 w-6 cursor-pointer text-[#1f2f2a]"
             onClick={() => navigate(-1)}
@@ -197,11 +224,7 @@ export const CartPage = () => {
           </h1>
         </div>
 
-        {status === "loading" && (
-          <div className="rounded-2xl border border-[#d7e8dd] bg-white/70 p-6 shadow-sm">
-            <p className="text-sm text-gray-500">Cargando carrito...</p>
-          </div>
-        )}
+        {status === "loading" && (<PageLoader />)}
 
         {status === "error" && (
           <div className="rounded-2xl border border-[#d7e8dd] bg-white/70 p-6 shadow-sm">
@@ -216,8 +239,8 @@ export const CartPage = () => {
         )}
 
         {status === "ready" && (
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-            <section className="space-y-4 lg:col-span-2">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 flex-1 min-h-0 pb-6">
+            <section className="space-y-4 lg:col-span-2 overflow-y-auto">
               {cartItems.length === 0 ? (
                 <div className="rounded-2xl border border-[#d7e8dd] bg-white/70 p-6 shadow-sm">
                   <p className="text-sm text-gray-500">Tu carrito está vacío.</p>
@@ -233,7 +256,7 @@ export const CartPage = () => {
                       className="relative rounded-2xl border border-[#d7e8dd] bg-white/70 p-4 shadow-sm"
                     >
                       <button
-                        onClick={() => removeItem(item.id)}
+                        onClick={() => setItemToDelete(item)}
                         className="absolute right-4 top-4 rounded-full p-1 text-[#ff7a7a] transition hover:bg-red-50 hover:text-red-500"
                       >
                         <Trash2 size={16} />
@@ -289,7 +312,8 @@ export const CartPage = () => {
                               <div className="mt-2 flex items-center gap-2">
                                 <button
                                   onClick={() => updateQuantity(item.id, "dec")}
-                                  className="flex h-7 w-7 items-center justify-center rounded-full bg-[#eef4f1] text-[#4e6a60] transition hover:bg-[#dbe9e2]"
+                                  disabled={loadingItemIds.has(item.id)}
+                                  className="flex h-7 w-7 items-center justify-center rounded-full bg-[#eef4f1] text-[#4e6a60] transition hover:bg-[#dbe9e2] disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   <Minus size={14} />
                                 </button>
@@ -300,7 +324,8 @@ export const CartPage = () => {
 
                                 <button
                                   onClick={() => updateQuantity(item.id, "inc")}
-                                  className="flex h-7 w-7 items-center justify-center rounded-full bg-[#eef4f1] text-[#4e6a60] transition hover:bg-[#dbe9e2]"
+                                  disabled={loadingItemIds.has(item.id)}
+                                  className="flex h-7 w-7 items-center justify-center rounded-full bg-[#eef4f1] text-[#4e6a60] transition hover:bg-[#dbe9e2] disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   <Plus size={14} />
                                 </button>
@@ -321,7 +346,7 @@ export const CartPage = () => {
               )}
             </section>
 
-            <aside className="space-y-5">
+            <aside className="space-y-5 overflow-y-auto">
               <div className="rounded-2xl border border-[#d7e8dd] bg-white/70 p-5 shadow-sm">
                 <h3 className="mb-5 text-xl font-bold text-[#344d45]">
                   Resumen del pedido
@@ -367,6 +392,19 @@ export const CartPage = () => {
           </div>
         )}
       </main>
+      <ConfirmationModal
+        isOpen={itemToDelete !== null}
+        title="Eliminar producto del carrito"
+        subtitle={itemToDelete?.name}
+        warnings={[
+          "¿Estás seguro de que deseas eliminar este producto del carrito?",
+          "• Esta acción no se puede deshacer",
+        ]}
+        onClose={() => setItemToDelete(null)}
+        onConfirm={() => { if (itemToDelete) removeItem(itemToDelete.id); }}
+        confirmText="Eliminar producto"
+        icon={Trash2}
+      />
     </div>
   );
 };

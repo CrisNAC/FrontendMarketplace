@@ -1,29 +1,62 @@
+# Pipeline de CI para FrontendMarketplace
+# - Los tests E2E corren en pull_request hacia ramas protegidas (dev, main)
+# - El build de producción solo corre en push directo a ramas protegidas (dev, main)
+# - Ningún secret se escribe en el código: se usan GitHub Actions Secrets
+
 name: Playwright Tests
 
 on:
   pull_request:
     branches: [ dev, main ]
+  push:
+    branches: [ dev, main ]
 
 jobs:
   security-audit:
     name: Security audit (high/critical)
+    if: github.event_name == 'pull_request'
     timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
-      with:
-        node-version: lts/*
-        cache: 'npm'
-    - name: Install dependencies
-      run: npm ci
-    - name: Run npm audit policy
-      run: npx --yes audit-ci@7 --config security/audit-ci.json
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Run npm audit policy
+        run: npx --yes audit-ci@7 --config security/audit-ci.json
 
+  # Job de build: verifica que el proyecto compila correctamente.
+  # Solo se ejecuta en push a ramas protegidas, nunca desde forks ni ramas de feature.
+  build:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        env:
+          # La URL de la API se lee desde GitHub Secrets, nunca hardcodeada en el código
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+        run: npm run build
+
+  # Job de tests E2E: corre en paralelo en pull_request hacia dev o main.
+  # Garantiza que ningún cambio rompa los flujos principales antes de mergear.
   test:
+    if: github.event_name == 'pull_request'
     timeout-minutes: 20
     runs-on: ubuntu-latest
-      
+
     strategy:
       fail-fast: false
       matrix:
@@ -31,26 +64,28 @@ jobs:
         shardTotal: [2]
 
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
-      with:
-        node-version: lts/*
-        cache: 'npm'
-        
-    - name: Install dependencies
-      run: npm ci
-      
-    - name: Install Playwright Browsers
-      run: npx playwright install --with-deps
+      - uses: actions/checkout@v4
 
-    - name: Run Playwright tests
-      env:
-        VITE_API_URL: https://backendmarketplace-test.onrender.com
-      run: npx playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: 'npm'
 
-    - uses: actions/upload-artifact@v4
-      if: ${{ !cancelled() }}
-      with:
-        name: playwright-report-${{ matrix.shardIndex }}-${{ matrix.shardTotal }}
-        path: playwright-report/
-        retention-days: 30
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
+      - name: Run Playwright tests
+        env:
+          # La URL de la API se lee desde GitHub Secrets, nunca hardcodeada en el código
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+        run: npx playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report-${{ matrix.shardIndex }}-${{ matrix.shardTotal }}
+          path: playwright-report/
+          retention-days: 30

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { X } from "lucide-react";
-import toast from "react-hot-toast";
 import { becomeDelivery, getCurrentUserForDeliveryForm } from "../services/deliveryApi";
 import {
   getBackendErrorMessage,
@@ -37,7 +36,7 @@ function resolveProfileUser(profile, sessionUser) {
 /**
  * Modal: tipo de vehículo. Nombre y correo siguen en la cuenta.
  */
-export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
+export function BecomeDeliveryModal({ open, onClose, onSuccess, showToast }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -134,7 +133,7 @@ export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
       await becomeDelivery(parsed.data.vehicleType, parsed.data.phone);
       window.dispatchEvent(new Event("deliveryRegistered"));
       await getCurrentUserForDeliveryForm();
-      toast.success("Listo: ahora sos delivery.");
+      showToast?.("Listo: ahora sos delivery.", "success");
       if (onSuccess) {
         onSuccess();
       } else {
@@ -263,5 +262,3 @@ export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
     </div>
   );
 }
-
-export default BecomeDeliveryModal;

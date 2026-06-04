@@ -1,8 +1,8 @@
+//ClientOrderDetailsPage.jsx
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { PageLoader } from '../../../components/PageLoader';
 import axios from 'axios';
-import { SidebarClientProfile } from '../../../components/SidebarClientProfile';
-import Navbar from '../../../components/navbar/Navbar';
 import { formatGuarani } from '../../../lib/formatGuarani.js';
 
 // ─── API client ───────────────────────────────────────────────────────────────
@@ -41,12 +41,6 @@ const getBackendErrorMessage = (error, fallback) => {
   return fallback;
 };
 
-// ─── Detalle Producto
-const getProductById = async (productId) => {
-  const res = await apiClient.get(`/products/${productId}`);
-  return res.data;
-};
-
 const STATUS_CONFIG = {
   PENDING:    { label: 'Pendiente',  classes: 'border-yellow-500 text-yellow-600' },
   PROCESSING: { label: 'Procesando', classes: 'border-blue-500 text-blue-600'    },
@@ -76,12 +70,12 @@ const TableHeader = () => (
   </div>
 );
 
-// Fila de item 
+// Fila de item — CORREGIDO: usa item.name que viene del backend
 const TableRow = ({ item }) => (
   <div className="grid grid-cols-[1fr_180px_120px_160px] items-center px-3 py-3 border-b border-gray-100 text-sm">
     {/* Producto */}
     <div>
-      <p className="font-medium text-gray-800">{item.productName}</p>
+      <p className="font-medium text-gray-800">{item.name}</p>
       {item.isOfferApplied && (
         <span className="text-xs text-green-600">Oferta aplicada</span>
       )}
@@ -107,7 +101,6 @@ export const ClientOrderDetailsPage = () => {
   const { orderId } = useParams();
 
   const [order, setOrder]     = useState(null);
-  const [items, setItems]     = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(null);
 
@@ -120,20 +113,10 @@ export const ClientOrderDetailsPage = () => {
 
         const data = await getOrderById(userId, orderId);
         if (!data) { setError('Pedido no encontrado'); return; }
+        
+        // Ya no hacemos peticiones GET /products/:id innecesarias
+        // El backend devuelve item.name en cada item
         setOrder(data);
-
-        const enriched = await Promise.all(
-          data.items.map(async (item) => {
-            try {
-              const productId = item.productId ?? item.fk_product ?? item.id;
-              const product = await getProductById(productId);
-              return { ...item, productName: product?.name ?? `Artículo #${item.id}` };
-            } catch {
-              return { ...item, productName: `Artículo #${item.id}` };
-            }
-          })
-        );
-        setItems(enriched);
       } catch (err) {
         setError(getBackendErrorMessage(err, 'Error al cargar el pedido'));
       } finally {
@@ -143,27 +126,19 @@ export const ClientOrderDetailsPage = () => {
     fetchOrder();
   }, [orderId]);
 
-  if (loading) return <div><Navbar /><p className="p-6 text-gray-500">Cargando pedido...</p></div>;
-  if (error || !order) return <div><Navbar /><p className="p-6 text-red-500">{error || 'Pedido no encontrado'}</p></div>;
+  if (loading) return <PageLoader />;
+  if (error || !order) return <p className="p-6 text-red-500">{error || 'Pedido no encontrado'}</p>;
 
   const statusConfig  = STATUS_CONFIG[order.status] ?? { label: order.status, classes: 'border-gray-400 text-gray-600' };
   const subtotalTotal = order?.items?.reduce((acc, item) => acc + Number(item.subtotal), 0) ?? 0;
 
+
   return (
-    <div>
-      <Navbar />
-      <h3 className="p-2 ms-5 mt-2 font-bold">Mis Pedidos</h3>
-
-      <div className="grid grid-cols-[250px_1fr] min-h-screen gap-x-20">
-        <div className="p-3 w-80">
-          <SidebarClientProfile />
-        </div>
-
-        <div className="mb-5">
+    <div className="max-w-[1100px] mx-auto w-full mb-5">
           {/* Cabecera del pedido */}
           <div className="flex justify-between items-center mb-2 bg-white p-3 rounded-lg me-2">
             <div>
-              <p className="text-lg font-bold">Pedido N° {order.id}</p>
+              <p className="text-lg font-bold">Pedido N° {order.orderNumber}</p>
               <p className="text-sm text-gray-600">Fecha de pedido: {formatDate(order.createdAt)}</p>
             </div>
             <span className={`border px-3 py-1 rounded-sm text-sm ${statusConfig.classes}`}>
@@ -181,7 +156,7 @@ export const ClientOrderDetailsPage = () => {
 
             <div className="border border-gray-200 rounded-sm overflow-hidden">
               <TableHeader />
-              {items.map((item) => (
+              {order.items.map((item) => (
                 <TableRow key={item.id} item={item} />
               ))}
 
@@ -200,27 +175,45 @@ export const ClientOrderDetailsPage = () => {
               </div>
             </div>
 
-            {/* Información del pedido */}
+            {/* Información del pedido — CORREGIDA */}
             <div className="mt-5">
               <p className="text-base font-bold mb-3">Información de pedido</p>
               <div className="border-t border-gray-200 pt-4 grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Dirección de envío — con fallback para retiro en tienda */}
                 <div>
                   <p className="font-semibold text-gray-900 mb-1 text-sm">Dirección de envío</p>
                   <div className="text-gray-600 text-xs space-y-0.5">
-                    <p>{order.address?.address}</p>
-                    <p>{order.address?.city}</p>
-                    <p>{order.address?.region}</p>
+                    {order.address ? (
+                      <>
+                        <p>{order.address.address}</p>
+                        <p>{order.address.city}</p>
+                        <p>{order.address.region}</p>
+                      </>
+                    ) : (
+                      <p className="italic text-gray-500">Retiro en tienda</p>
+                    )}
                   </div>
                 </div>
+
+                {/* Notas del pedido */}
                 <div>
                   <p className="font-semibold text-gray-900 mb-1 text-sm">Notas del pedido</p>
                   <p className="text-gray-600 text-xs">{order.notes ?? 'Sin notas'}</p>
                 </div>
-                <div>
-                  <p className="font-semibold text-gray-900 mb-1 text-sm">Estado</p>
-                  <span className={`inline-block border px-2 py-0.5 rounded text-xs ${statusConfig.classes}`}>
-                    {statusConfig.label}
-                  </span>
+
+                {/* Estado + Nombre de la tienda */}
+                <div className="space-y-3">
+                  <div>
+                    <p className="font-semibold text-gray-900 mb-1 text-sm">Estado</p>
+                    <span className={`inline-block border px-2 py-0.5 rounded text-xs ${statusConfig.classes}`}>
+                      {statusConfig.label}
+                    </span>
+                  </div>
+                  {/* Nombre de la tienda */}
+                  <div>
+                    <p className="font-semibold text-gray-900 mb-1 text-sm">Tienda</p>
+                    <p className="text-gray-600 text-xs">{order.store?.name ?? 'Comercio'}</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -234,8 +227,6 @@ export const ClientOrderDetailsPage = () => {
               Volver
             </button>
           </div>
-        </div>
-      </div>
     </div>
   );
 };

@@ -1,7 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import toast from 'react-hot-toast';
 
 const mockFetchPendingStores = vi.fn();
 const mockApproveStore = vi.fn();
@@ -13,11 +12,12 @@ vi.mock('../features/admin/services/adminUsersApi', () => ({
   rejectStore: (...args) => mockRejectStore(...args),
 }));
 
-vi.mock('react-hot-toast', () => ({
-  default: {
-    success: vi.fn(),
-    error: vi.fn(),
-  }
+const mockShowToast = vi.fn();
+
+vi.mock('@/hooks', () => ({
+  useToast: () => ({
+    showToast: mockShowToast,
+  }),
 }));
 
 import { AdminPendingStoresPage } from '../features/admin/pages/AdminPendingStoresPage';
@@ -54,6 +54,7 @@ function renderPage() {
 describe('AdminPendingStoresPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockShowToast.mockClear();
     mockFetchPendingStores.mockResolvedValue({
       data: mockStores,
       pagination: paginationSinglePage,
@@ -147,7 +148,7 @@ describe('AdminPendingStoresPage', () => {
 
     await waitFor(() => {
       expect(mockApproveStore).toHaveBeenCalledWith(1);
-      expect(toast.success).toHaveBeenCalledWith('Comercio aprobado exitosamente');
+      expect(mockShowToast).toHaveBeenCalledWith('Comercio aprobado exitosamente', 'success');
       // Debería recargar los datos
       expect(mockFetchPendingStores).toHaveBeenCalledTimes(2);
     });
@@ -178,7 +179,7 @@ describe('AdminPendingStoresPage', () => {
 
     await waitFor(() => {
       expect(mockRejectStore).toHaveBeenCalledWith(1, 'Motivo inválido de prueba');
-      expect(toast.success).toHaveBeenCalledWith('Comercio rechazado');
+      expect(mockShowToast).toHaveBeenCalledWith('Comercio rechazado', 'success');
       // Recarga de datos
       expect(mockFetchPendingStores).toHaveBeenCalledTimes(2);
     });
@@ -203,7 +204,7 @@ describe('AdminPendingStoresPage', () => {
     await user.click(confirmButton);
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith('El motivo es obligatorio');
+      expect(mockShowToast).toHaveBeenCalledWith('El motivo es obligatorio', 'error');
       // No debe llamar
       expect(mockRejectStore).not.toHaveBeenCalled();
     });

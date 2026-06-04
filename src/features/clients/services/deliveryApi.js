@@ -24,7 +24,6 @@ export const getDeliveryProfile = async (deliveryId) => {
   return data;
 };
 
-/** Valores que espera POST /api/deliveries/register (Zod en backend). */
 const UI_VEHICLE_TO_API = {
   BICICLETA: "BICYCLE",
   MOTOCICLETA: "MOTORCYCLE",

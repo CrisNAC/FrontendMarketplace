@@ -1,4 +1,3 @@
-// src/components/SidebarDelivery.jsx
 import { useNavigate, useLocation } from "react-router-dom";
 import { useLogout } from "../hooks/useLogout";
 import {
@@ -24,7 +23,6 @@ export const SidebarDelivery = ({ collapsed, onToggle, onNavigate }) => {
         { label: "Cerrar Sesión", icon: LogOut,  onClick: logout },
     ];
 
-    // Activo basado en la URL actual — ordena por especificidad (rutas más largas primero)
     const active = [...NAV_ITEMS]
         .filter(item => item.route)
         .sort((a, b) => b.route.length - a.route.length)
@@ -42,7 +40,6 @@ export const SidebarDelivery = ({ collapsed, onToggle, onNavigate }) => {
             transition: "width 0.2s ease",
             flexShrink: 0,
         }}>
-            {/* Header */}
             <div style={{
                 display: "flex",
                 flexDirection: "row",
@@ -64,7 +61,6 @@ export const SidebarDelivery = ({ collapsed, onToggle, onNavigate }) => {
                 </button>
             </div>
 
-            {/* Nav items */}
             <nav style={{ display: "flex", flexDirection: "column", gap: "4px", flex: 1 }}>
                 {NAV_ITEMS.map(({ label, icon: Icon, route, onClick }) => {
                     const isActive = active === label;
@@ -107,7 +103,6 @@ export const SidebarDelivery = ({ collapsed, onToggle, onNavigate }) => {
                 })}
             </nav>
 
-            {/* Help box */}
             {!collapsed && (
                 <div style={{
                     backgroundColor: "var(--primary)",
@@ -128,5 +123,3 @@ export const SidebarDelivery = ({ collapsed, onToggle, onNavigate }) => {
         </div>
     );
 };
-
-export default SidebarDelivery;

@@ -30,3 +30,30 @@ export async function fetchCartsApi(userId) {
   });
   return res.data?.carts ?? [];
 }
+
+/**
+ * DELETE /api/users/cart/items/:cartItemId
+ * Elimina un item del carrito (borrado lógico).
+ */
+export async function removeCartItemApi(cartItemId) {
+  const base = getApiBase() || "http://localhost:3000";
+  const res = await axios.delete(`${base}/api/users/cart/items/${cartItemId}`, {
+    withCredentials: true,
+  });
+  return res.data;
+}
+
+/**
+ * PUT /api/users/cart/items/:cartItemId
+ * Body: { quantity }
+ * Actualiza la cantidad de un item del carrito.
+ */
+export async function updateCartItemQuantityApi(cartItemId, quantity) {
+  const base = getApiBase() || "http://localhost:3000";
+  const res = await axios.put(
+    `${base}/api/users/cart/items/${cartItemId}`,
+    { quantity },
+    { withCredentials: true }
+  );
+  return res.data;
+}
