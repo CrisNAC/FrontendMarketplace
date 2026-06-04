@@ -23,16 +23,16 @@ const RejectModal = ({ isOpen, onClose, onConfirm, isSubmitting }) => {
   useEffect(() => {
     if (!isOpen) return;
     setReason("");
-    setTimeout(() => textareaRef.current?.focus(), 0);
+    const focusId = setTimeout(() => textareaRef.current?.focus(), 0);
+    return () => clearTimeout(focusId);
   }, [isOpen]);
 
-  // Fix 2: cerrar con Escape
   useEffect(() => {
     if (!isOpen) return;
-    const handleKey = (e) => { if (e.key === "Escape") onClose(); };
+    const handleKey = (e) => { if (e.key === "Escape" && !isSubmitting) onClose(); };
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
-  }, [isOpen, onClose]);
+  }, [isOpen, isSubmitting, onClose]);
 
   if (!isOpen) return null;
 
@@ -41,7 +41,7 @@ const RejectModal = ({ isOpen, onClose, onConfirm, isSubmitting }) => {
     <div
       role="presentation"
       style={{ position: "fixed", inset: 0, zIndex: 60, backgroundColor: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
-      onClick={onClose}
+      onClick={isSubmitting ? undefined : onClose}
     >
       <div
         role="dialog"
@@ -52,7 +52,7 @@ const RejectModal = ({ isOpen, onClose, onConfirm, isSubmitting }) => {
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
           <h3 id="modal-title-reject" style={{ fontSize: "18px", fontWeight: "700", margin: 0 }}>Rechazar solicitud</h3>
-          <button type="button" onClick={onClose} aria-label="Cerrar modal" style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280" }}>
+          <button type="button" onClick={onClose} disabled={isSubmitting} aria-label="Cerrar modal" style={{ background: "none", border: "none", cursor: isSubmitting ? "not-allowed" : "pointer", color: "#6b7280" }}>
             <X size={20} />
           </button>
         </div>
@@ -107,7 +107,7 @@ export const AdminBannerRequestsPage = () => {
     try {
       const result = await getAllBannerRequests(statusFilter ? { approvalStatus: statusFilter } : {});
       setRequests(result.data ?? []);
-    } catch {
+    } catch (_err) {
       toast.error("No se pudieron cargar las solicitudes");
     } finally {
       setLoading(false);
@@ -124,7 +124,7 @@ export const AdminBannerRequestsPage = () => {
       await reviewBannerRequest(requestId, { decision: "APPROVE" });
       toast.success("Solicitud aprobada");
       await loadRequests();
-    } catch {
+    } catch (_err) {
       toast.error("No se pudo aprobar la solicitud");
     } finally {
       setReviewingId(null);
@@ -138,7 +138,7 @@ export const AdminBannerRequestsPage = () => {
       toast.success("Solicitud rechazada");
       setRejectTarget(null);
       await loadRequests();
-    } catch {
+    } catch (_err) {
       toast.error("No se pudo rechazar la solicitud");
     } finally {
       setIsSubmitting(false);
@@ -194,7 +194,7 @@ export const AdminBannerRequestsPage = () => {
           <div style={{ display: "flex", flexDirection: "column" }}>
             {requests.map((req) => {
               const badge = STATUS_BADGE[req.approvalStatus] ?? STATUS_BADGE.PENDING;
-              const isActioning = reviewingId === req.id || (rejectTarget === req.id && isSubmitting);
+              const isActioning = isSubmitting || reviewingId === req.id || (rejectTarget === req.id && isSubmitting);
               return (
                 <div key={req.id} style={{ display: "flex", gap: "16px", padding: "16px 8px", borderBottom: "1px solid #f3f4f6", alignItems: "flex-start", flexWrap: "wrap" }}>
                   <div style={{ width: "72px", height: "48px", borderRadius: "8px", border: "1px solid #e5e7eb", overflow: "hidden", backgroundColor: "#f3f4f6", flexShrink: 0 }}>

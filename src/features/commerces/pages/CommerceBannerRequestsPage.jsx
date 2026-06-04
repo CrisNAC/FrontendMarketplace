@@ -41,8 +41,8 @@ const BannerRequestModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
   useEffect(() => {
     if (!isOpen) return;
     setTitle(""); setDescription(""); setImageUrl(""); setLinkUrl(""); setStartAt(""); setEndAt("");
-    // Mover foco al primer campo al abrir
-    setTimeout(() => firstInputRef.current?.focus(), 0);
+    const focusId = setTimeout(() => firstInputRef.current?.focus(), 0);
+    return () => clearTimeout(focusId);
   }, [isOpen]);
 
   // Cerrar con Escape
@@ -200,6 +200,47 @@ const RequestCard = ({ req, onCancel }) => {
   );
 };
 
+// ─── Modal de confirmación ────────────────────────────────────────────────────
+
+const ConfirmModal = ({ isOpen, message, onConfirm, onClose }) => {
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKey = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+  return (
+    <div
+      role="presentation"
+      style={{ position: "fixed", inset: 0, zIndex: 70, backgroundColor: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title-confirm"
+        style={{ backgroundColor: "white", borderRadius: "16px", padding: "24px", maxWidth: "380px", width: "100%", boxShadow: "0 20px 40px rgba(0,0,0,0.15)" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 id="modal-title-confirm" style={{ fontSize: "16px", fontWeight: "700", margin: "0 0 12px" }}>Confirmar acción</h3>
+        <p style={{ fontSize: "14px", color: "#374151", margin: "0 0 20px" }}>{message}</p>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+          <button type="button" onClick={onClose}
+            style={{ padding: "8px 18px", borderRadius: "8px", border: "1px solid #d1d5db", background: "white", fontSize: "14px", cursor: "pointer" }}>
+            No
+          </button>
+          <button type="button" onClick={onConfirm}
+            style={{ padding: "8px 18px", borderRadius: "8px", border: "none", background: "#dc2626", color: "white", fontSize: "14px", fontWeight: "600", cursor: "pointer" }}>
+            Sí, cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ─── Página ───────────────────────────────────────────────────────────────────
 
 export const CommerceBannerRequestsPage = () => {
@@ -208,12 +249,13 @@ export const CommerceBannerRequestsPage = () => {
   const [storeId, setStoreId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [confirmCancelId, setConfirmCancelId] = useState(null);
 
   const loadRequests = useCallback(async (sid) => {
     try {
       const data = await getMyBannerRequests(sid);
       setRequests(data);
-    } catch {
+    } catch (_err) {
       toast.error("No se pudieron cargar las solicitudes");
     }
   }, []);
@@ -231,7 +273,7 @@ export const CommerceBannerRequestsPage = () => {
         }
         setStoreId(sid);
         await loadRequests(sid);
-      } catch {
+      } catch (_err) {
         toast.error("Error al cargar la sesión");
       } finally {
         setLoading(false);
@@ -249,17 +291,21 @@ export const CommerceBannerRequestsPage = () => {
       toast.success("Solicitud enviada — será revisada por un administrador");
       setIsModalOpen(false);
       await loadRequests(storeId);
-    } catch {
+    } catch (_err) {
       toast.error("No se pudo enviar la solicitud");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleCancel = async (requestId) => {
-    // Fix 7: guard de storeId
+  const handleCancel = (requestId) => {
     if (!storeId) { toast.error("No se encontró un comercio asociado"); return; }
-    if (!window.confirm("¿Cancelar esta solicitud?")) return;
+    setConfirmCancelId(requestId);
+  };
+
+  const handleConfirmCancel = async () => {
+    const requestId = confirmCancelId;
+    setConfirmCancelId(null);
     try {
       await cancelBannerRequest(storeId, requestId);
       setRequests((prev) => prev.filter((r) => r.id !== requestId));
@@ -312,6 +358,12 @@ export const CommerceBannerRequestsPage = () => {
         ))
       )}
 
+      <ConfirmModal
+        isOpen={confirmCancelId !== null}
+        message="¿Cancelar esta solicitud?"
+        onConfirm={handleConfirmCancel}
+        onClose={() => setConfirmCancelId(null)}
+      />
       <BannerRequestModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
