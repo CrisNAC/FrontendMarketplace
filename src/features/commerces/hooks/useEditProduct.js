@@ -192,6 +192,7 @@ export const useEditProduct = (productId, { onSuccess, onError } = {}) => {
         const errors = validateForm(formData, selectedTags);
         if (Object.keys(errors).length > 0) {
             setValidationErrors(errors);
+            onError?.("Revisá los campos del formulario antes de continuar");
             return;
         }
 
