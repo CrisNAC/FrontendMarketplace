@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Camera, Loader2 } from "lucide-react";
-import Navbar from "../../../components/navbar/Navbar";
-import { SidebarClientProfile } from "../../../components/SidebarClientProfile";
+import { PageLoader } from "../../../components/PageLoader";
 import {
     getSession,
     fetchUserProfile,
@@ -91,110 +90,87 @@ const MyAccountPage = () => {
         }
     };
 
-    if (loading) {
-        return (
-            <div className="min-h-screen flex flex-col">
-                <Navbar />
-                <div className="flex-1 flex items-center justify-center">
-                    <Loader2 size={28} className="animate-spin text-[#2d4030]" />
-                </div>
-            </div>
-        );
-    }
+    if (loading) return <PageLoader />;
 
     return (
-        <div className="min-h-screen flex flex-col">
-            <Navbar />
-
-            <main className="max-w-[1400px] mx-auto w-full px-6 py-10">
-                <h1 className="text-[28px] font-bold text-[#2d4030] mb-8">Mi Cuenta</h1>
-
+        <div className="max-w-[1100px] mx-auto w-full space-y-10">
                 {error && (
-                    <div className="mb-6 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-md">
+                    <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-md">
                         {error}
                     </div>
                 )}
 
-                <div className="flex flex-col md:flex-row gap-8 items-start">
-                    <aside className="w-full md:w-[280px] shrink-0">
-                        <SidebarClientProfile />
-                    </aside>
-
-                    <div className="flex-1 w-full space-y-10">
-                        {/* Foto de perfil */}
-                        <section className="flex items-center gap-6">
-                            <div className="relative">
-                                <div className="w-24 h-24 rounded-full bg-[#e8f0e9] border-2 border-[#2d4030] overflow-hidden flex items-center justify-center">
-                                    {photoPreview ? (
-                                        <img
-                                            src={photoPreview}
-                                            alt="Foto de perfil"
-                                            className="w-full h-full object-cover"
-                                        />
-                                    ) : (
-                                        <span className="text-3xl font-bold text-[#2d4030]">
-                                            {user?.name?.[0]?.toUpperCase() ?? "?"}
-                                        </span>
-                                    )}
-                                </div>
-                                <button
-                                    onClick={() => fileInputRef.current?.click()}
-                                    disabled={uploadingPhoto}
-                                    className="absolute bottom-0 right-0 bg-[#2d4030] text-white rounded-full p-1.5 hover:bg-[#3d5540] transition-colors shadow-md"
-                                    title="Cambiar foto"
-                                >
-                                    {uploadingPhoto
-                                        ? <Loader2 size={14} className="animate-spin" />
-                                        : <Camera size={14} />
-                                    }
-                                </button>
-                                <input
-                                    ref={fileInputRef}
-                                    type="file"
-                                    accept="image/*"
-                                    className="hidden"
-                                    onChange={handlePhotoChange}
+                {/* Foto de perfil */}
+                <section className="flex items-center gap-6">
+                    <div className="relative">
+                        <div className="w-24 h-24 rounded-full bg-[#e8f0e9] border-2 border-[#2d4030] overflow-hidden flex items-center justify-center">
+                            {photoPreview ? (
+                                <img
+                                    src={photoPreview}
+                                    alt="Foto de perfil"
+                                    className="w-full h-full object-cover"
                                 />
-                            </div>
-                            <div>
-                                <p className="text-[18px] font-semibold text-[#2d4030]">{user?.name ?? "—"}</p>
-                                <p className="text-[14px] text-gray-500">{user?.email ?? "—"}</p>
-                            </div>
-                        </section>
-
-                        {/* Información de la cuenta */}
-                        <section>
-                            <AccountSectionHeader title="Información de la cuenta" />
-                            <div className="grid md:grid-cols-2 gap-4 mt-4">
-                                <AccountInfoCard
-                                    title="Información de Contacto"
-                                    footer={
-                                        <>
-                                            <button
-                                                className="hover:underline"
-                                                onClick={() => navigate("/mi-perfil")}
-                                            >
-                                                Editar
-                                            </button>
-                                            <button
-                                                className="hover:underline"
-                                                onClick={() => navigate("/cambiar-contrasena")}
-                                            >
-                                                Cambiar contraseña
-                                            </button>
-                                        </>
-                                    }
-                                >
-                                    <p>{user?.name ?? "—"}</p>
-                                    <p>{user?.email ?? "—"}</p>
-                                    {user?.phone && <p>{user.phone}</p>}
-                                </AccountInfoCard>
-                            </div>
-                        </section>
+                            ) : (
+                                <span className="text-3xl font-bold text-[#2d4030]">
+                                    {user?.name?.[0]?.toUpperCase() ?? "?"}
+                                </span>
+                            )}
+                        </div>
+                        <button
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploadingPhoto}
+                            className="absolute bottom-0 right-0 bg-[#2d4030] text-white rounded-full p-1.5 hover:bg-[#3d5540] transition-colors shadow-md"
+                            title="Cambiar foto"
+                        >
+                            {uploadingPhoto
+                                ? <Loader2 size={14} className="animate-spin" />
+                                : <Camera size={14} />
+                            }
+                        </button>
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handlePhotoChange}
+                        />
                     </div>
-                </div>
-            </main>
-        </div>
+                    <div>
+                        <p className="text-[18px] font-semibold text-[#2d4030]">{user?.name ?? "—"}</p>
+                        <p className="text-[14px] text-gray-500">{user?.email ?? "—"}</p>
+                    </div>
+                </section>
+
+                {/* Información de la cuenta */}
+                <section>
+                    <AccountSectionHeader title="Información de la cuenta" />
+                    <div className="grid md:grid-cols-2 gap-4 mt-4">
+                        <AccountInfoCard
+                            title="Información de Contacto"
+                            footer={
+                                <>
+                                    <button
+                                        className="hover:underline"
+                                        onClick={() => navigate("/mi-perfil")}
+                                    >
+                                        Editar
+                                    </button>
+                                    <button
+                                        className="hover:underline"
+                                        onClick={() => navigate("/cambiar-contrasena")}
+                                    >
+                                        Cambiar contraseña
+                                    </button>
+                                </>
+                            }
+                        >
+                            <p>{user?.name ?? "—"}</p>
+                            <p>{user?.email ?? "—"}</p>
+                            {user?.phone && <p>{user.phone}</p>}
+                        </AccountInfoCard>
+                    </div>
+                </section>
+            </div>
     );
 };
 

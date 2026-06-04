@@ -2,9 +2,8 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import axios from "axios";
-import toast from "react-hot-toast";
-import { getApiBase } from "../../../lib/cartApi";
-import { formatGuarani } from "../../../lib/formatGuarani.js";
+import { getApiBase, formatGuarani } from "@/lib";
+import { useToast } from "@/hooks";
 
 const shippingOptions = [
   {
@@ -80,12 +79,13 @@ export default function ConfirmarPedido() {
   const navigate = useNavigate();
   const { cartId } = useParams();
   const apiBase = getApiBase() || "http://localhost:3000";
+  const { showToast } = useToast();
 
   const loadCart = useCallback(async () => {
     try {
       if (!cartId) {
         setStatus("error");
-        toast.error("Carrito inválido");
+        showToast("Carrito inválido", "error");
         return;
       }
 
@@ -97,7 +97,7 @@ export default function ConfirmarPedido() {
 
       if (!userId) {
         setStatus("unauthorized");
-        toast.error("Iniciá sesión para continuar");
+        showToast("Iniciá sesión para continuar", "error");
         navigate("/login");
         return;
       }
@@ -114,25 +114,26 @@ export default function ConfirmarPedido() {
 
       if (!selectedCart) {
         setStatus("error");
-        toast.error("Carrito no encontrado");
+        showToast("Carrito no encontrado", "error");
         return;
       }
 
       setCart(selectedCart);
-    } catch (error: any) {
-      const code = error?.response?.status;
+    } catch (error: unknown) {
+      const err = error as { response?: { status?: number; data?: { message?: string } } };
+      const code = err?.response?.status;
 
       if (code === 401) {
         setStatus("unauthorized");
-        toast.error("Iniciá sesión para continuar");
+        showToast("Iniciá sesión para continuar", "error");
         navigate("/login");
         return;
       }
 
       setStatus("error");
-      toast.error(error?.response?.data?.message || "No se pudo cargar el pedido");
+      showToast(err?.response?.data?.message || "No se pudo cargar el pedido", "error");
     }
-  }, [apiBase, cartId, navigate]);
+  }, [apiBase, cartId, navigate, showToast]);
 
   const loadAddresses = useCallback(async () => {
     try {
@@ -143,7 +144,7 @@ export default function ConfirmarPedido() {
       const userId = sessionRes.data?.user?.id_user;
 
       if (!userId) {
-        toast.error("Iniciá sesión para ver tus direcciones");
+        showToast("Iniciá sesión para ver tus direcciones", "error");
         navigate("/login");
         return;
       }
@@ -157,13 +158,14 @@ export default function ConfirmarPedido() {
         : [];
 
       setAddresses(addressesData);
-    } catch (error: any) {
-      toast.error(
-        error?.response?.data?.message || "No se pudieron cargar las direcciones"
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      showToast(
+        err?.response?.data?.message || "No se pudieron cargar las direcciones"
       );
       setAddresses([]);
     }
-  }, [apiBase, navigate]);
+  }, [apiBase, navigate, showToast]);
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -212,14 +214,16 @@ export default function ConfirmarPedido() {
 
       setShippingQuote(response.data);
       setShippingQuoteStatus("ready");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       setShippingQuote(null);
       setShippingQuoteStatus("error");
-      toast.error(
-        error?.response?.data?.message || "No se pudo calcular el costo de envío"
+      showToast(
+        err?.response?.data?.message || "No se pudo calcular el costo de envío",
+        "error"
       );
     }
-  }, [apiBase, cart, selectedAddress, selectedShipping]);
+  }, [apiBase, cart, selectedAddress, selectedShipping, showToast]);
 
   useEffect(() => {
     if (selectedShipping !== "standard") {
@@ -280,64 +284,66 @@ export default function ConfirmarPedido() {
   }, [cart]);
 
   const handleConfirmOrder = async () => {
-  if (submitLockRef.current) return;
+    if (submitLockRef.current) return;
 
-  try {
-    if (!cart) {
-      toast.error("No se encontró el carrito");
-      return;
+    try {
+      if (!cart) {
+        showToast("No se encontró el carrito", "error");
+        return;
+      }
+
+      if (requiresAddress && !selectedAddress) {
+        showToast("Selecciona una dirección de entrega", "error");
+        return;
+      }
+
+      if (requiresAddress && shippingQuoteStatus !== "ready") {
+        showToast("Debes calcular el envío antes de confirmar", "error");
+        return;
+      }
+
+      submitLockRef.current = true;
+      setIsSubmitting(true);
+
+      const payload = {
+        cartId: cart.id,
+        addressId: requiresAddress ? selectedAddress : null,
+        shippingMethod: requiresAddress ? "standard" : "pickup",
+        shippingCost: requiresAddress ? shipping : 0,
+        shippingDistanceKm: requiresAddress ? shippingQuote?.distance_km ?? null : null,
+        notes: notes.trim() || null,
+      };
+
+      const response = await axios.post(`${apiBase}/api/orders`, payload, {
+        withCredentials: true,
+      });
+
+      const createdOrder = response.data;
+
+      showToast("Pedido confirmado correctamente", "success");
+
+      navigate("/pedido-confirmado", {
+        state: {
+          order: createdOrder,
+          shippingMethod: selectedShipping,
+          shippingCost: shipping,
+          shippingDistanceKm: shippingQuote?.distance_km ?? null,
+          subtotal,
+          discount,
+          total,
+        },
+      });
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      showToast(
+        err?.response?.data?.message || "No se pudo confirmar el pedido",
+        "error"
+      );
+    } finally {
+      submitLockRef.current = false;
+      setIsSubmitting(false);
     }
-
-    if (requiresAddress && !selectedAddress) {
-      toast.error("Selecciona una dirección de entrega");
-      return;
-    }
-
-    if (requiresAddress && shippingQuoteStatus !== "ready") {
-      toast.error("Debes calcular el envío antes de confirmar");
-      return;
-    }
-
-    submitLockRef.current = true;
-    setIsSubmitting(true);
-
-    const payload = {
-      cartId: cart.id,
-      addressId: requiresAddress ? selectedAddress : null,
-      shippingMethod: requiresAddress ? "standard" : "pickup",
-      shippingCost: requiresAddress ? shipping : 0,
-      shippingDistanceKm: requiresAddress ? shippingQuote?.distance_km ?? null : null,
-      notes: notes.trim() || null,
-    };
-
-    const response = await axios.post(`${apiBase}/api/orders`, payload, {
-      withCredentials: true,
-    });
-
-    const createdOrder = response.data;
-
-    toast.success("Pedido confirmado correctamente");
-
-    navigate("/pedido-confirmado", {
-      state: {
-        order: createdOrder,
-        shippingMethod: selectedShipping,
-        shippingCost: shipping,
-        shippingDistanceKm: shippingQuote?.distance_km ?? null,
-        subtotal,
-        discount,
-        total,
-      },
-    });
-  } catch (error: any) {
-    toast.error(
-      error?.response?.data?.message || "No se pudo confirmar el pedido"
-    );
-  } finally {
-    submitLockRef.current = false;
-    setIsSubmitting(false);
-  }
-};
+  };
 
   return (
     <div className="min-h-screen bg-[#f0f7f2] font-sans">
@@ -397,19 +403,17 @@ export default function ConfirmarPedido() {
                     {shippingOptions.map((opt) => (
                       <label
                         key={opt.id}
-                        className={`flex items-start gap-3 rounded-xl border p-3 cursor-pointer transition-all duration-150 ${
-                          selectedShipping === opt.id
+                        className={`flex items-start gap-3 rounded-xl border p-3 cursor-pointer transition-all duration-150 ${selectedShipping === opt.id
                             ? "border-[#5B7B6D] bg-[#eef4f1]"
                             : "border-gray-200 bg-gray-50/40 hover:border-[#5B7B6D]/40"
-                        }`}
+                          }`}
                       >
                         <span className="mt-2">
                           <span
-                            className={`inline-flex h-4 w-4 items-center justify-center rounded-full border transition-colors ${
-                              selectedShipping === opt.id
+                            className={`inline-flex h-4 w-4 items-center justify-center rounded-full border transition-colors ${selectedShipping === opt.id
                                 ? "border-[#5B7B6D] bg-[#5B7B6D]"
                                 : "border-gray-300 bg-white"
-                            }`}
+                              }`}
                           >
                             {selectedShipping === opt.id && (
                               <span className="block h-1.5 w-1.5 rounded-full bg-white" />
@@ -435,9 +439,8 @@ export default function ConfirmarPedido() {
 
                         <div className="text-right">
                           <p
-                            className={`text-sm font-bold ${
-                              opt.id === "pickup" ? "text-[#5B7B6D]" : "text-gray-800"
-                            }`}
+                            className={`text-sm font-bold ${opt.id === "pickup" ? "text-[#5B7B6D]" : "text-gray-800"
+                              }`}
                           >
                             {opt.id === "pickup"
                               ? "Gratis"

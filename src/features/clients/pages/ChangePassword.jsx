@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Lock, Eye, EyeOff } from "lucide-react";
-import Navbar from "../../../components/navbar/Navbar";
+import { PageLoader } from "../../../components/PageLoader";
 import axios from "axios";
 import {
     getSession,
@@ -136,19 +136,10 @@ export const ChangePassword = () => {
         }
     };
 
-    if (loading) {
-        return (
-            <div>
-                <Navbar />
-                <div className="p-10 text-center">Cargando...</div>
-            </div>
-        );
-    }
+    if (loading) return <PageLoader />;
 
     return (
-        <div>
-            <Navbar />
-            <div className="flex justify-center w-full mt-3 mb-3">
+        <div className="flex justify-center w-full mt-3 mb-3">
                 <div className="w-full max-w-2xl bg-white p-8 rounded-md shadow-md">
                     <div className="flex items-center gap-3 mb-1">
                         <div className="bg-[#e8f0e9] p-2 rounded-full">
@@ -207,7 +198,6 @@ export const ChangePassword = () => {
                     {error && <div className="text-red-500 mt-4 text-sm">{error}</div>}
                     {success && <div className="text-green-600 mt-4 text-sm">{success}</div>}
                 </div>
-            </div>
         </div>
     );
 };

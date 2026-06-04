@@ -11,6 +11,7 @@ import {
   Users,
 } from "lucide-react";
 import { fetchAdminDashboardStats, fetchAdminRecentActivity } from "../services/adminDashboardApi";
+import { PageLoader } from "../../../components/PageLoader";
 
 const cardStyle = {
   backgroundColor: "var(--background-white)",
@@ -156,6 +157,8 @@ export const AdminDashboardPage = () => {
     [stats]
   );
 
+  if (loading) return <PageLoader />;
+
   const hasProductReportWarnings = stats.pendingProductReports > 0;
 
   const badgeStyleByType = {
@@ -189,7 +192,7 @@ export const AdminDashboardPage = () => {
         </div>
       )}
 
-      {!loading && hasProductReportWarnings && (
+      {hasProductReportWarnings && (
         <div
           role="alert"
           style={{
@@ -256,7 +259,7 @@ export const AdminDashboardPage = () => {
                 <Icon size={17} color={danger ? "#dc2626" : "#64748b"} />
               </div>
               <p style={{ margin: "0 0 10px 0", fontSize: "30px", fontWeight: "700", color: "#111827" }}>
-                {loading ? "..." : value.toLocaleString("es-PY")}
+                {value.toLocaleString("es-PY")}
               </p>
               <span
                 style={{
@@ -321,7 +324,7 @@ export const AdminDashboardPage = () => {
           </p>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            {!loading && recentActivity.length === 0 && (
+            {recentActivity.length === 0 && (
               <p style={{ margin: 0, fontSize: "13px", color: "#6b7280" }}>
                 Aun no hay actividad disponible para mostrar.
               </p>
@@ -388,7 +391,7 @@ export const AdminDashboardPage = () => {
                       {task.title}
                     </p>
                     <p style={{ margin: 0, fontSize: "12px", color: task.color, opacity: 0.9 }}>
-                      {loading ? "Cargando..." : task.subtitle}
+                      {task.subtitle}
                     </p>
                   </div>
                 </div>
@@ -406,7 +409,7 @@ export const AdminDashboardPage = () => {
                     color: task.color,
                   }}
                 >
-                  {loading ? "..." : task.count}
+                  {task.count}
                 </span>
               </button>
             ))}

@@ -1,27 +1,22 @@
-//DetalleProducto.jsx
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import toast from "react-hot-toast";
 import { ArrowLeft, MoreVertical } from "lucide-react";
+import { ProductDetailSkeleton, PageLoader } from "@/components";
 import axios from "axios";
-import apiClient from "../../../lib/apiClient";
-import RelatedProducts from "../components/products/RelatedProducts.jsx";
+import { apiClient, addToCartApi, mergeCartResponseFromApi, formatGuarani } from "@/lib";
+import RelatedProducts from "@/features/clients/components/products/RelatedProducts.jsx";
 import {
   getWishlists,
   createWishlist,
   addWishlistItem,
-} from "../services/wishlistService";
-import { addToCartApi } from "../../../lib/cartApi";
-import { mergeCartResponseFromApi } from "../../../lib/cartLocalStorage";
-import { formatGuarani } from "../../../lib/formatGuarani.js";
-import {
   REPORT_REASON_LABELS,
   fetchPendingProductReport,
   fetchProductReportReasons,
   hasLocalReportForProduct,
   rememberLocalReport,
   submitProductReport,
-} from "../services/productReportApi.js";
+} from "@/features/clients/services";
+import { useToast } from "@/hooks";
 
 function apiErrorMessage(data) {
   if (!data) return null;
@@ -81,8 +76,13 @@ const VERDE = "#8BB2A1";
 
 export default function DetalleProducto() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const { id } = useParams();
   const productId = id ? Number(id) : null;
+
+  const apiBase = useMemo(() => {
+    return (import.meta.env.VITE_API_URL || "").trim().replace(/\/$/, "");
+  }, []);
 
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
@@ -112,11 +112,11 @@ export default function DetalleProducto() {
   const [submittingReport, setSubmittingReport] = useState(false);
   const [reportReasonOptions, setReportReasonOptions] = useState(REPORT_REASON_LABELS);
 
-  // Cargar sesión del usuario
   useEffect(() => {
     let active = true;
+    const base = apiBase || "http://localhost:3000";
     axios
-      .get(`/api/session/user-session`, { withCredentials: true })
+      .get(`${base}/api/session/user-session`, { withCredentials: true })
       .then((res) => {
         if (!active) return;
         setSessionUserId(res.data?.user?.id_user ?? null);
@@ -131,31 +131,25 @@ export default function DetalleProducto() {
       .finally(() => {
         if (active) setSessionChecked(true);
       });
-
     return () => {
       active = false;
     };
-  }, []);
+  }, [apiBase]);
 
-  // Cargar razones de reporte
   useEffect(() => {
     if (!sessionChecked || sessionRole !== "CUSTOMER") return;
-
     let cancelled = false;
-
     (async () => {
       const list = await fetchProductReportReasons();
       if (!cancelled && list && list.length > 0) {
         setReportReasonOptions(list);
       }
     })();
-
     return () => {
       cancelled = true;
     };
   }, [sessionChecked, sessionRole]);
 
-  // Verificar si hay reporte pendiente
   useEffect(() => {
     if (!sessionChecked) return;
 
@@ -172,7 +166,6 @@ export default function DetalleProducto() {
     }
 
     let cancelled = false;
-
     (async () => {
       setCheckingReport(true);
       try {
@@ -197,77 +190,35 @@ export default function DetalleProducto() {
     };
   }, [sessionChecked, sessionUserId, sessionRole, productId]);
 
-  // Cerrar menú al hacer click fuera
   useEffect(() => {
     if (!menuOpen) return undefined;
-
     const onDown = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
         setMenuOpen(false);
       }
     };
-
     document.addEventListener("mousedown", onDown);
     return () => document.removeEventListener("mousedown", onDown);
   }, [menuOpen]);
 
-  // Cerrar modal de reporte con Escape
   useEffect(() => {
     if (!reportModalOpen) return undefined;
-
     const onKey = (e) => {
       if (e.key === "Escape" && !submittingReport) {
         setReportModalOpen(false);
         setReportModalError("");
       }
     };
-
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [reportModalOpen, submittingReport]);
 
-  // Cargar producto por ID
-  useEffect(() => {
-    let isActive = true;
-
-    const load = async () => {
-      if (!productId || !Number.isFinite(productId)) {
-        setProduct(null);
-        setStatus("idle");
-        setError("");
-        return;
-      }
-
-      try {
-        setStatus("loading");
-        setError("");
-
-        const response = await apiClient.get(`/products/${productId}`);
-
-        if (!isActive) return;
-        setProduct(response.data);
-        setStatus("success");
-      } catch (e) {
-        if (!isActive) return;
-        setProduct(null);
-        setStatus("error");
-        setError(e instanceof Error ? e.message : "No se pudo cargar el producto.");
-      }
-    };
-
-    load();
-    return () => {
-      isActive = false;
-    };
-  }, [productId]);
-
-  const showReportMenu = Boolean(
-    sessionChecked &&
-    sessionUserId &&
-    sessionRole === "CUSTOMER" &&
-    !checkingReport &&
-    status === "success"
-  );
+  const showReportMenu =
+    sessionChecked
+    && sessionUserId
+    && sessionRole === "CUSTOMER"
+    && !checkingReport
+    && status === "success";
 
   const openReportModal = () => {
     setReportReason("");
@@ -287,12 +238,9 @@ export default function DetalleProducto() {
       setReportModalError("Ya enviaste un reporte para este producto.");
       return;
     }
-
     if (!reportReason || !productId || !sessionUserId) return;
-
     setSubmittingReport(true);
     setReportModalError("");
-
     try {
       const res = await submitProductReport({
         productId,
@@ -304,11 +252,18 @@ export default function DetalleProducto() {
         rememberLocalReport(sessionUserId, productId);
         setHasPendingReport(true);
         setReportModalOpen(false);
-        toast.success("Gracias por tu reporte. Lo revisaremos pronto.");
+        showToast("Gracias por tu reporte. Lo revisaremos pronto.", "success");
         return;
       }
 
-      if (res.status === 400 || res.status === 409) {
+      if (res.status === 400) {
+        setReportModalError(
+          apiErrorMessage(res.data) || "Ya enviaste un reporte para este producto."
+        );
+        return;
+      }
+
+      if (res.status === 409) {
         setReportModalError(
           apiErrorMessage(res.data) || "Ya enviaste un reporte para este producto."
         );
@@ -316,17 +271,15 @@ export default function DetalleProducto() {
       }
 
       const msg = apiErrorMessage(res.data);
-      toast.error(msg ? String(msg) : "No se pudo enviar el reporte");
+      showToast(msg ? String(msg) : "No se pudo enviar el reporte", "error");
     } catch (e) {
       const code = e?.response?.status;
       const msg = apiErrorMessage(e?.response?.data);
-
       if (code === 400 || code === 409) {
         setReportModalError(msg || "Ya enviaste un reporte para este producto.");
         return;
       }
-
-      toast.error(msg ? String(msg) : "No se pudo enviar el reporte");
+      showToast(msg ? String(msg) : "No se pudo enviar el reporte", "error");
     } finally {
       setSubmittingReport(false);
     }
@@ -334,25 +287,21 @@ export default function DetalleProducto() {
 
   const openWishlistModal = async () => {
     if (!productId) return;
-
     setWishlistModalOpen(true);
     setLoadingWishlists(true);
-
     try {
       const sessionRes = await apiClient.get("/api/session/user-session");
       const uid = sessionRes.data?.user?.id_user;
-
       if (!uid) {
-        toast.error("Iniciá sesión para agregar a tu lista de deseos");
+        showToast("Iniciá sesión para agregar a tu lista de deseos", "error");
         setWishlistModalOpen(false);
         return;
       }
-
       setSessionUserId(uid);
       const lists = await getWishlists(uid);
       setWishlists(lists);
     } catch {
-      toast.error("No se pudieron cargar las listas");
+      showToast("No se pudieron cargar las listas", "error");
       setWishlistModalOpen(false);
     } finally {
       setLoadingWishlists(false);
@@ -362,38 +311,31 @@ export default function DetalleProducto() {
   const handleAddToWishlist = async (wishlistId) => {
     try {
       await addWishlistItem(sessionUserId, wishlistId, productId, cantidad);
-      toast.success("Producto agregado a la lista");
+      showToast("Producto agregado a la lista", "success");
       setWishlistModalOpen(false);
     } catch {
-      toast.error("No se pudo agregar el producto");
+      showToast("No se pudo agregar el producto", "error");
     }
   };
 
   const handleCreateAndAdd = async () => {
     const name = newListName.trim();
-
-    if (!name) {
-      toast.error("Ingresá un nombre para la lista");
-      return;
-    }
-
+    if (!name) return showToast("Ingresá un nombre para la lista", "error");
     setCreatingList(true);
-
     try {
       const newList = await createWishlist(sessionUserId, name);
-
       try {
         await addWishlistItem(sessionUserId, newList.id, productId, cantidad);
-        toast.success(`Producto agregado a "${name}"`);
+        showToast(`Producto agregado a "${name}"`, "success");
         setWishlistModalOpen(false);
         setNewListName("");
       } catch {
-        toast.error("No se pudo agregar el producto a la lista");
+        showToast("No se pudo agregar el producto a la lista", "error");
         const lists = await getWishlists(sessionUserId);
         setWishlists(lists);
       }
     } catch {
-      toast.error("No se pudo crear la lista");
+      showToast("No se pudo crear la lista", "error");
     } finally {
       setCreatingList(false);
     }
@@ -401,56 +343,96 @@ export default function DetalleProducto() {
 
   const agregarAlCarrito = async () => {
     if (addingToCart || !productId) return;
-
     if (product?.quantity != null && Number(product.quantity) <= 0) {
-      toast.error("Este producto no tiene stock disponible");
+      showToast("Este producto no tiene stock disponible", "error");
       return;
     }
 
     try {
       setAddingToCart(true);
       const sessionRes = await axios.get(
-        `/api/session/user-session`,
+        `${apiBase || "http://localhost:3000"}/api/session/user-session`,
         { withCredentials: true }
       );
       const userId = sessionRes.data?.user?.id_user;
 
       if (!userId) {
-        toast.error("Iniciá sesión para agregar al carrito");
+        showToast("Iniciá sesión para agregar al carrito", "error");
         return;
       }
 
       const cart = await addToCartApi(userId, { productId, quantity: cantidad });
       mergeCartResponseFromApi(cart);
-      toast.success("Producto agregado al carrito");
+      showToast("Producto agregado al carrito", "success");
     } catch (e) {
       const code = e?.response?.status;
       const msg = e?.response?.data?.message;
-
       if (code === 401) {
-        toast.error("Iniciá sesión para agregar al carrito");
+        showToast("Iniciá sesión para agregar al carrito", "error");
       } else if (msg) {
-        toast.error(String(msg));
+        showToast(String(msg), "error");
       } else {
-        toast.error("No se pudo agregar al carrito");
+        showToast("No se pudo agregar al carrito", "error");
       }
     } finally {
       setAddingToCart(false);
     }
   };
 
-  const categoryNames = product?.categories?.length > 0
-    ? product.categories.map((c) => c.name).join(", ")
-    : null;
+  useEffect(() => {
+    let isActive = true;
+    const controller = new AbortController();
 
-  const commerceName = product?.commerce?.name ?? null;
-  const titleText = commerceName && categoryNames
-    ? `${commerceName} / ${categoryNames}`
-    : commerceName ?? categoryNames ?? "Detalle del producto";
+    const load = async () => {
+      if (!productId || !Number.isFinite(productId)) {
+        setProduct(null);
+        setStatus("idle");
+        setError("");
+        return;
+      }
+
+      try {
+        setStatus("loading");
+        setError("");
+
+        const url = `${apiBase || "http://localhost:3000"}/products/${productId}`;
+        const res = await fetch(url, {
+          signal: controller.signal,
+          headers: { Accept: "application/json" },
+        });
+
+        if (!res.ok) throw new Error(`Error HTTP ${res.status}`);
+
+        const data = await res.json();
+        if (!isActive) return;
+        setProduct(data);
+        setStatus("success");
+      } catch (e) {
+        if (e?.name === "AbortError") return;
+        if (!isActive) return;
+        setProduct(null);
+        setStatus("error");
+        setError(e instanceof Error ? e.message : "No se pudo cargar el producto.");
+      }
+    };
+
+    load();
+    return () => { isActive = false; controller.abort(); };
+  }, [apiBase, productId]);
+
+  const titleText = product?.commerce?.name && product?.category?.name
+    ? `${product.commerce.name} / ${product.category.name}`
+    : product?.category?.name ?? "Detalle del producto";
 
   const productName = product?.name || "Producto";
   const productDescription = product?.description || "";
   const inStock = product?.quantity == null ? null : Number(product.quantity) > 0;
+
+  if (status === "loading") return (
+    <div className="max-w-7xl mx-auto w-full px-6 py-6">
+      <ProductDetailSkeleton />
+    </div>
+  );
 
   return (
     <>
@@ -461,7 +443,6 @@ export default function DetalleProducto() {
               <ArrowLeft className="w-6 h-6 shrink-0 cursor-pointer" onClick={() => navigate(-1)} />
               <h1 className="text-2xl font-bold truncate">{titleText}</h1>
             </div>
-
             {showReportMenu && (
               <div className="relative shrink-0" ref={menuRef}>
                 <button
@@ -474,7 +455,6 @@ export default function DetalleProducto() {
                 >
                   <MoreVertical className="w-6 h-6" strokeWidth={2} />
                 </button>
-
                 {menuOpen && (
                   <div
                     role="menu"
@@ -497,19 +477,18 @@ export default function DetalleProducto() {
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-16 items-start">
-            {/* Imagen del producto */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-start">
             <div className="flex justify-center">
               {product?.imageUrl ? (
                 <img
                   src={product.imageUrl}
                   alt={productName}
-                  className="w-[400px] object-contain rounded-2xl"
+                  className="w-full max-w-[400px] object-contain rounded-2xl"
                   draggable={false}
                   onError={(e) => { e.currentTarget.style.display = "none"; }}
                 />
               ) : (
-                <div className="w-[400px] h-[400px] flex items-center justify-center rounded-2xl bg-gray-100 text-gray-400 text-sm">
+                <div className="w-full max-w-[400px] aspect-square flex items-center justify-center rounded-2xl bg-gray-100 text-gray-400 text-sm">
                   Sin imagen
                 </div>
               )}
@@ -543,7 +522,6 @@ export default function DetalleProducto() {
                 </span>
               )}
 
-              {status === "loading" && <div className="mt-3 text-[12px] text-gray-500">Cargando producto...</div>}
               {status === "error" && <div className="mt-3 text-[12px] text-red-600">No se pudo cargar el producto{error ? `: ${error}` : "."}</div>}
               {!productId && <div className="mt-3 text-[12px] text-gray-500">No se especificó un producto. Volvé a la búsqueda y elegí uno.</div>}
 
@@ -562,19 +540,11 @@ export default function DetalleProducto() {
               <div className="mt-6">
                 <h3 className="text-[13px] font-semibold mb-2 text-black">Cantidad</h3>
                 <div className="inline-flex border border-gray-300 rounded-md overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => setCantidad((v) => (v > 1 ? v - 1 : 1))}
-                    className="w-9 h-9 flex items-center justify-center"
-                  >
+                  <button type="button" onClick={() => setCantidad((v) => (v > 1 ? v - 1 : 1))} className="w-9 h-9 flex items-center justify-center">
                     <SvgIcon className="w-4 h-4 text-gray-600">{I.minus}</SvgIcon>
                   </button>
                   <div className="w-10 h-9 flex items-center justify-center text-[12px] text-black">{cantidad}</div>
-                  <button
-                    type="button"
-                    onClick={() => setCantidad((v) => v + 1)}
-                    className="w-9 h-9 flex items-center justify-center"
-                  >
+                  <button type="button" onClick={() => setCantidad((v) => v + 1)} className="w-9 h-9 flex items-center justify-center">
                     <SvgIcon className="w-4 h-4 text-gray-600">{I.plus}</SvgIcon>
                   </button>
                 </div>
@@ -615,7 +585,6 @@ export default function DetalleProducto() {
             </div>
           </div>
 
-          {/* ✅ RelatedProducts: render condicional booleano explícito */}
           {status === "success" && Boolean(productId) && (
             <RelatedProducts productId={productId} limit={8} />
           )}
@@ -709,7 +678,6 @@ export default function DetalleProducto() {
           </div>
         )}
       </div>
-
       {wishlistModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/45"
@@ -729,7 +697,7 @@ export default function DetalleProducto() {
             </p>
 
             {loadingWishlists ? (
-              <p className="text-[13px] text-gray-400 text-center py-4">Cargando listas...</p>
+              <PageLoader />
             ) : (
               <div className="max-h-[220px] overflow-y-auto flex flex-col gap-2 mb-4">
                 {wishlists.length === 0 ? (

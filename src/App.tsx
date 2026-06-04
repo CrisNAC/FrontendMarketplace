@@ -289,11 +289,14 @@ function App() {
               <MyCommerceLayout><CommerceClaims /></MyCommerceLayout>
             </RequireAuth>
           } />
+<<<<<<< HEAD
           <Route path="/comercio/banners" element={
             <RequireAuth>
               <MyCommerceLayout><CommerceBannerRequestsPage /></MyCommerceLayout>
             </RequireAuth>
           } />
+=======
+>>>>>>> origin/dev
 
           {/* ── Área de delivery (con sidebar) ───────────────────────────── */}
           <Route path="/delivery" element={
@@ -398,11 +401,14 @@ function App() {
               <AdminLayout><ReclamosPage /></AdminLayout>
             </RequireAuth>
           } />
+<<<<<<< HEAD
           <Route path="/admin/banner-solicitudes" element={
             <RequireAdmin>
               <AdminLayout><AdminBannerRequestsPage /></AdminLayout>
             </RequireAdmin>
           } />
+=======
+>>>>>>> origin/dev
 
           {/* ── Páginas de error ───────────────────────────────────────────── */}
           {isDev && <Route path="/test-errors" element={<TestErrorsPage />} />}

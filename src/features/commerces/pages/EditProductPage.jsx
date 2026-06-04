@@ -1,14 +1,17 @@
 import { useState } from "react";
 import { ArrowLeft, X } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useEditProduct } from "../hooks/useEditProduct";
-import { CreationResultModal } from "../components/createProduct/CreationResultModal";
-import { CategoryRequestModal } from "../components/createProduct/CategoryRequestModal";
-import Toggle from "../components/createProduct/Toggle";
-import { useCategoryRequest } from "../hooks/useCategoryRequest";
-import { ProductCategorySelector } from "../components/createProduct/ProductCategorySelector";
+import {
+    CategoryRequestModal,
+    Toggle,
+    ProductCategorySelector,
+} from "@/features/commerces/components";
+import {
+    useEditProduct,
+    useCategoryRequest
+} from "@/features/commerces/hooks";
+import { useToast } from "@/hooks";
 
-// ─── Clases reutilizadas de CreateProductPage (misma apariencia) ──────────────
 const inputClassName =
     "mb-3 w-full rounded-[10px] border border-[#d2d8d4] bg-[#f0f2f1] px-3 py-2 text-[14px] text-[#1f2e27] outline-none transition focus:border-[#8fb6a3] focus:ring-4 focus:ring-[rgba(107,144,128,0.16)] disabled:cursor-not-allowed disabled:opacity-60";
 const labelClassName = "mb-2 block text-[14px] font-semibold text-[#273830]";
@@ -21,6 +24,7 @@ const cardTitleClassName =
 export default function EditProductPage() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { showToast } = useToast();
 
     const {
         formData,
@@ -34,8 +38,6 @@ export default function EditProductPage() {
         isSubmitting,
         isFormDisabled,
         loadError,
-        resultModal,
-        closeModal,
         onFieldChange,
         onImageFileChange,
         imageFile,
@@ -44,9 +46,11 @@ export default function EditProductPage() {
         handleSubmit,
         MAX_TAGS,
         availableTags,
-    } = useEditProduct(id);
+    } = useEditProduct(id, {
+        onSuccess: (msg) => showToast(msg, 'success'),
+        onError: (msg) => showToast(msg, 'error'),
+    });
 
-    // ── Modal de solicitud de categoría ──────────────────────────────────────
     const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
     const {
@@ -67,7 +71,6 @@ export default function EditProductPage() {
 
     const handleCategoryRequestSuccess = () => {
         if (categoryRequestResultModal.variant === "success") {
-            // En EditProduct no tenemos setFormData, usamos onFieldChange
             onFieldChange({ target: { name: "categoryIds", value: [], type: "text" } });
             setIsCategoryModalOpen(false);
             resetCategoryRequestForm();
@@ -76,8 +79,6 @@ export default function EditProductPage() {
 
     return (
         <div className="ml-0 mr-auto w-full max-w-[1160px] text-[#22312a]">
-
-            {/* ── Encabezado ── */}
             <header className="mb-5 flex items-start gap-2.5">
                 <button
                     type="button"
@@ -97,7 +98,6 @@ export default function EditProductPage() {
                 </div>
             </header>
 
-            {/* ── Error de carga ── */}
             {loadError && (
                 <div
                     className="mb-4 rounded-[10px] border border-[#f5c0c8] bg-[#ffe9ec] px-3 py-2.5 font-semibold text-[#9c1f31]"
@@ -107,18 +107,14 @@ export default function EditProductPage() {
                 </div>
             )}
 
-            {/* ── Formulario ── */}
             <form
                 className="ml-0 grid grid-cols-1 gap-5 lg:ml-8 lg:grid-cols-[minmax(0,1fr)_300px] xl:ml-12"
                 onSubmit={handleSubmit}
                 noValidate
             >
 
-                {/* ════════════════ INFORMACIÓN BÁSICA ════════════════ */}
                 <section className={cardClassName}>
                     <h2 className={cardTitleClassName}>Información Básica</h2>
-
-                    {/* Nombre */}
                     <label className={labelClassName} htmlFor="name">
                         Nombre del Producto *
                     </label>
@@ -136,7 +132,6 @@ export default function EditProductPage() {
                         <p className={errorClassName}>{validationErrors.name}</p>
                     )}
 
-                    {/* Descripción */}
                     <label className={labelClassName} htmlFor="description">
                         Descripción *
                     </label>
@@ -153,7 +148,6 @@ export default function EditProductPage() {
                         <p className={errorClassName}>{validationErrors.description}</p>
                     )}
 
-                    {/* Precio + Categoría */}
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                         <div>
                             <label className={labelClassName} htmlFor="price">
@@ -185,7 +179,6 @@ export default function EditProductPage() {
                                 error={validationErrors.categoryIds}
                                 label="Categorías *"
                             />
-                            {/* ── Solicitar nueva categoría ── */}
                             <button
                                 type="button"
                                 onClick={() => setIsCategoryModalOpen(true)}
@@ -218,7 +211,6 @@ export default function EditProductPage() {
                         </div>
                     </div>
 
-                    {/* ── Oferta ── */}
                     <div className="mt-1 rounded-[12px] border border-[#d2d8d4] bg-white px-4 py-3">
                         <div className="flex items-center justify-between gap-3">
                             <div>
@@ -284,7 +276,6 @@ export default function EditProductPage() {
                         )}
                     </div>
 
-                    {/* ── Etiquetas actuales (chips removibles) ── */}
                     <label className={labelClassName}>
                         Etiquetas actuales
                     </label>
@@ -319,7 +310,6 @@ export default function EditProductPage() {
                         <p className={errorClassName}>{validationErrors.tags}</p>
                     )}
 
-                    {/* ── Sugerencias de etiquetas ── */}
                     {displayedTagOptions.length > 0 && (
                         <div className="mb-3 rounded-[10px] border border-[#d2d8d4] bg-white p-2.5">
                             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#6b7280]">
@@ -369,14 +359,10 @@ export default function EditProductPage() {
                     </p>
                 </section>
 
-                {/* ════════════════ ASIDE DERECHO ════════════════ */}
                 <aside className="flex flex-col gap-5">
-
-                    {/* ── Imagen del Producto ── */}
                     <section className={cardClassName}>
                         <h2 className={cardTitleClassName}>Imagen del Producto</h2>
 
-                        {/* Preview: muestra la imagen nueva si se seleccionó, o la actual del producto */}
                         {(formData.imageUrl || imageFile) ? (
                             <div className="relative overflow-hidden rounded-[10px] border border-[#d2d8d4] bg-[#f0f2f1] mb-3">
                                 <img
@@ -385,7 +371,6 @@ export default function EditProductPage() {
                                     className="h-[160px] w-full object-cover"
                                     onError={(e) => { e.currentTarget.style.display = "none"; }}
                                 />
-                                {/* Botón para quitar la imagen seleccionada o limpiar la actual */}
                                 <button
                                     type="button"
                                     onClick={() => {
@@ -405,7 +390,6 @@ export default function EditProductPage() {
                             </div>
                         )}
 
-                        {/* Selector de archivo — reemplaza el campo de URL */}
                         <label className={`cursor-pointer inline-flex items-center gap-2 bg-[#6b9080] text-white px-4 py-2 rounded-[10px] text-[13px] font-semibold hover:bg-[#5a7d6d] transition ${isFormDisabled ? "opacity-60 cursor-not-allowed pointer-events-none" : ""}`}>
                             Seleccionar imagen
                             <input
@@ -426,7 +410,6 @@ export default function EditProductPage() {
                         )}
                     </section>
 
-                    {/* ── Estado del Producto ── */}
                     <section className={cardClassName}>
                         <h2 className={cardTitleClassName}>Estado del Producto</h2>
                         <div className="flex items-center justify-between gap-3">
@@ -440,7 +423,6 @@ export default function EditProductPage() {
                                 </p>
                             </div>
 
-                            {/* Reutilizamos Toggle de CreateProductPage */}
                             <Toggle
                                 isOn={formData.isVisible}
                                 disabled={isFormDisabled}
@@ -471,7 +453,6 @@ export default function EditProductPage() {
                     </section>
                 </aside>
 
-                {/* ── Botones de acción ── */}
                 <div className="flex items-center justify-start gap-3 border-t border-[#d0d7d2] pt-4 lg:col-span-2 lg:justify-end">
                     <button
                         type="button"
@@ -491,20 +472,6 @@ export default function EditProductPage() {
                 </div>
             </form>
 
-            {/* ── Modal de resultado (reutilizado de CreateProductPage) ── */}
-            <CreationResultModal
-                isOpen={resultModal.isOpen}
-                variant={resultModal.variant}
-                title={resultModal.title}
-                message={resultModal.message}
-                onClose={resultModal.variant === "success"
-                    ? () => navigate("/comercio/productos")
-                    : closeModal
-                }
-                closeLabel={resultModal.variant === "success" ? "Ir a Productos" : "Cerrar"}
-            />
-
-            {/* ── Modal de solicitud de categoría ── */}
             <CategoryRequestModal
                 isOpen={isCategoryModalOpen}
                 onClose={handleCloseCategoryModal}

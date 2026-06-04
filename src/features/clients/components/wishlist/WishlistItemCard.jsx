@@ -1,6 +1,6 @@
-import { formatGuarani } from "../../../../lib/formatGuarani.js";
+import { formatGuarani } from "@/lib";
 
-export default function WishlistItemCard({ item, onViewMore, onAddToCart, onRemove }) {
+export function WishlistItemCard({ item, onViewMore, onAddToCart, onRemove }) {
   const { product, quantity } = item;
 
   return (

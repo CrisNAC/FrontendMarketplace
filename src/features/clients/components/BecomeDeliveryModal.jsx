@@ -1,20 +1,19 @@
 import { useEffect, useState } from "react";
 import { z } from "zod";
-import { Phone, X } from "lucide-react";
-import toast from "react-hot-toast";
+import { X } from "lucide-react";
 import { becomeDelivery, getCurrentUserForDeliveryForm } from "../services/deliveryApi";
-import { getBackendErrorMessage } from "../../commerces/services/editUserProfileApi";
+import {
+  getBackendErrorMessage,
+  DELIVERY_PHONE_MESSAGE,
+  DELIVERY_PHONE_REGEX,
+} from "../../commerces/services/editUserProfileApi";
 
 const formSchema = z.object({
   vehicleType: z.enum(["BICICLETA", "MOTOCICLETA", "AUTOMOVIL", "A_PIE"]),
   phone: z
     .string()
     .trim()
-    .max(20, "Máximo 20 caracteres")
-    .regex(
-      /^(?=(?:.*\d){8,})[\d\s+().\-]+$/,
-      "Ingresá al menos 8 dígitos; solo números y símbolos habituales (+, espacio, guiones, paréntesis)"
-    ),
+    .regex(DELIVERY_PHONE_REGEX, DELIVERY_PHONE_MESSAGE),
 });
 
 const VEHICLE_TYPE_LABELS = {
@@ -35,9 +34,9 @@ function resolveProfileUser(profile, sessionUser) {
 }
 
 /**
- * Modal: teléfono (editable) + tipo de vehículo. Nombre y correo siguen en la cuenta.
+ * Modal: tipo de vehículo. Nombre y correo siguen en la cuenta.
  */
-export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
+export function BecomeDeliveryModal({ open, onClose, onSuccess, showToast }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -63,7 +62,7 @@ export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
         setUserId(uid);
         const resolved = resolveProfileUser(profile, su);
         setProfileUser(resolved);
-        setPhone((resolved.phone ?? "").trim());
+        setPhone((resolved.phone ?? "").replace(/\D/g, "").slice(0, 10));
         setIsAlreadyDelivery(resolved.role === "DELIVERY" || su?.role === "DELIVERY");
       } catch (err) {
         if (!mounted) return;
@@ -121,6 +120,11 @@ export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
       return;
     }
 
+    if (!parsed.data.phone) {
+      setError("El teléfono es obligatorio.");
+      return;
+    }
+
     setSaving(true);
     setError("");
     setFieldErrors({});
@@ -129,7 +133,7 @@ export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
       await becomeDelivery(parsed.data.vehicleType, parsed.data.phone);
       window.dispatchEvent(new Event("deliveryRegistered"));
       await getCurrentUserForDeliveryForm();
-      toast.success("Listo: ahora sos delivery.");
+      showToast?.("Listo: ahora sos delivery.", "success");
       if (onSuccess) {
         onSuccess();
       } else {
@@ -164,7 +168,8 @@ export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
             Quiero ser delivery
           </h2>
           <p className="mt-2 text-sm text-slate-600 leading-relaxed">
-            Indicá tu <strong>teléfono</strong> y el <strong>tipo de vehículo</strong>. El nombre y el correo son los de tu cuenta.
+            Indicá tu <strong>teléfono</strong> (10 dígitos, sin +) y el <strong>tipo de vehículo</strong>.
+            El nombre y el correo son los de tu cuenta.
           </p>
 
           {loading && <p className="mt-6 text-sm text-slate-600">Cargando…</p>}
@@ -172,34 +177,25 @@ export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
           {!loading && (
             <form className="mt-6 space-y-5" onSubmit={handleSubmit} noValidate>
               <div>
-                <label htmlFor="delivery-phone" className="block text-sm font-medium text-slate-700 mb-1.5">
-                  Teléfono / WhatsApp
+                <label htmlFor="become-delivery-phone" className="block text-sm font-medium text-slate-700 mb-1.5">
+                  Teléfono (WhatsApp)
                 </label>
-                <div className="relative">
-                  <Phone
-                    className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[#6B9080]"
-                    aria-hidden
-                  />
-                  <input
-                    id="delivery-phone"
-                    type="tel"
-                    name="phone"
-                    inputMode="tel"
-                    autoComplete="tel"
-                    placeholder="+54 9 11 2345-6789"
-                    value={phone}
-                    disabled={saving || isAlreadyDelivery}
-                    onChange={(e) => {
-                      setPhone(e.target.value);
-                      setFieldErrors((prev) => ({ ...prev, phone: undefined }));
-                      setError("");
-                    }}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50/90 py-2.5 pl-10 pr-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[#769482]/45 focus:bg-white focus:ring-2 focus:ring-[#769482]/18 disabled:opacity-60"
-                  />
-                </div>
-                <p className="mt-1.5 text-xs text-slate-500">
-                  Donde te podemos contactar para coordinar entregas.
-                </p>
+                <input
+                  id="become-delivery-phone"
+                  type="tel"
+                  inputMode="numeric"
+                  autoComplete="tel"
+                  maxLength={10}
+                  value={phone}
+                  onChange={(e) => {
+                    setPhone(e.target.value.replace(/\D/g, "").slice(0, 10));
+                    setFieldErrors((prev) => ({ ...prev, phone: undefined }));
+                    setError("");
+                  }}
+                  disabled={saving || isAlreadyDelivery}
+                  placeholder="09xxxxxxxx"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/90 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-[#769482]/45 focus:bg-white focus:ring-2 focus:ring-[#769482]/18 disabled:opacity-60"
+                />
                 {fieldErrors.phone && (
                   <p className="mt-1 text-xs text-red-600">{fieldErrors.phone}</p>
                 )}
@@ -266,6 +262,3 @@ export function BecomeDeliveryModal({ open, onClose, onSuccess }) {
     </div>
   );
 }
-
-export default BecomeDeliveryModal;
-

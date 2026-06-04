@@ -16,8 +16,7 @@ export const CommentCard = ({
 
   const formatDate = (value) => {
     const parsed = new Date(value);
-    if (isNaN(parsed)) return value; // si ya viene formateado
-
+    if (isNaN(parsed)) return value; 
     return parsed.toLocaleDateString("es-ES", {
       day: "numeric",
       month: "long",
@@ -27,7 +26,6 @@ export const CommentCard = ({
 
   return (
     <div className="bg-white rounded-3xl p-4 mb-4 transition-shadow hover:shadow-sm">
-      {/* Header con usuario y estrellas en una línea */}
       <div className="flex items-center gap-2.5 mb-2">
         <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-semibold text-gray-500 flex-shrink-0">
           {author.charAt(0).toUpperCase()}
@@ -38,7 +36,6 @@ export const CommentCard = ({
         </span>
       </div>
 
-      {/* Estrellas + título de rating */}
       <div className="flex items-center gap-1 mb-1.5">
         {[...Array(5)].map((_, i) => (
           <span
@@ -53,12 +50,10 @@ export const CommentCard = ({
         </span>
       </div>
 
-      {/* Ubicación y fecha */}
       <div className="text-xs text-gray-500 mb-1.5">
         Calificado en {location} el {formatDate(date)}
       </div>
 
-      {/* Detalles del producto */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mb-2 text-xs">
         {Object.entries(productDetails).map(([key, value]) => (
           <span key={key} className="text-gray-500">
@@ -72,12 +67,10 @@ export const CommentCard = ({
         )}
       </div>
 
-      {/* Contenido */}
       <p className="m-0 text-sm text-gray-600 leading-relaxed mb-3">
         {content}
       </p>
 
-      {/* Acciones */}
       <div className="flex items-center gap-3 pt-2">
         <button className="px-4 py-1 border border-gray-300 rounded text-xs text-gray-700 cursor-pointer transition-all hover:border-gray-500 hover:bg-gray-50">
           Útil

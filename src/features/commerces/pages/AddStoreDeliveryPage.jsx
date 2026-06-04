@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
 import { useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
 import { Search, ArrowLeft, User, Phone, Mail, Package, Percent, Star } from "lucide-react";
+import { PageLoader } from "../../../components/PageLoader";
 import { apiClient as commerceApiClient } from "../services/editCommerceApi";
 import {
     searchDeliveries,
@@ -12,6 +12,7 @@ import {
 import { prependCachedStoreDelivery } from "../utils/storeDeliveriesLocalCache";
 import { ConfirmLinkDeliveryModal } from "../components/ConfirmLinkDeliveryModal";
 import { useDebouncedValue } from "../../../hooks/useDebouncedValue";
+import { useToast } from "@/hooks";
 
 function pickStats(c) {
     return {
@@ -126,7 +127,9 @@ ResultCard.propTypes = {
 
 export function AddStoreDeliveryPage() {
     const navigate = useNavigate();
+    const { showToast } = useToast();
     const [storeId, setStoreId] = useState(null);
+    const [sessionLoading, setSessionLoading] = useState(true);
     const [sessionError, setSessionError] = useState("");
     const [query, setQuery] = useState("");
     const debouncedQuery = useDebouncedValue(query, 200);
@@ -153,6 +156,8 @@ export function AddStoreDeliveryPage() {
                 setStoreId(sid);
             } catch {
                 if (active) setSessionError("No se pudo cargar la sesión.");
+            } finally {
+                if (active) setSessionLoading(false);
             }
         })();
         return () => {
@@ -209,16 +214,18 @@ export function AddStoreDeliveryPage() {
                 phone: selected.phone,
                 delivery_status: created?.delivery_status ?? "INACTIVE",
             });
-            toast.success("Repartidor agregado a tu comercio.");
+            showToast("Repartidor agregado a tu comercio", "success");
             setModalOpen(false);
             setSelected(null);
             navigate("/comercio/delivery");
         } catch (err) {
-            toast.error(getStoreDeliveryErrorMessage(err, "No se pudo agregar al repartidor."));
+            showToast(getStoreDeliveryErrorMessage(err, "No se pudo agregar al repartidor."), "error");
         } finally {
             setConfirming(false);
         }
     };
+
+    if (sessionLoading) return <PageLoader />;
 
     if (sessionError) {
         return (
@@ -285,10 +292,9 @@ export function AddStoreDeliveryPage() {
                         {buildAvailabilityLabel(displayed.length, candidates.length)}
                     </span>
                 )}
-                {loadingList && (
-                    <span style={{ marginLeft: "12px", fontSize: "13px", color: "#6b7280" }}>Cargando lista…</span>
-                )}
             </div>
+
+            {loadingList && <PageLoader />}
 
             {listError && (
                 <div style={{ backgroundColor: "#fff1f2", border: "1px solid #fecdd3", borderRadius: "10px", padding: "12px 16px", color: "#be123c", fontSize: "14px", marginBottom: "16px" }}>

@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { useLogout } from "../hooks/useLogout";
+import { useLogout } from "@/hooks";
 import {
     LayoutDashboard,
     Users,
@@ -23,7 +23,7 @@ const NAV_ITEMS = [
     { label: "Comercios por Aprobar",   icon: Store,           route: "/admin/comercios-pendientes" },
     { label: "Moderación de Productos", icon: Package,         route: "/admin/productos" },
     { label: "Moderación de Reseñas",   icon: MessageSquare,   route: "/admin/reviews"},    
-    { label: "Gestión de Categorías",   icon: Tag,             route: "/admin/categorias" },
+    { label: "Categorías y Etiquetas", icon: Tag,             route: "/admin/categorias" },
 ];
 
 export const SidebarAdmin = ({ collapsed, onToggle }) => {
@@ -40,14 +40,13 @@ export const SidebarAdmin = ({ collapsed, onToggle }) => {
         <div style={{
             width: collapsed ? "60px" : "260px",
             backgroundColor: "var(--primary-dark)",
-            minHeight: "100vh",
+            height: "100%",
             display: "flex",
             flexDirection: "column",
             padding: "12px 8px",
             transition: "width 0.2s ease",
             flexShrink: 0,
         }}>
-            {/* Header */}
             <div style={{
                 display: "flex",
                 alignItems: "center",
@@ -71,8 +70,7 @@ export const SidebarAdmin = ({ collapsed, onToggle }) => {
                 </button>
             </div>
 
-            {/* Nav items */}
-            <nav style={{ display: "flex", flexDirection: "column", gap: "4px", flex: 1 }}>
+            <nav style={{ display: "flex", flexDirection: "column", gap: "4px", flex: 1, overflowY: "auto" }}>
                 {NAV_ITEMS.map(({ label, icon: Icon, route, disabled }) => {
                     const isActive = active === label;
                     return (
@@ -105,7 +103,6 @@ export const SidebarAdmin = ({ collapsed, onToggle }) => {
                     );
                 })}
 
-                {/* Cerrar sesión */}
                 <div
                     onClick={logout}
                     title={collapsed ? "Cerrar Sesión" : undefined}
@@ -128,7 +125,6 @@ export const SidebarAdmin = ({ collapsed, onToggle }) => {
                 </div>
             </nav>
 
-            {/* Info box */}
             {!collapsed && (
                 <div style={{
                     backgroundColor: "var(--primary)",

@@ -1,12 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import toast from "react-hot-toast";
-import { HeroCarousel, defaultSlides } from "../components/home/HeroCarousel";
-import { HomeSections } from "../components/home/HomeSections";
-import { SellerCTA } from "../components/home/SellerCTA";
-import Navbar from "../../../components/navbar/Navbar";
-import DeliveryRatingPromptModal from "../components/orders/DeliveryRatingPromptModal";
+import { HeroCarousel, defaultSlides, HomeSections, SellerCTA } from "@/features/clients/components/home";
+import { Navbar } from "@/components";
+import { DeliveryRatingPromptModal } from "@/features/clients/components/orders/DeliveryRatingPromptModal";
 import { getSession } from "../../commerces/services/editUserProfileApi";
-import { fetchActiveBanners } from "../services/bannerApi";
+import { fetchActiveBanners } from "@/features/clients/services";
 import {
   createDeliveryReview,
   getBackendErrorMessage,
@@ -107,7 +104,9 @@ export const HomePage = () => {
 
   return (
     <div className="bg-white">
-      <Navbar />
+      <div className="sticky top-0 z-50">
+        <Navbar />
+      </div>
       <HeroCarousel slides={combinedSlides} />
       <HomeSections />
       <SellerCTA />
