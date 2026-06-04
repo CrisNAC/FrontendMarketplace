@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Calendar, Megaphone, Plus, X } from "lucide-react";
-import toast from "react-hot-toast";
+import { useToast } from "../../../hooks/useToast";
 import { apiClient } from "../services/editCommerceApi";
 import {
   getMyBannerRequests,
@@ -31,6 +31,7 @@ const fromLocalInputValue = (value) => {
 // ─── Modal nueva solicitud ────────────────────────────────────────────────────
 
 const BannerRequestModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
+  const { showToast } = useToast();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [imageUrl, setImageUrl] = useState("");
@@ -59,11 +60,11 @@ const BannerRequestModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
   const labelStyle = { fontSize: "12px", fontWeight: "600", color: "#374151" };
 
   const handleSubmit = () => {
-    if (!title.trim()) return toast.error("El título es obligatorio");
-    if (!imageUrl.trim()) return toast.error("La URL de imagen es obligatoria");
-    if (!startAt) return toast.error("La fecha de inicio es obligatoria");
+    if (!title.trim()) return showToast("El título es obligatorio", "error");
+    if (!imageUrl.trim()) return showToast("La URL de imagen es obligatoria", "error");
+    if (!startAt) return showToast("La fecha de inicio es obligatoria", "error");
     if (endAt && fromLocalInputValue(endAt) <= fromLocalInputValue(startAt)) {
-      return toast.error("La fecha de fin debe ser posterior a la de inicio");
+      return showToast("La fecha de fin debe ser posterior a la de inicio", "error");
     }
     onSubmit({
       title: title.trim(),
@@ -272,6 +273,7 @@ ConfirmModal.propTypes = {
 // ─── Página ───────────────────────────────────────────────────────────────────
 
 export const CommerceBannerRequestsPage = () => {
+  const { showToast } = useToast();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [storeId, setStoreId] = useState(null);
@@ -284,9 +286,9 @@ export const CommerceBannerRequestsPage = () => {
       const data = await getMyBannerRequests(sid);
       setRequests(data);
     } catch (err) {
-      toast.error(err?.response?.data?.error?.message ?? "No se pudieron cargar las solicitudes");
+      showToast(err?.response?.data?.error?.message ?? "No se pudieron cargar las solicitudes", "error");
     }
-  }, []);
+  }, [showToast]);
 
   useEffect(() => {
     const init = async () => {
@@ -294,7 +296,7 @@ export const CommerceBannerRequestsPage = () => {
         const sessionRes = await apiClient.get("/api/session/user-session");
         const sid = sessionRes.data?.user?.id_store;
         if (!sid) {
-          toast.error("No tenés un comercio registrado");
+          showToast("No tenés un comercio registrado", "error");
           setStoreId(null);
           setLoading(false);
           return;
@@ -302,7 +304,7 @@ export const CommerceBannerRequestsPage = () => {
         setStoreId(sid);
         await loadRequests(sid);
       } catch (err) {
-        toast.error(err?.response?.data?.error?.message ?? "Error al cargar la sesión");
+        showToast(err?.response?.data?.error?.message ?? "Error al cargar la sesión", "error");
       } finally {
         setLoading(false);
       }
@@ -311,22 +313,22 @@ export const CommerceBannerRequestsPage = () => {
   }, [loadRequests]);
 
   const handleSubmit = async (payload) => {
-    if (!storeId) { toast.error("No se encontró un comercio asociado"); return; }
+    if (!storeId) { showToast("No se encontró un comercio asociado", "error"); return; }
     setIsSubmitting(true);
     try {
       await createBannerRequest(storeId, payload);
-      toast.success("Solicitud enviada — será revisada por un administrador");
+      showToast("Solicitud enviada — será revisada por un administrador", "success");
       setIsModalOpen(false);
       await loadRequests(storeId);
     } catch (err) {
-      toast.error(err?.response?.data?.error?.message ?? "No se pudo enviar la solicitud");
+      showToast(err?.response?.data?.error?.message ?? "No se pudo enviar la solicitud", "error");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleCancel = (requestId) => {
-    if (!storeId) { toast.error("No se encontró un comercio asociado"); return; }
+    if (!storeId) { showToast("No se encontró un comercio asociado", "error"); return; }
     setConfirmCancelId(requestId);
   };
 
@@ -336,9 +338,9 @@ export const CommerceBannerRequestsPage = () => {
     try {
       await cancelBannerRequest(storeId, requestId);
       setRequests((prev) => prev.filter((r) => r.id !== requestId));
-      toast.success("Solicitud cancelada");
+      showToast("Solicitud cancelada", "success");
     } catch (e) {
-      toast.error(e?.response?.data?.error?.message ?? "No se pudo cancelar la solicitud");
+      showToast(e?.response?.data?.error?.message ?? "No se pudo cancelar la solicitud", "error");
     }
   };
 

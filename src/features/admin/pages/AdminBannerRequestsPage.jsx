@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Calendar, Image, X } from "lucide-react";
-import toast from "react-hot-toast";
+import { useToast } from "../../../hooks/useToast";
 import { getAllBannerRequests, reviewBannerRequest } from "../../commerces/services/commerceBannerRequestsApi";
 
 const cardStyle = {
@@ -102,6 +102,7 @@ RejectModal.propTypes = {
 };
 
 export const AdminBannerRequestsPage = () => {
+  const { showToast } = useToast();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("");
@@ -115,11 +116,11 @@ export const AdminBannerRequestsPage = () => {
       const result = await getAllBannerRequests(statusFilter ? { approvalStatus: statusFilter } : {});
       setRequests(result.data ?? []);
     } catch (err) {
-      toast.error(err?.response?.data?.error?.message ?? "No se pudieron cargar las solicitudes");
+      showToast(err?.response?.data?.error?.message ?? "No se pudieron cargar las solicitudes", "error");
     } finally {
       setLoading(false);
     }
-  }, [statusFilter]);
+  }, [statusFilter, showToast]);
 
   useEffect(() => {
     loadRequests();
@@ -129,10 +130,10 @@ export const AdminBannerRequestsPage = () => {
     setReviewingId(requestId);
     try {
       await reviewBannerRequest(requestId, { decision: "APPROVE" });
-      toast.success("Solicitud aprobada");
+      showToast("Solicitud aprobada", "success");
       await loadRequests();
     } catch (err) {
-      toast.error(err?.response?.data?.error?.message ?? "No se pudo aprobar la solicitud");
+      showToast(err?.response?.data?.error?.message ?? "No se pudo aprobar la solicitud", "error");
     } finally {
       setReviewingId(null);
     }
@@ -142,11 +143,11 @@ export const AdminBannerRequestsPage = () => {
     setIsSubmitting(true);
     try {
       await reviewBannerRequest(rejectTarget, { decision: "REJECT", rejectionReason: reason });
-      toast.success("Solicitud rechazada");
+      showToast("Solicitud rechazada", "success");
       setRejectTarget(null);
       await loadRequests();
     } catch (err) {
-      toast.error(err?.response?.data?.error?.message ?? "No se pudo rechazar la solicitud");
+      showToast(err?.response?.data?.error?.message ?? "No se pudo rechazar la solicitud", "error");
     } finally {
       setIsSubmitting(false);
     }
