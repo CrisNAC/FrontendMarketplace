@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Calendar, Megaphone, Plus, X } from "lucide-react";
 import toast from "react-hot-toast";
@@ -27,7 +28,7 @@ const fromLocalInputValue = (value) => {
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 };
 
-// ─── Modal ────────────────────────────────────────────────────────────────────
+// ─── Modal nueva solicitud ────────────────────────────────────────────────────
 
 const BannerRequestModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
   const [title, setTitle] = useState("");
@@ -45,7 +46,6 @@ const BannerRequestModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
     return () => clearTimeout(focusId);
   }, [isOpen]);
 
-  // Cerrar con Escape
   useEffect(() => {
     if (!isOpen) return;
     const handleKey = (e) => { if (e.key === "Escape") onClose(); };
@@ -62,7 +62,6 @@ const BannerRequestModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
     if (!title.trim()) return toast.error("El título es obligatorio");
     if (!imageUrl.trim()) return toast.error("La URL de imagen es obligatoria");
     if (!startAt) return toast.error("La fecha de inicio es obligatoria");
-    // Fix 4: validar que fin sea posterior al inicio
     if (endAt && fromLocalInputValue(endAt) <= fromLocalInputValue(startAt)) {
       return toast.error("La fecha de fin debe ser posterior a la de inicio");
     }
@@ -77,18 +76,18 @@ const BannerRequestModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
   };
 
   return (
-    // Fix 5: accesibilidad de diálogo
-    <div
-      role="presentation"
-      style={{ position: "fixed", inset: 0, zIndex: 60, backgroundColor: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
-      onClick={onClose}
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
+    <>
+      <button
+        type="button"
+        aria-label="Cerrar"
+        tabIndex={-1}
+        onClick={isSubmitting ? undefined : onClose}
+        style={{ position: "fixed", inset: 0, zIndex: 60, backgroundColor: "rgba(0,0,0,0.45)", border: "none", cursor: isSubmitting ? "default" : "pointer" }}
+      />
+      <dialog
+        open
         aria-labelledby="modal-title-commerce"
-        style={{ backgroundColor: "white", borderRadius: "16px", padding: "24px", maxWidth: "560px", width: "100%", boxShadow: "0 20px 40px rgba(0,0,0,0.15)" }}
-        onClick={(e) => e.stopPropagation()}
+        style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 61, backgroundColor: "white", borderRadius: "16px", padding: "24px", maxWidth: "560px", width: "calc(100% - 32px)", boxShadow: "0 20px 40px rgba(0,0,0,0.15)", border: "none", margin: 0 }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
           <h3 id="modal-title-commerce" style={{ fontSize: "18px", fontWeight: "700", margin: 0 }}>Nueva solicitud de banner</h3>
@@ -100,7 +99,6 @@ const BannerRequestModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
           Tu solicitud será revisada por un administrador antes de publicarse en el inicio.
         </p>
 
-        {/* Fix 6: htmlFor + id en todos los campos */}
         <div style={{ display: "grid", gap: "12px" }}>
           <div>
             <label htmlFor="req-title" style={labelStyle}>Título</label>
@@ -140,9 +138,16 @@ const BannerRequestModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
             {isSubmitting ? "Enviando..." : "Enviar solicitud"}
           </button>
         </div>
-      </div>
-    </div>
+      </dialog>
+    </>
   );
+};
+
+BannerRequestModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onSubmit: PropTypes.func.isRequired,
+  isSubmitting: PropTypes.bool.isRequired,
 };
 
 // ─── Card de solicitud ────────────────────────────────────────────────────────
@@ -200,6 +205,21 @@ const RequestCard = ({ req, onCancel }) => {
   );
 };
 
+RequestCard.propTypes = {
+  req: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    approvalStatus: PropTypes.string.isRequired,
+    imageUrl: PropTypes.string,
+    title: PropTypes.string.isRequired,
+    description: PropTypes.string,
+    startAt: PropTypes.string,
+    endAt: PropTypes.string,
+    createdAt: PropTypes.string.isRequired,
+    rejectionReason: PropTypes.string,
+  }).isRequired,
+  onCancel: PropTypes.func.isRequired,
+};
+
 // ─── Modal de confirmación ────────────────────────────────────────────────────
 
 const ConfirmModal = ({ isOpen, message, onConfirm, onClose }) => {
@@ -212,17 +232,18 @@ const ConfirmModal = ({ isOpen, message, onConfirm, onClose }) => {
 
   if (!isOpen) return null;
   return (
-    <div
-      role="presentation"
-      style={{ position: "fixed", inset: 0, zIndex: 70, backgroundColor: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
-      onClick={onClose}
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
+    <>
+      <button
+        type="button"
+        aria-label="Cerrar"
+        tabIndex={-1}
+        onClick={onClose}
+        style={{ position: "fixed", inset: 0, zIndex: 70, backgroundColor: "rgba(0,0,0,0.45)", border: "none", cursor: "pointer" }}
+      />
+      <dialog
+        open
         aria-labelledby="modal-title-confirm"
-        style={{ backgroundColor: "white", borderRadius: "16px", padding: "24px", maxWidth: "380px", width: "100%", boxShadow: "0 20px 40px rgba(0,0,0,0.15)" }}
-        onClick={(e) => e.stopPropagation()}
+        style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 71, backgroundColor: "white", borderRadius: "16px", padding: "24px", maxWidth: "380px", width: "calc(100% - 32px)", boxShadow: "0 20px 40px rgba(0,0,0,0.15)", border: "none", margin: 0 }}
       >
         <h3 id="modal-title-confirm" style={{ fontSize: "16px", fontWeight: "700", margin: "0 0 12px" }}>Confirmar acción</h3>
         <p style={{ fontSize: "14px", color: "#374151", margin: "0 0 20px" }}>{message}</p>
@@ -236,9 +257,16 @@ const ConfirmModal = ({ isOpen, message, onConfirm, onClose }) => {
             Sí, cancelar
           </button>
         </div>
-      </div>
-    </div>
+      </dialog>
+    </>
   );
+};
+
+ConfirmModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  message: PropTypes.string.isRequired,
+  onConfirm: PropTypes.func.isRequired,
+  onClose: PropTypes.func.isRequired,
 };
 
 // ─── Página ───────────────────────────────────────────────────────────────────
@@ -255,8 +283,8 @@ export const CommerceBannerRequestsPage = () => {
     try {
       const data = await getMyBannerRequests(sid);
       setRequests(data);
-    } catch (_err) {
-      toast.error("No se pudieron cargar las solicitudes");
+    } catch (err) {
+      toast.error(err?.response?.data?.error?.message ?? "No se pudieron cargar las solicitudes");
     }
   }, []);
 
@@ -273,8 +301,8 @@ export const CommerceBannerRequestsPage = () => {
         }
         setStoreId(sid);
         await loadRequests(sid);
-      } catch (_err) {
-        toast.error("Error al cargar la sesión");
+      } catch (err) {
+        toast.error(err?.response?.data?.error?.message ?? "Error al cargar la sesión");
       } finally {
         setLoading(false);
       }
@@ -283,7 +311,6 @@ export const CommerceBannerRequestsPage = () => {
   }, [loadRequests]);
 
   const handleSubmit = async (payload) => {
-    // Fix 7: guard de storeId
     if (!storeId) { toast.error("No se encontró un comercio asociado"); return; }
     setIsSubmitting(true);
     try {
@@ -291,8 +318,8 @@ export const CommerceBannerRequestsPage = () => {
       toast.success("Solicitud enviada — será revisada por un administrador");
       setIsModalOpen(false);
       await loadRequests(storeId);
-    } catch (_err) {
-      toast.error("No se pudo enviar la solicitud");
+    } catch (err) {
+      toast.error(err?.response?.data?.error?.message ?? "No se pudo enviar la solicitud");
     } finally {
       setIsSubmitting(false);
     }
@@ -318,6 +345,7 @@ export const CommerceBannerRequestsPage = () => {
   if (loading) return <p style={{ color: "#6b7280", padding: "16px" }}>Cargando...</p>;
 
   const pendingCount = requests.filter((r) => r.approvalStatus === "PENDING").length;
+  const pluralSuffix = pendingCount === 1 ? "" : "s";
 
   return (
     <>
@@ -340,7 +368,7 @@ export const CommerceBannerRequestsPage = () => {
 
       {pendingCount > 0 && (
         <div style={{ backgroundColor: "#fffbeb", border: "1px solid #fde68a", borderRadius: "10px", padding: "12px 16px", marginBottom: "20px", fontSize: "13px", color: "#92400e" }}>
-          Tenés <strong>{pendingCount}</strong> solicitud{pendingCount !== 1 ? "es" : ""} pendiente{pendingCount !== 1 ? "s" : ""} de revisión.
+          Tenés <strong>{pendingCount}</strong> solicitud{pluralSuffix} pendiente{pluralSuffix} de revisión.
         </div>
       )}
 

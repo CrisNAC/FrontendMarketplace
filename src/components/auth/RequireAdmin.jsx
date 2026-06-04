@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { getSession } from "../../features/commerces/services/editUserProfileApi";
@@ -33,5 +34,9 @@ export function RequireAdmin({ children }) {
   if (status === "error") return <Navigate to="/error/500" replace />;
   return children;
 }
+
+RequireAdmin.propTypes = {
+  children: PropTypes.node.isRequired,
+};
 
 export default RequireAdmin;

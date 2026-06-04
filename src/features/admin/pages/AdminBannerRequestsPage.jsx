@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Calendar, Image, X } from "lucide-react";
 import toast from "react-hot-toast";
@@ -37,18 +38,18 @@ const RejectModal = ({ isOpen, onClose, onConfirm, isSubmitting }) => {
   if (!isOpen) return null;
 
   return (
-    // Fix 2: semántica de diálogo
-    <div
-      role="presentation"
-      style={{ position: "fixed", inset: 0, zIndex: 60, backgroundColor: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
-      onClick={isSubmitting ? undefined : onClose}
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
+    <>
+      <button
+        type="button"
+        aria-label="Cerrar"
+        tabIndex={-1}
+        onClick={isSubmitting ? undefined : onClose}
+        style={{ position: "fixed", inset: 0, zIndex: 60, backgroundColor: "rgba(0,0,0,0.45)", border: "none", cursor: isSubmitting ? "default" : "pointer" }}
+      />
+      <dialog
+        open
         aria-labelledby="modal-title-reject"
-        style={{ backgroundColor: "white", borderRadius: "16px", padding: "24px", maxWidth: "440px", width: "100%", boxShadow: "0 20px 40px rgba(0,0,0,0.15)" }}
-        onClick={(e) => e.stopPropagation()}
+        style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 61, backgroundColor: "white", borderRadius: "16px", padding: "24px", maxWidth: "440px", width: "calc(100% - 32px)", boxShadow: "0 20px 40px rgba(0,0,0,0.15)", border: "none", margin: 0 }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
           <h3 id="modal-title-reject" style={{ fontSize: "18px", fontWeight: "700", margin: 0 }}>Rechazar solicitud</h3>
@@ -57,7 +58,6 @@ const RejectModal = ({ isOpen, onClose, onConfirm, isSubmitting }) => {
           </button>
         </div>
 
-        {/* Fix 3: htmlFor + id para asociar label con textarea */}
         <div>
           <label htmlFor="reject-reason" style={{ fontSize: "12px", fontWeight: "600", color: "#374151" }}>Motivo de rechazo (opcional)</label>
           <textarea
@@ -89,9 +89,16 @@ const RejectModal = ({ isOpen, onClose, onConfirm, isSubmitting }) => {
             {isSubmitting ? "Rechazando..." : "Rechazar"}
           </button>
         </div>
-      </div>
-    </div>
+      </dialog>
+    </>
   );
+};
+
+RejectModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onConfirm: PropTypes.func.isRequired,
+  isSubmitting: PropTypes.bool.isRequired,
 };
 
 export const AdminBannerRequestsPage = () => {
@@ -107,8 +114,8 @@ export const AdminBannerRequestsPage = () => {
     try {
       const result = await getAllBannerRequests(statusFilter ? { approvalStatus: statusFilter } : {});
       setRequests(result.data ?? []);
-    } catch (_err) {
-      toast.error("No se pudieron cargar las solicitudes");
+    } catch (err) {
+      toast.error(err?.response?.data?.error?.message ?? "No se pudieron cargar las solicitudes");
     } finally {
       setLoading(false);
     }
@@ -124,8 +131,8 @@ export const AdminBannerRequestsPage = () => {
       await reviewBannerRequest(requestId, { decision: "APPROVE" });
       toast.success("Solicitud aprobada");
       await loadRequests();
-    } catch (_err) {
-      toast.error("No se pudo aprobar la solicitud");
+    } catch (err) {
+      toast.error(err?.response?.data?.error?.message ?? "No se pudo aprobar la solicitud");
     } finally {
       setReviewingId(null);
     }
@@ -138,14 +145,15 @@ export const AdminBannerRequestsPage = () => {
       toast.success("Solicitud rechazada");
       setRejectTarget(null);
       await loadRequests();
-    } catch (_err) {
-      toast.error("No se pudo rechazar la solicitud");
+    } catch (err) {
+      toast.error(err?.response?.data?.error?.message ?? "No se pudo rechazar la solicitud");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const pendingCount = requests.filter((r) => r.approvalStatus === "PENDING").length;
+  const pluralSuffix = pendingCount === 1 ? "" : "s";
 
   return (
     <div style={{ maxWidth: "1100px", paddingBottom: "40px" }}>
@@ -158,7 +166,7 @@ export const AdminBannerRequestsPage = () => {
 
       {pendingCount > 0 && (
         <div style={{ backgroundColor: "#fffbeb", border: "1px solid #fde68a", borderRadius: "10px", padding: "12px 16px", marginBottom: "20px", fontSize: "13px", color: "#92400e" }}>
-          Hay <strong>{pendingCount}</strong> solicitud{pendingCount !== 1 ? "es" : ""} pendiente{pendingCount !== 1 ? "s" : ""} de revisión.
+          Hay <strong>{pendingCount}</strong> solicitud{pluralSuffix} pendiente{pluralSuffix} de revisión.
         </div>
       )}
 
@@ -177,20 +185,16 @@ export const AdminBannerRequestsPage = () => {
       </div>
 
       <div style={cardStyle}>
-        {loading && (
+        {loading ? (
           <div style={{ textAlign: "center", padding: "40px 0", color: "#9ca3af", fontSize: "14px" }}>
             Cargando solicitudes...
           </div>
-        )}
-
-        {!loading && requests.length === 0 && (
+        ) : requests.length === 0 ? (
           <div style={{ textAlign: "center", padding: "60px 0", color: "#9ca3af", fontSize: "14px" }}>
             <Image size={40} color="#d1d5db" style={{ margin: "0 auto 10px", display: "block" }} />
             No hay solicitudes para mostrar.
           </div>
-        )}
-
-        {!loading && requests.length > 0 && (
+        ) : (
           <div style={{ display: "flex", flexDirection: "column" }}>
             {requests.map((req) => {
               const badge = STATUS_BADGE[req.approvalStatus] ?? STATUS_BADGE.PENDING;
