@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { z } from "zod";
-import { X } from "lucide-react";
+import { Phone, Car, X } from "lucide-react";
 import { becomeDelivery, getCurrentUserForDeliveryForm } from "../services/deliveryApi";
 import {
   getBackendErrorMessage,
@@ -34,7 +34,7 @@ function resolveProfileUser(profile, sessionUser) {
 }
 
 /**
- * Modal: tipo de vehículo. Nombre y correo siguen en la cuenta.
+ * Modal: teléfono (editable) + tipo de vehículo. Nombre y correo siguen en la cuenta.
  */
 export function BecomeDeliveryModal({ open, onClose, onSuccess, showToast }) {
   const [loading, setLoading] = useState(true);
@@ -180,22 +180,28 @@ export function BecomeDeliveryModal({ open, onClose, onSuccess, showToast }) {
                 <label htmlFor="become-delivery-phone" className="block text-sm font-medium text-slate-700 mb-1.5">
                   Teléfono (WhatsApp)
                 </label>
-                <input
-                  id="become-delivery-phone"
-                  type="tel"
-                  inputMode="numeric"
-                  autoComplete="tel"
-                  maxLength={10}
-                  value={phone}
-                  onChange={(e) => {
-                    setPhone(e.target.value.replace(/\D/g, "").slice(0, 10));
-                    setFieldErrors((prev) => ({ ...prev, phone: undefined }));
-                    setError("");
-                  }}
-                  disabled={saving || isAlreadyDelivery}
-                  placeholder="09xxxxxxxx"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50/90 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-[#769482]/45 focus:bg-white focus:ring-2 focus:ring-[#769482]/18 disabled:opacity-60"
-                />
+                <div className="relative">
+                  <Phone
+                      className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[#6B9080]"
+                      aria-hidden
+                    />
+                  <input
+                    id="become-delivery-phone"
+                    type="tel"
+                    inputMode="numeric"
+                    autoComplete="tel"
+                    maxLength={10}
+                    value={phone}
+                    onChange={(e) => {
+                      setPhone(e.target.value.replace(/\D/g, "").slice(0, 10));
+                      setFieldErrors((prev) => ({ ...prev, phone: undefined }));
+                      setError("");
+                    }}
+                    disabled={saving || isAlreadyDelivery}
+                    placeholder="09xxxxxxxx"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/90 py-2.5 pl-10 pr-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[#769482]/45 focus:bg-white focus:ring-2 focus:ring-[#769482]/18 disabled:opacity-60"
+                  />
+                </div>
                 {fieldErrors.phone && (
                   <p className="mt-1 text-xs text-red-600">{fieldErrors.phone}</p>
                 )}
@@ -205,23 +211,29 @@ export function BecomeDeliveryModal({ open, onClose, onSuccess, showToast }) {
                 <label htmlFor="delivery-vehicle" className="block text-sm font-medium text-slate-700 mb-1.5">
                   Tipo de vehículo
                 </label>
-                <select
-                  id="delivery-vehicle"
-                  value={vehicleType}
-                  onChange={(e) => {
-                    setVehicleType(e.target.value);
-                    setFieldErrors((prev) => ({ ...prev, vehicleType: undefined }));
-                    setError("");
-                  }}
-                  disabled={saving || isAlreadyDelivery}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50/90 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-[#769482]/45 focus:bg-white focus:ring-2 focus:ring-[#769482]/18 disabled:opacity-60"
-                >
-                  {Object.entries(VEHICLE_TYPE_LABELS).map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <Car
+                      className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[#6B9080]"
+                      aria-hidden
+                    />
+                  <select
+                    id="delivery-vehicle"
+                    value={vehicleType}
+                    onChange={(e) => {
+                      setVehicleType(e.target.value);
+                      setFieldErrors((prev) => ({ ...prev, vehicleType: undefined }));
+                      setError("");
+                    }}
+                    disabled={saving || isAlreadyDelivery}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/90 py-2.5 pl-10 pr-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[#769482]/45 focus:bg-white focus:ring-2 focus:ring-[#769482]/18 disabled:opacity-60"
+                  >
+                    {Object.entries(VEHICLE_TYPE_LABELS).map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 {fieldErrors.vehicleType && (
                   <p className="mt-1 text-xs text-red-600">{fieldErrors.vehicleType}</p>
                 )}
