@@ -9,10 +9,9 @@ import {
 } from "../services/commerceBannerRequestsApi";
 
 const STATUS_BADGE = {
-  PENDING:   { label: "Pendiente",  color: "#92400e", bg: "#fef3c7" },
-  APPROVED:  { label: "Aprobado",   color: "#15803d", bg: "#dcfce7" },
-  REJECTED:  { label: "Rechazado",  color: "#991b1b", bg: "#fee2e2" },
-  CANCELLED: { label: "Cancelada",  color: "#6b7280", bg: "#f3f4f6" },
+  PENDING:  { label: "Pendiente", color: "#92400e", bg: "#fef3c7" },
+  ACTIVE:   { label: "Aprobado",  color: "#15803d", bg: "#dcfce7" },
+  REJECTED: { label: "Rechazado", color: "#991b1b", bg: "#fee2e2" },
 };
 
 const toLocalInputValue = (value) => {
@@ -149,8 +148,8 @@ const BannerRequestModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
 // ─── Card de solicitud ────────────────────────────────────────────────────────
 
 const RequestCard = ({ req, onCancel }) => {
-  const badge = STATUS_BADGE[req.status] ?? STATUS_BADGE.PENDING;
-  const isPending = req.status === "PENDING";
+  const badge = STATUS_BADGE[req.approvalStatus] ?? STATUS_BADGE.PENDING;
+  const isPending = req.approvalStatus === "PENDING";
 
   return (
     <div style={{
@@ -178,7 +177,7 @@ const RequestCard = ({ req, onCancel }) => {
               Enviada {new Date(req.createdAt).toLocaleDateString("es-PY", { day: "numeric", month: "short", year: "numeric" })}
             </span>
           </div>
-          {req.status === "REJECTED" && req.rejectionReason && (
+          {req.approvalStatus === "REJECTED" && req.rejectionReason && (
             <p style={{ margin: "8px 0 0", fontSize: "12px", color: "#991b1b", backgroundColor: "#fee2e2", padding: "6px 10px", borderRadius: "6px", display: "inline-block" }}>
               Motivo de rechazo: {req.rejectionReason}
             </p>
@@ -207,7 +206,6 @@ export const CommerceBannerRequestsPage = () => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [storeId, setStoreId] = useState(null);
-  const [storeName, setStoreName] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -225,8 +223,6 @@ export const CommerceBannerRequestsPage = () => {
       try {
         const sessionRes = await apiClient.get("/api/session/user-session");
         const sid = sessionRes.data?.user?.id_store;
-        const name = sessionRes.data?.user?.store_name ?? "";
-        // Fix 7: si no hay comercio, dejar storeId null y no seguir
         if (!sid) {
           toast.error("No tenés un comercio registrado");
           setStoreId(null);
@@ -234,7 +230,6 @@ export const CommerceBannerRequestsPage = () => {
           return;
         }
         setStoreId(sid);
-        setStoreName(name);
         await loadRequests(sid);
       } catch {
         toast.error("Error al cargar la sesión");
@@ -250,7 +245,7 @@ export const CommerceBannerRequestsPage = () => {
     if (!storeId) { toast.error("No se encontró un comercio asociado"); return; }
     setIsSubmitting(true);
     try {
-      await createBannerRequest(storeId, storeName, payload);
+      await createBannerRequest(storeId, payload);
       toast.success("Solicitud enviada — será revisada por un administrador");
       setIsModalOpen(false);
       await loadRequests(storeId);
@@ -266,20 +261,17 @@ export const CommerceBannerRequestsPage = () => {
     if (!storeId) { toast.error("No se encontró un comercio asociado"); return; }
     if (!window.confirm("¿Cancelar esta solicitud?")) return;
     try {
-      // Fix 8: cancelar actualiza estado CANCELLED, no borra
       await cancelBannerRequest(storeId, requestId);
-      setRequests((prev) =>
-        prev.map((r) => r.id === requestId ? { ...r, status: "CANCELLED" } : r)
-      );
+      setRequests((prev) => prev.filter((r) => r.id !== requestId));
       toast.success("Solicitud cancelada");
     } catch (e) {
-      toast.error(e?.message ?? "No se pudo cancelar la solicitud");
+      toast.error(e?.response?.data?.error?.message ?? "No se pudo cancelar la solicitud");
     }
   };
 
   if (loading) return <p style={{ color: "#6b7280", padding: "16px" }}>Cargando...</p>;
 
-  const pendingCount = requests.filter((r) => r.status === "PENDING").length;
+  const pendingCount = requests.filter((r) => r.approvalStatus === "PENDING").length;
 
   return (
     <>

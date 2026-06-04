@@ -11,10 +11,9 @@ const cardStyle = {
 };
 
 const STATUS_BADGE = {
-  PENDING:   { label: "Pendiente",  color: "#1d4ed8", bg: "#dbeafe" },
-  APPROVED:  { label: "Aprobado",   color: "#15803d", bg: "#dcfce7" },
-  REJECTED:  { label: "Rechazado",  color: "#b91c1c", bg: "#fee2e2" },
-  CANCELLED: { label: "Cancelada",  color: "#6b7280", bg: "#f3f4f6" },
+  PENDING:  { label: "Pendiente", color: "#1d4ed8", bg: "#dbeafe" },
+  ACTIVE:   { label: "Aprobado",  color: "#15803d", bg: "#dcfce7" },
+  REJECTED: { label: "Rechazado", color: "#b91c1c", bg: "#fee2e2" },
 };
 
 const RejectModal = ({ isOpen, onClose, onConfirm, isSubmitting }) => {
@@ -106,14 +105,14 @@ export const AdminBannerRequestsPage = () => {
   const loadRequests = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await getAllBannerRequests();
-      setRequests(data);
+      const result = await getAllBannerRequests(statusFilter ? { approvalStatus: statusFilter } : {});
+      setRequests(result.data ?? []);
     } catch {
       toast.error("No se pudieron cargar las solicitudes");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [statusFilter]);
 
   useEffect(() => {
     loadRequests();
@@ -122,7 +121,7 @@ export const AdminBannerRequestsPage = () => {
   const handleApprove = async (requestId) => {
     setReviewingId(requestId);
     try {
-      await reviewBannerRequest(requestId, { status: "APPROVED" });
+      await reviewBannerRequest(requestId, { decision: "APPROVE" });
       toast.success("Solicitud aprobada");
       await loadRequests();
     } catch {
@@ -135,7 +134,7 @@ export const AdminBannerRequestsPage = () => {
   const handleRejectConfirm = async (reason) => {
     setIsSubmitting(true);
     try {
-      await reviewBannerRequest(rejectTarget, { status: "REJECTED", rejectionReason: reason });
+      await reviewBannerRequest(rejectTarget, { decision: "REJECT", rejectionReason: reason });
       toast.success("Solicitud rechazada");
       setRejectTarget(null);
       await loadRequests();
@@ -146,11 +145,7 @@ export const AdminBannerRequestsPage = () => {
     }
   };
 
-  const filtered = statusFilter
-    ? requests.filter((r) => r.status === statusFilter)
-    : requests;
-
-  const pendingCount = requests.filter((r) => r.status === "PENDING").length;
+  const pendingCount = requests.filter((r) => r.approvalStatus === "PENDING").length;
 
   return (
     <div style={{ maxWidth: "1100px", paddingBottom: "40px" }}>
@@ -176,7 +171,7 @@ export const AdminBannerRequestsPage = () => {
         >
           <option value="">Todos</option>
           <option value="PENDING">Pendientes</option>
-          <option value="APPROVED">Aprobados</option>
+          <option value="ACTIVE">Aprobados</option>
           <option value="REJECTED">Rechazados</option>
         </select>
       </div>
@@ -188,17 +183,17 @@ export const AdminBannerRequestsPage = () => {
           </div>
         )}
 
-        {!loading && filtered.length === 0 && (
+        {!loading && requests.length === 0 && (
           <div style={{ textAlign: "center", padding: "60px 0", color: "#9ca3af", fontSize: "14px" }}>
             <Image size={40} color="#d1d5db" style={{ margin: "0 auto 10px", display: "block" }} />
             No hay solicitudes para mostrar.
           </div>
         )}
 
-        {!loading && filtered.length > 0 && (
+        {!loading && requests.length > 0 && (
           <div style={{ display: "flex", flexDirection: "column" }}>
-            {filtered.map((req) => {
-              const badge = STATUS_BADGE[req.status] ?? STATUS_BADGE.PENDING;
+            {requests.map((req) => {
+              const badge = STATUS_BADGE[req.approvalStatus] ?? STATUS_BADGE.PENDING;
               const isActioning = reviewingId === req.id || (rejectTarget === req.id && isSubmitting);
               return (
                 <div key={req.id} style={{ display: "flex", gap: "16px", padding: "16px 8px", borderBottom: "1px solid #f3f4f6", alignItems: "flex-start", flexWrap: "wrap" }}>
@@ -214,7 +209,7 @@ export const AdminBannerRequestsPage = () => {
                     <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#9ca3af" }}>
                       Comercio: <strong style={{ color: "#374151" }}>{req.storeName || req.storeId}</strong>
                     </p>
-                    {req.status === "REJECTED" && req.rejectionReason && (
+                    {req.approvalStatus === "REJECTED" && req.rejectionReason && (
                       <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#b91c1c" }}>
                         Motivo: {req.rejectionReason}
                       </p>
@@ -234,7 +229,7 @@ export const AdminBannerRequestsPage = () => {
                   </span>
 
                   <div style={{ display: "flex", gap: "6px", marginLeft: "auto", alignSelf: "center" }}>
-                    {req.status === "PENDING" && (
+                    {req.approvalStatus === "PENDING" && (
                       <>
                         <button
                           type="button"
