@@ -217,23 +217,8 @@ export const useEditProduct = (productId, { onSuccess, onError } = {}) => {
                 setImageFile(null);
             }
 
-            setResultModal({
-                isOpen: true,
-                variant: "success",
-                title: "Producto actualizado",
-                message: "Los cambios se guardaron correctamente.",
-            });
             onSuccess?.("Producto actualizado correctamente");
         } catch (error) {
-            setResultModal({
-                isOpen: true,
-                variant: "error",
-                title: "No se pudo actualizar",
-                message: getBackendErrorMessage(
-                    error,
-                    "No se pudo actualizar el producto. Intentá nuevamente."
-                ),
-            });
             onError?.(getBackendErrorMessage(error, "No se pudo actualizar el producto. Intenta nuevamente."));
         } finally {
             setIsSubmitting(false);
