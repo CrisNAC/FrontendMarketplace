@@ -228,57 +228,7 @@ export default function OrdenesComprasPage() {
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-2 mb-4">
-                    {items.map((row) => {
-                      const sub = itemSubtotal(row.product?.price, row.quantity);
-                      const name = row.product?.name || "Producto";
-                      const unit = row.product?.price;
-                      const imageUrl = row.product?.imageUrl ?? row.product?.image_url ?? null;
-
-                      return (
-                        <div
-                          key={row.id ?? `${cart.id}-${row.product?.id}`}
-                          className="bg-white rounded-lg border border-[#e5e7eb] px-2.5 py-2 flex justify-between gap-2 items-start"
-                        >
-                          <div className="flex items-start gap-2 min-w-0">
-                            <div className="w-10 h-10 rounded-md overflow-hidden bg-gray-100 shrink-0">
-                              {imageUrl ? (
-                                <img
-                                  src={imageUrl}
-                                  alt={name}
-                                  className="w-full h-full object-cover"
-                                  onError={(e) => {
-                                    e.currentTarget.style.display = "none";
-                                  }}
-                                />
-                              ) : (
-                                <div className="w-full h-full bg-gray-200" />
-                              )}
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-xs font-bold text-[#111827] leading-snug">
-                                {name}
-                              </p>
-                              <p className="text-[11px] text-gray-500 leading-tight mt-0.5">
-                                Cantidad: {row.quantity}
-                              </p>
-                              <p className="text-[11px] font-semibold text-[#111827] mt-1">
-                                {formatGuarani(unit)}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <p className="text-[10px] text-gray-500">Subtotal</p>
-                            <p className="text-xs font-bold text-[#111827]">
-                              {formatGuarani(sub)}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  <div className="flex gap-2 justify-center">
+                  <div className="flex gap-2 justify-center mt-2">
                     <button
                       type="button"
                       onClick={() => handleDeleteCartClick(cart.id, storeName, productCount)}
