@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect, useCallback } from "react";
 import { Minus, Plus, Trash2, ArrowLeft } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
-import { getApiBase, formatGuarani, removeCartItemApi, updateCartItemQuantityApi } from "@/lib";
+import { getApiBase, removeCartItemApi, updateCartItemQuantityApi, formatGuarani } from "@/lib";
 import { Navbar, PageLoader } from "@/components";
 import { useToast } from "@/hooks";
 import { ConfirmationModal } from "../components/cart/ConfirmationModal";
@@ -46,10 +46,10 @@ type BackendCart = {
 
 export const CartPage = () => {
   const navigate = useNavigate();
-  const { showToast } = useToast();
   const { cartId } = useParams();
   const apiBase = getApiBase() || "http://localhost:3000";
 
+  const { showToast } = useToast();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [cartName, setCartName] = useState("Carrito de Compras");
   const [status, setStatus] = useState<"loading" | "ready" | "error" | "unauthorized">("loading");
