@@ -399,9 +399,11 @@ function App() {
             </RequireAuth>
           } />
           <Route path="/admin/banner-solicitudes" element={
-            <RequireAdmin>
-              <AdminLayout><AdminBannerRequestsPage /></AdminLayout>
-            </RequireAdmin>
+            <RequireAuth>
+              <AdminLayout>
+                <RequireAdmin><AdminBannerRequestsPage /></RequireAdmin>
+              </AdminLayout>
+            </RequireAuth>
           } />
 
           {/* ── Páginas de error ───────────────────────────────────────────── */}
