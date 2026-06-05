@@ -93,33 +93,21 @@ describe('DeliveryOrderScreen', () => {
         })
     })
 
-    it('acepta un pedido al hacer clic en Aceptar', async () => {
+    it.each([
+        ['Aceptar', 'ACCEPT', 'Pedido aceptado.'],
+        ['Rechazar', 'REJECT', 'Pedido rechazado.'],
+    ])('%s un pedido al hacer clic en el botón', async (btnText, action, successMsg) => {
         setupWithAssignment()
         respondToDeliveryOrder.mockResolvedValueOnce({})
         loadDeliveryDashboard.mockResolvedValueOnce({ assignments: [], reason: null, delivery: { id_delivery: 1 } })
         render(<DeliveryOrderScreen />)
         await waitFor(() => {
-            expect(screen.getByText('Aceptar')).toBeInTheDocument()
+            expect(screen.getByText(btnText)).toBeInTheDocument()
         })
-        await userEvent.click(screen.getByText('Aceptar'))
+        await userEvent.click(screen.getByText(btnText))
         await waitFor(() => {
-            expect(respondToDeliveryOrder).toHaveBeenCalledWith(10, 'ACCEPT')
-            expect(toast.success).toHaveBeenCalledWith('Pedido aceptado.')
-        })
-    })
-
-    it('rechaza un pedido al hacer clic en Rechazar', async () => {
-        setupWithAssignment()
-        respondToDeliveryOrder.mockResolvedValueOnce({})
-        loadDeliveryDashboard.mockResolvedValueOnce({ assignments: [], reason: null, delivery: { id_delivery: 1 } })
-        render(<DeliveryOrderScreen />)
-        await waitFor(() => {
-            expect(screen.getByText('Rechazar')).toBeInTheDocument()
-        })
-        await userEvent.click(screen.getByText('Rechazar'))
-        await waitFor(() => {
-            expect(respondToDeliveryOrder).toHaveBeenCalledWith(10, 'REJECT')
-            expect(toast.success).toHaveBeenCalledWith('Pedido rechazado.')
+            expect(respondToDeliveryOrder).toHaveBeenCalledWith(10, action)
+            expect(toast.success).toHaveBeenCalledWith(successMsg)
         })
     })
 

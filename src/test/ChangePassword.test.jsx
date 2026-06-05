@@ -77,31 +77,17 @@ describe('ChangePassword', () => {
         expect(screen.getByText('La contraseña actual es obligatoria')).toBeInTheDocument()
     })
 
-    it('muestra error cuando las contraseñas no coinciden', async () => {
+    it.each([
+        ['contraseñas no coinciden', 'oldpassword', 'newpass123', 'differentpass', 'Las contraseñas no coinciden'],
+        ['contraseña muy corta', 'oldpass', 'abc', 'abc', 'La nueva contraseña debe tener al menos 6 caracteres'],
+        ['nueva igual a actual', 'samepass123', 'samepass123', 'samepass123', 'La nueva contraseña debe ser diferente a la actual'],
+    ])('muestra error de validación: %s', async (_, current, newPass, confirm, errorMsg) => {
         await renderReady()
-        await userEvent.type(screen.getByPlaceholderText('Tu contraseña actual'), 'oldpassword')
-        await userEvent.type(screen.getByPlaceholderText('Mínimo 6 caracteres'), 'newpass123')
-        await userEvent.type(screen.getByPlaceholderText('Repetí la nueva contraseña'), 'differentpass')
+        await userEvent.type(screen.getByPlaceholderText('Tu contraseña actual'), current)
+        await userEvent.type(screen.getByPlaceholderText('Mínimo 6 caracteres'), newPass)
+        await userEvent.type(screen.getByPlaceholderText('Repetí la nueva contraseña'), confirm)
         await userEvent.click(screen.getByText('Cambiar contraseña'))
-        expect(screen.getByText('Las contraseñas no coinciden')).toBeInTheDocument()
-    })
-
-    it('muestra error cuando la nueva contraseña es muy corta', async () => {
-        await renderReady()
-        await userEvent.type(screen.getByPlaceholderText('Tu contraseña actual'), 'oldpass')
-        await userEvent.type(screen.getByPlaceholderText('Mínimo 6 caracteres'), 'abc')
-        await userEvent.type(screen.getByPlaceholderText('Repetí la nueva contraseña'), 'abc')
-        await userEvent.click(screen.getByText('Cambiar contraseña'))
-        expect(screen.getByText('La nueva contraseña debe tener al menos 6 caracteres')).toBeInTheDocument()
-    })
-
-    it('muestra error cuando nueva y actual son iguales', async () => {
-        await renderReady()
-        await userEvent.type(screen.getByPlaceholderText('Tu contraseña actual'), 'samepass123')
-        await userEvent.type(screen.getByPlaceholderText('Mínimo 6 caracteres'), 'samepass123')
-        await userEvent.type(screen.getByPlaceholderText('Repetí la nueva contraseña'), 'samepass123')
-        await userEvent.click(screen.getByText('Cambiar contraseña'))
-        expect(screen.getByText('La nueva contraseña debe ser diferente a la actual')).toBeInTheDocument()
+        expect(screen.getByText(errorMsg)).toBeInTheDocument()
     })
 
     it('muestra éxito al cambiar la contraseña correctamente', async () => {

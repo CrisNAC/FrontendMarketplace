@@ -36,6 +36,13 @@ const mockOrder = {
     ],
 }
 
+const standardState = { order: mockOrder, shippingMethod: 'delivery', shippingCost: 0, subtotal: 750000, discount: 0, total: 750000 }
+
+function renderWithOrder(state = standardState) {
+    mockLocationState = state
+    render(<PedidoConfirmadoPage />)
+}
+
 describe('PedidoConfirmadoPage', () => {
     beforeEach(() => {
         vi.clearAllMocks()
@@ -53,77 +60,47 @@ describe('PedidoConfirmadoPage', () => {
         expect(mockNavigate).toHaveBeenCalledWith('/pedidos')
     })
 
-    it('muestra "¡Pedido Confirmado!" cuando hay orden', () => {
-        mockLocationState = { order: mockOrder, shippingMethod: 'delivery', shippingCost: 0, subtotal: 750000, discount: 0, total: 750000 }
-        render(<PedidoConfirmadoPage />)
-        expect(screen.getByText('¡Pedido Confirmado!')).toBeInTheDocument()
-    })
-
-    it('muestra el número del pedido', () => {
-        mockLocationState = { order: mockOrder, shippingMethod: 'delivery', shippingCost: 0, subtotal: 750000, discount: 0, total: 750000 }
-        render(<PedidoConfirmadoPage />)
-        expect(screen.getByText('#99')).toBeInTheDocument()
+    it.each([
+        ['¡Pedido Confirmado!',  '¡Pedido Confirmado!'],
+        ['número del pedido',    '#99'],
+        ['Oferta aplicada',      'Oferta aplicada'],
+        ['dirección de entrega', 'Av. Principal 456'],
+        ['notas del pedido',     'Dejar en la puerta'],
+        ['envío gratis',         'Gratis'],
+    ])('muestra el/la %s cuando hay orden', (_, text) => {
+        renderWithOrder()
+        expect(screen.getByText(text)).toBeInTheDocument()
     })
 
     it('muestra los productos del pedido', () => {
-        mockLocationState = { order: mockOrder, shippingMethod: 'delivery', shippingCost: 0, subtotal: 750000, discount: 0, total: 750000 }
-        render(<PedidoConfirmadoPage />)
+        renderWithOrder()
         expect(screen.getByText('Laptop HP')).toBeInTheDocument()
         expect(screen.getByText('Mouse Logitech')).toBeInTheDocument()
     })
 
-    it('muestra "Oferta aplicada" para items con oferta', () => {
-        mockLocationState = { order: mockOrder, shippingMethod: 'delivery', shippingCost: 0, subtotal: 750000, discount: 0, total: 750000 }
-        render(<PedidoConfirmadoPage />)
-        expect(screen.getByText('Oferta aplicada')).toBeInTheDocument()
-    })
-
-    it('muestra la dirección de entrega cuando existe', () => {
-        mockLocationState = { order: mockOrder, shippingMethod: 'delivery', shippingCost: 0, subtotal: 750000, discount: 0, total: 750000 }
-        render(<PedidoConfirmadoPage />)
-        expect(screen.getByText('Av. Principal 456')).toBeInTheDocument()
-    })
-
     it('muestra "Retiro en Local" cuando shippingMethod es pickup', () => {
-        mockLocationState = { order: { ...mockOrder, address: null }, shippingMethod: 'pickup', shippingCost: 0, subtotal: 750000, discount: 0, total: 750000 }
-        render(<PedidoConfirmadoPage />)
+        renderWithOrder({ order: { ...mockOrder, address: null }, shippingMethod: 'pickup', shippingCost: 0, subtotal: 750000, discount: 0, total: 750000 })
         expect(screen.getAllByText('Retiro en Local').length).toBeGreaterThan(0)
     })
 
     it('muestra "Envío Estándar" cuando shippingMethod es delivery', () => {
-        mockLocationState = { order: mockOrder, shippingMethod: 'delivery', shippingCost: 15000, subtotal: 750000, discount: 0, total: 765000 }
-        render(<PedidoConfirmadoPage />)
+        renderWithOrder({ order: mockOrder, shippingMethod: 'delivery', shippingCost: 15000, subtotal: 750000, discount: 0, total: 765000 })
         expect(screen.getAllByText('Envío Estándar').length).toBeGreaterThan(0)
     })
 
     it('muestra el descuento cuando es mayor a 0', () => {
-        mockLocationState = { order: mockOrder, shippingMethod: 'delivery', shippingCost: 0, subtotal: 750000, discount: 50000, total: 700000 }
-        render(<PedidoConfirmadoPage />)
+        renderWithOrder({ order: mockOrder, shippingMethod: 'delivery', shippingCost: 0, subtotal: 750000, discount: 50000, total: 700000 })
         expect(screen.getByText('Descuento:')).toBeInTheDocument()
     })
 
-    it('muestra las notas del pedido cuando existen', () => {
-        mockLocationState = { order: mockOrder, shippingMethod: 'delivery', shippingCost: 0, subtotal: 750000, discount: 0, total: 750000 }
-        render(<PedidoConfirmadoPage />)
-        expect(screen.getByText('Dejar en la puerta')).toBeInTheDocument()
-    })
-
-    it('muestra "Gratis" cuando shippingCost es 0', () => {
-        mockLocationState = { order: mockOrder, shippingMethod: 'delivery', shippingCost: 0, subtotal: 750000, discount: 0, total: 750000 }
-        render(<PedidoConfirmadoPage />)
-        expect(screen.getByText('Gratis')).toBeInTheDocument()
-    })
-
     it('navega a /pedidos al hacer clic en "Ver Mis Pedidos"', async () => {
-        mockLocationState = { order: mockOrder, shippingMethod: 'delivery', shippingCost: 0, subtotal: 750000, discount: 0, total: 750000 }
-        render(<PedidoConfirmadoPage />)
+        renderWithOrder()
         await userEvent.click(screen.getByText('Ver Mis Pedidos'))
         expect(mockNavigate).toHaveBeenCalledWith('/pedidos')
     })
 
     it('muestra "—" cuando la fecha no está disponible', () => {
-        mockLocationState = { order: { ...mockOrder, createdAt: undefined }, shippingMethod: 'pickup', shippingCost: 0, subtotal: 750000, discount: 0, total: 750000 }
-        render(<PedidoConfirmadoPage />)
+        renderWithOrder({ order: { ...mockOrder, createdAt: undefined }, shippingMethod: 'pickup', shippingCost: 0, subtotal: 750000, discount: 0, total: 750000 })
         expect(screen.getByText('—')).toBeInTheDocument()
     })
 })

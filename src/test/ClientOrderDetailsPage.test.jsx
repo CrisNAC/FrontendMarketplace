@@ -43,6 +43,11 @@ function setupOrderMocks(productName = 'Laptop Pro') {
         .mockResolvedValue({ data: { name: productName } })
 }
 
+function setupAndRender(productName = 'Laptop Pro') {
+    setupOrderMocks(productName)
+    render(<ClientOrderDetailsPage />)
+}
+
 describe('ClientOrderDetailsPage', () => {
     beforeEach(() => {
         vi.clearAllMocks()
@@ -55,40 +60,35 @@ describe('ClientOrderDetailsPage', () => {
     })
 
     it('muestra el pedido cargado', async () => {
-        setupOrderMocks()
-        render(<ClientOrderDetailsPage />)
+        setupAndRender()
         await waitFor(() => {
             expect(screen.getByText(/Pedido N° 42/)).toBeInTheDocument()
         })
     })
 
     it('muestra el estado "Pendiente" para orden PENDING', async () => {
-        setupOrderMocks()
-        render(<ClientOrderDetailsPage />)
+        setupAndRender()
         await waitFor(() => {
             expect(screen.getAllByText('Pendiente').length).toBeGreaterThan(0)
         })
     })
 
     it('muestra los items del pedido', async () => {
-        setupOrderMocks()
-        render(<ClientOrderDetailsPage />)
+        setupAndRender()
         await waitFor(() => {
             expect(screen.getByText('Laptop Pro')).toBeInTheDocument()
         })
     })
 
     it('muestra el total del pedido', async () => {
-        setupOrderMocks()
-        render(<ClientOrderDetailsPage />)
+        setupAndRender()
         await waitFor(() => {
             expect(screen.getAllByText('Gs. 500000').length).toBeGreaterThan(0)
         })
     })
 
     it('muestra las notas del pedido', async () => {
-        setupOrderMocks()
-        render(<ClientOrderDetailsPage />)
+        setupAndRender()
         await waitFor(() => {
             expect(screen.getByText('Entregar en puerta')).toBeInTheDocument()
         })
@@ -112,8 +112,7 @@ describe('ClientOrderDetailsPage', () => {
     })
 
     it('muestra la dirección de envío', async () => {
-        setupOrderMocks('Producto Test')
-        render(<ClientOrderDetailsPage />)
+        setupAndRender('Producto Test')
         await waitFor(() => {
             expect(screen.getByText('Av. Test 123')).toBeInTheDocument()
         })

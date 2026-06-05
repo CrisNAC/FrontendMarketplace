@@ -20,6 +20,22 @@ import {
 const mockCategories = [{ id: 1, name: 'Electrónica', status: true }]
 const mockTags = [{ id: 1, name: 'oferta', status: true }, { id: 2, name: 'nuevo', status: true }]
 
+async function renderHookReady() {
+    const { result } = renderHook(() => useCreateProduct())
+    await waitFor(() => expect(result.current.isLoadingInitialData).toBe(false))
+    return result
+}
+
+function fillRequiredFields(result, quantity = '10') {
+    act(() => {
+        result.current.onFieldChange({ target: { name: 'name', value: 'Laptop', type: 'text' } })
+        result.current.onFieldChange({ target: { name: 'description', value: 'Desc completa del laptop', type: 'text' } })
+        result.current.onFieldChange({ target: { name: 'price', value: '500000', type: 'number' } })
+        result.current.onFieldChange({ target: { name: 'categoryId', value: '1', type: 'select' } })
+        result.current.onFieldChange({ target: { name: 'quantity', value: quantity, type: 'number' } })
+    })
+}
+
 describe('useCreateProduct', () => {
     beforeEach(() => {
         vi.clearAllMocks()
@@ -51,9 +67,7 @@ describe('useCreateProduct', () => {
     })
 
     it('onFieldChange actualiza el formData', async () => {
-        const { result } = renderHook(() => useCreateProduct())
-
-        await waitFor(() => expect(result.current.isLoadingInitialData).toBe(false))
+        const result = await renderHookReady()
 
         act(() => {
             result.current.onFieldChange({
@@ -65,9 +79,7 @@ describe('useCreateProduct', () => {
     })
 
     it('onFieldChange maneja checkboxes', async () => {
-        const { result } = renderHook(() => useCreateProduct())
-
-        await waitFor(() => expect(result.current.isLoadingInitialData).toBe(false))
+        const result = await renderHookReady()
 
         act(() => {
             result.current.onFieldChange({
@@ -79,9 +91,7 @@ describe('useCreateProduct', () => {
     })
 
     it('toggleTag agrega un tag no seleccionado', async () => {
-        const { result } = renderHook(() => useCreateProduct())
-
-        await waitFor(() => expect(result.current.isLoadingInitialData).toBe(false))
+        const result = await renderHookReady()
 
         act(() => {
             result.current.toggleTag({ id: 1, name: 'oferta' })
@@ -92,9 +102,7 @@ describe('useCreateProduct', () => {
     })
 
     it('toggleTag elimina un tag ya seleccionado', async () => {
-        const { result } = renderHook(() => useCreateProduct())
-
-        await waitFor(() => expect(result.current.isLoadingInitialData).toBe(false))
+        const result = await renderHookReady()
 
         act(() => { result.current.toggleTag({ id: 1, name: 'oferta' }) })
         act(() => { result.current.toggleTag({ id: 1, name: 'oferta' }) })
@@ -103,9 +111,7 @@ describe('useCreateProduct', () => {
     })
 
     it('selectedTagNames combina los nombres de tags seleccionados', async () => {
-        const { result } = renderHook(() => useCreateProduct())
-
-        await waitFor(() => expect(result.current.isLoadingInitialData).toBe(false))
+        const result = await renderHookReady()
 
         act(() => {
             result.current.toggleTag({ id: 1, name: 'oferta' })
@@ -116,9 +122,7 @@ describe('useCreateProduct', () => {
     })
 
     it('handleSubmit muestra errores de validación cuando el formulario está vacío', async () => {
-        const { result } = renderHook(() => useCreateProduct())
-
-        await waitFor(() => expect(result.current.isLoadingInitialData).toBe(false))
+        const result = await renderHookReady()
 
         await act(async () => {
             result.current.handleSubmit({ preventDefault: vi.fn() })
@@ -132,17 +136,8 @@ describe('useCreateProduct', () => {
     it('handleSubmit crea el producto exitosamente', async () => {
         createProduct.mockResolvedValueOnce({ id_product: 100 })
 
-        const { result } = renderHook(() => useCreateProduct())
-
-        await waitFor(() => expect(result.current.isLoadingInitialData).toBe(false))
-
-        act(() => {
-            result.current.onFieldChange({ target: { name: 'name', value: 'Laptop', type: 'text' } })
-            result.current.onFieldChange({ target: { name: 'description', value: 'Descripcion completa del laptop', type: 'text' } })
-            result.current.onFieldChange({ target: { name: 'price', value: '500000', type: 'number' } })
-            result.current.onFieldChange({ target: { name: 'categoryId', value: '1', type: 'select' } })
-            result.current.onFieldChange({ target: { name: 'quantity', value: '10', type: 'number' } })
-        })
+        const result = await renderHookReady()
+        fillRequiredFields(result)
 
         await act(async () => {
             await result.current.handleSubmit({ preventDefault: vi.fn() })
@@ -157,17 +152,8 @@ describe('useCreateProduct', () => {
     it('handleSubmit muestra error cuando createProduct falla', async () => {
         createProduct.mockRejectedValueOnce(new Error('Error al crear'))
 
-        const { result } = renderHook(() => useCreateProduct())
-
-        await waitFor(() => expect(result.current.isLoadingInitialData).toBe(false))
-
-        act(() => {
-            result.current.onFieldChange({ target: { name: 'name', value: 'Laptop', type: 'text' } })
-            result.current.onFieldChange({ target: { name: 'description', value: 'Desc completa del laptop', type: 'text' } })
-            result.current.onFieldChange({ target: { name: 'price', value: '500000', type: 'number' } })
-            result.current.onFieldChange({ target: { name: 'categoryId', value: '1', type: 'select' } })
-            result.current.onFieldChange({ target: { name: 'quantity', value: '10', type: 'number' } })
-        })
+        const result = await renderHookReady()
+        fillRequiredFields(result)
 
         await act(async () => {
             await result.current.handleSubmit({ preventDefault: vi.fn() })
@@ -181,17 +167,8 @@ describe('useCreateProduct', () => {
     it('closeModal cierra el modal de resultado', async () => {
         createProduct.mockResolvedValueOnce({ id_product: 100 })
 
-        const { result } = renderHook(() => useCreateProduct())
-
-        await waitFor(() => expect(result.current.isLoadingInitialData).toBe(false))
-
-        act(() => {
-            result.current.onFieldChange({ target: { name: 'name', value: 'Laptop', type: 'text' } })
-            result.current.onFieldChange({ target: { name: 'description', value: 'Desc completa del laptop', type: 'text' } })
-            result.current.onFieldChange({ target: { name: 'price', value: '500000', type: 'number' } })
-            result.current.onFieldChange({ target: { name: 'categoryId', value: '1', type: 'select' } })
-            result.current.onFieldChange({ target: { name: 'quantity', value: '10', type: 'number' } })
-        })
+        const result = await renderHookReady()
+        fillRequiredFields(result)
 
         await act(async () => {
             await result.current.handleSubmit({ preventDefault: vi.fn() })
@@ -207,9 +184,7 @@ describe('useCreateProduct', () => {
     })
 
     it('onImageFileChange actualiza el imageFile', async () => {
-        const { result } = renderHook(() => useCreateProduct())
-
-        await waitFor(() => expect(result.current.isLoadingInitialData).toBe(false))
+        const result = await renderHookReady()
 
         const file = new File(['content'], 'foto.jpg', { type: 'image/jpeg' })
         act(() => {
@@ -224,9 +199,7 @@ describe('useCreateProduct', () => {
         fetchProductTags.mockResolvedValueOnce(manyTags)
         fetchProductCategories.mockResolvedValueOnce([])
 
-        const { result } = renderHook(() => useCreateProduct())
-
-        await waitFor(() => expect(result.current.isLoadingInitialData).toBe(false))
+        const result = await renderHookReady()
 
         expect(result.current.displayedTagOptions.length).toBe(MAX_VISIBLE_TAG_SUGGESTIONS)
     })
@@ -236,9 +209,7 @@ describe('useCreateProduct', () => {
         fetchProductTags.mockResolvedValueOnce(manyTags)
         fetchProductCategories.mockResolvedValueOnce([])
 
-        const { result } = renderHook(() => useCreateProduct())
-
-        await waitFor(() => expect(result.current.isLoadingInitialData).toBe(false))
+        const result = await renderHookReady()
 
         act(() => {
             result.current.setShowAllTagSuggestions(true)
@@ -251,19 +222,13 @@ describe('useCreateProduct', () => {
         createProduct.mockResolvedValueOnce({ id_product: 200 })
         uploadProductImage.mockResolvedValueOnce({ image_url: 'https://cdn.example.com/img.jpg' })
 
-        const { result } = renderHook(() => useCreateProduct())
-
-        await waitFor(() => expect(result.current.isLoadingInitialData).toBe(false))
+        const result = await renderHookReady()
 
         const file = new File(['content'], 'foto.jpg', { type: 'image/jpeg' })
         act(() => {
             result.current.onImageFileChange(file)
-            result.current.onFieldChange({ target: { name: 'name', value: 'Laptop', type: 'text' } })
-            result.current.onFieldChange({ target: { name: 'description', value: 'Desc completa del laptop', type: 'text' } })
-            result.current.onFieldChange({ target: { name: 'price', value: '500000', type: 'number' } })
-            result.current.onFieldChange({ target: { name: 'categoryId', value: '1', type: 'select' } })
-            result.current.onFieldChange({ target: { name: 'quantity', value: '5', type: 'number' } })
         })
+        fillRequiredFields(result, '5')
 
         await act(async () => {
             await result.current.handleSubmit({ preventDefault: vi.fn() })
@@ -275,9 +240,7 @@ describe('useCreateProduct', () => {
     })
 
     it('removeTag elimina el tag por id', async () => {
-        const { result } = renderHook(() => useCreateProduct())
-
-        await waitFor(() => expect(result.current.isLoadingInitialData).toBe(false))
+        const result = await renderHookReady()
 
         act(() => { result.current.toggleTag({ id: 1, name: 'oferta' }) })
         expect(result.current.selectedTags).toHaveLength(1)

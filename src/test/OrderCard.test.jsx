@@ -18,25 +18,31 @@ const mockOrder = {
 }
 
 describe('OrderCard', () => {
-    it('renderiza el id del pedido', () => {
-        render(<OrderCard order={mockOrder} onClick={() => {}} />)
-        expect(screen.getByText('42')).toBeInTheDocument()
-    })
+    describe('datos renderizados', () => {
+        beforeEach(() => {
+            render(<OrderCard order={mockOrder} onClick={() => {}} />)
+        })
 
-    it('renderiza la fecha del pedido', () => {
-        render(<OrderCard order={mockOrder} onClick={() => {}} />)
-        expect(screen.getByText('15 de junio del 2024')).toBeInTheDocument()
-    })
+        it('renderiza el id del pedido', () => {
+            expect(screen.getByText('42')).toBeInTheDocument()
+        })
 
-    it('renderiza la cantidad de productos', () => {
-        render(<OrderCard order={mockOrder} onClick={() => {}} />)
-        expect(screen.getByText('3 producto(s)')).toBeInTheDocument()
-    })
+        it('renderiza la fecha del pedido', () => {
+            expect(screen.getByText('15 de junio del 2024')).toBeInTheDocument()
+        })
 
-    it('renderiza el total formateado', () => {
-        render(<OrderCard order={mockOrder} onClick={() => {}} />)
-        const total = screen.getByText(/Gs\./)
-        expect(total).toBeInTheDocument()
+        it('renderiza la cantidad de productos', () => {
+            expect(screen.getByText('3 producto(s)')).toBeInTheDocument()
+        })
+
+        it('renderiza el total formateado', () => {
+            const total = screen.getByText(/Gs\./)
+            expect(total).toBeInTheDocument()
+        })
+
+        it('renderiza el OrderStepper con el estado correcto', () => {
+            expect(screen.getByTestId('order-stepper')).toHaveTextContent('Pendiente')
+        })
     })
 
     it('llama a onClick cuando se hace clic en la tarjeta', async () => {
@@ -44,11 +50,6 @@ describe('OrderCard', () => {
         const { container } = render(<OrderCard order={mockOrder} onClick={mockClick} />)
         await userEvent.click(container.firstChild)
         expect(mockClick).toHaveBeenCalledTimes(1)
-    })
-
-    it('renderiza el OrderStepper con el estado correcto', () => {
-        render(<OrderCard order={mockOrder} onClick={() => {}} />)
-        expect(screen.getByTestId('order-stepper')).toHaveTextContent('Pendiente')
     })
 
     it('renderiza todos los estados de pedido sin errores', () => {
