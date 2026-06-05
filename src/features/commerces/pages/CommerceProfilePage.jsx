@@ -368,7 +368,6 @@ export function CommerceProfilePage() {
                                 {createdAt}
                             </span>
                         </StatRow>
-                        <StatRow label="ID del comercio:">{commerce?.id_store ?? "—"}</StatRow>
                     </div>
 
                     <div style={card}>
