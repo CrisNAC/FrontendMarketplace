@@ -129,12 +129,12 @@ describe('getUserImage', () => {
     beforeEach(() => vi.clearAllMocks())
 
     it('llama a GET /users/:userId/image', async () => {
-        mockApiClient.get.mockResolvedValueOnce({ data: { url: 'http://img.com/photo.jpg' } })
+        mockApiClient.get.mockResolvedValueOnce({ data: { url: 'https://img.com/photo.jpg' } })
 
         const result = await getUserImage(7)
 
         expect(mockApiClient.get).toHaveBeenCalledWith('/users/7/image')
-        expect(result).toMatchObject({ url: 'http://img.com/photo.jpg' })
+        expect(result).toMatchObject({ url: 'https://img.com/photo.jpg' })
     })
 })
 
@@ -142,7 +142,7 @@ describe('uploadUserImage', () => {
     beforeEach(() => vi.clearAllMocks())
 
     it('llama a POST /users/:userId/image con FormData', async () => {
-        mockApiClient.post.mockResolvedValueOnce({ data: { url: 'http://img.com/new.jpg' } })
+        mockApiClient.post.mockResolvedValueOnce({ data: { url: 'https://img.com/new.jpg' } })
 
         const file = new File(['content'], 'photo.jpg', { type: 'image/jpeg' })
         const result = await uploadUserImage(7, file)
@@ -152,7 +152,7 @@ describe('uploadUserImage', () => {
             expect.any(FormData),
             { headers: { 'Content-Type': 'multipart/form-data' } }
         )
-        expect(result).toMatchObject({ url: 'http://img.com/new.jpg' })
+        expect(result).toMatchObject({ url: 'https://img.com/new.jpg' })
     })
 })
 
