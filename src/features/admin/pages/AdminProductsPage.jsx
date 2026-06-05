@@ -3,6 +3,9 @@ import { Search, Package, Flag, Eye, Check, X, AlertTriangle, Store, Tag, Calend
 import { PageLoader } from "../../../components/PageLoader";
 import { fetchAdminProducts, approveProduct, rejectProduct } from "../services/adminProductsApi";
 import { useToast } from "@/hooks";
+import { REPORT_REASON_LABELS } from "@/features/clients/services";
+
+const REASON_LABEL = Object.fromEntries(REPORT_REASON_LABELS.map(({ value, label }) => [value, label]));
 
 const cardStyle = {
   backgroundColor: "var(--background-white)",
@@ -118,7 +121,7 @@ const ProductDetailModal = ({ isOpen, product, onClose, onApprove, onReject, isS
                 {product.latestReport && (
                   <>
                     <p style={{ margin: "0 0 2px", fontSize: "12px", color: "#6b7280" }}>Último motivo</p>
-                    <p style={{ margin: "0 0 4px", fontSize: "13px", color: "#374151", fontWeight: "500" }}>{product.latestReport.reason}</p>
+                    <p style={{ margin: "0 0 4px", fontSize: "13px", color: "#374151", fontWeight: "500" }}>{REASON_LABEL[product.latestReport.reason] ?? product.latestReport.reason}</p>
                     {product.latestReport.description && (
                       <p style={{ margin: "0 0 4px", fontSize: "13px", color: "#4b5563" }}>{product.latestReport.description}</p>
                     )}
@@ -251,7 +254,7 @@ const ProductRow = ({ product, onViewDetail, onApprove, onReject, isSubmitting }
         </p>
         {product.latestReport && (
           <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#92400e" }}>
-            Motivo del reporte: {product.latestReport.reason}
+            Motivo del reporte: {REASON_LABEL[product.latestReport.reason] ?? product.latestReport.reason}
           </p>
         )}
       </div>

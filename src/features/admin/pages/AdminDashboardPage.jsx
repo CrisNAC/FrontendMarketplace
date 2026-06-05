@@ -140,7 +140,7 @@ export const AdminDashboardPage = () => {
         border: "#86efac",
         color: "#166534",
         Icon: MessageSquareWarning,
-        route: "/admin/resenas",
+        route: "/admin/reviews",
       },
       {
         key: "commerces",
@@ -151,7 +151,7 @@ export const AdminDashboardPage = () => {
         border: "#93c5fd",
         color: "#1e40af",
         Icon: ShoppingCart,
-        route: "/admin/comercios",
+        route: "/admin/comercios-pendientes",
       },
     ],
     [stats]
