@@ -121,8 +121,7 @@ export const CartPage = () => {
       setCartItems(mappedItems);
       setStatus("ready");
     } catch (error: unknown) {
-  const err = error as { response?: { status?: number; data?: { message?: string } } };
-
+      const err = error as { response?: { status?: number; data?: { message?: string } } };
 
       if (err.response?.status === 401) {
         setStatus("unauthorized");

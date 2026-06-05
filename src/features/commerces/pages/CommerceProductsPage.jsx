@@ -1,16 +1,13 @@
-// src/features/commerces/pages/CommerceProductsPage.jsx
 import { useState, useEffect, useMemo } from "react";
-import { PageLoader } from "../../../components/PageLoader";
+import { PageLoader } from "@/components/PageLoader";
 import { useNavigate } from "react-router-dom";
 import { Plus, Search, Eye, Pencil, Trash2, Star, AlertTriangle } from "lucide-react";
 import { apiClient as commerceApiClient } from "../services/editCommerceApi";
 import { apiClient as productApiClient } from "../services/editProductApi";
 import { EDIT_PRODUCT_ENDPOINT_PATHS } from "../services/editProductEndpoints";
-import { formatGuarani } from "../../../lib/formatGuarani.js";
+import { formatGuarani } from "@/lib";
+import { useToast } from "@/hooks";
 
-// ─── Sub-componentes ──────────────────────────────────────────────────────────
-// Normaliza visibilidad para productos que vienen de /api/commerces/:id (campo visible: boolean)
-// o de /products/:id via mapProductResponse (campo status: "active"|"pending")
 const isProductVisible = (product) => {
     if (typeof product.visible === "boolean") return product.visible;
     if (typeof product.status === "string") return product.status === "active";
@@ -63,7 +60,6 @@ function ProductCard({ product, onView, onEdit, onDelete }) {
     const [imgError, setImgError] = useState(false);
     const isVisible = isProductVisible(product);
     const productCategories = Array.isArray(product.categories) ? product.categories : [];
-    // el back ahora devuelve image_url directamente en el producto
     const imageUrl = product.image_url ?? product.imageUrl ?? null;
 
     return (
@@ -72,7 +68,6 @@ function ProductCard({ product, onView, onEdit, onDelete }) {
             boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
             display: "flex", flexDirection: "column",
         }}>
-            {/* Imagen */}
             <div style={{ position: "relative", height: "160px", backgroundColor: "#f3f4f6", flexShrink: 0 }}>
                 {imageUrl && !imgError ? (
                     <img
@@ -92,7 +87,6 @@ function ProductCard({ product, onView, onEdit, onDelete }) {
                 <StatusBadge visible={isVisible} />
             </div>
 
-            {/* Contenido */}
             <div style={{ padding: "12px", flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
                 <h3 style={{ fontSize: "13px", fontWeight: "700", color: "#1f2e27", margin: 0, lineHeight: "1.3" }}>
                     {product.name}
@@ -122,7 +116,6 @@ function ProductCard({ product, onView, onEdit, onDelete }) {
                 )}
             </div>
 
-            {/* Botones */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: "6px", padding: "0 12px 12px" }}>
                 <button type="button" onClick={onView} style={{
                     display: "flex", alignItems: "center", justifyContent: "center", gap: "4px",
@@ -151,7 +144,6 @@ function ProductCard({ product, onView, onEdit, onDelete }) {
     );
 }
 
-// ─── Modal de confirmación ────────────────────────────────────────────────────
 function DeleteModal({ product, isDeleting, onConfirm, onCancel, deleteError }) {
     if (!product) return null;
     return (
@@ -222,9 +214,9 @@ function DeleteModal({ product, isDeleting, onConfirm, onCancel, deleteError }) 
     );
 }
 
-// ─── Página principal ─────────────────────────────────────────────────────────
 export function CommerceProductsPage() {
     const navigate = useNavigate();
+    const { showToast } = useToast();
     const [products, setProducts] = useState([]);
     const [store, setStore] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -245,7 +237,6 @@ export function CommerceProductsPage() {
                 if (!idStore) throw new Error("No tenés un comercio registrado.");
                 const res = await commerceApiClient.get(`/api/commerces/${idStore}`);
                 const loadedProducts = res.data?.products ?? [];
-                console.log("Primer producto del comercio:", JSON.stringify(loadedProducts[0], null, 2));
                 if (active) {
                     setProducts(loadedProducts);
                     setStore(res.data);
@@ -260,7 +251,6 @@ export function CommerceProductsPage() {
         return () => { active = false; };
     }, []);
 
-    // Categorías únicas para el filtro (de todos los productos, no solo la primera)
     const categories = useMemo(() => {
         const seen = new Set();
         const result = [];
@@ -276,7 +266,6 @@ export function CommerceProductsPage() {
         return result;
     }, [products]);
 
-    // Productos filtrados
     const filteredProducts = useMemo(() => {
         return products.filter(p => {
             const matchesSearch = !search || p.name?.toLowerCase().includes(search.toLowerCase());
@@ -298,6 +287,7 @@ export function CommerceProductsPage() {
             await productApiClient.delete(EDIT_PRODUCT_ENDPOINT_PATHS.productById(productToDelete.id_product));
             setProducts(prev => prev.filter(p => p.id_product !== productToDelete.id_product));
             setProductToDelete(null);
+            showToast("Producto eliminado correctamente", "success");
         } catch (err) {
             const msg = err.response?.data?.error?.message
                 || err.response?.data?.message
@@ -320,7 +310,6 @@ export function CommerceProductsPage() {
     
     return (
         <>
-            {/* Header */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px" }}>
                 <div>
                     <h4 style={{ fontWeight: "600", margin: "0 0 4px 0" }}>Gestión de Productos</h4>
@@ -350,7 +339,6 @@ export function CommerceProductsPage() {
                 </div>
             )}
 
-            {/* Barra de búsqueda y filtros */}
             <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px", flexWrap: "wrap" }}>
                 <div style={{ position: "relative", flex: 1, minWidth: "180px" }}>
                     <Search size={13} color="#9ca3af" style={{
@@ -389,7 +377,6 @@ export function CommerceProductsPage() {
                 </div>
             </div>
 
-            {/* Grid de cards */}
             {filteredProducts.length === 0 ? (
                 <div className="bg-[#F3F5F4] border border-[#C7D6CF] rounded-xl p-10 text-center">
                     <p className="text-[18px] text-[#4f615b] font-medium">
@@ -433,7 +420,6 @@ export function CommerceProductsPage() {
                 </p>
             )}
 
-            {/* Modal de eliminación */}
             <DeleteModal
                 product={productToDelete}
                 isDeleting={isDeleting}

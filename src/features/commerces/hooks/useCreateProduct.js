@@ -199,6 +199,7 @@ export const useCreateProduct = ({ onSuccess, onError } = {}) => {
     const errors = validateForm(formData, selectedTags);
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors);
+      onError?.("Revisá los campos del formulario antes de continuar");
       return;
     }
 
@@ -217,9 +218,7 @@ export const useCreateProduct = ({ onSuccess, onError } = {}) => {
     try {
       const created = await createProduct({ payload });
       if (imageFile instanceof File && (created?.id_product ?? created?.id)) {
-        await uploadProductImage(created.id_product ?? created.id, imageFile).catch((err) => {
-          console.warn("[WARN] No se pudo subir la imagen del producto:", err);
-        });
+        await uploadProductImage(created.id_product ?? created.id, imageFile).catch(() => {})
       }
 
       setResultModal({
