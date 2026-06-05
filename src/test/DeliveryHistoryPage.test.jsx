@@ -32,6 +32,12 @@ const mockPayload = {
     size: 10,
 }
 
+function setupDelivery() {
+    getSession.mockResolvedValueOnce({ user: { role: 'DELIVERY', id_delivery: 5 } })
+    getDeliveryOrderHistory.mockResolvedValue(mockPayload)
+    render(<DeliveryHistoryPage />)
+}
+
 describe('DeliveryHistoryPage', () => {
     beforeEach(() => {
         vi.clearAllMocks()
@@ -39,9 +45,7 @@ describe('DeliveryHistoryPage', () => {
 
     it('muestra alerta cuando el usuario no es DELIVERY', async () => {
         getSession.mockResolvedValueOnce({ user: { role: 'CUSTOMER', id_delivery: null } })
-
         render(<DeliveryHistoryPage />)
-
         await waitFor(() => {
             expect(screen.getByText('Iniciá sesión con una cuenta de repartidor para ver el historial.')).toBeInTheDocument()
         })
@@ -49,9 +53,7 @@ describe('DeliveryHistoryPage', () => {
 
     it('muestra alerta cuando no tiene perfil de delivery', async () => {
         getSession.mockResolvedValueOnce({ user: { role: 'DELIVERY', id_delivery: null } })
-
         render(<DeliveryHistoryPage />)
-
         await waitFor(() => {
             expect(screen.getByText('Tu usuario no tiene perfil de delivery. Registrate como delivery desde el perfil de cliente.')).toBeInTheDocument()
         })
@@ -59,31 +61,21 @@ describe('DeliveryHistoryPage', () => {
 
     it('muestra alerta not_delivery cuando la sesión falla', async () => {
         getSession.mockRejectedValueOnce(new Error('Network'))
-
         render(<DeliveryHistoryPage />)
-
         await waitFor(() => {
             expect(screen.getByText('Iniciá sesión con una cuenta de repartidor para ver el historial.')).toBeInTheDocument()
         })
     })
 
     it('muestra el título Historial', async () => {
-        getSession.mockResolvedValueOnce({ user: { role: 'DELIVERY', id_delivery: 5 } })
-        getDeliveryOrderHistory.mockResolvedValueOnce(mockPayload)
-
-        render(<DeliveryHistoryPage />)
-
+        setupDelivery()
         await waitFor(() => {
             expect(screen.getByText('Historial')).toBeInTheDocument()
         })
     })
 
     it('renderiza las entradas del historial', async () => {
-        getSession.mockResolvedValueOnce({ user: { role: 'DELIVERY', id_delivery: 5 } })
-        getDeliveryOrderHistory.mockResolvedValueOnce(mockPayload)
-
-        render(<DeliveryHistoryPage />)
-
+        setupDelivery()
         await waitFor(() => {
             expect(screen.queryByText('Cargando...')).not.toBeInTheDocument()
         })
@@ -92,35 +84,24 @@ describe('DeliveryHistoryPage', () => {
     it('muestra error cuando falla la carga del historial', async () => {
         getSession.mockResolvedValueOnce({ user: { role: 'DELIVERY', id_delivery: 5 } })
         getDeliveryOrderHistory.mockRejectedValueOnce(new Error('Red'))
-
         render(<DeliveryHistoryPage />)
-
         await waitFor(() => {
             expect(screen.getByText('No se pudo cargar el historial.')).toBeInTheDocument()
         })
     })
 
     it('muestra los tabs de período', async () => {
-        getSession.mockResolvedValueOnce({ user: { role: 'DELIVERY', id_delivery: 5 } })
-        getDeliveryOrderHistory.mockResolvedValue(mockPayload)
-
-        render(<DeliveryHistoryPage />)
-
+        setupDelivery()
         await waitFor(() => {
             expect(screen.getByText('7 días')).toBeInTheDocument()
         })
-
         expect(screen.getByText('15 días')).toBeInTheDocument()
         expect(screen.getByText('Mes')).toBeInTheDocument()
         expect(screen.getByText('Todos')).toBeInTheDocument()
     })
 
     it('muestra el botón de filtros', async () => {
-        getSession.mockResolvedValueOnce({ user: { role: 'DELIVERY', id_delivery: 5 } })
-        getDeliveryOrderHistory.mockResolvedValue(mockPayload)
-
-        render(<DeliveryHistoryPage />)
-
+        setupDelivery()
         await waitFor(() => {
             expect(screen.getByText('Filtros')).toBeInTheDocument()
         })
@@ -135,26 +116,18 @@ describe('DeliveryHistoryPage', () => {
             page: 1,
             size: 10,
         })
-
         render(<DeliveryHistoryPage />)
-
         await waitFor(() => {
             expect(screen.getByText('No hay pedidos que coincidan con los filtros.')).toBeInTheDocument()
         })
     })
 
     it('cambia de tab al hacer clic', async () => {
-        getSession.mockResolvedValueOnce({ user: { role: 'DELIVERY', id_delivery: 5 } })
-        getDeliveryOrderHistory.mockResolvedValue(mockPayload)
-
-        render(<DeliveryHistoryPage />)
-
+        setupDelivery()
         await waitFor(() => {
             expect(screen.getByText('7 días')).toBeInTheDocument()
         })
-
         await userEvent.click(screen.getByText('Todos'))
-
         await waitFor(() => {
             expect(getDeliveryOrderHistory).toHaveBeenCalledWith(
                 5,

@@ -33,6 +33,13 @@ const mockProduct = {
     imageUrl: null,
 }
 
+async function renderLoaded() {
+    render(<CommerceProductsPage />)
+    await waitFor(() => {
+        expect(screen.getByText('Laptop Gaming')).toBeInTheDocument()
+    })
+}
+
 describe('CommerceProductsPage', () => {
     beforeEach(() => {
         vi.clearAllMocks()
@@ -51,11 +58,7 @@ describe('CommerceProductsPage', () => {
     })
 
     it('renderiza los productos del comercio', async () => {
-        render(<CommerceProductsPage />)
-
-        await waitFor(() => {
-            expect(screen.getByText('Laptop Gaming')).toBeInTheDocument()
-        })
+        await renderLoaded()
     })
 
     it('muestra error cuando no hay id_store en sesión', async () => {
@@ -120,25 +123,15 @@ describe('CommerceProductsPage', () => {
     })
 
     it('abre el modal de confirmación de eliminación', async () => {
-        render(<CommerceProductsPage />)
-
-        await waitFor(() => {
-            expect(screen.getByText('Laptop Gaming')).toBeInTheDocument()
-        })
-
+        await renderLoaded()
         await userEvent.click(screen.getByTitle('Eliminar producto'))
-
         expect(screen.getByText('¿Estás seguro?')).toBeInTheDocument()
     })
 
     it('cancela la eliminación al hacer clic en Cancelar', async () => {
-        render(<CommerceProductsPage />)
-
-        await waitFor(() => expect(screen.getByText('Laptop Gaming')).toBeInTheDocument())
-
+        await renderLoaded()
         await userEvent.click(screen.getByTitle('Eliminar producto'))
         await userEvent.click(screen.getByText('Cancelar'))
-
         await waitFor(() => {
             expect(screen.queryByText('¿Estás seguro?')).not.toBeInTheDocument()
         })
@@ -146,14 +139,9 @@ describe('CommerceProductsPage', () => {
 
     it('elimina un producto al confirmar', async () => {
         mockProductClient.delete.mockResolvedValueOnce({})
-
-        render(<CommerceProductsPage />)
-
-        await waitFor(() => expect(screen.getByText('Laptop Gaming')).toBeInTheDocument())
-
+        await renderLoaded()
         await userEvent.click(screen.getByTitle('Eliminar producto'))
         await userEvent.click(screen.getByText('Eliminar'))
-
         await waitFor(() => {
             expect(mockProductClient.delete).toHaveBeenCalled()
         })

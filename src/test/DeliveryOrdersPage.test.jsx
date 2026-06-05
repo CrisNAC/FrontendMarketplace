@@ -29,6 +29,11 @@ const mockAssignment = {
     },
 }
 
+function setupWithAssignment() {
+    getActiveDeliveryAssignments.mockResolvedValueOnce([mockAssignment])
+    render(<DeliveryOrdersPage />)
+}
+
 describe('DeliveryOrdersPage', () => {
     beforeEach(() => {
         vi.clearAllMocks()
@@ -39,17 +44,13 @@ describe('DeliveryOrdersPage', () => {
 
     it('muestra "Cargando pedidos..." mientras carga', () => {
         getCurrentUserForDeliveryForm.mockReturnValue(new Promise(() => {}))
-
         render(<DeliveryOrdersPage />)
-
         expect(screen.getByText('Cargando pedidos...')).toBeInTheDocument()
     })
 
     it('muestra "Mis Pedidos en Curso"', async () => {
         getActiveDeliveryAssignments.mockResolvedValueOnce([])
-
         render(<DeliveryOrdersPage />)
-
         await waitFor(() => {
             expect(screen.getByText('Mis Pedidos en Curso')).toBeInTheDocument()
         })
@@ -57,32 +58,23 @@ describe('DeliveryOrdersPage', () => {
 
     it('muestra mensaje cuando no hay pedidos activos', async () => {
         getActiveDeliveryAssignments.mockResolvedValueOnce([])
-
         render(<DeliveryOrdersPage />)
-
         await waitFor(() => {
             expect(screen.getByText('¡No tienes pedidos activos! Buen trabajo completando entregas.')).toBeInTheDocument()
         })
     })
 
     it('renderiza los pedidos cuando hay asignaciones activas', async () => {
-        getActiveDeliveryAssignments.mockResolvedValueOnce([mockAssignment])
-
-        render(<DeliveryOrdersPage />)
-
+        setupWithAssignment()
         await waitFor(() => {
             expect(screen.getByText('#ORD-999')).toBeInTheDocument()
         })
-
         expect(screen.getByText('Juan Pérez')).toBeInTheDocument()
         expect(screen.getByText('Asunción, Central')).toBeInTheDocument()
     })
 
     it('muestra el precio del pedido formateado', async () => {
-        getActiveDeliveryAssignments.mockResolvedValueOnce([mockAssignment])
-
-        render(<DeliveryOrdersPage />)
-
+        setupWithAssignment()
         await waitFor(() => {
             expect(screen.getByText(/250/)).toBeInTheDocument()
         })
@@ -90,43 +82,31 @@ describe('DeliveryOrdersPage', () => {
 
     it('muestra error cuando falla la carga', async () => {
         getCurrentUserForDeliveryForm.mockRejectedValueOnce(new Error('Red'))
-
         render(<DeliveryOrdersPage />)
-
         await waitFor(() => {
             expect(screen.getByText('No se pudieron cargar los pedidos activos')).toBeInTheDocument()
         })
     })
 
     it('completa una entrega al hacer clic en Finalizado', async () => {
-        getActiveDeliveryAssignments.mockResolvedValueOnce([mockAssignment])
+        setupWithAssignment()
         completeDeliveryAssignment.mockResolvedValueOnce({})
-
-        render(<DeliveryOrdersPage />)
-
         await waitFor(() => {
             expect(screen.getByText('Finalizado')).toBeInTheDocument()
         })
-
         await userEvent.click(screen.getByText('Finalizado'))
-
         await waitFor(() => {
             expect(completeDeliveryAssignment).toHaveBeenCalledWith(101)
         })
     })
 
     it('elimina el pedido de la lista tras completarlo', async () => {
-        getActiveDeliveryAssignments.mockResolvedValueOnce([mockAssignment])
+        setupWithAssignment()
         completeDeliveryAssignment.mockResolvedValueOnce({})
-
-        render(<DeliveryOrdersPage />)
-
         await waitFor(() => {
             expect(screen.getByText('#ORD-999')).toBeInTheDocument()
         })
-
         await userEvent.click(screen.getByText('Finalizado'))
-
         await waitFor(() => {
             expect(screen.queryByText('#ORD-999')).not.toBeInTheDocument()
         })
@@ -138,32 +118,20 @@ describe('DeliveryOrdersPage', () => {
             order: { ...mockAssignment.order, address: { city: '', region: '' } },
         }
         getActiveDeliveryAssignments.mockResolvedValueOnce([assignmentWithoutAddress])
-
         render(<DeliveryOrdersPage />)
-
         await waitFor(() => {
             expect(screen.getByText('Dirección sin especificar')).toBeInTheDocument()
         })
     })
 
-    it('muestra plural cuando hay más de un pedido', async () => {
-        const second = { ...mockAssignment, id_delivery_assignment: 102, order: { ...mockAssignment.order, id_order: 1000 } }
-        getActiveDeliveryAssignments.mockResolvedValueOnce([mockAssignment, second])
-
+    it.each([
+        [[mockAssignment, { ...mockAssignment, id_delivery_assignment: 102, order: { ...mockAssignment.order, id_order: 1000 } }], 'Tienes 2 pedidos para entregar'],
+        [[mockAssignment], 'Tienes 1 pedido para entregar'],
+    ])('muestra el conteo correcto de pedidos', async (assignments, expectedText) => {
+        getActiveDeliveryAssignments.mockResolvedValueOnce(assignments)
         render(<DeliveryOrdersPage />)
-
         await waitFor(() => {
-            expect(screen.getByText('Tienes 2 pedidos para entregar')).toBeInTheDocument()
-        })
-    })
-
-    it('muestra singular cuando hay un solo pedido', async () => {
-        getActiveDeliveryAssignments.mockResolvedValueOnce([mockAssignment])
-
-        render(<DeliveryOrdersPage />)
-
-        await waitFor(() => {
-            expect(screen.getByText('Tienes 1 pedido para entregar')).toBeInTheDocument()
+            expect(screen.getByText(expectedText)).toBeInTheDocument()
         })
     })
 })
