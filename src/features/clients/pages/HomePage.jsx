@@ -9,40 +9,36 @@ import {
   getBackendErrorMessage,
   getPendingDeliveryReviews
 } from "../../commerces/services/orderApi";
+import { useToast } from "@/hooks";
 
 export const HomePage = () => {
+  const { showToast } = useToast();
   const [pendingReviews, setPendingReviews] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [bannerSlides, setBannerSlides] = useState([]);
 
-  const shouldCheckPrompt = useMemo(
-    () => sessionStorage.getItem("showDeliveryReviewPrompt") === "1",
-    []
-  );
-
   useEffect(() => {
     const loadPendingReviews = async () => {
-      if (!shouldCheckPrompt) return;
-      sessionStorage.removeItem("showDeliveryReviewPrompt");
-
       try {
         const sessionData = await getSession();
+        console.log("[DeliveryModal] session:", sessionData?.user?.role);
         if (sessionData?.user?.role !== "CUSTOMER") return;
 
         const pending = await getPendingDeliveryReviews();
+        console.log("[DeliveryModal] pending reviews:", pending);
         if (Array.isArray(pending) && pending.length > 0) {
           setPendingReviews(pending);
           setIsModalOpen(true);
         }
-      } catch {
-        // Si falla el chequeo, no interrumpir la experiencia del home.
+      } catch (err) {
+        console.error("[DeliveryModal] error:", err);
       }
     };
 
     loadPendingReviews();
-  }, [shouldCheckPrompt]);
+  }, []);
 
   useEffect(() => {
     let isActive = true;
@@ -89,7 +85,7 @@ export const HomePage = () => {
         setIsModalOpen(remaining.length > 0);
         return remaining;
       });
-      toast.success("Gracias por calificar al delivery.");
+      showToast("Gracias por calificar al delivery.", "success");
     } catch (error) {
       setSubmitError(getBackendErrorMessage(error, "No se pudo guardar la calificación"));
     } finally {

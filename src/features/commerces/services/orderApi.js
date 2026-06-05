@@ -38,7 +38,7 @@ export const cancelOrder = async (orderId) => {
  * GET /api/orders/pending-delivery-reviews
  */
 export const getPendingDeliveryReviews = async () => {
-    const response = await apiClient.get("/api/orders/pending-delivery-reviews");
+    const response = await apiClient.get("/api/orders/pending-delivery-reviews", { skipGlobalErrorRedirect: true });
     return response.data;
 };
 
@@ -47,7 +47,7 @@ export const getPendingDeliveryReviews = async () => {
  * POST /api/orders/:orderId/delivery-review
  */
 export const createDeliveryReview = async (orderId, payload) => {
-    const response = await apiClient.post(`/api/orders/${orderId}/delivery-review`, payload);
+    const response = await apiClient.post(`/api/orders/${orderId}/delivery-review`, payload, { skipGlobalErrorRedirect: true });
     return response.data;
 };
 
