@@ -33,58 +33,26 @@ describe('submitCategoryRequest', () => {
 describe('getBackendErrorMessage - categoryRequestApi', () => {
     beforeEach(() => vi.clearAllMocks())
 
-    it('retorna string de data', () => {
+    it.each([
+        [true,  { response: { data: 'Error directo' } },                      'Error directo'],
+        [true,  { response: { data: { message: 'Error mensaje' } } },         'Error mensaje'],
+        [true,  { response: { data: { error: 'Error str' } } },               'Error str'],
+        [true,  { response: { data: { detail: 'Detalle' } } },                'Detalle'],
+        [false, new Error('error directo'),                                     'error directo'],
+        [false, {},                                                             'fallback text'],
+    ])('retorna mensaje según tipo de error', (isAxios, input, expected) => {
+        axios.isAxiosError.mockReturnValue(isAxios)
+        expect(getBackendErrorMessage(input, 'fallback text')).toBe(expected)
+    })
+
+    it.each([
+        [400, 'Datos inválidos. Completá el nombre de la categoría.'],
+        [401, 'Necesitas iniciar sesión para solicitar una categoría.'],
+        [403, 'Solo los comercios pueden solicitar nuevas categorías.'],
+        [409, 'Ya existe esa categoría o una solicitud pendiente con ese nombre.'],
+        [500, 'Error interno del servidor.'],
+    ])('retorna mensaje específico para status %i', (status, expected) => {
         axios.isAxiosError.mockReturnValue(true)
-        expect(getBackendErrorMessage({ response: { data: 'Error directo' } }, 'fb')).toBe('Error directo')
-    })
-
-    it('retorna data.message', () => {
-        axios.isAxiosError.mockReturnValue(true)
-        expect(getBackendErrorMessage({ response: { data: { message: 'Error mensaje' } } }, 'fb')).toBe('Error mensaje')
-    })
-
-    it('retorna data.error', () => {
-        axios.isAxiosError.mockReturnValue(true)
-        expect(getBackendErrorMessage({ response: { data: { error: 'Error str' } } }, 'fb')).toBe('Error str')
-    })
-
-    it('retorna data.detail', () => {
-        axios.isAxiosError.mockReturnValue(true)
-        expect(getBackendErrorMessage({ response: { data: { detail: 'Detalle' } } }, 'fb')).toBe('Detalle')
-    })
-
-    it('retorna mensaje específico para 400', () => {
-        axios.isAxiosError.mockReturnValue(true)
-        expect(getBackendErrorMessage({ response: { status: 400, data: {} } }, 'fb')).toBe('Datos inválidos. Completá el nombre de la categoría.')
-    })
-
-    it('retorna mensaje específico para 401', () => {
-        axios.isAxiosError.mockReturnValue(true)
-        expect(getBackendErrorMessage({ response: { status: 401, data: {} } }, 'fb')).toBe('Necesitas iniciar sesión para solicitar una categoría.')
-    })
-
-    it('retorna mensaje específico para 403', () => {
-        axios.isAxiosError.mockReturnValue(true)
-        expect(getBackendErrorMessage({ response: { status: 403, data: {} } }, 'fb')).toBe('Solo los comercios pueden solicitar nuevas categorías.')
-    })
-
-    it('retorna mensaje específico para 409', () => {
-        axios.isAxiosError.mockReturnValue(true)
-        expect(getBackendErrorMessage({ response: { status: 409, data: {} } }, 'fb')).toBe('Ya existe esa categoría o una solicitud pendiente con ese nombre.')
-    })
-
-    it('retorna mensaje específico para 500', () => {
-        axios.isAxiosError.mockReturnValue(true)
-        expect(getBackendErrorMessage({ response: { status: 500, data: {} } }, 'fb')).toBe('Error interno del servidor.')
-    })
-
-    it('retorna error.message para instancia de Error', () => {
-        axios.isAxiosError.mockReturnValue(false)
-        expect(getBackendErrorMessage(new Error('error directo'), 'fb')).toBe('error directo')
-    })
-
-    it('retorna fallback para error desconocido', () => {
-        axios.isAxiosError.mockReturnValue(false)
-        expect(getBackendErrorMessage({}, 'fallback text')).toBe('fallback text')
+        expect(getBackendErrorMessage({ response: { status, data: {} } }, 'fb')).toBe(expected)
     })
 })

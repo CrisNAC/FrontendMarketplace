@@ -30,23 +30,18 @@ describe('fetchCurrentSessionUser', () => {
 
     it('retorna el usuario de sesión', async () => {
         mockApiClient.get.mockResolvedValueOnce({ data: { user: { id_user: 7 } } })
-
         const result = await fetchCurrentSessionUser()
-
         expect(result).toMatchObject({ id_user: 7 })
     })
 
     it('también acepta data.data.user', async () => {
         mockApiClient.get.mockResolvedValueOnce({ data: { data: { user: { id_user: 5 } } } })
-
         const result = await fetchCurrentSessionUser()
-
         expect(result).toMatchObject({ id_user: 5 })
     })
 
     it('lanza error cuando no hay id_user', async () => {
         mockApiClient.get.mockResolvedValueOnce({ data: { user: null } })
-
         await expect(fetchCurrentSessionUser()).rejects.toThrow('Necesitas iniciar sesion para publicar un producto.')
     })
 })
@@ -58,9 +53,7 @@ describe('fetchProductCategories', () => {
         mockApiClient.get.mockResolvedValueOnce({
             data: [{ id: 1, name: 'Electrónica', status: true }]
         })
-
         const result = await fetchProductCategories()
-
         expect(result).toHaveLength(1)
         expect(result[0]).toMatchObject({ id: 1, name: 'Electrónica' })
     })
@@ -69,17 +62,13 @@ describe('fetchProductCategories', () => {
         mockApiClient.get.mockResolvedValueOnce({
             data: [{ id_product_category: 5, name: 'Ropa' }]
         })
-
         const result = await fetchProductCategories()
-
         expect(result[0]).toMatchObject({ id: 5, name: 'Ropa' })
     })
 
     it('retorna array vacío cuando la respuesta no es válida', async () => {
         mockApiClient.get.mockResolvedValueOnce({ data: null })
-
         const result = await fetchProductCategories()
-
         expect(result).toEqual([])
     })
 
@@ -91,9 +80,7 @@ describe('fetchProductCategories', () => {
                 { id: 2, name: '' },
             ]
         })
-
         const result = await fetchProductCategories()
-
         expect(result).toHaveLength(1)
         expect(result[0].name).toBe('Válida')
     })
@@ -102,9 +89,7 @@ describe('fetchProductCategories', () => {
         mockApiClient.get.mockResolvedValueOnce({
             data: { data: [{ id: 3, name: 'Gaming' }] }
         })
-
         const result = await fetchProductCategories()
-
         expect(result).toHaveLength(1)
     })
 })
@@ -116,9 +101,7 @@ describe('fetchProductTags', () => {
         mockApiClient.get.mockResolvedValueOnce({
             data: [{ id: 1, name: 'oferta' }]
         })
-
         const result = await fetchProductTags()
-
         expect(result).toHaveLength(1)
         expect(result[0]).toMatchObject({ id: 1, name: 'oferta' })
     })
@@ -127,9 +110,7 @@ describe('fetchProductTags', () => {
         mockApiClient.get.mockResolvedValueOnce({
             data: [{ id_product_tag: 10, name: 'nuevo' }]
         })
-
         const result = await fetchProductTags()
-
         expect(result[0]).toMatchObject({ id: 10, name: 'nuevo' })
     })
 
@@ -137,9 +118,7 @@ describe('fetchProductTags', () => {
         mockApiClient.get.mockResolvedValueOnce({
             data: [{ id: 1, name: '' }, { id: 2, name: 'válido' }]
         })
-
         const result = await fetchProductTags()
-
         expect(result).toHaveLength(1)
     })
 })
@@ -150,10 +129,8 @@ describe('createProduct', () => {
     it('llama a GET session y POST products con el payload', async () => {
         mockApiClient.get.mockResolvedValueOnce({ data: { user: { id_user: 7 } } })
         mockApiClient.post.mockResolvedValueOnce({ data: { id_product: 100 } })
-
         const payload = { name: 'Laptop', price: 500000, categoryId: 1, quantity: 5 }
         const result = await createProduct({ payload })
-
         expect(mockApiClient.post).toHaveBeenCalledWith(
             expect.stringContaining('products'),
             payload
@@ -167,10 +144,8 @@ describe('uploadProductImage', () => {
 
     it('llama a POST /products/:id/image con FormData', async () => {
         mockApiClient.post.mockResolvedValueOnce({ data: { image_url: 'https://cdn.example.com/img.jpg' } })
-
         const file = new File(['content'], 'foto.jpg', { type: 'image/jpeg' })
         const result = await uploadProductImage(100, file)
-
         expect(mockApiClient.post).toHaveBeenCalledWith(
             '/products/100/image',
             expect.any(FormData),
@@ -183,53 +158,25 @@ describe('uploadProductImage', () => {
 describe('getBackendErrorMessage', () => {
     beforeEach(() => vi.clearAllMocks())
 
-    it('retorna string de data', () => {
+    it.each([
+        [true,  { response: { data: 'Error directo' } },                      'Error directo'],
+        [true,  { response: { data: { message: 'Error mensaje' } } },         'Error mensaje'],
+        [false, new Error('error directo'),                                     'error directo'],
+        [false, {},                                                             'fallback text'],
+    ])('retorna mensaje según tipo de error', (isAxios, input, expected) => {
+        axios.isAxiosError.mockReturnValue(isAxios)
+        expect(getBackendErrorMessage(input, 'fallback text')).toBe(expected)
+    })
+
+    it.each([
+        [400, 'Datos invalidos. Revisa los campos requeridos del producto.'],
+        [401, 'Necesitas iniciar sesion para publicar un producto.'],
+        [403, 'No tienes permisos para crear productos con esta cuenta.'],
+        [404, 'No se encontro el comercio o alguna referencia del producto.'],
+        [409, 'Ya existe un producto con los datos enviados.'],
+        [500, 'Error interno del servidor.'],
+    ])('retorna mensaje específico para status %i', (status, expected) => {
         axios.isAxiosError.mockReturnValue(true)
-        expect(getBackendErrorMessage({ response: { data: 'Error directo' } }, 'fb')).toBe('Error directo')
-    })
-
-    it('retorna data.message', () => {
-        axios.isAxiosError.mockReturnValue(true)
-        expect(getBackendErrorMessage({ response: { data: { message: 'Error mensaje' } } }, 'fb')).toBe('Error mensaje')
-    })
-
-    it('retorna mensaje específico para 400', () => {
-        axios.isAxiosError.mockReturnValue(true)
-        expect(getBackendErrorMessage({ response: { status: 400, data: {} } }, 'fb')).toBe('Datos invalidos. Revisa los campos requeridos del producto.')
-    })
-
-    it('retorna mensaje específico para 401', () => {
-        axios.isAxiosError.mockReturnValue(true)
-        expect(getBackendErrorMessage({ response: { status: 401, data: {} } }, 'fb')).toBe('Necesitas iniciar sesion para publicar un producto.')
-    })
-
-    it('retorna mensaje específico para 403', () => {
-        axios.isAxiosError.mockReturnValue(true)
-        expect(getBackendErrorMessage({ response: { status: 403, data: {} } }, 'fb')).toBe('No tienes permisos para crear productos con esta cuenta.')
-    })
-
-    it('retorna mensaje específico para 404', () => {
-        axios.isAxiosError.mockReturnValue(true)
-        expect(getBackendErrorMessage({ response: { status: 404, data: {} } }, 'fb')).toBe('No se encontro el comercio o alguna referencia del producto.')
-    })
-
-    it('retorna mensaje específico para 409', () => {
-        axios.isAxiosError.mockReturnValue(true)
-        expect(getBackendErrorMessage({ response: { status: 409, data: {} } }, 'fb')).toBe('Ya existe un producto con los datos enviados.')
-    })
-
-    it('retorna mensaje específico para 500', () => {
-        axios.isAxiosError.mockReturnValue(true)
-        expect(getBackendErrorMessage({ response: { status: 500, data: {} } }, 'fb')).toBe('Error interno del servidor.')
-    })
-
-    it('retorna error.message para instancia de Error', () => {
-        axios.isAxiosError.mockReturnValue(false)
-        expect(getBackendErrorMessage(new Error('error directo'), 'fb')).toBe('error directo')
-    })
-
-    it('retorna fallback para error desconocido', () => {
-        axios.isAxiosError.mockReturnValue(false)
-        expect(getBackendErrorMessage({}, 'fallback text')).toBe('fallback text')
+        expect(getBackendErrorMessage({ response: { status, data: {} } }, 'fb')).toBe(expected)
     })
 })

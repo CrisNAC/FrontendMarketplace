@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -56,6 +57,12 @@ const mockInactiveCommerce = {
     data: { ...mockActiveCommerce.data, store_status: 'INACTIVE' }
 }
 
+function setupActive() {
+    apiClient.get
+        .mockResolvedValueOnce(mockSession)
+        .mockResolvedValueOnce(mockActiveCommerce)
+}
+
 describe('CommerceProfilePage', () => {
     beforeEach(() => {
         vi.clearAllMocks()
@@ -84,9 +91,7 @@ describe('CommerceProfilePage', () => {
     })
 
     it('muestra badge "Activo" cuando el comercio está ACTIVE', async () => {
-        apiClient.get
-            .mockResolvedValueOnce(mockSession)
-            .mockResolvedValueOnce(mockActiveCommerce)
+        setupActive()
         render(<CommerceProfilePage />)
         await waitFor(() => {
             expect(screen.getByText('Activo')).toBeInTheDocument()
@@ -104,50 +109,21 @@ describe('CommerceProfilePage', () => {
         expect(screen.getByText('Habilitar Comercio')).toBeInTheDocument()
     })
 
-    it('muestra el nombre del comercio', async () => {
-        apiClient.get
-            .mockResolvedValueOnce(mockSession)
-            .mockResolvedValueOnce(mockActiveCommerce)
+    it.each([
+        ['nombre',    'Comercio Test'],
+        ['email',     'test@test.com'],
+        ['teléfono',  '0981000000'],
+        ['categoría', 'Tecnología'],
+    ])('muestra el %s del comercio', async (_, text) => {
+        setupActive()
         render(<CommerceProfilePage />)
         await waitFor(() => {
-            expect(screen.getByText('Comercio Test')).toBeInTheDocument()
-        })
-    })
-
-    it('muestra el email del comercio', async () => {
-        apiClient.get
-            .mockResolvedValueOnce(mockSession)
-            .mockResolvedValueOnce(mockActiveCommerce)
-        render(<CommerceProfilePage />)
-        await waitFor(() => {
-            expect(screen.getByText('test@test.com')).toBeInTheDocument()
-        })
-    })
-
-    it('muestra el teléfono del comercio', async () => {
-        apiClient.get
-            .mockResolvedValueOnce(mockSession)
-            .mockResolvedValueOnce(mockActiveCommerce)
-        render(<CommerceProfilePage />)
-        await waitFor(() => {
-            expect(screen.getByText('0981000000')).toBeInTheDocument()
-        })
-    })
-
-    it('muestra la categoría del comercio', async () => {
-        apiClient.get
-            .mockResolvedValueOnce(mockSession)
-            .mockResolvedValueOnce(mockActiveCommerce)
-        render(<CommerceProfilePage />)
-        await waitFor(() => {
-            expect(screen.getByText('Tecnología')).toBeInTheDocument()
+            expect(screen.getByText(text)).toBeInTheDocument()
         })
     })
 
     it('muestra el modal de confirmación al hacer clic en "Deshabilitar Comercio"', async () => {
-        apiClient.get
-            .mockResolvedValueOnce(mockSession)
-            .mockResolvedValueOnce(mockActiveCommerce)
+        setupActive()
         render(<CommerceProfilePage />)
         await waitFor(() => screen.getByText('Deshabilitar Comercio'))
         await userEvent.click(screen.getByText('Deshabilitar Comercio'))
@@ -156,9 +132,7 @@ describe('CommerceProfilePage', () => {
     })
 
     it('llama a updateStoreStatus con INACTIVE al confirmar deshabilitar', async () => {
-        apiClient.get
-            .mockResolvedValueOnce(mockSession)
-            .mockResolvedValueOnce(mockActiveCommerce)
+        setupActive()
         updateStoreStatus.mockResolvedValue({ success: true })
         render(<CommerceProfilePage />)
         await waitFor(() => screen.getByText('Deshabilitar Comercio'))
@@ -180,9 +154,7 @@ describe('CommerceProfilePage', () => {
     })
 
     it('muestra modal de eliminación al hacer clic en "Eliminar Comercio"', async () => {
-        apiClient.get
-            .mockResolvedValueOnce(mockSession)
-            .mockResolvedValueOnce(mockActiveCommerce)
+        setupActive()
         render(<CommerceProfilePage />)
         await waitFor(() => screen.getByText('Eliminar Comercio'))
         await userEvent.click(screen.getByText('Eliminar Comercio'))
@@ -190,14 +162,11 @@ describe('CommerceProfilePage', () => {
     })
 
     it('llama a apiClient.delete al confirmar eliminación', async () => {
-        apiClient.get
-            .mockResolvedValueOnce(mockSession)
-            .mockResolvedValueOnce(mockActiveCommerce)
+        setupActive()
         apiClient.delete.mockResolvedValue({})
         render(<CommerceProfilePage />)
         await waitFor(() => screen.getByText('Eliminar Comercio'))
         await userEvent.click(screen.getByText('Eliminar Comercio'))
-        // After opening modal, there are two "Eliminar Comercio" buttons - click the last one (in the modal)
         const deleteBtns = screen.getAllByText('Eliminar Comercio')
         await userEvent.click(deleteBtns[deleteBtns.length - 1])
         await waitFor(() => {
@@ -206,9 +175,7 @@ describe('CommerceProfilePage', () => {
     })
 
     it('muestra error de toggle cuando falla el cambio de estado', async () => {
-        apiClient.get
-            .mockResolvedValueOnce(mockSession)
-            .mockResolvedValueOnce(mockActiveCommerce)
+        setupActive()
         updateStoreStatus.mockRejectedValue(new Error('Error de red'))
         render(<CommerceProfilePage />)
         await waitFor(() => screen.getByText('Deshabilitar Comercio'))
@@ -220,9 +187,7 @@ describe('CommerceProfilePage', () => {
     })
 
     it('cierra el modal de toggle al hacer clic en Cancelar', async () => {
-        apiClient.get
-            .mockResolvedValueOnce(mockSession)
-            .mockResolvedValueOnce(mockActiveCommerce)
+        setupActive()
         render(<CommerceProfilePage />)
         await waitFor(() => screen.getByText('Deshabilitar Comercio'))
         await userEvent.click(screen.getByText('Deshabilitar Comercio'))

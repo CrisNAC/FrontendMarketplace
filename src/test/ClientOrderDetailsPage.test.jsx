@@ -36,6 +36,13 @@ const mockOrder = {
     ],
 }
 
+function setupOrderMocks(productName = 'Laptop Pro') {
+    mockGet
+        .mockResolvedValueOnce({ data: { user: { id_user: 7 } } })
+        .mockResolvedValueOnce({ data: [mockOrder] })
+        .mockResolvedValue({ data: { name: productName } })
+}
+
 describe('ClientOrderDetailsPage', () => {
     beforeEach(() => {
         vi.clearAllMocks()
@@ -48,10 +55,7 @@ describe('ClientOrderDetailsPage', () => {
     })
 
     it('muestra el pedido cargado', async () => {
-        mockGet.mockResolvedValueOnce({ data: { user: { id_user: 7 } } })
-        mockGet.mockResolvedValueOnce({ data: [mockOrder] })
-        mockGet.mockResolvedValue({ data: { name: 'Laptop Pro' } })
-
+        setupOrderMocks()
         render(<ClientOrderDetailsPage />)
         await waitFor(() => {
             expect(screen.getByText(/Pedido N° 42/)).toBeInTheDocument()
@@ -59,10 +63,7 @@ describe('ClientOrderDetailsPage', () => {
     })
 
     it('muestra el estado "Pendiente" para orden PENDING', async () => {
-        mockGet.mockResolvedValueOnce({ data: { user: { id_user: 7 } } })
-        mockGet.mockResolvedValueOnce({ data: [mockOrder] })
-        mockGet.mockResolvedValue({ data: { name: 'Laptop Pro' } })
-
+        setupOrderMocks()
         render(<ClientOrderDetailsPage />)
         await waitFor(() => {
             expect(screen.getAllByText('Pendiente').length).toBeGreaterThan(0)
@@ -70,10 +71,7 @@ describe('ClientOrderDetailsPage', () => {
     })
 
     it('muestra los items del pedido', async () => {
-        mockGet.mockResolvedValueOnce({ data: { user: { id_user: 7 } } })
-        mockGet.mockResolvedValueOnce({ data: [mockOrder] })
-        mockGet.mockResolvedValue({ data: { name: 'Laptop Pro' } })
-
+        setupOrderMocks()
         render(<ClientOrderDetailsPage />)
         await waitFor(() => {
             expect(screen.getByText('Laptop Pro')).toBeInTheDocument()
@@ -81,10 +79,7 @@ describe('ClientOrderDetailsPage', () => {
     })
 
     it('muestra el total del pedido', async () => {
-        mockGet.mockResolvedValueOnce({ data: { user: { id_user: 7 } } })
-        mockGet.mockResolvedValueOnce({ data: [mockOrder] })
-        mockGet.mockResolvedValue({ data: { name: 'Laptop Pro' } })
-
+        setupOrderMocks()
         render(<ClientOrderDetailsPage />)
         await waitFor(() => {
             expect(screen.getAllByText('Gs. 500000').length).toBeGreaterThan(0)
@@ -92,10 +87,7 @@ describe('ClientOrderDetailsPage', () => {
     })
 
     it('muestra las notas del pedido', async () => {
-        mockGet.mockResolvedValueOnce({ data: { user: { id_user: 7 } } })
-        mockGet.mockResolvedValueOnce({ data: [mockOrder] })
-        mockGet.mockResolvedValue({ data: { name: 'Laptop Pro' } })
-
+        setupOrderMocks()
         render(<ClientOrderDetailsPage />)
         await waitFor(() => {
             expect(screen.getByText('Entregar en puerta')).toBeInTheDocument()
@@ -105,7 +97,6 @@ describe('ClientOrderDetailsPage', () => {
     it('muestra "Pedido no encontrado" cuando no existe el pedido', async () => {
         mockGet.mockResolvedValueOnce({ data: { user: { id_user: 7 } } })
         mockGet.mockResolvedValueOnce({ data: [] })
-
         render(<ClientOrderDetailsPage />)
         await waitFor(() => {
             expect(screen.getByText('Pedido no encontrado')).toBeInTheDocument()
@@ -114,7 +105,6 @@ describe('ClientOrderDetailsPage', () => {
 
     it('muestra error cuando falla el fetch de sesión', async () => {
         mockGet.mockRejectedValueOnce(new Error('Error de sesión'))
-
         render(<ClientOrderDetailsPage />)
         await waitFor(() => {
             expect(screen.getByText('Error de sesión')).toBeInTheDocument()
@@ -122,10 +112,7 @@ describe('ClientOrderDetailsPage', () => {
     })
 
     it('muestra la dirección de envío', async () => {
-        mockGet.mockResolvedValueOnce({ data: { user: { id_user: 7 } } })
-        mockGet.mockResolvedValueOnce({ data: [mockOrder] })
-        mockGet.mockResolvedValue({ data: { name: 'Producto Test' } })
-
+        setupOrderMocks('Producto Test')
         render(<ClientOrderDetailsPage />)
         await waitFor(() => {
             expect(screen.getByText('Av. Test 123')).toBeInTheDocument()
