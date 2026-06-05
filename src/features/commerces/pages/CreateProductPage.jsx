@@ -48,7 +48,10 @@ export default function CreateProductPage() {
     toggleTag,
     handleSubmit,
   } = useCreateProduct({
-    onSuccess: (msg) => showToast(msg, 'success'),
+    onSuccess: (msg) => {
+      showToast(msg, 'success');
+      navigate('/comercio');
+    },
     onError: (msg) => showToast(msg, 'error'),
   });
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
