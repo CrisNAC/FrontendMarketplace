@@ -40,12 +40,18 @@ const mockFetch = (categoriesData, productsData = [], storesData = []) => {
 }
 
 describe('HomeSections', () => {
+    const originalFetch = globalThis.fetch
+
     beforeEach(() => {
         vi.clearAllMocks()
     })
 
+    afterEach(() => {
+        globalThis.fetch = originalFetch
+    })
+
     it('muestra texto de carga durante el fetch', () => {
-        global.fetch = vi.fn(() => new Promise(() => {}))
+        globalThis.fetch = vi.fn(() => new Promise(() => {}))
 
         render(<HomeSections />)
 
@@ -83,7 +89,7 @@ describe('HomeSections', () => {
     })
 
     it('muestra error cuando falla la carga de categorías', async () => {
-        global.fetch = vi.fn((url) => {
+        globalThis.fetch = vi.fn((url) => {
             if (String(url).includes('/api/categories/products')) {
                 return Promise.resolve(makeErrorResponse())
             }
@@ -134,7 +140,7 @@ describe('HomeSections', () => {
     })
 
     it('muestra error de ofertas cuando falla la carga', async () => {
-        global.fetch = vi.fn((url) => {
+        globalThis.fetch = vi.fn((url) => {
             const urlStr = String(url)
             if (urlStr.includes('/api/categories/products')) {
                 return Promise.resolve(makeOkResponse([]))
@@ -177,7 +183,7 @@ describe('HomeSections', () => {
     })
 
     it('muestra error de comercios cuando falla la carga', async () => {
-        global.fetch = vi.fn((url) => {
+        globalThis.fetch = vi.fn((url) => {
             const urlStr = String(url)
             if (urlStr.includes('/api/categories/products')) {
                 return Promise.resolve(makeOkResponse([]))

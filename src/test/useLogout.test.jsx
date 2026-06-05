@@ -44,6 +44,7 @@ describe('useLogout', () => {
             await result.current()
         })
 
+        expect(apiClient.delete).toHaveBeenCalledWith('/api/session')
         expect(mockNavigate).toHaveBeenCalledWith('/')
     })
 })

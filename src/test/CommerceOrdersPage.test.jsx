@@ -149,7 +149,7 @@ describe('CommerceOrdersPage', () => {
         await userEvent.click(screen.getByText('Seguimiento'))
 
         // El pedido debe aparecer en Seguimiento
-        expect(screen.getByText('ORD-2')).toBeInTheDocument()
+        expect(screen.getByText('#ORD-2')).toBeInTheDocument()
         // El botón de avanzar estado debe estar visible
         expect(screen.getByText('Marcar como Enviado')).toBeInTheDocument()
     })

@@ -193,7 +193,7 @@ describe('CommerceProfilePage', () => {
         apiClient.get
             .mockResolvedValueOnce(mockSession)
             .mockResolvedValueOnce(mockActiveCommerce)
-        apiClient.delete = vi.fn().mockResolvedValue({})
+        apiClient.delete.mockResolvedValue({})
         render(<CommerceProfilePage />)
         await waitFor(() => screen.getByText('Eliminar Comercio'))
         await userEvent.click(screen.getByText('Eliminar Comercio'))

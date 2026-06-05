@@ -1,7 +1,7 @@
 // src/features/commerces/pages/CommerceProfilePage.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Edit, Mail, Phone, MapPin, Calendar, Star, Zap, Image, Trash2, AlertTriangle, Globe, Instagram, Music2, ToggleLeft, ToggleRight } from "lucide-react";
+import { Edit, Mail, Phone, MapPin, Calendar, Star, Zap, Image, Trash2, AlertTriangle, Globe, Instagram, Music2, ToggleLeft, ToggleRight, Clock } from "lucide-react";
 import { apiClient, getBackendErrorMessage, updateStoreStatus } from "../services/editCommerceApi";
 
 // ─── Estilos compartidos ──────────────────────────────────────────────────────
@@ -208,7 +208,7 @@ export function CommerceProfilePage() {
         try {
             await apiClient.delete(`/api/commerces/${commerce.id_store}`);
             setShowDeleteModal(false);
-            navigate("/homepage");
+            navigate("/");
         } catch (err) {
             setDeleteError(getBackendErrorMessage(err, "No se pudo eliminar el comercio. Intentá nuevamente."));
             setIsDeleting(false);
@@ -242,6 +242,11 @@ export function CommerceProfilePage() {
 
     const isActive = commerce?.store_status === "ACTIVE";
     const address = commerce?.addresses?.[0];
+    const commerceCategories = Array.isArray(commerce?.categories) && commerce.categories.length > 0
+        ? commerce.categories
+        : commerce?.store_category
+            ? [commerce.store_category]
+            : [];
     const addressText = [address?.address, address?.city, address?.region].filter(Boolean).join(", ");
     const createdAt = commerce?.created_at
         ? new Date(commerce.created_at).toLocaleDateString("es-PY", { day: "numeric", month: "long", year: "numeric" })
@@ -298,10 +303,15 @@ export function CommerceProfilePage() {
                         <p style={valueStyle}>{commerce?.name || "—"}</p>
                         <p style={labelStyle}>Descripción</p>
                         <p style={{ ...valueStyle, lineHeight: "1.6" }}>{commerce?.description || "—"}</p>
-                        <p style={{ ...labelStyle, marginBottom: "8px" }}>Categorías de Productos</p>
-                        {commerce?.store_category
-                            ? <CategoryChip name={commerce.store_category.name} />
-                            : <span style={{ fontSize: "13px", color: "#9ca3af" }}>Sin categoría</span>
+                        <p style={{ ...labelStyle, marginBottom: "8px" }}>Categorías del Comercio</p>
+                        {commerceCategories.length > 0
+                            ? commerceCategories.map((category, index) => (
+                                <CategoryChip
+                                    key={`${category.id ?? category.id_store_category ?? index}`}
+                                    name={category.name}
+                                />
+                            ))
+                            : <span style={{ fontSize: "13px", color: "#9ca3af" }}>Sin categorías</span>
                         }
                     </div>
 
@@ -364,6 +374,9 @@ export function CommerceProfilePage() {
                         <h6 style={sectionTitle}>Acciones Rápidas</h6>
                         <OutlineBtn onClick={() => navigate("/comercio/editar")} icon={Image}>
                             Cambiar Logo
+                        </OutlineBtn>
+                        <OutlineBtn onClick={() => navigate("/comercio/horarios")} icon={Clock}>
+                            Gestionar Horarios
                         </OutlineBtn>
                         <OutlineBtn color="#9ca3af" icon={Zap} disabled title="Estadísticas disponibles próximamente">
                             Ver Estadísticas

@@ -17,7 +17,6 @@ vi.mock('../features/admin/services/adminCategoriesApi', () => ({
 import {
     fetchCategoriesWithProducts,
     createAdminCategory,
-    updateAdminCategory,
     deleteAdminCategory,
 } from '../features/admin/services/adminCategoriesApi'
 import { AdminCategoriesPage } from '../features/admin/pages/AdminCategoriesPage'

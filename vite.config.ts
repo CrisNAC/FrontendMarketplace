@@ -57,9 +57,6 @@ export default defineConfig({
         // Entry points y configuración — sin lógica de negocio
         'src/main.tsx',
         'src/App.tsx',
-        'src/App.css',
-        'src/index.css',
-        'src/vite-env.d.ts',
         'src/**/*.d.ts',
         // Archivos de test
         'src/test/**',
@@ -68,6 +65,12 @@ export default defineConfig({
         // Páginas de error estáticas
         'src/pages/errors/**',
       ],
+      thresholds: {
+        lines: 85,
+        functions: 85,
+        branches: 85,
+        statements: 85,
+      },
     },
   },
 

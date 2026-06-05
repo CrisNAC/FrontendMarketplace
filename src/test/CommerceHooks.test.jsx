@@ -75,6 +75,7 @@ describe('useCategoryRequest', () => {
         })
         expect(result.current.resultModal.isOpen).toBe(true)
         expect(result.current.resultModal.variant).toBe('error')
+        expect(getBackendErrorMessage).toHaveBeenCalled()
     })
 
     it('closeModal cierra el modal de resultado', async () => {

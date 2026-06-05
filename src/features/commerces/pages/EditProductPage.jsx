@@ -6,6 +6,7 @@ import { CreationResultModal } from "../components/createProduct/CreationResultM
 import { CategoryRequestModal } from "../components/createProduct/CategoryRequestModal";
 import Toggle from "../components/createProduct/Toggle";
 import { useCategoryRequest } from "../hooks/useCategoryRequest";
+import { ProductCategorySelector } from "../components/createProduct/ProductCategorySelector";
 
 // ─── Clases reutilizadas de CreateProductPage (misma apariencia) ──────────────
 const inputClassName =
@@ -67,7 +68,7 @@ export default function EditProductPage() {
     const handleCategoryRequestSuccess = () => {
         if (categoryRequestResultModal.variant === "success") {
             // En EditProduct no tenemos setFormData, usamos onFieldChange
-            onFieldChange({ target: { name: "categoryId", value: "", type: "text" } });
+            onFieldChange({ target: { name: "categoryIds", value: [], type: "text" } });
             setIsCategoryModalOpen(false);
             resetCategoryRequestForm();
         }
@@ -153,7 +154,7 @@ export default function EditProductPage() {
                     )}
 
                     {/* Precio + Categoría */}
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                         <div>
                             <label className={labelClassName} htmlFor="price">
                                 Precio *
@@ -176,41 +177,43 @@ export default function EditProductPage() {
                         </div>
 
                         <div>
-                            <label className={labelClassName} htmlFor="categoryId">
-                                Categoría *
+                            <ProductCategorySelector
+                                categories={categories}
+                                selectedIds={formData.categoryIds}
+                                onChange={onFieldChange}
+                                disabled={isFormDisabled}
+                                error={validationErrors.categoryIds}
+                                label="Categorías *"
+                            />
+                            {/* ── Solicitar nueva categoría ── */}
+                            <button
+                                type="button"
+                                onClick={() => setIsCategoryModalOpen(true)}
+                                disabled={isFormDisabled}
+                                className="mt-1 self-start text-xs font-semibold text-[#2f63f2] hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                ¿No encontrás tu categoría? Solicitala
+                            </button>
+                        </div>
+
+                        <div>
+                            <label className={labelClassName} htmlFor="quantity">
+                                Stock Disponible *
                             </label>
-                            <div className="flex flex-col gap-1.5">
-                                <select
-                                    id="categoryId"
-                                    name="categoryId"
-                                    value={formData.categoryId}
-                                    onChange={onFieldChange}
-                                    className={inputClassName}
-                                    disabled={isFormDisabled}
-                                >
-                                    <option value="">
-                                        {isLoadingInitialData
-                                            ? "Cargando categorías..."
-                                            : "Seleccioná una categoría"}
-                                    </option>
-                                    {categories.map((cat) => (
-                                        <option key={cat.id} value={cat.id}>
-                                            {cat.name}
-                                        </option>
-                                    ))}
-                                </select>
-                                {/* ── Solicitar nueva categoría ── */}
-                                <button
-                                    type="button"
-                                    onClick={() => setIsCategoryModalOpen(true)}
-                                    disabled={isFormDisabled}
-                                    className="self-start text-xs font-semibold text-[#2f63f2] hover:underline disabled:cursor-not-allowed disabled:opacity-60"
-                                >
-                                    ¿No encontrás tu categoría? Solicitala
-                                </button>
-                            </div>
-                            {validationErrors.categoryId && (
-                                <p className={errorClassName}>{validationErrors.categoryId}</p>
+                            <input
+                                id="quantity"
+                                name="quantity"
+                                type="number"
+                                min="0"
+                                step="1"
+                                value={formData.quantity}
+                                onChange={onFieldChange}
+                                className={inputClassName}
+                                placeholder="20"
+                                disabled={isFormDisabled}
+                            />
+                            {validationErrors.quantity && (
+                                <p className={errorClassName}>{validationErrors.quantity}</p>
                             )}
                         </div>
                     </div>
@@ -221,9 +224,8 @@ export default function EditProductPage() {
                             <div>
                                 <p className={`${labelClassName} mb-0.5`}>Producto en oferta</p>
                                 <p
-                                    className={`mb-0 text-[13px] font-semibold ${
-                                        formData.isOffer ? "text-amber-700" : "text-slate-600"
-                                    }`}
+                                    className={`mb-0 text-[13px] font-semibold ${formData.isOffer ? "text-amber-700" : "text-slate-600"
+                                        }`}
                                 >
                                     {formData.isOffer ? "Oferta activa" : "Precio regular"}
                                 </p>
@@ -333,8 +335,8 @@ export default function EditProductPage() {
                                             onClick={() => toggleTag(tag)}
                                             disabled={isFormDisabled || (!isSelected && selectedTags.length >= MAX_TAGS)}
                                             className={`rounded-full border px-2.5 py-1 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${isSelected
-                                                    ? "border-emerald-400 bg-emerald-100 text-emerald-800"
-                                                    : "border-[#b8d4c7] bg-[#eef7f2] text-[#356852] hover:bg-[#dff0e8]"
+                                                ? "border-emerald-400 bg-emerald-100 text-emerald-800"
+                                                : "border-[#b8d4c7] bg-[#eef7f2] text-[#356852] hover:bg-[#dff0e8]"
                                                 }`}
                                         >
                                             {isSelected ? `✓ ${tag.name}` : tag.name}
@@ -458,8 +460,8 @@ export default function EditProductPage() {
 
                         <div
                             className={`mt-3.5 rounded-[10px] px-3 py-2.5 text-[13px] font-semibold ${formData.isVisible
-                                    ? "bg-emerald-100 text-emerald-700"
-                                    : "bg-slate-100 text-slate-700"
+                                ? "bg-emerald-100 text-emerald-700"
+                                : "bg-slate-100 text-slate-700"
                                 }`}
                         >
                             {formData.isVisible

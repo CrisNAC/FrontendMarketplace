@@ -1,11 +1,19 @@
 import { useState, useEffect} from "react";
 import { MapPin, Plus, Pencil, Trash2, X, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { z } from "zod";
 import Navbar from "../../../../components/navbar/Navbar";
 import { SidebarClientProfile } from "../../../../components/SidebarClientProfile";
 import { useAddresses } from "../../../../hooks/useAddresses";
 import MapView from "../Map";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+
+// ─── Esquema de validación ──────────────────────────────────────────────────
+const addressSchema = z.object({
+  address: z.string().min(1, "La dirección es obligatoria"),
+  latitude: z.number().nullable().refine((val) => val !== null, { message: "Debes seleccionar un punto en el mapa" }),
+  longitude: z.number().nullable().refine((val) => val !== null, { message: "Debes seleccionar un punto en el mapa" }),
+});
 
 const API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:3000").trim();
 
@@ -17,7 +25,7 @@ const useSession = () => {
         axios
             .get(`${API_BASE}/api/session/user-session`, { withCredentials: true })
             .then(({ data }) => {
-                if (data.success) setUserId(data.user.id_user);
+                if (data?.user?.id_user) setUserId(data.user.id_user);
             })
             .catch(() => setUserId(null))
             .finally(() => setSessionLoading(false));
@@ -113,9 +121,16 @@ const AddressFormModal = ({ open, onClose, onSubmit, initialData, loading }) => 
         e.preventDefault();
         setFormError(null);
 
-        if (form.latitude === null || form.longitude === null) {
-            setFormError("Debes seleccionar un punto en el mapa.");
-            return;
+        const parsed = addressSchema.safeParse(form);
+        
+        if (!parsed.success) {
+          const errors = {};
+          for (const issue of parsed.error.issues) {
+            const key = issue.path[0];
+            if (key && !errors[key]) errors[key] = issue.message;
+          }
+          setFormError(errors[Object.keys(errors)[0]]);
+          return;
         }
 
         try {
@@ -146,7 +161,7 @@ const AddressFormModal = ({ open, onClose, onSubmit, initialData, loading }) => 
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+                <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4" noValidate>
                     {formError && (
                         <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2 rounded-md">
                             <AlertCircle size={14} />
@@ -280,14 +295,6 @@ const AddressCard = ({ address, onEdit, onDelete }) => {
     );
 };
 
-// ─── Section header (reutiliza el estilo de MyAccountPage) ──────────────────
-const SectionHeader = ({ title, rightContent }) => (
-    <div className="bg-[#f0f2f1] border border-gray-200 px-4 py-3 font-semibold text-black flex justify-between items-center rounded-sm">
-        <span className="text-[15px]">{title}</span>
-        {rightContent && <div className="text-sm font-normal">{rightContent}</div>}
-    </div>
-);
-
 // ─── Pagina Principal ────────────────────────────────────────────────────────────
 const MAX_ADDRESSES = 5;
 
@@ -418,7 +425,7 @@ export const AddressesPage = () => {
             <Navbar />
 
             <main className="max-w-[1400px] mx-auto w-full px-6 py-10">
-                <h1 className="text-[28px] font-bold text-[#2d4030] mb-8">Mi Cuenta</h1>
+                <h1 className="text-[28px] font-bold text-[#2d4030] mb-8">Libreta de direcciones</h1>
 
                 <div className="flex flex-col md:flex-row gap-8 items-start">
                     {/* Sidebar */}
@@ -429,14 +436,10 @@ export const AddressesPage = () => {
                     {/* Content */}
                     <div className="flex-1 w-full">
 
-                        {/* Header section */}
-                        <div className="bg-[#f0f2f1] border border-gray-200 px-4 py-3 rounded-sm flex justify-between items-center mb-4">
-                            <span className="font-semibold text-black text-[15px]">
-                                Libreta de direcciones
-                            </span>
-                            <span className="text-sm text-gray-500">
-                                {addresses.length}/{MAX_ADDRESSES} direcciones
-                            </span>
+                        {/* Section header */}
+                        <div className="bg-[`#f0f2f1`] border border-gray-200 px-4 py-3 rounded-sm flex justify-between items-center mb-4">
++                            <h2 className="font-semibold text-black text-[15px]">Mis direcciones</h2>
+                            <span className="text-sm text-gray-500">{addresses.length}/{MAX_ADDRESSES} direcciones</span>
                         </div>
 
                         {/* Error de carga */}

@@ -117,7 +117,7 @@ describe('ReviewReportsPanel', () => {
 
         await waitFor(() => {
             expect(resolveReviewReport).toHaveBeenCalledWith(1, { decision: 'KEEP_REVIEW' })
-            expect(toast.success).toHaveBeenCalled()
+            expect(toast.success).toHaveBeenCalledWith(expect.stringMatching(/reporte descartado/i))
         })
     })
 
@@ -142,7 +142,7 @@ describe('ReviewReportsPanel', () => {
 
         await waitFor(() => {
             expect(resolveReviewReport).toHaveBeenCalledWith(1, { decision: 'REMOVE_REVIEW' })
-            expect(toast.success).toHaveBeenCalled()
+            expect(toast.success).toHaveBeenCalledWith(expect.stringMatching(/ocultada/i))
         })
     })
 

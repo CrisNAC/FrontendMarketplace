@@ -36,6 +36,7 @@ import { CreateCommercePage } from '../features/clients/pages/CreateCommercePage
 describe('BecomeDeliveryPage', () => {
     it('renderiza sin errores', () => {
         render(<BecomeDeliveryPage />)
+        expect(screen.getByText('BecomeDeliveryModal')).toBeInTheDocument()
     })
 
     it('contiene el modal de delivery', () => {

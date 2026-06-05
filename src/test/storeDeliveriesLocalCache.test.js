@@ -58,9 +58,8 @@ describe('storeDeliveriesLocalCache', () => {
         })
 
         it('no duplica si el fk_user ya existe en la lista', () => {
-            const entry = { fk_user: 1, name: 'Juan' }
-            prependCachedStoreDelivery(5, entry)
-            prependCachedStoreDelivery(5, entry)
+            prependCachedStoreDelivery(5, { fk_user: 1, name: 'Juan' })
+            prependCachedStoreDelivery(5, { fk_user: 1, name: 'Juan actualizado' })
 
             const result = readCachedStoreDeliveries(5)
             expect(result).toHaveLength(1)

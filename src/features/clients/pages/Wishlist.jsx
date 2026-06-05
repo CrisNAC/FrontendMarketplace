@@ -141,7 +141,7 @@ export default function Wishlist() {
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen bg-[#E5EAE9] flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <p className="text-gray-500 text-[14px]">Cargando listas de deseos...</p>
       </div>
     );
@@ -149,7 +149,7 @@ export default function Wishlist() {
 
   if (status === "error") {
     return (
-      <div className="min-h-screen bg-[#E5EAE9] flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <p className="text-red-500 text-[14px]">No se pudieron cargar las listas.</p>
       </div>
     );
@@ -190,62 +190,37 @@ export default function Wishlist() {
   };
 
   return (
-    <div className="min-h-screen bg-[#E5EAE9] py-10">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="flex flex-row justify-between gap-4 mb-8">
-          <h1 className="text-4xl font-bold text-[#2f3e39]">Lista de deseos</h1>
-          <div className="flex items-center gap-2">
-            {showCreateForm && (
-              <div className="flex gap-3 items-center">
-                <input
-                  type="text"
-                  value={newListName}
-                  onChange={(e) => setNewListName(e.target.value)}
-                  placeholder="Nombre de la lista"
-                  className="border border-[#C7D6CF] rounded-full px-4 py-2 text-[14px] bg-white focus:outline-none focus:ring-2 focus:ring-[#8BB2A1] w-[32rem]"
-                  maxLength={50}
-                />
-                <button
-                  type="button"
-                  onClick={handleCreateList}
-                  disabled={creatingList}
-                  className="px-4 py-2 rounded-full text-white text-[13px] font-medium bg-[#2f3e39] hover:opacity-90 disabled:opacity-60"
-                >
-                  {creatingList ? "Creando..." : "Crear"}
-                </button>
-              </div>
-            )}
-            {totalItems > 0 && (
-              <button
-                type="button"
-                onClick={handleAddAllToCart}
-                disabled={addingAllToCart}
-                className="px-4 py-2 rounded-full text-white text-[13px] font-medium bg-[#6487B9] hover:opacity-90 disabled:opacity-60"
-              >
-                {addingAllToCart ? "Agregando..." : "Agregar todo al carrito"}
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => setShowCreateForm((v) => !v)}
-              className="px-4 py-2 rounded-full text-white text-[13px] font-medium bg-[#8BB2A1] hover:opacity-90"
-            >
-              {showCreateForm ? "Cancelar" : "Nueva lista"}
-            </button>
-          </div>
-        </div>
+    <div className="max-w-[1400px] mx-auto w-full px-6 py-10">
+      <h1 className="text-[28px] font-bold text-[#2d4030] mb-8">Lista de deseos</h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr_280px] gap-6 items-start">
-          <aside className="w-full">
-            <SidebarClientProfile />
-          </aside>
+      <div className="flex flex-col md:flex-row gap-8 items-start">
+        <aside className="w-full md:w-[280px] shrink-0">
+          <SidebarClientProfile />
+        </aside>
 
-          <main className="w-full space-y-8">
+        <div className="flex-1 w-full">
+          <WishlistSummaryCard
+            totalLists={wishlists.length}
+            totalItems={totalItems}
+            showCreateForm={showCreateForm}
+            onToggleCreateForm={() => setShowCreateForm((v) => !v)}
+            newListName={newListName}
+            onListNameChange={setNewListName}
+            onCreateList={handleCreateList}
+            creatingList={creatingList}
+            onAddAllToCart={handleAddAllToCart}
+            addingAllToCart={addingAllToCart}
+          />
+
+          <main className="space-y-8">
             {wishlists.length === 0 ? (
               <div className="bg-[#F3F5F4] border border-[#C7D6CF] rounded-xl p-10 text-center">
                 <p className="text-[18px] text-[#4f615b] font-medium">No tenés listas creadas</p>
                 <p className="text-[14px] text-gray-500 mt-2">
-                  Creá una lista y empezá a guardar productos.
+                  {"Creá una lista y empezá a guardar "}
+                  <button className="underline text-[#2d4030]" onClick={() => navigate("/busqueda")}>
+                    productos
+                  </button>.
                 </p>
               </div>
             ) : (
@@ -292,11 +267,6 @@ export default function Wishlist() {
               ))
             )}
           </main>
-
-          <WishlistSummaryCard
-            totalLists={wishlists.length}
-            totalItems={totalItems}
-          />
         </div>
       </div>
     </div>

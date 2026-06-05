@@ -7,6 +7,10 @@ describe('mergeWishlistLinesIntoLocalCart', () => {
         vi.spyOn(window, 'dispatchEvent')
     })
 
+    afterEach(() => {
+        vi.restoreAllMocks()
+    })
+
     it('no hace nada con lines vacías o nulas', () => {
         mergeWishlistLinesIntoLocalCart([])
         mergeWishlistLinesIntoLocalCart(null)
@@ -91,6 +95,10 @@ describe('mergeCartResponseFromApi', () => {
     beforeEach(() => {
         localStorage.clear()
         vi.spyOn(window, 'dispatchEvent')
+    })
+
+    afterEach(() => {
+        vi.restoreAllMocks()
     })
 
     it('no hace nada si items es null o vacío', () => {

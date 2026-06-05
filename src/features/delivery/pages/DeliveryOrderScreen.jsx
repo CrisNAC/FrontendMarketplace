@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { MapPin, Package, Store, Clock, Phone } from "lucide-react";
+import { MapPin, Package, Store, Clock, Phone, Timer } from "lucide-react";
 import toast from "react-hot-toast";
 import { formatGuarani } from "../../../lib/formatGuarani";
 import {
@@ -56,6 +56,21 @@ function resolveCustomerAvatarUrl(user) {
   return raw;
 }
 
+function formatRemainingTime(deadlineIso) {
+  if (!deadlineIso) return null;
+  const ms = new Date(deadlineIso).getTime() - Date.now();
+  if (ms <= 0) return "Tiempo agotado";
+  const totalSec = Math.floor(ms / 1000);
+  const min = Math.floor(totalSec / 60);
+  const sec = totalSec % 60;
+  return `${min}:${String(sec).padStart(2, "0")}`;
+}
+
+function isDeadlineExpired(deadlineIso) {
+  if (!deadlineIso) return false;
+  return new Date(deadlineIso).getTime() <= Date.now();
+}
+
 function customerInitials(name) {
   if (!name || typeof name !== "string") return "?";
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -95,6 +110,7 @@ function mapAssignmentToCard(assignment, fallbackStore) {
   return {
     assignmentId: assignment.id_delivery_assignment,
     orderId: order.id_order,
+    responseDeadline: assignment.response_deadline ?? null,
     orderStatus: order.order_status,
     total: Number(order.total),
     shippingDistanceKm: km,
@@ -113,6 +129,7 @@ export default function DeliveryOrderScreen() {
   const [loading, setLoading] = useState(true);
   const [actingId, setActingId] = useState(null);
   const [gateReason, setGateReason] = useState(null);
+  const [, setNowTick] = useState(Date.now());
 
   const loadOffers = useCallback(async () => {
     try {
@@ -148,11 +165,39 @@ export default function DeliveryOrderScreen() {
     loadOffers();
   }, [loadOffers]);
 
-  const handleDecision = async (orderId, action) => {
+  useEffect(() => {
+    const timer = setInterval(() => setNowTick(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [setNowTick]);
+
+  useEffect(() => {
+     const deadlines = cards
+      .map((c) => (c.responseDeadline ? new Date(c.responseDeadline).getTime() : null))
+      .filter((ts) => Number.isFinite(ts));
+    if (deadlines.length === 0) return undefined;
+
+    const now = Date.now();
+    const expired = deadlines.some((ts) => ts <= now);
+    const future = deadlines.filter((ts) => ts > now);
+    const delay = expired ? 800 : Math.max(0, Math.min(...future) - now + 800);
+
+    const refresh = setTimeout(() => loadOffers(), delay);
+    return () => clearTimeout(refresh);
+  }, [cards, loadOffers]);
+
+
+const handleDecision = async (orderId, action) => {
     try {
       setActingId(orderId);
-      await respondToDeliveryOrder(orderId, action);
-      toast.success(action === "ACCEPT" ? "Pedido aceptado." : "Pedido rechazado.");
+      const result = await respondToDeliveryOrder(orderId, action);
+      if (action === "ACCEPT") {
+        toast.success("Pedido aceptado.");
+      } else if (result?.delivery_unavailable) {
+        toast.success("Pedido rechazado. El comercio fue notificado para reasignar otro repartidor.");
+      } else {
+        toast.success("Pedido rechazado.");
+      }
+      window.dispatchEvent(new Event("notificationsUpdated"));
       await loadOffers();
     } catch (err) {
       toast.error(
@@ -176,7 +221,7 @@ export default function DeliveryOrderScreen() {
                 Pedidos para aceptar
               </h1>
               <p className="mt-1 max-w-xl text-sm text-slate-500 md:text-base">
-                Gestioná tu carga: cada tarjeta es un pedido asignado a vos pendiente de respuesta.
+                Tenés entre 5 y 10 minutos para aceptar o rechazar cada pedido asignado.
               </p>
             </div>
             <button
@@ -218,124 +263,147 @@ export default function DeliveryOrderScreen() {
 
         {!gateReason && !loading && cards.length > 0 ? (
           <ul className="grid list-none grid-cols-1 gap-4 md:gap-5 lg:grid-cols-2">
-            {cards.map((o) => (
-              <li key={o.assignmentId} className="min-w-0">
-                <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
-                  <div className="h-1.5 w-full bg-[#719783]" />
-                  <div className="flex flex-1 flex-col p-4 sm:p-5">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
-                      <div className="flex min-w-0 items-start gap-2">
-                        <Store className="mt-0.5 h-5 w-5 shrink-0 text-[#719783]" strokeWidth={2} />
-                        <div className="min-w-0">
-                          <h2 className="truncate text-base font-bold text-[#102A43]">{o.storeName}</h2>
-                          <p className="text-xs text-slate-500">
-                            Pedido #{o.orderId}
-                            {o.orderStatus ? (
-                              <span className="ml-2 font-mono text-[10px] uppercase text-slate-400">
-                                {o.orderStatus}
-                              </span>
+            {cards.map((o) => {
+              const expired = isDeadlineExpired(o.responseDeadline);
+              const remaining = formatRemainingTime(o.responseDeadline);
+              const actionsDisabled = expired || actingId === o.orderId;
+
+              return (
+                <li key={o.assignmentId} className="min-w-0">
+                  <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+                    <div className="h-1.5 w-full bg-[#719783]" />
+                    <div className="flex flex-1 flex-col p-4 sm:p-5">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+                        <div className="flex min-w-0 items-start gap-2">
+                          <Store className="mt-0.5 h-5 w-5 shrink-0 text-[#719783]" strokeWidth={2} />
+                          <div className="min-w-0">
+                            <h2 className="truncate text-base font-bold text-[#102A43]">{o.storeName}</h2>
+                            <p className="text-xs text-slate-500">
+                              Pedido #{o.orderId}
+                              {o.orderStatus ? (
+                                <span className="ml-2 font-mono text-[10px] uppercase text-slate-400">
+                                  {o.orderStatus}
+                                </span>
+                              ) : null}
+                              {o.storeStatus ? (
+                                <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 font-medium text-slate-700">
+                                  {STORE_STATUS_LABEL[o.storeStatus] ?? o.storeStatus}
+                                </span>
+                              ) : null}
+                            </p>
+                          </div>
+                        </div>
+                        <p className="shrink-0 text-base font-semibold text-[#719783] sm:text-right">
+                          {formatGuarani(o.total)}
+                        </p>
+                      </div>
+
+                      <div className="mt-4 rounded-xl border border-slate-100 bg-[#F8FBFA] px-3 py-3">
+                        <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Cliente</p>
+                        <div className="mt-2 flex gap-3">
+                          <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full bg-[#EAF5F3] ring-2 ring-white">
+                            <div
+                              className="absolute inset-0 flex items-center justify-center text-sm font-bold text-[#719783]"
+                              aria-hidden
+                            >
+                              {o.customer.initials}
+                            </div>
+                            {o.customer.avatarUrl ? (
+                              <img
+                                src={o.customer.avatarUrl}
+                                alt={o.customer.name}
+                                className="relative z-10 h-full w-full object-cover"
+                                loading="lazy"
+                                referrerPolicy="no-referrer"
+                                onError={(e) => {
+                                  e.currentTarget.style.visibility = "hidden";
+                                }}
+                              />
                             ) : null}
-                            {o.storeStatus ? (
-                              <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 font-medium text-slate-700">
-                                {STORE_STATUS_LABEL[o.storeStatus] ?? o.storeStatus}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-semibold text-[#102A43]">{o.customer.name}</p>
+                            <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-600">
+                              <Phone className="h-3.5 w-3.5 shrink-0 text-slate-500" />
+                              <span>{o.customer.phone ?? "Sin teléfono"}</span>
+                            </div>
+                            <div className="mt-1 flex items-start gap-1.5 text-xs text-slate-600">
+                              <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-500" />
+                              <span className="leading-snug break-words">
+                                <span className="font-medium text-[#102A43]">Envío: </span>
+                                {formatAddress(o.address)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {o.responseDeadline ? (
+                        <div
+                          className={`mt-3 flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold ${
+                            expired
+                              ? "border-amber-200 bg-amber-50 text-amber-900"
+                              : "border-[#719783]/30 bg-[#F3FAF7] text-[#102A43]"
+                          }`}
+                        >
+                          <Timer className="h-4 w-4 shrink-0" />
+                          <span>
+                            {expired
+                              ? "El plazo para responder venció"
+                              : `Tiempo para responder: ${remaining}`}
+                          </span>
+                        </div>
+                      ) : null}
+
+                      <div className="mt-3 space-y-2 rounded-xl border border-slate-100 bg-white px-3 py-3 text-sm text-slate-800">
+                        <div className="flex gap-2">
+                          <Package className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
+                          <p className="min-w-0 leading-snug">
+                            <span className="font-semibold text-[#102A43]">Productos: </span>
+                            {o.itemsSummary}
+                            {o.itemsExtraCount > 0 ? (
+                              <span className="text-slate-600"> (+{o.itemsExtraCount} más)</span>
+                            ) : null}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Clock className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
+                          <p className="min-w-0">
+                            <span className="font-semibold text-[#102A43]">Tiempo estimado: </span>~
+                            {o.estimatedMinutes} min
+                            {o.shippingDistanceKm != null ? (
+                              <span className="text-slate-600">
+                                {" "}
+                                · {Number(o.shippingDistanceKm).toFixed(1)} km
                               </span>
                             ) : null}
                           </p>
                         </div>
                       </div>
-                      <p className="shrink-0 text-base font-semibold text-[#719783] sm:text-right">
-                        {formatGuarani(o.total)}
-                      </p>
-                    </div>
 
-                    <div className="mt-4 rounded-xl border border-slate-100 bg-[#F8FBFA] px-3 py-3">
-                      <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Cliente</p>
-                      <div className="mt-2 flex gap-3">
-                        <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full bg-[#EAF5F3] ring-2 ring-white">
-                          <div
-                            className="absolute inset-0 flex items-center justify-center text-sm font-bold text-[#719783]"
-                            aria-hidden
-                          >
-                            {o.customer.initials}
-                          </div>
-                          {o.customer.avatarUrl ? (
-                            <img
-                              src={o.customer.avatarUrl}
-                              alt={o.customer.name}
-                              className="relative z-10 h-full w-full object-cover"
-                              loading="lazy"
-                              referrerPolicy="no-referrer"
-                              onError={(e) => {
-                                e.currentTarget.style.visibility = "hidden";
-                              }}
-                            />
-                          ) : null}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold text-[#102A43]">{o.customer.name}</p>
-                          <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-600">
-                            <Phone className="h-3.5 w-3.5 shrink-0 text-slate-500" />
-                            <span>{o.customer.phone ?? "Sin teléfono"}</span>
-                          </div>
-                          <div className="mt-1 flex items-start gap-1.5 text-xs text-slate-600">
-                            <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-500" />
-                            <span className="leading-snug break-words">
-                              <span className="font-medium text-[#102A43]">Envío: </span>
-                              {formatAddress(o.address)}
-                            </span>
-                          </div>
-                        </div>
+                      <div className="mt-auto grid grid-cols-1 gap-3 pt-5 sm:grid-cols-2">
+                        <button
+                          type="button"
+                          disabled={actionsDisabled}
+                          onClick={() => handleDecision(o.orderId, "REJECT")}
+                          className="min-h-[48px] rounded-xl bg-red-500 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600 active:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50 sm:rounded-full"
+                        >
+                          Rechazar
+                        </button>
+                        <button
+                          type="button"
+                          disabled={actionsDisabled}
+                          onClick={() => handleDecision(o.orderId, "ACCEPT")}
+                          className="min-h-[48px] rounded-xl bg-[#719783] py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#5e806f] active:bg-[#536b5f] disabled:cursor-not-allowed disabled:opacity-50 sm:rounded-full"
+                        >
+                          Aceptar
+                        </button>
                       </div>
                     </div>
-
-                    <div className="mt-3 space-y-2 rounded-xl border border-slate-100 bg-white px-3 py-3 text-sm text-slate-800">
-                      <div className="flex gap-2">
-                        <Package className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
-                        <p className="min-w-0 leading-snug">
-                          <span className="font-semibold text-[#102A43]">Productos: </span>
-                          {o.itemsSummary}
-                          {o.itemsExtraCount > 0 ? (
-                            <span className="text-slate-600"> (+{o.itemsExtraCount} más)</span>
-                          ) : null}
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Clock className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
-                        <p className="min-w-0">
-                          <span className="font-semibold text-[#102A43]">Tiempo estimado: </span>~
-                          {o.estimatedMinutes} min
-                          {o.shippingDistanceKm != null ? (
-                            <span className="text-slate-600">
-                              {" "}
-                              · {Number(o.shippingDistanceKm).toFixed(1)} km
-                            </span>
-                          ) : null}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="mt-auto grid grid-cols-1 gap-3 pt-5 sm:grid-cols-2">
-                      <button
-                        type="button"
-                        disabled={actingId === o.orderId}
-                        onClick={() => handleDecision(o.orderId, "REJECT")}
-                        className="min-h-[48px] rounded-xl bg-red-500 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600 active:bg-red-700 disabled:opacity-50 sm:rounded-full"
-                      >
-                        Rechazar
-                      </button>
-                      <button
-                        type="button"
-                        disabled={actingId === o.orderId}
-                        onClick={() => handleDecision(o.orderId, "ACCEPT")}
-                        className="min-h-[48px] rounded-xl bg-[#719783] py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#5e806f] active:bg-[#536b5f] disabled:opacity-50 sm:rounded-full"
-                      >
-                        Aceptar
-                      </button>
-                    </div>
-                  </div>
-                </article>
-              </li>
-            ))}
+                  </article>
+                </li>
+              );
+            })}
           </ul>
         ) : null}
       </main>

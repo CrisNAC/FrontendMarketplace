@@ -170,7 +170,9 @@ describe('CommentForm', () => {
 
         const stars = screen.getAllByRole('button', { name: /Calificar con/i })
         await userEvent.hover(stars[2])
+        expect(stars[2]).toBeInTheDocument()
         await userEvent.unhover(stars[2])
+        expect(stars[2]).toBeInTheDocument()
     })
 })
 

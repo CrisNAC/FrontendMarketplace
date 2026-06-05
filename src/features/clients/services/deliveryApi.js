@@ -13,12 +13,14 @@ export const getCurrentUserForDeliveryForm = async () => {
   return {
     userId,
     sessionUser: session.user,
-    profile: profileResponse ?? null,
+    profile: profileResponse?.data ?? null,
   };
 };
 
 export const getDeliveryProfile = async (deliveryId) => {
-  const { data } = await apiClient.get(`/api/deliveries/${deliveryId}`);
+  const { data } = await apiClient.get(`/api/deliveries/${deliveryId}`, {
+    skipGlobalErrorRedirect: true,
+  });
   return data;
 };
 
@@ -31,10 +33,10 @@ const UI_VEHICLE_TO_API = {
 };
 
 /**
- * Registra al usuario autenticado como delivery; el teléfono se guarda en el perfil con PUT.
+ * Registra al usuario autenticado como delivery.
  *
  * @param {string} uiVehicleType - BICICLETA | MOTOCICLETA | AUTOMOVIL | A_PIE
- * @param {string} [phone] - Número a guardar en Users.phone
+ * @param {string} [phone] - Teléfono / WhatsApp (se guarda en el perfil del usuario)
  */
 export const becomeDelivery = async (uiVehicleType, phone) => {
   const vehicleType = UI_VEHICLE_TO_API[uiVehicleType];
@@ -42,21 +44,17 @@ export const becomeDelivery = async (uiVehicleType, phone) => {
     throw new Error("Tipo de vehículo no válido.");
   }
 
-  const { data } = await apiClient.post("/api/deliveries/register", { vehicleType });
-
-  const trimmed = typeof phone === "string" ? phone.trim() : "";
-  if (trimmed) {
-    try {
-      const session = await getSession();
-      const uid = session?.user?.id_user;
-      if (uid) {
-        await updateUserProfile(uid, { phone: trimmed });
-      }
-    } catch (err) {
-      // El alta como delivery ya fue exitosa; no invalidar el flujo si falla sesión o guardado de teléfono.
-      console.warn("[becomeDelivery] No se pudo actualizar el teléfono en el perfil:", err);
-    }
+  const session = await getSession();
+  const userId = session?.user?.id_user;
+  if (!userId) {
+    throw new Error("No hay sesión activa.");
   }
+
+  if (phone?.trim()) {
+    await updateUserProfile(userId, { phone: phone.trim() });
+  }
+
+  const { data } = await apiClient.post("/api/deliveries/register", { vehicleType });
 
   return data;
 };

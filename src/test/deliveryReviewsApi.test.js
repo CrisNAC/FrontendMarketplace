@@ -18,7 +18,7 @@ import {
 } from '../features/commerces/services/deliveryReviewsApi'
 
 describe('getStoreDeliveryReviews', () => {
-    beforeEach(() => vi.clearAllMocks())
+    beforeEach(() => vi.resetAllMocks())
 
     it('llama al endpoint correcto y retorna data', async () => {
         const mockData = [{ id: 1, rating: 5 }]
@@ -63,7 +63,7 @@ describe('getStoreDeliveryReviews', () => {
 })
 
 describe('getDeliveryReviewsErrorMessage', () => {
-    beforeEach(() => vi.clearAllMocks())
+    beforeEach(() => vi.resetAllMocks())
 
     it('retorna data.message para errores axios', () => {
         axios.isAxiosError.mockReturnValue(true)

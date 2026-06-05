@@ -168,11 +168,11 @@ describe('CommerceDeliveriesPage', () => {
 
             render(<CommerceDeliveriesPage />)
 
-            await waitFor(() => screen.getByText('Disponible'))
+            await waitFor(() => screen.getAllByText('Disponible'))
 
-            expect(screen.getByText('Disponible')).toBeInTheDocument()
-            expect(screen.getByText('En entrega')).toBeInTheDocument()
-            expect(screen.getByText('No disponible')).toBeInTheDocument()
+            expect(screen.getAllByText('Disponible').length).toBeGreaterThan(0)
+            expect(screen.getAllByText('En entrega').length).toBeGreaterThan(0)
+            expect(screen.getAllByText('No disponible').length).toBeGreaterThan(0)
         })
 
         it('muestra "—" cuando avgRating es null', async () => {
@@ -268,8 +268,8 @@ describe('CommerceDeliveriesPage', () => {
             fireEvent.click(screen.getAllByText('Ver Reseñas')[0])
 
             expect(mockNavigate).toHaveBeenCalledWith(
-                '/comercio/deliveries/resenas',
-                { state: { deliveryId: 10 } }
+                '/comercio/deliveries/resenas?deliveryId=10',
+                { state: { deliveryData: mockDelivery1 } }
             )
         })
 

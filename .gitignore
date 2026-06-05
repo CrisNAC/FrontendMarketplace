@@ -31,7 +31,8 @@ dist-ssr
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
-/coverage
 
+coverage/
 coverage_raw.txt
 coverage_output.txt
+.claude/

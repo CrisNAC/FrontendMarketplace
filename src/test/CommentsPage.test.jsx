@@ -231,10 +231,8 @@ describe('CommentsPage', () => {
             expect(screen.getByText('Comentarios')).toBeInTheDocument()
         })
 
-        // El SVG ArrowLeft tiene onClick directo y clase cursor-pointer
-        const svgIcon = document.querySelector('.cursor-pointer')
-        expect(svgIcon).not.toBeNull()
-        await userEvent.click(svgIcon)
+        const backBtn = screen.getByTestId('back-button')
+        await userEvent.click(backBtn)
 
         expect(mockNavigate).toHaveBeenCalledWith(-1)
     })

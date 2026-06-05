@@ -9,6 +9,7 @@ vi.mock('../features/commerces/services/createProductApi', () => ({
     getBackendErrorMessage: (_err, fallback) => fallback,
 }))
 
+import { MAX_VISIBLE_TAG_SUGGESTIONS } from '../features/commerces/hooks/useCreateProduct'
 import {
     fetchProductCategories,
     fetchProductTags,
@@ -228,7 +229,7 @@ describe('useCreateProduct', () => {
 
         await waitFor(() => expect(result.current.isLoadingInitialData).toBe(false))
 
-        expect(result.current.displayedTagOptions.length).toBe(6)
+        expect(result.current.displayedTagOptions.length).toBe(MAX_VISIBLE_TAG_SUGGESTIONS)
     })
 
     it('displayedTagOptions muestra todos cuando showAllTagSuggestions es true', async () => {

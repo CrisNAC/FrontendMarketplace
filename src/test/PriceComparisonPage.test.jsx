@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
-const originalFetch = global.fetch
+const originalFetch = globalThis.fetch
 
 vi.mock('react-router-dom', () => ({
     useLocation: () => ({ search: '?search=Laptop' }),
@@ -45,17 +45,17 @@ describe('PriceComparisonPage', () => {
     })
 
     afterEach(() => {
-        global.fetch = originalFetch
+        globalThis.fetch = originalFetch
     })
 
     it('muestra "Cargando ofertas..." durante la carga', () => {
-        global.fetch = vi.fn(() => new Promise(() => {}))
+        globalThis.fetch = vi.fn(() => new Promise(() => {}))
         render(<PriceComparisonPage />)
         expect(screen.getByText(/Cargando ofertas/)).toBeInTheDocument()
     })
 
     it('muestra las ofertas cargadas', async () => {
-        global.fetch = vi.fn(() => Promise.resolve({
+        globalThis.fetch = vi.fn(() => Promise.resolve({
             ok: true,
             json: () => Promise.resolve({ product: { name: 'Laptop HP' }, offers: mockOffers }),
         }))
@@ -66,7 +66,7 @@ describe('PriceComparisonPage', () => {
     })
 
     it('muestra la cantidad de ofertas encontradas', async () => {
-        global.fetch = vi.fn(() => Promise.resolve({
+        globalThis.fetch = vi.fn(() => Promise.resolve({
             ok: true,
             json: () => Promise.resolve({ product: { name: 'Laptop HP' }, offers: mockOffers }),
         }))
@@ -77,7 +77,7 @@ describe('PriceComparisonPage', () => {
     })
 
     it('muestra "Sin ofertas" cuando la lista está vacía', async () => {
-        global.fetch = vi.fn(() => Promise.resolve({
+        globalThis.fetch = vi.fn(() => Promise.resolve({
             ok: true,
             json: () => Promise.resolve({ product: { name: 'Laptop HP' }, offers: [] }),
         }))
@@ -88,7 +88,7 @@ describe('PriceComparisonPage', () => {
     })
 
     it('muestra error cuando el fetch falla', async () => {
-        global.fetch = vi.fn(() => Promise.resolve({
+        globalThis.fetch = vi.fn(() => Promise.resolve({
             ok: false,
             status: 500,
             json: () => Promise.resolve({}),
@@ -100,7 +100,7 @@ describe('PriceComparisonPage', () => {
     })
 
     it('muestra el rango de precios cuando hay ofertas', async () => {
-        global.fetch = vi.fn(() => Promise.resolve({
+        globalThis.fetch = vi.fn(() => Promise.resolve({
             ok: true,
             json: () => Promise.resolve({ product: { name: 'Laptop HP' }, offers: mockOffers }),
         }))
@@ -111,7 +111,7 @@ describe('PriceComparisonPage', () => {
     })
 
     it('muestra "Sin precios disponibles" cuando no hay ofertas', async () => {
-        global.fetch = vi.fn(() => Promise.resolve({
+        globalThis.fetch = vi.fn(() => Promise.resolve({
             ok: true,
             json: () => Promise.resolve({ product: null, offers: [] }),
         }))
@@ -122,7 +122,7 @@ describe('PriceComparisonPage', () => {
     })
 
     it('muestra el nombre del producto en el título', async () => {
-        global.fetch = vi.fn(() => Promise.resolve({
+        globalThis.fetch = vi.fn(() => Promise.resolve({
             ok: true,
             json: () => Promise.resolve({ product: { name: 'Laptop HP' }, offers: mockOffers }),
         }))
@@ -133,7 +133,7 @@ describe('PriceComparisonPage', () => {
     })
 
     it('muestra el enlace Ver más para productos con ID válido', async () => {
-        global.fetch = vi.fn(() => Promise.resolve({
+        globalThis.fetch = vi.fn(() => Promise.resolve({
             ok: true,
             json: () => Promise.resolve({ product: { name: 'Laptop' }, offers: mockOffers }),
         }))

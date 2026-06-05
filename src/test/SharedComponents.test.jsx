@@ -145,8 +145,7 @@ describe('ReportModal', () => {
     it('llama onSubmit con reason y description al enviar válido', async () => {
         const onSubmit = vi.fn()
         render(<ReportModal isOpen={true} onClose={() => {}} onSubmit={onSubmit} />)
-        const radios = screen.getAllByRole('radio')
-        await userEvent.click(radios[0]) // seleccionar primer motivo (SPAM)
+        await userEvent.click(screen.getByRole('radio', { name: /spam/i }))
         await userEvent.click(screen.getByRole('button', { name: /Enviar/i }))
         expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ reason: 'SPAM' }))
     })

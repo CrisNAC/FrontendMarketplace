@@ -10,6 +10,7 @@ import './index.css'
  * Infraestructura de errores
  */
 import { setNavigate } from './lib/apiClient';
+import { RequireAuth } from './components/auth/RequireAuth';
 import { NotFoundPage } from './pages/errors/NotFoundPage';
 import { ForbiddenPage } from './pages/errors/ForbiddenPage';
 import { ServerErrorPage } from './pages/errors/ServerErrorPage';
@@ -46,7 +47,10 @@ import { CommerceDeliveryReviewsPage } from './features/commerces/pages/Commerce
 import { CommerceDeliveriesPage } from './features/commerces/pages/CommerceDeliveriesPage'
 import { AddStoreDeliveryPage } from './features/commerces/pages/AddStoreDeliveryPage'
 import { EditCommercePage } from './features/commerces/pages/EditCommercePage'
+import { StoreBusinessHoursPage } from './features/commerces/pages/StoreBusinessHoursPage'
 import AuthPage from './features/clients/pages/AuthPage';
+import ForgotPasswordPage from './features/clients/pages/ForgotPasswordPage';
+import ResetPasswordPage from './features/clients/pages/ResetPasswordPage';
 
 import ProductDetailView from './features/commerces/pages/ProductDetailView';
 import PriceComparisonPage from './features/clients/pages/PriceComparisonPage';
@@ -65,6 +69,7 @@ import { AdminCategoryDetailPage } from './features/admin/pages/AdminCategoryDet
 import { AdminDashboardPage } from './features/admin/pages/AdminDashboardPage';
 import { AdminModulePlaceholderPage } from './features/admin/pages/AdminModulePlaceholderPage';
 import { AdminProductsPage } from './features/admin/pages/AdminProductsPage';
+import { AdminBannersPage } from './features/admin/pages/AdminBannersPage';
 import ReclamosPage from './features/admin/pages/ReclamosPage';
 import Reclamos from './features/admin/pages/Reclamos';
 import CommerceClaims from './features/commerces/pages/CommerceClaims';
@@ -80,7 +85,8 @@ import ConfirmarPedido from './features/clients/pages/ConfirmarPedido';
 import PedidoConfirmadoPage from './features/clients/pages/PedidoConfirmadoPage';
 import DeliveryOrderScreen from "./features/delivery/pages/DeliveryOrderScreen";
 import DeliveryHistoryPage from './features/delivery/pages/DeliveryHistoryPage';
-//import Map from "./features/clients/components/Map";
+import NotificationsPage from './features/clients/pages/NotificationsPage';
+import TestPage from './features/clients/pages/TestPage';
 
 /**
  * Inyecta el navigate de React Router en el apiClient centralizado.
@@ -93,54 +99,36 @@ const NavigationSetter = () => {
   return null;
 };
 
-const HomePageRoutes = () => (
-  <div className="p-10 text-center">
-    <h1 className="text-3xl font-bold">Bienvenido al Marketplace</h1>
-    <p className="mt-4">Navega a <a href="/login" className="text-blue-500 underline">Login/Registro</a></p>
-    <p className="mt-4">Navega a <a href="/comparar" className="text-blue-500 underline">Comparar Precios</a></p>
-    <p className="mt-4">Navega a <a href="/perfil" className="text-blue-500 underline">Mi Perfil</a></p>
-    <p className="mt-4">Navega a <a href="/producto-detalle/:id" className="text-blue-500 underline">Detalle de Producto</a></p>
-    <p className="mt-4">Navega a <a href="/comercio" className="text-blue-500 underline">Mi Comercio (Dashboard)</a></p>
-    <p className="mt-4">Navega a <a href="/admin/dashboard" className="text-blue-500 underline">Mi Panel de Admin</a></p>
-    <p className="mt-4">Navega a <a href="/perfil-comercio" className="text-blue-500 underline">Perfil comercio</a></p>
-    <p className="mt-4">Navega a <a href="/comercio/productos/1" className="text-blue-500 underline">Ver Producto Comercio (ID 1)</a></p>
-    <p className="mt-4">Navega a <a href="/comercio/productos/nuevo" className="text-blue-500 underline">Crear Producto Comercio</a></p>
-    <p className="mt-4">Navega a <a href="/pedidos" className="text-blue-500 underline">Ver pedidos</a></p>
-    <p className="mt-4">Navega a <a href="/homepage" className="text-blue-500 underline">Homepage</a></p>
-    <p className="mt-4">Navega a <a href="/busqueda" className="text-blue-500 underline">Busqueda</a></p>
-    <p className="mt-4">Navega a <a href="/comentarios" className="text-blue-500 underline">Comentarios</a></p>
-    <p className="mt-4">Navega a <a href="/crear-comercio" className="text-blue-500 underline">Crear Comercio</a></p>
-    <p className="mt-4">Navega a <a href="/mi-perfil" className="text-blue-500 underline">Editar Perfil</a></p>
-    <p className="mt-4">Navega a <a href="/cambiar-contrasena" className="text-blue-500 underline">Cambiar Contraseña</a></p>
-    <p className="mt-4">Navega a <a href="/carrito" className="text-blue-500 underline">Carrito de Compras</a></p>
-    <p className="mt-4">Navega a <a href="/cart" className="text-blue-500 underline">Carrito de Compras</a></p>
-    <p className="mt-4">Navega a <a href="/admin/reviews" className="text-blue-500 underline">Reclamos</a></p>
-    <p className="mt-4">Navega a <a href="/admin/claims" className="text-blue-500 underline">Reclamos</a></p>
-    <p className="mt-4">Navega a <a href="/comercio/claims" className="text-blue-500 underline">Reclamos Comercio</a></p>
-
-  </div>
-);
-
 function App() {
   return (
     <Router>
       <NavigationSetter />
       <Toaster position="top-right" reverseOrder={false} />
       <Routes>
-        <Route path="/" element={<HomePageRoutes />} />
+        <Route path="/test" element={<TestPage />} />
 
         <Route path="/login" element={<AuthPage />} />
+        <Route path="/recuperar-contrasena" element={<ForgotPasswordPage />} />
+        <Route path="/restablecer-contrasena/:token" element={<ResetPasswordPage />} />
 
-        <Route path="/perfil" element={<MyAccountPage />} />
-        <Route path="/mi-perfil" element={<EditClientProfile />} />
-        <Route path="/cambiar-contrasena" element={<ChangePassword />} />
+        <Route path="/perfil" element={<RequireAuth><MyAccountPage /></RequireAuth>} />
+        <Route path="/mi-perfil" element={<RequireAuth><EditClientProfile /></RequireAuth>} />
+        <Route path="/cambiar-contrasena" element={<RequireAuth><ChangePassword /></RequireAuth>} />
 
-        <Route path='/direcciones' element={<AddressesPage />} />
+        <Route path="/notificaciones" element={
+          <RequireAuth>
+            <VistaComercioLayout>
+              <NotificationsPage />
+            </VistaComercioLayout>
+          </RequireAuth>
+        } />
+
+        <Route path='/direcciones' element={<RequireAuth><AddressesPage /></RequireAuth>} />
 
         <Route path="/comparar" element={<PriceComparisonPage />} />
 
-        <Route path="/carrito/:cartId" element={<CartPage />} />   
-        <Route path="/pedido-confirmado" element={<PedidoConfirmadoPage />} />     
+        <Route path="/carrito/:cartId" element={<RequireAuth><CartPage /></RequireAuth>} />
+        <Route path="/pedido-confirmado" element={<RequireAuth><PedidoConfirmadoPage /></RequireAuth>} />
 
         <Route
           path="/producto-detalle/:id"
@@ -155,25 +143,33 @@ function App() {
             <VistaComercioPage />
           </VistaComercioLayout>
         } />
-        <Route path="/crear-comercio" element={<CreateCommercePage />} />
+        <Route path="/crear-comercio" element={<RequireAuth><CreateCommercePage /></RequireAuth>} />
 
-        <Route path="/pedidos" element={<ClientOrdersPage />} />
-        <Route path="/pedidos/:orderId" element={<ClientOrderDetailsPage />} />
-        <Route path="/homepage" element={<HomePage />} />
-        <Route path="/quiero-ser-delivery" element={<BecomeDeliveryPage />} />
-        <Route path="/wishlist" element={<VistaComercioLayout><Wishlist/></VistaComercioLayout>}/>
+        <Route path="/pedidos" element={<RequireAuth><ClientOrdersPage /></RequireAuth>} />
+        <Route path="/pedidos/:orderId" element={<RequireAuth><ClientOrderDetailsPage /></RequireAuth>} />
+        <Route path="/" element={<HomePage />} />
+        <Route path="/quiero-ser-delivery" element={<RequireAuth><BecomeDeliveryPage /></RequireAuth>} />
+        <Route path="/wishlist" element={
+          <RequireAuth>
+            <VistaComercioLayout><Wishlist /></VistaComercioLayout>
+          </RequireAuth>
+        } />
         <Route path="/carrito" element={
+          <RequireAuth>
             <VistaComercioLayout>
               <OrdenesComprasPage />
             </VistaComercioLayout>
-          }
+          </RequireAuth>
+        }
         />
         <Route
           path="/confirmar-pedido/:cartId"
           element={
-            <VistaComercioLayout>
-              <ConfirmarPedido />
-            </VistaComercioLayout>
+            <RequireAuth>
+              <VistaComercioLayout>
+                <ConfirmarPedido />
+              </VistaComercioLayout>
+            </RequireAuth>
           }
         />
         <Route
@@ -204,101 +200,171 @@ function App() {
 
         {/* ── Área del comercio (con sidebar) ───────────────────────────── */}
         <Route path="/comercio" element={
-          <MyCommerceLayout><MyCommercePage /></MyCommerceLayout>
+          <RequireAuth>
+            <MyCommerceLayout><MyCommercePage /></MyCommerceLayout>
+          </RequireAuth>
         } />
         <Route path="/comercio/perfil" element={
-          <MyCommerceLayout><CommerceProfilePage /></MyCommerceLayout>
+          <RequireAuth>
+            <MyCommerceLayout><CommerceProfilePage /></MyCommerceLayout>
+          </RequireAuth>
         } />
         <Route path="/comercio/editar" element={
-          <MyCommerceLayout><EditCommercePage /></MyCommerceLayout>
+          <RequireAuth>
+            <MyCommerceLayout><EditCommercePage /></MyCommerceLayout>
+          </RequireAuth>
+        } />
+        <Route path="/comercio/horarios" element={
+          <MyCommerceLayout><StoreBusinessHoursPage /></MyCommerceLayout>
         } />
         <Route path="/comercio/pedidos" element={
-          <MyCommerceLayout><CommerceOrdersPage /></MyCommerceLayout>
+          <RequireAuth>
+            <MyCommerceLayout><CommerceOrdersPage /></MyCommerceLayout>
+          </RequireAuth>
         } />
         <Route path="/comercio/deliveries/resenas" element={
-          <MyCommerceLayout><CommerceDeliveryReviewsPage /></MyCommerceLayout>
-        } />    
+          <RequireAuth>
+            <MyCommerceLayout><CommerceDeliveryReviewsPage /></MyCommerceLayout>
+          </RequireAuth>
+        } />
         <Route path="/comercio/delivery" element={
-          <MyCommerceLayout><CommerceDeliveriesPage /></MyCommerceLayout>
+          <RequireAuth>
+            <MyCommerceLayout><CommerceDeliveriesPage /></MyCommerceLayout>
+          </RequireAuth>
         } />
         <Route path="/comercio/delivery/agregar" element={
-          <MyCommerceLayout><AddStoreDeliveryPage /></MyCommerceLayout>
+          <RequireAuth>
+            <MyCommerceLayout><AddStoreDeliveryPage /></MyCommerceLayout>
+          </RequireAuth>
         } />
         <Route path="/comercio/productos" element={
-          <MyCommerceLayout><CommerceProductsPage /></MyCommerceLayout>
+          <RequireAuth>
+            <MyCommerceLayout><CommerceProductsPage /></MyCommerceLayout>
+          </RequireAuth>
         } />
         <Route path="/comercio/productos/nuevo" element={
-          <MyCommerceLayout><CreateProductPage /></MyCommerceLayout>
+          <RequireAuth>
+            <MyCommerceLayout><CreateProductPage /></MyCommerceLayout>
+          </RequireAuth>
         } />
         <Route path="/comercio/productos/:id" element={
-          <MyCommerceLayout><ProductDetailView /></MyCommerceLayout>
+          <RequireAuth>
+            <MyCommerceLayout><ProductDetailView /></MyCommerceLayout>
+          </RequireAuth>
         } />
         <Route path="/comercio/productos/:id/editar" element={
-          <MyCommerceLayout><EditProductPage /></MyCommerceLayout>
+          <RequireAuth>
+            <MyCommerceLayout><EditProductPage /></MyCommerceLayout>
+          </RequireAuth>
         } />
         <Route path="/comercio/claims" element={
-          <MyCommerceLayout><CommerceClaims/></MyCommerceLayout>
+          <RequireAuth>
+            <MyCommerceLayout><CommerceClaims /></MyCommerceLayout>
+          </RequireAuth>
         } />
 
         {/* ── Área de delivery (con sidebar) ───────────────────────────── */}
-        <Route path="/delivery" element={<Navigate to="/delivery/perfil" replace />} />
+        <Route path="/delivery" element={
+          <RequireAuth>
+            <Navigate to="/delivery/perfil" replace />
+          </RequireAuth>
+        } />
         <Route path="/delivery/perfil" element={
-          <DeliveryLayout><DeliveryProfilePage /></DeliveryLayout>
+          <RequireAuth>
+            <DeliveryLayout><DeliveryProfilePage /></DeliveryLayout>
+          </RequireAuth>
         } />
         <Route path="/delivery/perfil/editar" element={
-          <DeliveryLayout><DeliveryEditProfilePage /></DeliveryLayout>
+          <RequireAuth>
+            <DeliveryLayout><DeliveryEditProfilePage /></DeliveryLayout>
+          </RequireAuth>
         } />
         <Route path="/delivery/order" element={
-          <DeliveryLayout><DeliveryOrderScreen /></DeliveryLayout>
+          <RequireAuth>
+            <DeliveryLayout><DeliveryOrderScreen /></DeliveryLayout>
+          </RequireAuth>
         } />
         <Route path="/delivery/pedidos" element={
-          <DeliveryLayout><DeliveryOrdersPage /></DeliveryLayout>
+          <RequireAuth>
+            <DeliveryLayout><DeliveryOrdersPage /></DeliveryLayout>
+          </RequireAuth>
         } />
         <Route path="/delivery/history" element={
-          <DeliveryLayout><DeliveryHistoryPage /></DeliveryLayout>
+          <RequireAuth>
+            <DeliveryLayout><DeliveryHistoryPage /></DeliveryLayout>
+          </RequireAuth>
         } />
 
         {/* ── Área de administración (con sidebar) ──────────────────────── */}
-        <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="/admin" element={
+          <RequireAuth>
+            <Navigate to="/admin/dashboard" replace />
+          </RequireAuth>
+        } />
         <Route path="/admin/dashboard" element={
-          <AdminLayout><AdminDashboardPage /></AdminLayout>
+          <RequireAuth>
+            <AdminLayout><AdminDashboardPage /></AdminLayout>
+          </RequireAuth>
         } />
         <Route path="/admin/productos" element={
-          <AdminLayout><AdminProductsPage /></AdminLayout>
+          <RequireAuth>
+            <AdminLayout><AdminProductsPage /></AdminLayout>
+          </RequireAuth>
+        } />
+        <Route path="/admin/banners" element={
+          <RequireAuth>
+            <AdminLayout><AdminBannersPage /></AdminLayout>
+          </RequireAuth>
         } />
         <Route path="/admin/resenas" element={
-          <AdminLayout>
-            <AdminModulePlaceholderPage
-              title="Moderación de Reseñas"
-              description="Gestioná reseñas reportadas por usuarios y mantené la calidad del contenido."
-            />
-          </AdminLayout>
+          <RequireAuth>
+            <AdminLayout>
+              <AdminModulePlaceholderPage
+                title="Moderación de Reseñas"
+                description="Gestioná reseñas reportadas por usuarios y mantené la calidad del contenido."
+              />
+            </AdminLayout>
+          </RequireAuth>
         } />
         <Route path="/admin/comercios" element={
-          <AdminLayout>
-            <AdminModulePlaceholderPage
-              title="Aprobación de Comercios"
-              description="Revisá solicitudes pendientes y aprobá comercios para operar en la plataforma."
-            />
-          </AdminLayout>
+          <RequireAuth>
+            <AdminLayout>
+              <AdminModulePlaceholderPage
+                title="Aprobación de Comercios"
+                description="Revisá solicitudes pendientes y aprobá comercios para operar en la plataforma."
+              />
+            </AdminLayout>
+          </RequireAuth>
         } />
         <Route path="/admin/usuarios" element={
-          <AdminLayout><AdminUsersPage /></AdminLayout>
+          <RequireAuth>
+            <AdminLayout><AdminUsersPage /></AdminLayout>
+          </RequireAuth>
         } />
         <Route path="/admin/comercios-pendientes" element={
-          <AdminLayout><AdminPendingStoresPage /></AdminLayout>
+          <RequireAuth>
+            <AdminLayout><AdminPendingStoresPage /></AdminLayout>
+          </RequireAuth>
         } />
         <Route path="/admin/categorias" element={
-          <AdminLayout><AdminCategoriesPage /></AdminLayout>
+          <RequireAuth>
+            <AdminLayout><AdminCategoriesPage /></AdminLayout>
+          </RequireAuth>
         } />
         <Route path="/admin/categorias/:id" element={
-          <AdminLayout><AdminCategoryDetailPage /></AdminLayout>
+          <RequireAuth>
+            <AdminLayout><AdminCategoryDetailPage /></AdminLayout>
+          </RequireAuth>
         } />
         <Route path="/admin/claims" element={
-          <AdminLayout><Reclamos/></AdminLayout>
+          <RequireAuth>
+            <AdminLayout><Reclamos /></AdminLayout>
+          </RequireAuth>
         } />
         <Route path="/admin/reviews" element={
-          <AdminLayout><ReclamosPage /></AdminLayout>
+          <RequireAuth>
+            <AdminLayout><ReclamosPage /></AdminLayout>
+          </RequireAuth>
         } />
 
         {/* ── Páginas de error ───────────────────────────────────────────── */}

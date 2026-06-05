@@ -39,7 +39,7 @@ describe('fetchCommerceById', () => {
 
         const result = await fetchCommerceById(5)
 
-        expect(mockApiClient.get).toHaveBeenCalled()
+        expect(mockApiClient.get).toHaveBeenCalledWith(expect.stringContaining('/5'))
         expect(result).toMatchObject({ id_store: 5 })
     })
 })

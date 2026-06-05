@@ -1,7 +1,8 @@
 // src/features/commerces/hooks/useEditCommerce.js
 import { useState, useEffect, useRef } from "react";
+import { z } from "zod";
 import {
-    fetchCommerceById,
+    fetchMyCommerce,
     fetchCommerceCategories,
     updateCommerce,
     uploadStoreImage,
@@ -11,76 +12,34 @@ import {
 
 const HTTP_URL_REGEX = /^https?:\/\//i;
 
-// ─── Validación del formulario ────────────────────────────────────────────────
-// Refleja exactamente las mismas reglas del backend (store.service.js):
-//   - name     → validateRequiredStringField(value, "name", 100)
-//   - email    → validateEmailField(value)
-//   - phone    → validateRequiredStringField(value, "phone", 20)
-//   - address  → validateRequiredStringField(value, "address")
-//   - latitude/longitude → coordenadas validas para geocodificacion
-//   - logo     → validateOptionalStringField (max 500, puede ser null)
-const validateForm = (formData) => {
-    const errors = {};
-
-    if (!formData.name.trim()) {
-        errors.name = "El nombre del comercio es obligatorio.";
-    } else if (formData.name.trim().length > 100) {
-        errors.name = "El nombre no puede superar 100 caracteres.";
-    }
-
-    if (!formData.email.trim()) {
-        errors.email = "El email de contacto es obligatorio.";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
-        errors.email = "Ingresá un email válido.";
-    }
-
-    if (!formData.phone.trim()) {
-        errors.phone = "El teléfono es obligatorio.";
-    } else if (formData.phone.trim().length > 20) {
-        errors.phone = "El teléfono no puede superar 20 caracteres.";
-    }
-
-    if (!formData.address.trim()) {
-        errors.address = "La dirección es obligatoria.";
-    }
-
-    if (formData.latitude === null || formData.longitude === null) {
-        errors.location = "Selecciona un punto en el mapa.";
-    }
-
-    if (formData.logoUrl.trim() && formData.logoUrl.trim().length > 500) {
-        errors.logoUrl = "La URL del logo no puede superar 500 caracteres.";
-    }
-
-    const basePrice = Number(formData.basePrice);
-    if (!Number.isFinite(basePrice) || basePrice < 0) {
-        errors.basePrice = "Ingresá un precio base válido mayor o igual a 0.";
-    }
-
-    const distancePrice = Number(formData.distancePrice);
-    if (!Number.isFinite(distancePrice) || distancePrice < 0) {
-        errors.distancePrice = "Ingresá un precio para larga distancia válido mayor o igual a 0.";
-    }
-
-    const socialUrlFields = [
-        { key: "websiteUrl", label: "sitio web" },
-        { key: "instagramUrl", label: "Instagram" },
-        { key: "tiktokUrl", label: "TikTok" },
-    ];
-
-    for (const field of socialUrlFields) {
-        const value = formData[field.key]?.trim() || "";
-        if (value && !HTTP_URL_REGEX.test(value)) {
-            errors[field.key] = `La URL de ${field.label} debe iniciar con http:// o https://`;
-        }
-
-        if (value.length > 500) {
-            errors[field.key] = `La URL de ${field.label} no puede superar 500 caracteres.`;
-        }
-    }
-
-    return errors;
-};
+// ─── Esquema de validación con Zod ──────────────────────────────────────────
+const commerceEditSchema = z.object({
+    name: z.string().min(1, "El nombre del comercio es obligatorio").max(100, "El nombre no puede superar 100 caracteres"),
+    email: z.string().email("Ingresá un email válido"),
+    phone: z.string().min(1, "El teléfono es obligatorio").max(20, "El teléfono no puede superar 20 caracteres"),
+    address: z.string().min(1, "La dirección es obligatoria"),
+    latitude: z.number().nullable().refine((val) => val !== null, { message: "Selecciona un punto en el mapa" }),
+    longitude: z.number().nullable().refine((val) => val !== null, { message: "Selecciona un punto en el mapa" }),
+    logoUrl: z.string().max(500, "La URL del logo no puede superar 500 caracteres").optional(),
+    basePrice: z.preprocess(
+        (val) => (val === "" || val === null || val === undefined ? undefined : Number(val)),
+        z.number().min(0, "Ingresá un precio base válido mayor o igual a 0")),
+    distancePrice: z.preprocess(
+        (val) => (val === "" || val === null || val === undefined ? undefined : Number(val)),
+        z.number().min(0, "Ingresá un precio para larga distancia válido mayor o igual a 0")),
+    websiteUrl: z.string().refine((val) => {
+        const trimmed = val.trim();
+        return !trimmed || /^https?:\/\//.test(trimmed);
+    }, "La URL de sitio web debe iniciar con http:// o https://").optional(),
+    instagramUrl: z.string().refine((val) => {
+        const trimmed = val.trim();
+        return !trimmed || /^https?:\/\//.test(trimmed);
+    }, "La URL de Instagram debe iniciar con http:// o https://").optional(),
+    tiktokUrl: z.string().refine((val) => {
+        const trimmed = val.trim();
+        return !trimmed || /^https?:\/\//.test(trimmed);
+    }, "La URL de TikTok debe iniciar con http:// o https://").optional(),
+});
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 /**
@@ -95,7 +54,7 @@ const validateForm = (formData) => {
  *   store.website_url        → formData.websiteUrl
  *   store.instagram_url      → formData.instagramUrl
  *   store.tiktok_url         → formData.tiktokUrl
- *   store.fk_store_category  → formData.categoryId (string para <select>)
+ *   store.categories         → formData.categoryIds (array para <select multiple>)
  *   store.addresses[0].address     → formData.address
  *   store.addresses[0].latitude    → formData.latitude
  *   store.addresses[0].longitude   → formData.longitude
@@ -112,7 +71,7 @@ export const useEditCommerce = () => {
         email: "",
         phone: "",
         description: "",
-        categoryId: "",
+        categoryIds: [],
         logoUrl: "",
         address: "",
         latitude: null,
@@ -173,7 +132,7 @@ export const useEditCommerce = () => {
 
                 // 2. Comercio y categorías en paralelo para minimizar tiempo de carga
                 const [commerce, categoriesData] = await Promise.all([
-                    fetchCommerceById(sessionIdStore),
+                    fetchMyCommerce(sessionIdStore),
                     fetchCommerceCategories(),
                 ]);
 
@@ -188,10 +147,15 @@ export const useEditCommerce = () => {
                     email: commerce.email ?? "",
                     phone: commerce.phone ?? "",
                     description: commerce.description ?? "",
-                    // fk_store_category como string para que <select> lo reconozca
-                    categoryId: commerce.fk_store_category
-                        ? String(commerce.fk_store_category)
-                        : "",
+                    categoryIds: Array.isArray(commerce.categories) && commerce.categories.length > 0
+                        ? commerce.categories
+                            .map((category) => Number(category.id))
+                            .filter((id) => Number.isInteger(id) && id > 0)
+                            .map(String)
+                        : (() => {
+                            const id = Number(commerce.store_category?.id_store_category);
+                            return Number.isInteger(id) && id > 0 ? [String(id)] : [];
+                        })(),
                     logoUrl: commerce.logo ?? "",
                     // Campos de Addresses (primer registro del comercio)
                     address: firstAddress.address ?? "",
@@ -284,8 +248,33 @@ export const useEditCommerce = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        const errors = validateForm(formData);
-        if (Object.keys(errors).length > 0) {
+        const parsed = commerceEditSchema.safeParse({
+            name: formData.name.trim(),
+            email: formData.email.trim(),
+            phone: formData.phone.trim(),
+            address: formData.address.trim(),
+            latitude: formData.latitude,
+            longitude: formData.longitude,
+            logoUrl: formData.logoUrl.trim(),
+            basePrice: formData.basePrice,
+            distancePrice: formData.distancePrice,
+            websiteUrl: formData.websiteUrl.trim(),
+            instagramUrl: formData.instagramUrl.trim(),
+            tiktokUrl: formData.tiktokUrl.trim(),
+        });
+
+        if (!parsed.success) {
+            const errors = {};
+            for (const issue of parsed.error.issues) {
+                const key = issue.path[0];
+                if (key && !errors[key]) errors[key] = issue.message;
+            }
+            // Mapear 'latitude' y 'longitude' a 'location'
+            if (errors.latitude || errors.longitude) {
+                errors.location = "Selecciona un punto en el mapa.";
+                delete errors.latitude;
+                delete errors.longitude;
+            }
             setValidationErrors(errors);
             errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
             return;
@@ -299,9 +288,10 @@ export const useEditCommerce = () => {
             email: formData.email.trim(),
             phone: formData.phone.trim(),
             description: formData.description.trim() || null,
-            // fk_store_category → number (validateStoreCategoryService lo requiere)
-            ...(formData.categoryId && {
-                fk_store_category: Number(formData.categoryId),
+            ...(formData.categoryIds.length > 0 && {
+                category_ids: formData.categoryIds
+                    .map((id) => Number(id))
+                    .filter((id) => Number.isInteger(id) && id > 0),
             }),
             // logo → string URL o null para borrar (solo si no se subió un archivo nuevo)
             logo: logoFile ? undefined : (formData.logoUrl.trim() || null),

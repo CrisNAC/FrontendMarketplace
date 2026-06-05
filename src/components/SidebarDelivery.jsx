@@ -11,7 +11,7 @@ import {
     HelpCircle,
 } from "lucide-react";
 
-export const SidebarDelivery = ({ collapsed, onToggle }) => {
+export const SidebarDelivery = ({ collapsed, onToggle, onNavigate }) => {
     const navigate = useNavigate();
     const location = useLocation();
     const logout = useLogout();
@@ -69,18 +69,30 @@ export const SidebarDelivery = ({ collapsed, onToggle }) => {
                 {NAV_ITEMS.map(({ label, icon: Icon, route, onClick }) => {
                     const isActive = active === label;
                     return (
-                        <div
+                        <button
+                            type="button"
                             key={label}
-                            onClick={() => onClick ? onClick() : navigate(route)}
+                            onClick={() => {
+                                if (onClick) {
+                                    onClick();
+                                } else {
+                                    navigate(route);
+                                }
+                                onNavigate?.();
+                            }}
                             title={collapsed ? label : undefined}
                             style={{
                                 display: "flex",
                                 flexDirection: "row",
                                 alignItems: "center",
                                 gap: "10px",
+                                width: "100%",
                                 padding: "8px 10px",
+                                border: "none",
                                 borderRadius: "8px",
                                 cursor: "pointer",
+                                font: "inherit",
+                                textAlign: collapsed ? "center" : "left",
                                 backgroundColor: isActive ? "var(--primary)" : "transparent",
                                 color: "white",
                                 opacity: isActive ? 1 : 0.8,
@@ -90,7 +102,7 @@ export const SidebarDelivery = ({ collapsed, onToggle }) => {
                         >
                             <Icon size={18} style={{ flexShrink: 0 }} />
                             {!collapsed && <span style={{ fontSize: "14px" }}>{label}</span>}
-                        </div>
+                        </button>
                     );
                 })}
             </nav>

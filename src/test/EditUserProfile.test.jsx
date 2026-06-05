@@ -32,7 +32,7 @@ describe('EditClientProfile', () => {
     beforeEach(() => {
         vi.clearAllMocks()
         getSession.mockResolvedValue({ user: { id_user: 7 } })
-        fetchUserProfile.mockResolvedValue({ data: mockUser })
+        fetchUserProfile.mockResolvedValue(mockUser)
     })
 
     it('muestra "Cargando perfil..." al iniciar', () => {

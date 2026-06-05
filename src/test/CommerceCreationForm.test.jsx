@@ -40,7 +40,7 @@ const makeError = (msg = 'Error') => ({
 })
 
 const setupFetch = (userId = 7, categories = [{ id: 1, name: 'Tecnología' }]) => {
-    global.fetch = vi.fn((url) => {
+    globalThis.fetch = vi.fn((url) => {
         const u = String(url)
         if (u.includes('/api/session/user-session')) {
             return Promise.resolve(makeOk({ success: true, user: { id_user: userId } }))
@@ -183,7 +183,7 @@ describe('CommerceCreationForm', () => {
         await userEvent.click(screen.getByText('Registrar Comercio'))
 
         await waitFor(() => {
-            expect(global.fetch).toHaveBeenCalledWith(
+            expect(globalThis.fetch).toHaveBeenCalledWith(
                 expect.stringContaining('/api/commerces'),
                 expect.objectContaining({ method: 'POST' })
             )
@@ -191,7 +191,7 @@ describe('CommerceCreationForm', () => {
     })
 
     it('muestra el error cuando el API retorna error', async () => {
-        global.fetch = vi.fn((url) => {
+        globalThis.fetch = vi.fn((url) => {
             const u = String(url)
             if (u.includes('/api/session/user-session')) {
                 return Promise.resolve(makeOk({ success: true, user: { id_user: 7 } }))
@@ -217,7 +217,7 @@ describe('CommerceCreationForm', () => {
     })
 
     it('muestra error cuando falla la sesión', async () => {
-        global.fetch = vi.fn((url) => {
+        globalThis.fetch = vi.fn((url) => {
             const u = String(url)
             if (u.includes('/api/session/user-session')) {
                 return Promise.resolve(makeOk({ success: false }))
