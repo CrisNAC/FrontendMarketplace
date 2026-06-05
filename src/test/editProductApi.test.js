@@ -169,48 +169,24 @@ describe('deleteProductImage', () => {
 describe('getBackendErrorMessage', () => {
     beforeEach(() => vi.clearAllMocks())
 
-    it('retorna data.message cuando es Axios error', () => {
+    it.each([
+        [true,  { response: { data: { message: 'Error mensaje' } } }, 'Error mensaje'],
+        [true,  { response: { data: { error: 'Error campo' } } },     'Error campo'],
+        [false, new Error('mensaje de error'),                        'mensaje de error'],
+        [false, {},                                                    'fallback'],
+    ])('retorna mensaje según tipo de error', (isAxios, input, expected) => {
+        axios.isAxiosError.mockReturnValue(isAxios)
+        expect(getBackendErrorMessage(input, 'fallback')).toBe(expected)
+    })
+
+    it.each([
+        [400, 'Datos inválidos. Revisá los campos requeridos.'],
+        [401, 'Sesión inválida o expirada. Iniciá sesión nuevamente.'],
+        [403, 'No tenés permiso para editar este producto.'],
+        [404, 'Producto no encontrado.'],
+        [500, 'Error interno del servidor.'],
+    ])('retorna mensaje para status %i', (status, expected) => {
         axios.isAxiosError.mockReturnValue(true)
-        expect(getBackendErrorMessage({ response: { data: { message: 'Error mensaje' } } }, 'fb')).toBe('Error mensaje')
-    })
-
-    it('retorna data.error cuando no hay message', () => {
-        axios.isAxiosError.mockReturnValue(true)
-        expect(getBackendErrorMessage({ response: { data: { error: 'Error campo' } } }, 'fb')).toBe('Error campo')
-    })
-
-    it('retorna mensaje de status 400', () => {
-        axios.isAxiosError.mockReturnValue(true)
-        expect(getBackendErrorMessage({ response: { status: 400, data: {} } }, 'fb')).toBe('Datos inválidos. Revisá los campos requeridos.')
-    })
-
-    it('retorna mensaje de status 401', () => {
-        axios.isAxiosError.mockReturnValue(true)
-        expect(getBackendErrorMessage({ response: { status: 401, data: {} } }, 'fb')).toBe('Sesión inválida o expirada. Iniciá sesión nuevamente.')
-    })
-
-    it('retorna mensaje de status 403', () => {
-        axios.isAxiosError.mockReturnValue(true)
-        expect(getBackendErrorMessage({ response: { status: 403, data: {} } }, 'fb')).toBe('No tenés permiso para editar este producto.')
-    })
-
-    it('retorna mensaje de status 404', () => {
-        axios.isAxiosError.mockReturnValue(true)
-        expect(getBackendErrorMessage({ response: { status: 404, data: {} } }, 'fb')).toBe('Producto no encontrado.')
-    })
-
-    it('retorna mensaje de status 500', () => {
-        axios.isAxiosError.mockReturnValue(true)
-        expect(getBackendErrorMessage({ response: { status: 500, data: {} } }, 'fb')).toBe('Error interno del servidor.')
-    })
-
-    it('retorna error.message para instancia de Error', () => {
-        axios.isAxiosError.mockReturnValue(false)
-        expect(getBackendErrorMessage(new Error('mensaje de error'), 'fb')).toBe('mensaje de error')
-    })
-
-    it('retorna fallback para error desconocido', () => {
-        axios.isAxiosError.mockReturnValue(false)
-        expect(getBackendErrorMessage({}, 'fallback')).toBe('fallback')
+        expect(getBackendErrorMessage({ response: { status, data: {} } }, 'fb')).toBe(expected)
     })
 })

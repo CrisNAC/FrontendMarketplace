@@ -143,44 +143,16 @@ describe('getDeliveryOrderHistory', () => {
 describe('getBackendErrorMessage (delivery)', () => {
     beforeEach(() => vi.clearAllMocks())
 
-    it('retorna resData si es string', () => {
-        axios.isAxiosError.mockReturnValue(true)
-        const error = { response: { data: 'mensaje directo' } }
-        expect(getBackendErrorMessage(error, 'fallback')).toBe('mensaje directo')
-    })
-
-    it('retorna resData.message si es string', () => {
-        axios.isAxiosError.mockReturnValue(true)
-        const error = { response: { data: { message: 'mensaje objeto' } } }
-        expect(getBackendErrorMessage(error, 'fallback')).toBe('mensaje objeto')
-    })
-
-    it('retorna resData.error si es string', () => {
-        axios.isAxiosError.mockReturnValue(true)
-        const error = { response: { data: { error: 'error directo' } } }
-        expect(getBackendErrorMessage(error, 'fallback')).toBe('error directo')
-    })
-
-    it('retorna resData.error.message si está disponible', () => {
-        axios.isAxiosError.mockReturnValue(true)
-        const error = { response: { data: { error: { message: 'error anidado' } } } }
-        expect(getBackendErrorMessage(error, 'fallback')).toBe('error anidado')
-    })
-
-    it('retorna fallback cuando es axios error sin mensaje parseable', () => {
-        axios.isAxiosError.mockReturnValue(true)
-        const error = { response: { data: {} } }
-        expect(getBackendErrorMessage(error, 'fallback')).toBe('fallback')
-    })
-
-    it('retorna error.message si es instancia de Error', () => {
-        axios.isAxiosError.mockReturnValue(false)
-        const error = new Error('generic error')
-        expect(getBackendErrorMessage(error, 'fallback')).toBe('generic error')
-    })
-
-    it('retorna fallback si no hay información', () => {
-        axios.isAxiosError.mockReturnValue(false)
-        expect(getBackendErrorMessage({}, 'mi fallback')).toBe('mi fallback')
+    it.each([
+        [true,  { response: { data: 'mensaje directo' } },                         'fallback',   'mensaje directo'],
+        [true,  { response: { data: { message: 'mensaje objeto' } } },             'fallback',   'mensaje objeto'],
+        [true,  { response: { data: { error: 'error directo' } } },                'fallback',   'error directo'],
+        [true,  { response: { data: { error: { message: 'error anidado' } } } },   'fallback',   'error anidado'],
+        [true,  { response: { data: {} } },                                        'fallback',   'fallback'],
+        [false, new Error('generic error'),                                        'fallback',   'generic error'],
+        [false, {},                                                                 'mi fallback', 'mi fallback'],
+    ])('retorna mensaje según tipo de error', (isAxios, input, fb, expected) => {
+        axios.isAxiosError.mockReturnValue(isAxios)
+        expect(getBackendErrorMessage(input, fb)).toBe(expected)
     })
 })
