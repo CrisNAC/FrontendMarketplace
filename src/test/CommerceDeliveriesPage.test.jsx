@@ -83,6 +83,17 @@ const setupSuccess = () => {
     fetchStoreDeliveries.mockResolvedValue(mockData)
 }
 
+function renderSuccess() {
+    setupSuccess()
+    render(<CommerceDeliveriesPage />)
+}
+
+async function openDeleteModal() {
+    renderSuccess()
+    await waitFor(() => screen.getAllByText('Eliminar'))
+    fireEvent.click(screen.getAllByText('Eliminar')[0])
+}
+
 // ─── Tests ────────────────────────────────────────────────────────────────────
 describe('CommerceDeliveriesPage', () => {
     beforeEach(() => vi.clearAllMocks())
@@ -129,14 +140,12 @@ describe('CommerceDeliveriesPage', () => {
         })
 
         it('renderiza el encabezado y stats correctamente', async () => {
-            setupSuccess()
-            
-            render(<CommerceDeliveriesPage />)
-            
+            renderSuccess()
+
             await waitFor(() => {
                 expect(screen.getByText('Gestión de Repartidores')).toBeInTheDocument()
             })
-            
+
             expect(screen.getByText('Disponibles')).toBeInTheDocument()
             expect(screen.getByText('En Entrega')).toBeInTheDocument()
             expect(screen.getByText('Total Repartidores')).toBeInTheDocument()
@@ -151,9 +160,7 @@ describe('CommerceDeliveriesPage', () => {
     // ── Vista Cards ───────────────────────────────────────────────────────────
     describe('Vista Cards', () => {
         it('renderiza los nombres de los deliveries en vista cards (default)', async () => {
-            setupSuccess()
-
-            render(<CommerceDeliveriesPage />)
+            renderSuccess()
 
             await waitFor(() => {
                 expect(screen.getByText('Juan Pérez')).toBeInTheDocument()
@@ -164,9 +171,7 @@ describe('CommerceDeliveriesPage', () => {
         })
 
         it('muestra los badges de estado correctamente', async () => {
-            setupSuccess()
-
-            render(<CommerceDeliveriesPage />)
+            renderSuccess()
 
             await waitFor(() => screen.getAllByText('Disponible'))
 
@@ -176,21 +181,16 @@ describe('CommerceDeliveriesPage', () => {
         })
 
         it('muestra "—" cuando avgRating es null', async () => {
-            setupSuccess()
-
-            render(<CommerceDeliveriesPage />)
+            renderSuccess()
 
             await waitFor(() => screen.getByText('Ana López'))
 
-            // Ana López no tiene rating — debe mostrar —
             const dashes = screen.getAllByText('—')
             expect(dashes.length).toBeGreaterThan(0)
         })
 
         it('muestra el % de éxito correctamente', async () => {
-            setupSuccess()
-
-            render(<CommerceDeliveriesPage />)
+            renderSuccess()
 
             await waitFor(() => screen.getByText('97.4 %'))
             expect(screen.getByText('99.2 %')).toBeInTheDocument()
@@ -214,14 +214,11 @@ describe('CommerceDeliveriesPage', () => {
     // ── Vista Tabla ───────────────────────────────────────────────────────────
     describe('Vista Tabla', () => {
         it('cambia a vista tabla al hacer clic en el botón Tabla', async () => {
-            setupSuccess()
-
-            render(<CommerceDeliveriesPage />)
+            renderSuccess()
 
             await waitFor(() => screen.getByText('Tabla'))
             fireEvent.click(screen.getByText('Tabla'))
 
-            // Los headers de la tabla deben aparecer
             expect(screen.getByText('Nombre Completo')).toBeInTheDocument()
             expect(screen.getByText('Estado')).toBeInTheDocument()
             expect(screen.getByText('Teléfono')).toBeInTheDocument()
@@ -232,15 +229,12 @@ describe('CommerceDeliveriesPage', () => {
         })
 
         it('vuelve a vista cards al hacer clic en Cards', async () => {
-            setupSuccess()
-
-            render(<CommerceDeliveriesPage />)
+            renderSuccess()
 
             await waitFor(() => screen.getByText('Tabla'))
             fireEvent.click(screen.getByText('Tabla'))
             fireEvent.click(screen.getByText('Cards'))
 
-            // En cards no existe el header "Nombre Completo"
             expect(screen.queryByText('Nombre Completo')).not.toBeInTheDocument()
             expect(screen.getByText('Juan Pérez')).toBeInTheDocument()
         })
@@ -249,9 +243,7 @@ describe('CommerceDeliveriesPage', () => {
     // ── Navegación ────────────────────────────────────────────────────────────
     describe('Navegación', () => {
         it('navega a /comercio/delivery/agregar al hacer clic en Agregar Delivery', async () => {
-            setupSuccess()
-
-            render(<CommerceDeliveriesPage />)
+            renderSuccess()
 
             await waitFor(() => screen.getByText('Agregar Delivery'))
             fireEvent.click(screen.getByText('Agregar Delivery'))
@@ -260,9 +252,7 @@ describe('CommerceDeliveriesPage', () => {
         })
 
         it('navega a la página de reseñas con el state correcto al hacer clic en Ver Reseñas', async () => {
-            setupSuccess()
-
-            render(<CommerceDeliveriesPage />)
+            renderSuccess()
 
             await waitFor(() => screen.getAllByText('Ver Reseñas'))
             fireEvent.click(screen.getAllByText('Ver Reseñas')[0])
@@ -292,12 +282,7 @@ describe('CommerceDeliveriesPage', () => {
     // ── Modal de eliminación ──────────────────────────────────────────────────
     describe('Modal de eliminación', () => {
         it('abre el modal al hacer clic en Eliminar', async () => {
-            setupSuccess()
-            
-            render(<CommerceDeliveriesPage />)
-
-            await waitFor(() => screen.getAllByText('Eliminar'))
-            fireEvent.click(screen.getAllByText('Eliminar')[0])
+            await openDeleteModal()
 
             const modal = screen.getByText('Desvincular repartidor').closest('div')
             expect(screen.getByText('Desvincular repartidor')).toBeInTheDocument()
@@ -306,12 +291,7 @@ describe('CommerceDeliveriesPage', () => {
         })
 
         it('cierra el modal al hacer clic en Cancelar', async () => {
-            setupSuccess()
-
-            render(<CommerceDeliveriesPage />)
-
-            await waitFor(() => screen.getAllByText('Eliminar'))
-            fireEvent.click(screen.getAllByText('Eliminar')[0])
+            await openDeleteModal()
 
             expect(screen.getByText('Desvincular repartidor')).toBeInTheDocument()
 
@@ -321,14 +301,8 @@ describe('CommerceDeliveriesPage', () => {
         })
 
         it('llama a deleteStoreDelivery con los IDs correctos al confirmar', async () => {
-            setupSuccess()
             deleteStoreDelivery.mockResolvedValueOnce()
-            fetchStoreDeliveries.mockResolvedValue(mockData) // recarga
-
-            render(<CommerceDeliveriesPage />)
-
-            await waitFor(() => screen.getAllByText('Eliminar'))
-            fireEvent.click(screen.getAllByText('Eliminar')[0])
+            await openDeleteModal()
 
             fireEvent.click(screen.getByText('Desvincular'))
 
@@ -338,31 +312,22 @@ describe('CommerceDeliveriesPage', () => {
         })
 
         it('muestra error inline si deleteStoreDelivery falla', async () => {
-            setupSuccess()
             deleteStoreDelivery.mockRejectedValueOnce(new Error('Tiene entregas activas'))
+            await openDeleteModal()
 
-            render(<CommerceDeliveriesPage />)
-
-            await waitFor(() => screen.getAllByText('Eliminar'))
-            fireEvent.click(screen.getAllByText('Eliminar')[0])
             fireEvent.click(screen.getByText('Desvincular'))
 
             await waitFor(() => {
                 expect(screen.getByText('No se pudo desvincular el repartidor.')).toBeInTheDocument()
             })
 
-            // El modal sigue abierto
             expect(screen.getByText('Desvincular repartidor')).toBeInTheDocument()
         })
 
         it('deshabilita botones del modal mientras desvincula', async () => {
-            setupSuccess()
             deleteStoreDelivery.mockReturnValue(new Promise(() => { }))
+            await openDeleteModal()
 
-            render(<CommerceDeliveriesPage />)
-
-            await waitFor(() => screen.getAllByText('Eliminar'))
-            fireEvent.click(screen.getAllByText('Eliminar')[0])
             fireEvent.click(screen.getByText('Desvincular'))
 
             await waitFor(() => {
@@ -371,9 +336,8 @@ describe('CommerceDeliveriesPage', () => {
 
             expect(screen.getByText('Cancelar')).toBeDisabled()
         })
-        
+
         it('recarga la lista tras desvincular exitosamente', async () => {
-            apiClient.get.mockResolvedValue(mockSession)
             fetchStoreDeliveries
                 .mockResolvedValueOnce(mockData)
                 .mockResolvedValueOnce({
@@ -381,11 +345,8 @@ describe('CommerceDeliveriesPage', () => {
                     deliveries: [mockDelivery2, mockDelivery3],
                 })
             deleteStoreDelivery.mockResolvedValueOnce()
+            await openDeleteModal()
 
-            render(<CommerceDeliveriesPage />)
-
-            await waitFor(() => screen.getAllByText('Eliminar'))
-            fireEvent.click(screen.getAllByText('Eliminar')[0])
             fireEvent.click(screen.getByText('Desvincular'))
 
             await waitFor(() => {
