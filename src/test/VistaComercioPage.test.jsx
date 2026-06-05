@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import { render, screen, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
@@ -12,7 +13,7 @@ vi.mock('lucide-react', () => ({
     Mail: () => <span>Mail</span>,
     MapPin: () => <span>MapPin</span>,
     Search: () => <span>Search</span>,
-    X: ({ onClick }) => <span onClick={onClick} data-testid="x-icon">X</span>,
+    X: ({ onClick }) => <button type="button" onClick={onClick} data-testid="x-icon">X</button>,
 }))
 
 vi.mock('../lib/apiClient', () => ({

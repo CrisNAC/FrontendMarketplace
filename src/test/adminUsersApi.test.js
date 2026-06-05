@@ -16,10 +16,10 @@ import { fetchAdminUsers, fetchPendingStores, approveStore, rejectStore } from '
 describe('fetchAdminUsers', () => {
     beforeEach(() => vi.clearAllMocks())
 
-    it('llama a GET /api/admin/users con params por defecto', async () => {
+    it('llama a GET /api/admin/users con params por defecto', () => {
         apiClient.get.mockResolvedValueOnce({ data: { data: [], pagination: { total: 0 } } })
 
-        const result = await fetchAdminUsers()
+        const result = fetchAdminUsers()
 
         expect(apiClient.get).toHaveBeenCalledWith('/api/admin/users', {
             params: { page: 1, limit: 20 }
@@ -27,55 +27,55 @@ describe('fetchAdminUsers', () => {
         expect(result).toBeTruthy()
     })
 
-    it('incluye search cuando se proporciona', async () => {
+    it('incluye search cuando se proporciona', () => {
         apiClient.get.mockResolvedValueOnce({ data: {} })
 
-        await fetchAdminUsers({ search: 'Juan ' })
+        fetchAdminUsers({ search: 'Juan ' })
 
         const [, config] = apiClient.get.mock.calls[0]
         expect(config.params.search).toBe('Juan')
     })
 
-    it('no incluye search si está en blanco', async () => {
+    it('no incluye search si está en blanco', () => {
         apiClient.get.mockResolvedValueOnce({ data: {} })
 
-        await fetchAdminUsers({ search: '  ' })
+        fetchAdminUsers({ search: '  ' })
 
         const [, config] = apiClient.get.mock.calls[0]
         expect(config.params.search).toBeUndefined()
     })
 
-    it('incluye role cuando se proporciona', async () => {
+    it('incluye role cuando se proporciona', () => {
         apiClient.get.mockResolvedValueOnce({ data: {} })
 
-        await fetchAdminUsers({ role: 'SELLER' })
+        fetchAdminUsers({ role: 'SELLER' })
 
         const [, config] = apiClient.get.mock.calls[0]
         expect(config.params.role).toBe('SELLER')
     })
 
-    it('incluye status cuando se proporciona', async () => {
+    it('incluye status cuando se proporciona', () => {
         apiClient.get.mockResolvedValueOnce({ data: {} })
 
-        await fetchAdminUsers({ status: 'true' })
+        fetchAdminUsers({ status: 'true' })
 
         const [, config] = apiClient.get.mock.calls[0]
         expect(config.params.status).toBe('true')
     })
 
-    it('no incluye status vacío', async () => {
+    it('no incluye status vacío', () => {
         apiClient.get.mockResolvedValueOnce({ data: {} })
 
-        await fetchAdminUsers({ status: '' })
+        fetchAdminUsers({ status: '' })
 
         const [, config] = apiClient.get.mock.calls[0]
         expect(config.params.status).toBeUndefined()
     })
 
-    it('usa page y limit personalizados', async () => {
+    it('usa page y limit personalizados', () => {
         apiClient.get.mockResolvedValueOnce({ data: {} })
 
-        await fetchAdminUsers({ page: 3, limit: 50 })
+        fetchAdminUsers({ page: 3, limit: 50 })
 
         const [, config] = apiClient.get.mock.calls[0]
         expect(config.params).toMatchObject({ page: 3, limit: 50 })

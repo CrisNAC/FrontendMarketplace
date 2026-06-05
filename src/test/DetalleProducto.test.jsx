@@ -74,7 +74,6 @@ vi.mock("../lib/formatGuarani", () => ({
 }));
 
 import DetalleProducto from "../features/clients/pages/DetalleProducto";
-import toast from "react-hot-toast";
 import {
     getWishlists,
     addWishlistItem,

@@ -9,14 +9,13 @@ vi.mock('../features/commerces/services/createProductApi', () => ({
     getBackendErrorMessage: (_err, fallback) => fallback,
 }))
 
-import { MAX_VISIBLE_TAG_SUGGESTIONS } from '../features/commerces/hooks/useCreateProduct'
+import { MAX_VISIBLE_TAG_SUGGESTIONS, useCreateProduct } from '../features/commerces/hooks/useCreateProduct'
 import {
     fetchProductCategories,
     fetchProductTags,
     createProduct,
     uploadProductImage,
 } from '../features/commerces/services/createProductApi'
-import { useCreateProduct } from '../features/commerces/hooks/useCreateProduct'
 
 const mockCategories = [{ id: 1, name: 'Electrónica', status: true }]
 const mockTags = [{ id: 1, name: 'oferta', status: true }, { id: 2, name: 'nuevo', status: true }]

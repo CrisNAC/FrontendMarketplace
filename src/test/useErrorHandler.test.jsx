@@ -14,7 +14,7 @@ describe('useErrorHandler', () => {
     const makeError = (status, code) => ({
         response: {
             status,
-            data: code !== undefined ? { error: { code } } : {},
+            data: code === undefined ? {} : { error: { code } },
         },
     })
 
