@@ -2,10 +2,12 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi } from 'vitest'
 
+const mockNavigate = vi.fn()
+
 vi.mock('react-router-dom', () => ({
-    useNavigate: () => vi.fn(),
+    useNavigate: () => mockNavigate,
     useLocation: () => ({ pathname: '/test' }),
-    Link: ({ children, to, className }) => <a href={to} className={className}>{children}</a>,
+    Link: ({ children, to, ...rest }) => <a href={to} {...rest}>{children}</a>,
 }))
 
 vi.mock('lucide-react', () => ({
@@ -88,6 +90,7 @@ describe('SellerCTA', () => {
     it('llama a navigate al hacer clic', async () => {
         render(<SellerCTA />)
         await userEvent.click(screen.getByRole('button', { name: /Crear comercio/i }))
+        expect(mockNavigate).toHaveBeenCalled()
     })
 })
 

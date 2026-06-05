@@ -328,7 +328,7 @@ describe('ReclamosPage (ModeracionResenas)', () => {
 
     it('cambia al tab de Reclamos al hacer clic', async () => {
         render(<ModeracionResenas />)
-        const reclamosBtn = screen.getAllByRole('button').find(b => b.textContent?.includes('Reclamos') && !b.textContent?.includes('Reseñas'))
+        const reclamosBtn = screen.getByRole('button', { name: /Reclamos de producto/i })
         await userEvent.click(reclamosBtn)
         expect(screen.getByText('ProductClaimsPanel')).toBeInTheDocument()
     })

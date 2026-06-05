@@ -2,10 +2,12 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
+const { navigateMock } = vi.hoisted(() => ({ navigateMock: vi.fn() }))
+
 vi.mock('react-router-dom', () => ({
-    useNavigate: () => vi.fn(),
+    useNavigate: () => navigateMock,
     useLocation: () => ({ pathname: '/homepage', search: '' }),
-    Link: ({ children, to, className }) => <a href={to} className={className}>{children}</a>,
+    Link: ({ children, to, ...rest }) => <a href={to} {...rest}>{children}</a>,
 }))
 
 vi.mock('react-hot-toast', () => ({
@@ -55,7 +57,7 @@ describe('CategoriesBar', () => {
         expect(oferta.className).toContain('red')
     })
 
-    it('renderiza exactamente 8 categorías + Ofertas', () => {
+    it('renderiza al menos 8 categorías + Ofertas', () => {
         render(<CategoriesBar />)
         const spans = screen.getAllByText(/./i)
         expect(spans.length).toBeGreaterThanOrEqual(8)
@@ -91,6 +93,7 @@ describe('MarketplaceNavbar', () => {
 describe('Navbar', () => {
     beforeEach(() => {
         vi.clearAllMocks()
+        navigateMock.mockReset()
         axios.get.mockResolvedValue({ data: { user: null } })
         fetchCartsApi.mockResolvedValue([])
     })
@@ -178,8 +181,7 @@ describe('Navbar', () => {
         await waitFor(() => screen.getByPlaceholderText('Buscar'))
         await userEvent.type(screen.getByPlaceholderText('Buscar'), 'laptop')
         fireEvent.keyDown(screen.getByPlaceholderText('Buscar'), { key: 'Enter' })
-        // Solo verifica que el input cambia sin crash
-        expect(screen.getByPlaceholderText('Buscar')).toHaveValue('laptop')
+        expect(navigateMock).toHaveBeenCalled()
     })
 
     it('maneja error de sesión y muestra el botón de cuenta', async () => {

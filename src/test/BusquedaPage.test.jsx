@@ -301,9 +301,17 @@ describe("BusquedaPage", () => {
   it("navega atrás al hacer clic en la flecha", async () => {
     const user = userEvent.setup();
     vi.stubGlobal("fetch", createFetchMock());
-    renderBusqueda("/busqueda?search=algo");
-    await waitFor(() => screen.getByTestId("arrow-left"));
+    render(
+      <MemoryRouter initialEntries={["/inicio", "/busqueda?search=algo"]} initialIndex={1}>
+        <Routes>
+          <Route path="/inicio" element={<div>Página anterior</div>} />
+          <Route path="/busqueda" element={<BusquedaPage />} />
+        </Routes>
+      </MemoryRouter>
+    );
+    await screen.findByTestId("arrow-left");
     await user.click(screen.getByTestId("arrow-left"));
+    expect(screen.getByText("Página anterior")).toBeInTheDocument();
   });
 
   it("usa data.content como fallback cuando no hay data.products", async () => {
@@ -319,15 +327,21 @@ describe("BusquedaPage", () => {
   });
 
   it("usa total_pages como fallback cuando no hay pagination.totalPages", async () => {
-    const productsData = {
-      products: [{ id_product: 6, name: "Mesa", price: 300000 }],
-      total_pages: 5,
-    };
-    vi.stubGlobal("fetch", createFetchMock({ productsData }));
+    const user = userEvent.setup();
+    const fetchMock = createFetchMock({
+      productsData: {
+        products: [{ id_product: 6, name: "Mesa", price: 300000 }],
+        total_pages: 5,
+      },
+    });
+    vi.stubGlobal("fetch", fetchMock);
     renderBusqueda();
+    expect(await screen.findByText("Mesa")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /ir a página 2/i }));
     await waitFor(() => {
-      expect(screen.getByText("Mesa")).toBeInTheDocument();
-      expect(screen.getByText("Página actual: 1")).toBeInTheDocument();
+      const calledUrl =
+        fetchMock.mock.calls.map((c: unknown[]) => String(c[0])).find((u: string) => u.includes("page=2")) || "";
+      expect(calledUrl).toContain("page=2");
     });
   });
 });

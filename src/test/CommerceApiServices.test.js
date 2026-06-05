@@ -140,8 +140,9 @@ describe('getStoreDeliveryErrorMessage', () => {
         axios.isAxiosError.mockReturnValue(false)
         mockGetBackendErrorMessage.mockReturnValue('fallback error')
         const error = new Error('Network error')
-        getStoreDeliveryErrorMessage(error, 'fallback')
-        expect(mockGetBackendErrorMessage).toHaveBeenCalled()
+        const result = getStoreDeliveryErrorMessage(error, 'fallback')
+        expect(mockGetBackendErrorMessage).toHaveBeenCalledWith(error, 'fallback')
+        expect(result).toBe('fallback error')
     })
 })
 

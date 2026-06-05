@@ -208,6 +208,8 @@ describe('getBackendErrorMessage', () => {
     })
 
     it('retorna error.message para instancia de Error', () => {
+        // editCommerceApi.getBackendErrorMessage expone error.message para Error nativo;
+        // editUserProfileApi.getBackendErrorMessage retorna el fallback en ese caso (comportamiento distinto por diseño).
         axios.isAxiosError.mockReturnValue(false)
         expect(getBackendErrorMessage(new Error('mensaje real'), 'fb')).toBe('mensaje real')
     })

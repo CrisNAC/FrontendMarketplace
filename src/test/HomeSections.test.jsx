@@ -223,11 +223,8 @@ describe('HomeSections', () => {
 
         await waitFor(() => screen.getByText('Mi Tienda'))
 
-        const storeDivs = document.querySelectorAll('[class*="cursor-pointer"]')
-        if (storeDivs.length > 0) {
-            await userEvent.click(storeDivs[storeDivs.length - 1])
-            expect(mockNavigate).toHaveBeenCalledWith(expect.stringContaining('storeId=5'))
-        }
+        await userEvent.click(screen.getByText('Mi Tienda'))
+        expect(mockNavigate).toHaveBeenCalledWith(expect.stringContaining('storeId=5'))
     })
 
     it('navega a la búsqueda por categoría al hacer clic en una categoría', async () => {

@@ -93,21 +93,18 @@ describe('SearchFilterSidebar', () => {
     it('selecciona una categoría al hacer clic en el radio', async () => {
         const onFiltersApply = vi.fn()
         render(<SearchFilterSidebar categories={categories} onFiltersApply={onFiltersApply} />)
-        const radios = screen.getAllByRole('radio')
-        // radios[0] = Todas, radios[1] = Alimentos (primero alfabéticamente), etc.
-        await userEvent.click(radios[1])
+        await userEvent.click(screen.getByLabelText('Alimentos'))
         await userEvent.click(screen.getByText('Aplicar'))
         expect(onFiltersApply).toHaveBeenCalledWith(
-            expect.objectContaining({ categoryId: expect.any(Number) })
+            expect.objectContaining({ categoryId: 3 })
         )
     })
 
     it('actualiza localCategoryId cuando cambia selectedCategoryId prop', () => {
         const { rerender } = render(<SearchFilterSidebar categories={categories} selectedCategoryId={null} />)
         rerender(<SearchFilterSidebar categories={categories} selectedCategoryId={1} />)
-        const radios = screen.getAllByRole('radio')
-        const checkedRadio = radios.find((r) => (r as HTMLInputElement).checked)
-        expect(checkedRadio).toBeTruthy()
+        const categoriaSeleccionada = screen.getByLabelText('Electrónica') as HTMLInputElement
+        expect(categoriaSeleccionada.checked).toBe(true)
     })
 
     it('no llama onFiltersApply cuando no se provee la prop', async () => {

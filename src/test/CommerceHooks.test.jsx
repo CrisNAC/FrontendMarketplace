@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react'
+import { renderHook, act, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('../features/commerces/services/categoryRequestApi', () => ({
@@ -109,12 +109,14 @@ describe('useCategoryRequest', () => {
         act(() => {
             result.current.onFieldChange({ target: { name: 'name', value: 'Categoría' } })
         })
-        const submitPromise = act(async () => {
-            result.current.handleSubmit({ preventDefault: vi.fn() })
+        let submitPromise
+        act(() => {
+            submitPromise = result.current.handleSubmit({ preventDefault: vi.fn() })
         })
-        // Durante el envío isSubmitting debería ser true
-        await act(async () => { resolveSubmit({}) })
-        await submitPromise
-        expect(result.current.isSubmitting).toBe(false)
+        expect(result.current.isSubmitting).toBe(true)
+        resolveSubmit({})
+        await waitFor(() => {
+            expect(result.current.isSubmitting).toBe(false)
+        })
     })
 })
