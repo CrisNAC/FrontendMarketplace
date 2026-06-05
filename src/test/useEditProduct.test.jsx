@@ -25,6 +25,7 @@ const baseProduct = {
   visible: true,
   isOffer: false,
   offerPrice: null,
+  quantity: 10,
   tags: [],
 };
 

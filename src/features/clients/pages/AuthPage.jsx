@@ -83,10 +83,14 @@ export default function AuthPage() {
 
     try {
       if (isLogin) {
-        const res = await apiClient.post("/api/session", {
-          email: form.email,
-          password: form.password,
-        }, { skipGlobalErrorRedirect: true });
+        const res = await apiClient.post(
+          "/api/session",
+          {
+            email: form.email,
+            password: form.password,
+          },
+          { skipGlobalErrorRedirect: true }
+        );
 
         const role = res.data?.user?.role;
         if (role === "CUSTOMER") {
@@ -108,7 +112,11 @@ export default function AuthPage() {
       if (err.response?.status === 429) {
         setError("Demasiados intentos. Esperá unos minutos e intentá de nuevo.");
       } else {
-        setError(err.response?.data?.error?.message || err.response?.data?.message || "Ocurrió un error");
+        setError(
+          err.response?.data?.error?.message ||
+          err.response?.data?.message ||
+          "Ocurrió un error"
+        );
       }
     } finally {
       setLoading(false);

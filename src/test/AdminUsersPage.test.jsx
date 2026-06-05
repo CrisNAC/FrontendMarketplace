@@ -66,7 +66,7 @@ describe('AdminUsersPage', () => {
     mockFetchAdminUsers.mockReturnValue(new Promise(() => {})); // Promise que nunca resuelve
     renderPage();
 
-    expect(screen.getByText('Cargando usuarios...')).toBeInTheDocument();
+    expect(document.querySelector('.animate-spin')).toBeInTheDocument();
   });
 
   it('muestra nombre y email de cada usuario', async () => {

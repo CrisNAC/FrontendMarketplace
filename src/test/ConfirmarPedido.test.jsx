@@ -11,13 +11,6 @@ vi.mock("react-router-dom", () => ({
   useParams: () => ({ cartId: "55" }),
 }));
 
-vi.mock("axios", () => ({
-  default: {
-    get: vi.fn(),
-    post: vi.fn(),
-  },
-}));
-
 const mockShowToast = vi.fn();
 
 vi.mock('@/hooks', () => ({

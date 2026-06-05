@@ -10,13 +10,15 @@ import {
     ChevronLeft,
     ChevronRight,
     ShieldCheck,
-    Store,    
+    Store,
     Flag,
+    Megaphone,
 } from "lucide-react";
 
 const NAV_ITEMS = [
     { label: "Dashboard",               icon: LayoutDashboard, route: "/admin/dashboard" },
     { label: "Banners promocionales",   icon: Flag,            route: "/admin/banners" },
+    { label: "Solicitudes de banner",   icon: Megaphone,       route: "/admin/banner-solicitudes" },
     { label: "Gestión de Usuarios",     icon: Users,           route: "/admin/usuarios" },
     { label: "Comercios por Aprobar",   icon: Store,           route: "/admin/comercios-pendientes" },
     { label: "Moderación de Productos", icon: Package,         route: "/admin/productos" },

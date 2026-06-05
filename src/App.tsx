@@ -9,6 +9,7 @@ import { ToastProvider, ToastContainer } from '@/components/toast'
  */
 import { setNavigate } from './lib/apiClient';
 import { RequireAuth } from './components/auth/RequireAuth';
+import { RequireAdmin } from './components/auth/RequireAdmin';
 import { NotFoundPage } from './pages/errors/NotFoundPage';
 import { ForbiddenPage } from './pages/errors/ForbiddenPage';
 import { ServerErrorPage } from './pages/errors/ServerErrorPage';
@@ -19,11 +20,11 @@ const isDev = import.meta.env.DEV;
 /**
  * Layouts
  */
-import { 
+import {
   AdminLayout,
   ClientLayout,
   MyCommerceLayout,
-  VistaComercioLayout, 
+  VistaComercioLayout,
   CommentsLayout,
   DeliveryLayout,
 } from './layouts';
@@ -71,9 +72,11 @@ import { AdminDashboardPage } from './features/admin/pages/AdminDashboardPage';
 import { AdminModulePlaceholderPage } from './features/admin/pages/AdminModulePlaceholderPage';
 import { AdminProductsPage } from './features/admin/pages/AdminProductsPage';
 import { AdminBannersPage } from './features/admin/pages/AdminBannersPage';
+import { AdminBannerRequestsPage } from './features/admin/pages/AdminBannerRequestsPage';
 import ReclamosPage from './features/admin/pages/ReclamosPage';
 import Reclamos from './features/admin/pages/Reclamos';
 import CommerceClaims from './features/commerces/pages/CommerceClaims';
+import { CommerceBannerRequestsPage } from './features/commerces/pages/CommerceBannerRequestsPage';
 import DeliveryProfilePage from './features/delivery/pages/DeliveryProfilePage';
 import { DeliveryEditProfilePage } from './features/delivery/pages/DeliveryEditProfilePage';
 import DeliveryOrdersPage from './features/delivery/pages/DeliveryOrdersPage';
@@ -286,6 +289,11 @@ function App() {
               <MyCommerceLayout><CommerceClaims /></MyCommerceLayout>
             </RequireAuth>
           } />
+          <Route path="/comercio/banners" element={
+            <RequireAuth>
+              <MyCommerceLayout><CommerceBannerRequestsPage /></MyCommerceLayout>
+            </RequireAuth>
+          } />
 
           {/* ── Área de delivery (con sidebar) ───────────────────────────── */}
           <Route path="/delivery" element={
@@ -389,6 +397,11 @@ function App() {
             <RequireAuth>
               <AdminLayout><ReclamosPage /></AdminLayout>
             </RequireAuth>
+          } />
+          <Route path="/admin/banner-solicitudes" element={
+            <RequireAdmin>
+              <AdminLayout><AdminBannerRequestsPage /></AdminLayout>
+            </RequireAdmin>
           } />
 
           {/* ── Páginas de error ───────────────────────────────────────────── */}

@@ -11,15 +11,21 @@ vi.mock("react-router-dom", () => ({
   useParams: () => ({ cartId: "55" }),
 }));
 
-vi.mock("axios", () => ({
-  default: {
-    get: vi.fn(),
-    post: vi.fn(),
-  },
+vi.mock("@/hooks", () => ({
+  useToast: () => ({
+    showToast: vi.fn(),
+    toasts: [],
+    removeToast: vi.fn(),
+  }),
 }));
 
-vi.mock("../components/navbar/Navbar", () => ({
-  default: () => <div>Navbar</div>,
+vi.mock("@/components", () => ({
+  Navbar: () => <div>Navbar</div>,
+  PageLoader: () => <div data-testid="page-loader">Cargando...</div>,
+}));
+
+vi.mock("../features/clients/components/cart/ConfirmationModal", () => ({
+  ConfirmationModal: () => null,
 }));
 
 describe("CartPage", () => {
