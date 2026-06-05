@@ -1,7 +1,3 @@
-
-/** Este es un Spinner de carga, pueden implementarlo donde necesiten mostrar alguna carga.
- *  Le tienen que pasar size y color por si quieren cambiarle */
-
 export const Spinner = ({ size = "5", color = "text-white" }) => {
   return (
     <svg

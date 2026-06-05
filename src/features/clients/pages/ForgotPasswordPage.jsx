@@ -33,7 +33,11 @@ export default function ForgotPasswordPage() {
       await apiClient.post("/api/users/forgot-password", { email }, { skipGlobalErrorRedirect: true });
       setSubmitted(true);
     } catch (err) {
-      setError(err.response?.data?.message || "Ocurrió un error. Intentá de nuevo.");
+      if (err.response?.status === 429) {
+        setError("Demasiadas solicitudes. Esperá un momento e intentá de nuevo.");
+      } else {
+        setError(err.response?.data?.message || "Ocurrió un error. Intentá de nuevo.");
+      }
     } finally {
       setLoading(false);
     }

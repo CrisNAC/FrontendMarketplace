@@ -1,9 +1,10 @@
 // src/features/commerces/pages/CommerceDeliveryReviewsPage.jsx
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Star, MessageSquare, Truck, TrendingUp, Phone, Mail, Search, Filter, Loader2 } from "lucide-react";
+import { ArrowLeft, Star, MessageSquare, Truck, TrendingUp, Phone, Mail, Search, Filter } from "lucide-react";
 import { apiClient as commerceApiClient } from "../services/editCommerceApi";
 import { getDeliveryReviewsErrorMessage, getStoreDeliveryReviews } from "../services/deliveryReviewsApi";
+import { PageLoader } from "../../../components/PageLoader";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const STAR_OPTIONS = [
@@ -152,8 +153,10 @@ export function CommerceDeliveryReviewsPage() {
         return (sum / reviews.length).toFixed(1);
     }, [reviews]);
 
+    if (loadingSession) return <PageLoader />;
+
     // ── Redirección si llegaron sin state ─────────────────────────────────────
-    if (!loadingSession && !deliveryId) {
+    if (!deliveryId) {
         return (
             <div style={{ textAlign: "center", padding: "60px 20px" }}>
                 <p style={{ color: "#6b7280", marginBottom: "16px" }}>No se encontró información del repartidor.</p>
@@ -262,14 +265,10 @@ export function CommerceDeliveryReviewsPage() {
             )}
 
             {/* ── Spinner ── */}
-            {(loadingSession || loadingReviews) && (
-                <div style={{ display: "flex", justifyContent: "center", padding: "40px 0" }}>
-                    <Loader2 size={24} color="#9ca3af" style={{ animation: "spin 1s linear infinite" }} />
-                </div>
-            )}
+            {loadingReviews && <PageLoader />}
 
             {/* ── Lista de reseñas ── */}
-            {!loadingSession && !loadingReviews && !error && (
+            {!loadingReviews && !error && (
                 <>
                     <p style={{ fontSize: "14px", fontWeight: "700", color: "#111827", margin: "0 0 12px 0" }}>
                         Reseñas ({total})
@@ -288,7 +287,6 @@ export function CommerceDeliveryReviewsPage() {
                 </>
             )}
 
-            <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
         </>
     );
 }

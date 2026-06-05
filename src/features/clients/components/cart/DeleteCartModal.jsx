@@ -1,10 +1,8 @@
-// src/features/clients/components/cart/DeleteCartModal.jsx
 import { useState } from "react";
 import PropTypes from "prop-types";
 import { Trash2 } from "lucide-react";
 import axios from "axios";
-import toast from "react-hot-toast";
-import { getApiBase } from "../../../../lib/cartApi";
+import { getApiBase } from "@/lib";
 import { ConfirmationModal } from "./ConfirmationModal";
 
 export function DeleteCartModal({ cartId, userId, storeName, itemCount, onClose, onSuccess }) {
@@ -20,11 +18,10 @@ export function DeleteCartModal({ cartId, userId, storeName, itemCount, onClose,
         `${apiBase}/api/users/${userId}/cart/${cartId}`,
         { withCredentials: true }
       );
-      toast.success("Orden eliminada correctamente");
       onSuccess?.();
       onClose();
     } catch (err) {
-      const message = err?.response?.data?.message || "No se pudo eliminar la orden";
+      const message = err?.response?.data?.message || "No se pudo eliminar el carrito";
       setError(message);
       console.error("Error eliminando carrito:", err);
     } finally {
@@ -33,7 +30,7 @@ export function DeleteCartModal({ cartId, userId, storeName, itemCount, onClose,
   };
 
   const warnings = [
-    `¿Estás seguro de que deseas eliminar esta orden de compra?`,
+    `¿Estás seguro de que deseas eliminar este carrito?`,
     `• Contiene ${itemCount} ${itemCount === 1 ? "producto" : "productos"}`,
     `• Esta acción no se puede deshacer`,
   ];
@@ -41,13 +38,13 @@ export function DeleteCartModal({ cartId, userId, storeName, itemCount, onClose,
   return (
     <ConfirmationModal
       isOpen={Boolean(cartId)}
-      title="Eliminar orden"
+      title="Eliminar carrito"
       subtitle={storeName}
       warnings={warnings}
-      description="Los productos de esta orden se eliminarán permanentemente."
+      description="Los productos de este carrito se eliminarán permanentemente."
       onClose={onClose}
       onConfirm={handleDelete}
-      confirmText="Eliminar orden"
+      confirmText="Eliminar carrito"
       isLoading={deleting}
       error={error}
       icon={Trash2}

@@ -1,14 +1,14 @@
 import { useState, useEffect} from "react";
 import { MapPin, Plus, Pencil, Trash2, X, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { PageLoader } from "../../../../components/PageLoader";
+import { EmptyState } from "../../../../components/EmptyState";
 import { z } from "zod";
-import Navbar from "../../../../components/navbar/Navbar";
-import { SidebarClientProfile } from "../../../../components/SidebarClientProfile";
 import { useAddresses } from "../../../../hooks/useAddresses";
 import MapView from "../Map";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { useToast } from '@/hooks'
 
-// ─── Esquema de validación ──────────────────────────────────────────────────
 const addressSchema = z.object({
   address: z.string().min(1, "La dirección es obligatoria"),
   latitude: z.number().nullable().refine((val) => val !== null, { message: "Debes seleccionar un punto en el mapa" }),
@@ -97,7 +97,6 @@ const AddressFormModal = ({ open, onClose, onSubmit, initialData, loading }) => 
     const [form, setForm] = useState(initialData ?? EMPTY_FORM);
     const [formError, setFormError] = useState(null);
 
-    // sincroniza cuando se abre con datos distintos
     useEffect(() => {
         setForm(initialData ?? EMPTY_FORM);
         setFormError(null);
@@ -295,32 +294,20 @@ const AddressCard = ({ address, onEdit, onDelete }) => {
     );
 };
 
-// ─── Pagina Principal ────────────────────────────────────────────────────────────
 const MAX_ADDRESSES = 5;
 
 export const AddressesPage = () => {
     const navigate = useNavigate();
     const { userId , sessionLoading } = useSession();
-    //const userId = user?.id_user;
+    const { showToast } = useToast()
 
     const { addresses, loading, error, createAddress, updateAddress, deleteAddress } = useAddresses(userId);
 
-    // Modal para crear/editar
     const [modalOpen, setModalOpen] = useState(false);
     const [editingAddress, setEditingAddress] = useState(null);
     const [formLoading, setFormLoading] = useState(false);
-
-    //confirm delete
     const [deleteId, setDeleteId] = useState(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
-
-    // Toast
-    const [toast, setToast] = useState({ message: "", type: "success" });
-
-    const showToast = (message, type = "success") => {
-        setToast({ message, type });
-        setTimeout(() => setToast({ message: "", type: "success" }), 4000);
-    };
 
     const handleOpenCreate = () => {
         setEditingAddress(null);
@@ -380,61 +367,35 @@ export const AddressesPage = () => {
         }
     };
 
-    // Espera a que se verifique la sesión antes de renderizar
-    if (sessionLoading) {
-        return (
-            <div className="min-h-screen flex flex-col" >
-                <Navbar />
-                < div className="flex-1 flex items-center justify-center" >
-                    <Loader2 size={28} className="animate-spin text-[#2d4030]" />
-                </div>
-            </div>
-        );
-    }
+    if (sessionLoading) return <PageLoader />;
 
-    // Si la sesión ya resolvió pero no hay usuario, redirigir al login
     if (!userId) {
         return (
-            <div className="min-h-screen flex flex-col">
-                <Navbar />
-                <div className="flex-1 flex items-center justify-center px-4">
-                    <div className="bg-white border border-gray-200 rounded-md shadow-xl p-8 w-full max-w-sm text-center">
-                        <div className="bg-[#e8f0e9] p-3 rounded-full w-fit mx-auto mb-4">
-                            <MapPin size={24} className="text-[#2d4030]" />
-                        </div>
-                        <h2 className="font-semibold text-[#2d4030] text-[18px] mb-2">
-                            Inicia sesión para continuar
-                        </h2>
-                        <p className="text-gray-500 text-sm mb-6">
-                            Necesitas estar autenticado para ver tu libreta de direcciones.
-                        </p>
-                        <button
-                            onClick={() => navigate("/login")}
-                            className="w-full px-4 py-2 text-sm font-medium text-white bg-[#2d4030] hover:bg-[#3d5540] rounded-md transition-colors"
-                        >
-                            Ir al login
-                        </button>
+            <div className="flex items-center justify-center h-full px-4">
+                <div className="bg-white border border-gray-200 rounded-md shadow-xl p-8 w-full max-w-sm text-center">
+                    <div className="bg-[#e8f0e9] p-3 rounded-full w-fit mx-auto mb-4">
+                        <MapPin size={24} className="text-[#2d4030]" />
                     </div>
+                    <h2 className="font-semibold text-[#2d4030] text-[18px] mb-2">
+                        Inicia sesión para continuar
+                    </h2>
+                    <p className="text-gray-500 text-sm mb-6">
+                        Necesitas estar autenticado para ver tu libreta de direcciones.
+                    </p>
+                    <button
+                        onClick={() => navigate("/login")}
+                        className="w-full px-4 py-2 text-sm font-medium text-white bg-[#2d4030] hover:bg-[#3d5540] rounded-md transition-colors"
+                    >
+                        Ir al login
+                    </button>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen flex flex-col" >
-            <Navbar />
-
-            <main className="max-w-[1400px] mx-auto w-full px-6 py-10">
-                <h1 className="text-[28px] font-bold text-[#2d4030] mb-8">Libreta de direcciones</h1>
-
-                <div className="flex flex-col md:flex-row gap-8 items-start">
-                    {/* Sidebar */}
-                    <aside className="w-full md:w-[280px] shrink-0">
-                        <SidebarClientProfile />
-                    </aside>
-
-                    {/* Content */}
-                    <div className="flex-1 w-full">
+        <>
+            <div className="max-w-[1100px] mx-auto w-full">
 
                         {/* Section header */}
                         <div className="bg-[`#f0f2f1`] border border-gray-200 px-4 py-3 rounded-sm flex justify-between items-center mb-4">
@@ -489,12 +450,11 @@ export const AddressesPage = () => {
 
                                 {/* Estado vacio */}
                                 {addresses.length === 0 && !loading && (
-                                    <div className="col-span-2 text-center py-12 text-gray-400">
-                                        <MapPin size={36} className="mx-auto mb-3 opacity-40" />
-                                        <p className="text-[15px]">No tienes direcciones guardadas.</p>
-                                        <p className="text-[13px] mt-1">
-                                            Haz click en "Agregar dirección" para empezar.
-                                        </p>
+                                    <div className="col-span-2">
+                                        <EmptyState
+                                            message="No tienes direcciones guardadas."
+                                            subtitle='Haz click en "Agregar dirección" para empezar.'
+                                        />
                                     </div>
                                 )}
                             </div>
@@ -506,12 +466,9 @@ export const AddressesPage = () => {
                                 Alcanzaste el límite máximo de {MAX_ADDRESSES} direcciones. Elimina una para agregar otra.
                             </p>
                         )}
-                    </div>
-                </div>
-            </main>
+            </div>
 
-            {/* Modal crear / editar */}
-            <AddressFormModal 
+            <AddressFormModal
                 open={modalOpen}
                 onClose={handleCloseModal}
                 onSubmit={handleFormSubmit}
@@ -519,21 +476,14 @@ export const AddressesPage = () => {
                 loading={formLoading}
             />
 
-            {/* Dialog confirmar eliminación */}
             <ConfirmDialog
                 open={!!deleteId}
                 onConfirm={handleDeleteConfirm}
                 onCancel={() => setDeleteId(null)}
                 loading={deleteLoading}
             />
+        </>
 
-            {/* Toast message */}
-            <Toast
-                message={toast.message}
-                type={toast.type}
-                onClose={() => setToast({ message: "", type: "success" })}
-            />
-        </div>
     );
 };
 

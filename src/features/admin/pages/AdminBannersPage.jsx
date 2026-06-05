@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Calendar, Image, Pencil, Plus, Search, ToggleLeft, ToggleRight, X } from "lucide-react";
-import toast from "react-hot-toast";
+import { PageLoader } from "@/components/PageLoader";
 import {
   createAdminBanner,
   fetchAdminBanners,
   toggleAdminBanner,
   updateAdminBanner,
-} from "../services/adminBannersApi";
+} from "@/features/admin/services"; 
+import { useToast } from "@/hooks";
 
 const cardStyle = {
   backgroundColor: "var(--background-white)",
@@ -50,7 +51,7 @@ const buildScheduleBadge = (banner) => {
   return { label: "Visible", color: "#15803d", bg: "#dcfce7" };
 };
 
-const BannerFormModal = ({ isOpen, initialData, onClose, onSubmit, isSubmitting }) => {
+const BannerFormModal = ({ isOpen, initialData, onClose, onSubmit, isSubmitting, showToast }) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [imageUrl, setImageUrl] = useState("");
@@ -74,15 +75,15 @@ const BannerFormModal = ({ isOpen, initialData, onClose, onSubmit, isSubmitting 
 
   const handleSubmit = () => {
     if (!title.trim()) {
-      toast.error("El titulo es obligatorio");
+      showToast("El titulo es obligatorio", "error");
       return;
     }
     if (!imageUrl.trim()) {
-      toast.error("La imagen es obligatoria");
+      showToast("La imagen es obligatoria", "error");
       return;
     }
     if (!startAt) {
-      toast.error("La fecha de inicio es obligatoria");
+      showToast("La fecha de inicio es obligatoria", "error");
       return;
     }
 
@@ -213,6 +214,7 @@ const BannerFormModal = ({ isOpen, initialData, onClose, onSubmit, isSubmitting 
 };
 
 export const AdminBannersPage = () => {
+  const { showToast } = useToast();
   const [banners, setBanners] = useState([]);
   const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 20, totalPages: 1 });
   const [loading, setLoading] = useState(true);
@@ -269,16 +271,16 @@ export const AdminBannersPage = () => {
     try {
       if (editingBanner) {
         await updateAdminBanner(editingBanner.id, payload);
-        toast.success("Banner actualizado");
+        showToast("Banner actualizado", "success");
       } else {
         await createAdminBanner(payload);
-        toast.success("Banner creado");
+        showToast("Banner creado", "success");
       }
       setIsModalOpen(false);
       setEditingBanner(null);
       loadBanners(page);
     } catch (err) {
-      toast.error(err?.response?.data?.error?.message || "No se pudo guardar el banner");
+      showToast(err?.response?.data?.error?.message || "No se pudo guardar el banner", "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -287,10 +289,10 @@ export const AdminBannersPage = () => {
   const handleToggle = async (banner) => {
     try {
       await toggleAdminBanner(banner.id, !banner.isActive);
-      toast.success(banner.isActive ? "Banner desactivado" : "Banner activado");
+      showToast(banner.isActive ? "Banner desactivado" : "Banner activado", "success");
       loadBanners(page);
     } catch (err) {
-      toast.error(err?.response?.data?.error?.message || "No se pudo actualizar el banner");
+      showToast(err?.response?.data?.error?.message || "No se pudo actualizar el banner", "error");
     }
   };
 
@@ -308,7 +310,7 @@ export const AdminBannersPage = () => {
         <button
           type="button"
           onClick={handleCreate}
-          style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "10px 16px", backgroundColor: "#15803d", color: "white", border: "none", borderRadius: "10px", cursor: "pointer", fontSize: "14px", fontWeight: "600" }}
+          style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "10px 16px", backgroundColor: "var(--primary-dark)", color: "white", border: "none", borderRadius: "10px", cursor: "pointer", fontSize: "14px", fontWeight: "600" }}
         >
           <Plus size={16} /> Nuevo banner
         </button>
@@ -346,11 +348,7 @@ export const AdminBannersPage = () => {
           </div>
         )}
 
-        {loading && (
-          <div style={{ textAlign: "center", padding: "40px 0", color: "#9ca3af", fontSize: "14px" }}>
-            Cargando banners...
-          </div>
-        )}
+        {loading && <PageLoader />}
 
         {emptyState && (
           <div style={{ textAlign: "center", padding: "60px 0", color: "#9ca3af", fontSize: "14px" }}>
@@ -395,9 +393,9 @@ export const AdminBannersPage = () => {
                       type="button"
                       title={banner.isActive ? "Desactivar banner" : "Activar banner"}
                       onClick={() => handleToggle(banner)}
-                      style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px", borderRadius: "6px", border: "none", backgroundColor: banner.isActive ? "#fee2e2" : "#dcfce7", color: banner.isActive ? "#dc2626" : "#15803d", cursor: "pointer" }}
+                      style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px", borderRadius: "6px", border: "none", backgroundColor: banner.isActive ? "#dcfce7" : "#fee2e2", color: banner.isActive ? "#15803d" : "#dc2626", cursor: "pointer" }}
                     >
-                      {banner.isActive ? <ToggleLeft size={18} /> : <ToggleRight size={18} />}
+                      {banner.isActive ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
                     </button>
                   </div>
                 </div>
@@ -421,6 +419,7 @@ export const AdminBannersPage = () => {
         onClose={() => { setIsModalOpen(false); setEditingBanner(null); }}
         onSubmit={handleSubmit}
         isSubmitting={isSubmitting}
+        showToast={showToast}
       />
     </div>
   );

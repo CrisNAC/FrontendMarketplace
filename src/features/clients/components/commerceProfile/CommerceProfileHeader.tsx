@@ -37,6 +37,7 @@ export const CommerceProfileHeader = ({
     onSearchSubmit,
 }: Props) => {
     const [isMapOpen, setIsMapOpen] = useState(false);
+    const [emailCopied, setEmailCopied] = useState(false);
 
     const encodedAddress = address ? encodeURIComponent(address) : "";
     const hasCoords = Number.isFinite(latitude) && Number.isFinite(longitude);
@@ -50,9 +51,22 @@ export const CommerceProfileHeader = ({
         window.open(`tel:${phone}`, "_self");
     };
 
-    const handleEmail = () => {
+    const handleEmail = async () => {
         if (!email) return;
-        window.open(`mailto:${email}`, "_self");
+        try {
+            await navigator.clipboard.writeText(email);
+        } catch {
+            const ta = document.createElement("textarea");
+            ta.value = email;
+            ta.style.position = "fixed";
+            ta.style.opacity = "0";
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand("copy");
+            document.body.removeChild(ta);
+        }
+        setEmailCopied(true);
+        setTimeout(() => setEmailCopied(false), 2000);
     };
 
     const handleOpenMap = () => {
@@ -131,8 +145,11 @@ export const CommerceProfileHeader = ({
                         <span>⭐</span>
                         <span style={{ fontWeight: "bold" }}>{rating}</span>
                         <span style={{ fontSize: "14px", color: "#6b7280" }}>{reviews} reseñas</span>
-                        {closesAt.trim() ? (
+                        {isOpen && closesAt.trim() ? (
                             <span style={{ fontSize: "14px", color: "#6b7280" }}>· Cierra a las {closesAt}</span>
+                        ) : null}
+                        {!isOpen && closesAt.trim() ? (
+                            <span style={{ fontSize: "14px", color: "#6b7280" }}>· Cerrado por hoy</span>
                         ) : null}
                     </div>
 
@@ -149,12 +166,13 @@ export const CommerceProfileHeader = ({
                         </button>
                         <button style={{
                             display: "flex", flexDirection: "row", alignItems: "center", gap: "6px",
-                            backgroundColor: "#944343", color: "white", border: "none",
+                            backgroundColor: emailCopied ? "#2d7a4f" : "#944343", color: "white", border: "none",
                             borderRadius: "8px", padding: "6px 16px", fontSize: "14px", cursor: "pointer",
                             opacity: email ? 1 : 0.6,
+                            transition: "background-color 0.2s",
                         }} onClick={handleEmail} disabled={!email}>
                             <Mail size={16} />
-                            Email
+                            {emailCopied ? "¡Copiado!" : "Email"}
                         </button>
                         <button style={{
                             display: "flex", flexDirection: "row", alignItems: "center", gap: "6px",
@@ -290,6 +308,26 @@ export const CommerceProfileHeader = ({
                             referrerPolicy="no-referrer-when-downgrade"
                         />
                     </div>
+                </div>
+            )}
+
+            {emailCopied && (
+                <div style={{
+                    position: "fixed",
+                    bottom: "24px",
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    backgroundColor: "#2d7a4f",
+                    color: "white",
+                    padding: "10px 20px",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+                    zIndex: 9999,
+                    pointerEvents: "none",
+                }}>
+                    Email copiado: {email}
                 </div>
             )}
         </>

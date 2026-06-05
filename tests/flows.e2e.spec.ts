@@ -28,8 +28,8 @@ const deliverySidebar = (page: Page) => page.getByRole('navigation');
 /** Título del panel (fuera de <nav>; filtra el duplicado del header móvil oculto en desktop). */
 const deliveryPanelTitle = (page: Page) => page.getByText('Panel Delivery').filter({ visible: true });
 
-/** Misma regla que BecomeDeliveryModal: al menos 8 dígitos en el teléfono enviado por PUT. */
-const isValidDeliveryPhone = (phone: string) => /^(?=(?:.*\d){8,})[\d\s+().\-]+$/.test(phone.trim());
+/** Al menos 8 dígitos en el teléfono enviado por PUT. */
+const isValidPhone = (phone: string) => /^(?=(?:.*\d){8,})[\d\s+().-]+$/.test(phone.trim());
 
 async function fulfillUserProfilePut(route: Route, successBody: Record<string, unknown>) {
   let payload: { phone?: unknown };
@@ -39,11 +39,11 @@ async function fulfillUserProfilePut(route: Route, successBody: Record<string, u
     payload = {};
   }
   const phone = typeof payload.phone === 'string' ? payload.phone.trim() : '';
-  if (!phone || !isValidDeliveryPhone(phone)) {
+  if (!phone || !isValidPhone(phone)) {
     await route.fulfill({
       status: 400,
       contentType: 'application/json',
-      body: JSON.stringify({ error: { code: 400, message: 'phone inválido o faltante' } }),
+      body: JSON.stringify({ error: { code: 400, message: 'teléfono inválido o faltante' } }),
     });
     return;
   }
@@ -630,7 +630,7 @@ test.describe('Flujos E2E de usuario final', () => {
 
     // Navegar al listado de carritos
     await page.goto('/carrito');
-    await expect(page.getByRole('heading', { name: 'Ordenes de Compras' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Carritos' })).toBeVisible();
     await expect(page.getByText('Nissei')).toBeVisible();
 
     // Ver detalle del carrito
@@ -1535,7 +1535,7 @@ test.describe('Flujos E2E de usuario final', () => {
     await page.getByRole('button', { name: 'Seguimiento' }).click();
     await expect(page.getByRole('heading', { name: 'Seguimiento de Pedidos' })).toBeVisible();
     await expect(page.getByText('ORD-9001')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Marcar como Enviado' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Marcar como Entregado' })).toBeVisible();
   });
 
   //OM-479
@@ -1899,7 +1899,7 @@ test.describe('Flujos E2E de usuario final', () => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ user }) });
     });
 
-    // Perfil usuario (getCurrentUserForDeliveryForm -> fetchUserProfile / actualizar teléfono)
+    // Perfil usuario (getCurrentUserForDeliveryForm -> fetchUserProfile)
     await page.route('**/api/users/7', async (route) => {
       if (route.request().method() === 'PUT') {
         await fulfillUserProfilePut(route, {
@@ -1966,8 +1966,7 @@ test.describe('Flujos E2E de usuario final', () => {
     // Modal debe estar visible
     await expect(page.getByRole('heading', { name: 'Quiero ser delivery' })).toBeVisible();
 
-    // Teléfono y vehículo
-    await page.getByPlaceholder('+54 9 11 2345-6789').fill('0981000000');
+    // Seleccionar vehículo
     await page.locator('#delivery-vehicle').selectOption('AUTOMOVIL');
 
     // Confirmar (trigger POST -> deliveryRegistered = true)
@@ -2074,8 +2073,8 @@ test.describe('Flujos E2E de usuario final', () => {
 
     await page.route('**/api/session/user-session', async (route) => {
       const user = deliveryRegistered
-        ? { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'Cliente Demo', email: 'cliente@test.com' }
-        : { id_user: 7, role: 'CUSTOMER', name: 'Cliente Demo', email: 'cliente@test.com' };
+        ? { id_user: 7, id_delivery: 5, role: 'DELIVERY', name: 'Cliente Demo', email: 'cliente@test.com', phone: '0981000000' }
+        : { id_user: 7, role: 'CUSTOMER', name: 'Cliente Demo', email: 'cliente@test.com', phone: '0981000000' };
 
       await route.fulfill({
         status: 200,
@@ -2085,14 +2084,6 @@ test.describe('Flujos E2E de usuario final', () => {
     });
 
     await page.route('**/api/users/7', async (route) => {
-      if (route.request().method() === 'PUT') {
-        await fulfillUserProfilePut(route, {
-          id_user: 7,
-          name: 'Cliente Demo',
-          email: 'cliente@test.com',
-        });
-        return;
-      }
       if (route.request().method() === 'GET') {
         await route.fulfill({
           status: 200,
@@ -2106,15 +2097,6 @@ test.describe('Flujos E2E de usuario final', () => {
               role: 'CUSTOMER',
             }
           }),
-        });
-        return;
-      }
-
-      if (route.request().method() === 'PUT') {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({ success: true, data: { id_user: 7, phone: '0981000000' } }),
         });
         return;
       }
@@ -2173,7 +2155,6 @@ test.describe('Flujos E2E de usuario final', () => {
 
     await expect(page.getByRole('heading', { name: 'Quiero ser delivery' })).toBeVisible();
 
-    await page.getByPlaceholder('+54 9 11 2345-6789').fill('0981000000');
     await page.locator('#delivery-vehicle').selectOption('AUTOMOVIL');
     await page.getByRole('button', { name: 'Confirmar' }).click();
 
@@ -5230,8 +5211,8 @@ test.describe('Flujos E2E de usuario final', () => {
     expect(postCalled).toBe(false);
   });
 
-  //OM-511 -  Eliminar una o todas las ordenes de compra
-  test('flujo cliente: eliminar orden individual (cancelar y aceptar)', async ({ page }) => {
+  //OM-511 -  Eliminar uno o todos los carritos
+  test('flujo cliente: eliminar carrito individual (cancelar y aceptar)', async ({ page }) => {
     let carts = [
       {
         id: 1,
@@ -5307,7 +5288,7 @@ test.describe('Flujos E2E de usuario final', () => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
-          body: JSON.stringify({ message: 'Orden eliminada correctamente' }),
+          body: JSON.stringify({ message: 'Carrito eliminado correctamente' }),
         });
         return;
       }
@@ -5315,7 +5296,7 @@ test.describe('Flujos E2E de usuario final', () => {
     });
 
     await page.goto('/carrito');
-    await expect(page.getByRole('heading', { name: 'Ordenes de Compras' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Carritos' })).toBeVisible();
 
     // Verificar que las tres tiendas están visibles
     await expect(page.getByText('Nissei')).toBeVisible();
@@ -5326,30 +5307,30 @@ test.describe('Flujos E2E de usuario final', () => {
     await page.locator('div.rounded-2xl').filter({ has: page.locator('h2', { hasText: 'Nissei' }) })
       .getByRole('button', { name: 'Eliminar' }).click();
 
-    await expect(page.getByText('¿Estás seguro de que deseas eliminar esta orden de compra?')).toBeVisible();
+    await expect(page.getByText('¿Estás seguro de que deseas eliminar este carrito?')).toBeVisible();
     await page.getByRole('button', { name: 'Cancelar' }).click();
 
     await expect(page.getByText('Nissei')).toBeVisible();
     await expect(page.getByText('TechPoint')).toBeVisible();
     await expect(page.getByText('DigiStore')).toBeVisible();
-    await expect(page.locator('text=Orden eliminada correctamente')).toHaveCount(0);
+    await expect(page.locator('text=Carrito eliminado correctamente')).toHaveCount(0);
 
     // Aceptar eliminación de Nissei
 
     await page.locator('div.rounded-2xl').filter({ has: page.locator('h2', { hasText: 'Nissei' }) })
       .getByRole('button', { name: 'Eliminar' }).click();
 
-    await expect(page.getByText('¿Estás seguro de que deseas eliminar esta orden de compra?')).toBeVisible();
-    await page.getByRole('button', { name: 'Eliminar orden' }).click();
+    await expect(page.getByText('¿Estás seguro de que deseas eliminar este carrito?')).toBeVisible();
+    await page.getByRole('button', { name: 'Eliminar carrito' }).click();
 
-    await expect(page.getByText('Orden eliminada correctamente')).toBeVisible();
+    await expect(page.getByText('Carrito eliminado correctamente')).toBeVisible();
     await expect(page.getByText('Nissei')).not.toBeVisible();
     await expect(page.getByText('TechPoint')).toBeVisible();
     await expect(page.getByText('DigiStore')).toBeVisible();
   });
 
   //OM-511
-  test('flujo cliente: eliminar todas las órdenes (cancelar y aceptar)', async ({ page }) => {
+  test('flujo cliente: eliminar todos los carritos (cancelar y aceptar)', async ({ page }) => {
     let carts = [
       {
         id: 1,
@@ -5418,7 +5399,7 @@ test.describe('Flujos E2E de usuario final', () => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
-          body: JSON.stringify({ message: 'Todas las órdenes fueron eliminadas correctamente' }),
+          body: JSON.stringify({ message: 'Todos los carritos fueron eliminados correctamente' }),
         });
         return;
       }
@@ -5426,31 +5407,31 @@ test.describe('Flujos E2E de usuario final', () => {
     });
 
     await page.goto('/carrito');
-    await expect(page.getByRole('heading', { name: 'Ordenes de Compras' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Carritos' })).toBeVisible();
 
     // Verificar que las tres tiendas están visibles
     await expect(page.getByText('Nissei')).toBeVisible();
     await expect(page.getByText('TechPoint')).toBeVisible();
     await expect(page.getByText('DigiStore')).toBeVisible();
 
-    //Cancelar eliminación de todas las órdenes
+    //Cancelar eliminación de todos los carritos
     await page.getByRole('button', { name: 'Eliminar todas' }).click();
 
-    await expect(page.getByText('¿Estás seguro de que deseas eliminar TODAS tus órdenes de compra?')).toBeVisible();
+    await expect(page.getByText('¿Estás seguro de que deseas eliminar TODOS tus carritos?')).toBeVisible();
     await page.getByRole('button', { name: 'Cancelar' }).click();
 
-    // Las tres órdenes deben seguir visibles
+    // Los tres carritos deben seguir visibles
     await expect(page.getByText('Nissei')).toBeVisible();
     await expect(page.getByText('TechPoint')).toBeVisible();
     await expect(page.getByText('DigiStore')).toBeVisible();
 
-    // Aceptar eliminación de todas las órdenes
+    // Aceptar eliminación de todos los carritos
     await page.getByRole('button', { name: 'Eliminar todas' }).click();
-    await expect(page.getByText('¿Estás seguro de que deseas eliminar TODAS tus órdenes de compra?')).toBeVisible();
+    await expect(page.getByText('¿Estás seguro de que deseas eliminar TODOS tus carritos?')).toBeVisible();
     await page.getByRole('button', { name: 'Eliminar todas' }).nth(1).click();
 
-    // Todas las órdenes deben desaparecer y mostrarse el toast de éxito
-    await expect(page.getByText('Todas las órdenes fueron eliminadas correctamente')).toBeVisible();
+    // Todos los carritos deben desaparecer y mostrarse el toast de éxito
+    await expect(page.getByText('Todos los carritos fueron eliminados correctamente')).toBeVisible();
     await expect(page.getByText('Nissei')).not.toBeVisible();
     await expect(page.getByText('TechPoint')).not.toBeVisible();
     await expect(page.getByText('DigiStore')).not.toBeVisible();

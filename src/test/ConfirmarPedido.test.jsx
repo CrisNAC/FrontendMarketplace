@@ -2,7 +2,6 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import axios from "axios";
-import toast from "react-hot-toast";
 import ConfirmarPedido from "../features/clients/pages/ConfirmarPedido";
 
 const mockNavigate = vi.fn();
@@ -12,18 +11,12 @@ vi.mock("react-router-dom", () => ({
   useParams: () => ({ cartId: "55" }),
 }));
 
-vi.mock("axios", () => ({
-  default: {
-    get: vi.fn(),
-    post: vi.fn(),
-  },
-}));
+const mockShowToast = vi.fn();
 
-vi.mock("react-hot-toast", () => ({
-  default: {
-    success: vi.fn(),
-    error: vi.fn(),
-  },
+vi.mock('@/hooks', () => ({
+  useToast: () => ({
+    showToast: mockShowToast,
+  }),
 }));
 
 describe("ConfirmarPedido", () => {
@@ -109,7 +102,7 @@ describe("ConfirmarPedido", () => {
       );
     });
 
-    expect(toast.success).toHaveBeenCalledWith("Pedido confirmado correctamente");
+    expect(mockShowToast).toHaveBeenCalledWith("Pedido confirmado correctamente", "success" );
     expect(mockNavigate).toHaveBeenCalledWith(
       "/pedido-confirmado",
       expect.objectContaining({

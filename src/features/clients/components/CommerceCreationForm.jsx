@@ -153,7 +153,7 @@ const CategorySelector = ({ categories, selectedIds, onChange, disabled, error }
     )
 }
 
-const inputCls = "w-full px-3 py-2 border border-green-100 rounded-md bg-green-50/30 focus:outline-none focus:ring-1 focus:ring-[#5B7B6D] focus:border-[#5B7B6D] disabled:cursor-not-allowed disabled:opacity-60"
+const inputCls = "w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#5B7B6D]/20 focus:border-[#5B7B6D] transition-all duration-200 text-sm disabled:cursor-not-allowed disabled:opacity-60"
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:3000").trim()
 const HTTP_URL_REGEX = /^https?:\/\//i
 const PHONE_REGEX = /^\+595\d{9}$/
@@ -213,7 +213,9 @@ export const CommerceCreationForm = () => {
         })
             .then(r => r.json())
             .then(data => {
-                if (Array.isArray(data)) setCategories(data)
+                if (Array.isArray(data)) {
+                    setCategories(data.filter(cat => cat.visible !== false && cat.status !== false))
+                }
             })
             .catch(() => console.warn("No se pudieron cargar las categorías."))
     }, [])

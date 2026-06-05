@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { PageLoader } from "../../../components/PageLoader";
 import { getProductById } from "../../commerces/services/productDetailApi";
 import { getProductReviews } from "../../commerces/services/productReviewApi";
 import {
@@ -198,11 +199,7 @@ export default function ProductDetailView() {
     }, [product]);
 
     //estados de carga/error
-    if (loading) return (
-        <div className="min-h-screen bg-[#ECF7F0] flex items-center justify-center">
-            <p className="text-slate-500 text-sm">Cargando producto...</p>
-        </div>
-    );
+    if (loading) return <PageLoader />;
 
     if (error) return (
         <div className="min-h-screen bg-[#ECF7F0] p-6">
