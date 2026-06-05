@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Calendar, Megaphone, Plus, X } from "lucide-react";
+import { Calendar, Megaphone, Plus, Upload, X } from "lucide-react";
 import { useToast } from "../../../hooks/useToast";
 import { PageLoader } from "../../../components/PageLoader";
 import { apiClient } from "../services/editCommerceApi";
@@ -8,6 +8,7 @@ import {
   getMyBannerRequests,
   createBannerRequest,
   cancelBannerRequest,
+  uploadBannerRequestImage,
 } from "../services/commerceBannerRequestsApi";
 
 const STATUS_BADGE = {
@@ -35,7 +36,7 @@ const BannerRequestModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
   const { showToast } = useToast();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
+  const [imageFile, setImageFile] = useState(null);
   const [linkUrl, setLinkUrl] = useState("");
   const [startAt, setStartAt] = useState("");
   const [endAt, setEndAt] = useState("");
@@ -43,7 +44,7 @@ const BannerRequestModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
 
   useEffect(() => {
     if (!isOpen) return;
-    setTitle(""); setDescription(""); setImageUrl(""); setLinkUrl(""); setStartAt(""); setEndAt("");
+    setTitle(""); setDescription(""); setImageFile(null); setLinkUrl(""); setStartAt(""); setEndAt("");
     const focusId = setTimeout(() => firstInputRef.current?.focus(), 0);
     return () => clearTimeout(focusId);
   }, [isOpen]);
@@ -62,7 +63,7 @@ const BannerRequestModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
 
   const handleSubmit = () => {
     if (!title.trim()) return showToast("El título es obligatorio", "error");
-    if (!imageUrl.trim()) return showToast("La URL de imagen es obligatoria", "error");
+    if (!imageFile) return showToast("La imagen es obligatoria", "error");
     if (!startAt) return showToast("La fecha de inicio es obligatoria", "error");
     if (endAt && fromLocalInputValue(endAt) <= fromLocalInputValue(startAt)) {
       return showToast("La fecha de fin debe ser posterior a la de inicio", "error");
@@ -70,7 +71,7 @@ const BannerRequestModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
     onSubmit({
       title: title.trim(),
       description: description.trim() || null,
-      imageUrl: imageUrl.trim(),
+      imageFile,
       linkUrl: linkUrl.trim() || null,
       startAt: fromLocalInputValue(startAt),
       endAt: endAt ? fromLocalInputValue(endAt) : null,
@@ -111,8 +112,25 @@ const BannerRequestModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
             <textarea id="req-description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Texto breve que acompañará el banner" rows={2} style={{ ...inputStyle, resize: "vertical" }} />
           </div>
           <div>
-            <label htmlFor="req-image-url" style={labelStyle}>URL de imagen</label>
-            <input id="req-image-url" type="text" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." style={inputStyle} />
+            <label style={labelStyle}>Imagen del banner</label>
+            {imageFile ? (
+              <div style={{ position: "relative", marginTop: "6px", borderRadius: "8px", overflow: "hidden", border: "1px solid #e5e7eb", height: "120px", backgroundColor: "#f3f4f6" }}>
+                <img src={URL.createObjectURL(imageFile)} alt="Vista previa" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <button type="button" onClick={() => setImageFile(null)} aria-label="Quitar imagen"
+                  style={{ position: "absolute", top: "6px", right: "6px", background: "white", border: "none", borderRadius: "50%", width: "26px", height: "26px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.25)" }}>
+                  <X size={14} color="#ef4444" />
+                </button>
+              </div>
+            ) : (
+              <div style={{ marginTop: "6px", height: "80px", border: "2px dashed #e5e7eb", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#f9fafb" }}>
+                <span style={{ fontSize: "13px", color: "#9ca3af" }}>Sin imagen</span>
+              </div>
+            )}
+            <label style={{ display: "inline-flex", alignItems: "center", gap: "6px", marginTop: "8px", padding: "7px 14px", border: "1px solid #d1d5db", borderRadius: "8px", fontSize: "13px", cursor: "pointer", backgroundColor: "white", fontWeight: "500", color: "#374151" }}>
+              <Upload size={14} />
+              {imageFile ? "Cambiar imagen" : "Seleccionar imagen"}
+              <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => { const f = e.target.files[0]; if (f) setImageFile(f); e.target.value = ""; }} />
+            </label>
           </div>
           <div>
             <label htmlFor="req-link-url" style={labelStyle}>URL de destino (opcional)</label>
@@ -321,11 +339,15 @@ export const CommerceBannerRequestsPage = () => {
     init();
   }, [loadRequests]);
 
-  const handleSubmit = async (payload) => {
+  const handleSubmit = async ({ imageFile, ...fields }) => {
     if (!storeId) { showToast("No se encontró un comercio asociado", "error"); return; }
     setIsSubmitting(true);
     try {
-      await createBannerRequest(storeId, payload);
+      const created = await createBannerRequest(storeId, fields);
+      const requestId = created?.data?.id ?? created?.id;
+      if (imageFile instanceof File && requestId) {
+        await uploadBannerRequestImage(requestId, imageFile);
+      }
       showToast("Solicitud enviada — será revisada por un administrador", "success");
       setIsModalOpen(false);
       await loadRequests(storeId);
