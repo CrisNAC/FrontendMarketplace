@@ -283,7 +283,7 @@ export default function AuthPage() {
               {fieldErrors.password && <p className="mt-1 text-xs text-red-600">{fieldErrors.password}</p>}
             </div>
 
-            {isLogin && (
+            {/* {isLogin && (
               <div className="flex justify-end">
                 <button
                   type="button"
@@ -293,7 +293,7 @@ export default function AuthPage() {
                   ¿Olvidaste tu contraseña?
                 </button>
               </div>
-            )}
+            )} */}
 
             {!isLogin && (
               <div>
