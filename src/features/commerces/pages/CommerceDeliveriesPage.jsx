@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import apiClient from '../../../lib/apiClient';
 import { fetchStoreDeliveries, deleteStoreDelivery, getDeliveryErrorMessage } from "../services/commerceDeliveryApi";
+import { PageLoader } from "../../../components/PageLoader";
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 const ITEMS_PER_PAGE = 8;
@@ -319,12 +320,7 @@ export function CommerceDeliveriesPage() {
         </button>
     );
 
-    if (loading) return (
-        <div style={{ display: "flex", justifyContent: "center", padding: "60px 0" }}>
-            <Loader2 size={28} color="#9ca3af" style={{ animation: "spin 1s linear infinite" }} />
-            <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
-        </div>
-    );
+    if (loading) return <PageLoader />;
 
     if (error && !data) return (
         <div style={{ backgroundColor: "#fff1f2", border: "1px solid #fecdd3", borderRadius: "10px", padding: "12px 16px", color: "#be123c", fontSize: "14px" }}>{error}</div>
@@ -427,7 +423,6 @@ export function CommerceDeliveriesPage() {
                     error={deleteError}
                 />
             )}
-            <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
         </>
     );
 }

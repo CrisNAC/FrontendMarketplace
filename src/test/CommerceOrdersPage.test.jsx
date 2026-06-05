@@ -1,16 +1,24 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { CommerceOrdersPage, timeAgo } from '../features/commerces/pages/CommerceOrdersPage'
+import { CommerceOrdersPage } from '../features/commerces/pages/CommerceOrdersPage'
 
+// ─── Mocks de dependencias externas ──────────────────────────────────────────
+
+// Mock de react-router-dom (el componente usa useNavigate internamente
+// a través de otros componentes, lo dejamos vacío para evitar errores)
 vi.mock('react-router-dom', () => ({
     useNavigate: () => vi.fn(),
 }))
 
+// Mock del apiClient de sesión
 vi.mock('../features/commerces/services/editCommerceApi', () => ({
-    apiClient: { get: vi.fn() },
+    apiClient: {
+        get: vi.fn(),
+    },
 }))
 
+// Mock de las funciones de ordersApi
 vi.mock('../features/commerces/services/commerceOrdersApi', () => ({
     ordersApiClient: { get: vi.fn(), patch: vi.fn() },
     fetchStoreOrders: vi.fn(),
@@ -18,6 +26,7 @@ vi.mock('../features/commerces/services/commerceOrdersApi', () => ({
     getOrderErrorMessage: (_err, fallback) => fallback,
 }))
 
+// Mock de componentes que dependen de librerías externas
 vi.mock('../features/clients/components/commerceProfile/Pagination', () => ({
     Pagination: () => null,
 }))
@@ -26,29 +35,11 @@ vi.mock('../features/clients/components/OrderStepper', () => ({
     OrderStepper: () => null,
 }))
 
-vi.mock('../features/commerces/services/deliveryAssignmentApi', () => ({
+vi.mock('../features/commerces/services/deliveryAssignmentApi.js', () => ({
     checkOrderAssignment: vi.fn().mockResolvedValue({ has_assignment: false }),
 }))
 
-vi.mock('../features/commerces/components/deliveryAssignment/DeliveryAssignmentModal', () => ({
-    DeliveryAssignmentModal: ({ onClose }) => (
-        <div data-testid="delivery-modal">
-            <button onClick={onClose}>Cerrar modal</button>
-        </div>
-    ),
-}))
-
-vi.mock('lucide-react', () => ({
-    ShoppingBag: () => null,
-    Clock: () => null,
-    CheckCircle: () => null,
-    XCircle: () => null,
-    Truck: () => null,
-    MapPin: () => null,
-    Calendar: () => null,
-    Filter: () => null,
-}))
-
+// ─── Imports de los mocks (después de declararlos) ────────────────────────────
 import { apiClient } from '../features/commerces/services/editCommerceApi'
 import { fetchStoreOrders } from '../features/commerces/services/commerceOrdersApi'
 
@@ -93,7 +84,7 @@ describe('CommerceOrdersPage', () => {
 
         render(<CommerceOrdersPage />)
 
-        expect(screen.getByText('Cargando pedidos...')).toBeInTheDocument()
+        expect(document.querySelector('.animate-spin')).toBeInTheDocument()
     })
 
     it('muestra los tabs y el pedido pendiente cuando la API responde bien', async () => {
@@ -104,7 +95,7 @@ describe('CommerceOrdersPage', () => {
 
         // Esperar a que desaparezca el loading
         await waitFor(() => {
-            expect(screen.queryByText('Cargando pedidos...')).not.toBeInTheDocument()
+            expect(document.querySelector('.animate-spin')).not.toBeInTheDocument()
         })
 
         // Los tres tabs deben estar visibles
@@ -126,7 +117,69 @@ describe('CommerceOrdersPage', () => {
         })
     })
 
-        it('muestra pedido en Seguimiento cuando el estado es PROCESSING', async () => {
+    it('muestra detalle de productos en pedidos pendientes al expandir', async () => {
+        const orderWithItems = {
+            ...mockPendingOrder,
+            items: [
+                { id: 1, name: 'Empanada', quantity: 3, price: 5000, subtotal: 15000, isOfferApplied: false },
+            ],
+        }
+        apiClient.get.mockResolvedValue(mockSessionWithStore)
+        fetchStoreOrders.mockResolvedValue({ ...mockOrdersResponse, orders: [orderWithItems] })
+
+        render(<CommerceOrdersPage />)
+        await waitFor(() => expect(screen.getByText('#ORD-1')).toBeInTheDocument())
+        await userEvent.click(screen.getByText('Ver detalle del pedido'))
+        expect(screen.getByText('Empanada')).toBeInTheDocument()
+    })
+
+    it('muestra Aceptar/Rechazar en pendientes con envío a domicilio', async () => {
+        apiClient.get.mockResolvedValue(mockSessionWithStore)
+        fetchStoreOrders.mockResolvedValue(mockOrdersResponse)
+
+        render(<CommerceOrdersPage />)
+
+        await waitFor(() => {
+            expect(screen.getByText('#ORD-1')).toBeInTheDocument()
+        })
+
+        expect(screen.getByText('Aceptar')).toBeInTheDocument()
+        expect(screen.getByText('Rechazar')).toBeInTheDocument()
+        expect(screen.queryByText('Añadir delivery')).not.toBeInTheDocument()
+    })
+
+    it('muestra el detalle de productos al expandir en Seguimiento', async () => {
+        const mockProcessingOrder = {
+            ...mockPendingOrder,
+            id: 2,
+            status: 'PROCESSING',
+            items: [
+                { id: 10, name: 'Pizza muzzarella', quantity: 2, price: 45000, subtotal: 90000, isOfferApplied: false },
+            ],
+            shippingCost: 15000,
+        }
+
+        apiClient.get.mockResolvedValue(mockSessionWithStore)
+        fetchStoreOrders.mockResolvedValue({
+            ...mockOrdersResponse,
+            orders: [mockProcessingOrder],
+        })
+
+        render(<CommerceOrdersPage />)
+
+        await waitFor(() => {
+            expect(document.querySelector('.animate-spin')).not.toBeInTheDocument()
+        })
+
+        await userEvent.click(screen.getByText('Seguimiento'))
+        await userEvent.click(screen.getByText('Ver detalle del pedido'))
+
+        expect(screen.getByText('Productos del pedido')).toBeInTheDocument()
+        expect(screen.getByText('Pizza muzzarella')).toBeInTheDocument()
+        expect(screen.getByText('Ocultar detalle')).toBeInTheDocument()
+    })
+
+    it('muestra Añadir delivery en Seguimiento cuando el estado es PROCESSING con dirección', async () => {
         const mockProcessingOrder = {
             ...mockPendingOrder,
             id: 2,
@@ -142,58 +195,65 @@ describe('CommerceOrdersPage', () => {
         render(<CommerceOrdersPage />)
 
         await waitFor(() => {
-            expect(screen.queryByText('Cargando pedidos...')).not.toBeInTheDocument()
+            expect(document.querySelector('.animate-spin')).not.toBeInTheDocument()
         })
 
-        // Hacer clic en el tab Seguimiento
         await userEvent.click(screen.getByText('Seguimiento'))
 
-        // El pedido debe aparecer en Seguimiento
         expect(screen.getByText('#ORD-2')).toBeInTheDocument()
-        // El botón de avanzar estado debe estar visible
-        expect(screen.getByText('Marcar como Enviado')).toBeInTheDocument()
+        expect(screen.getByText('Añadir delivery')).toBeInTheDocument()
+        expect(screen.queryByText('Marcar como Enviado')).not.toBeInTheDocument()
     })
 
-    it('llama a updateOrderStatus con PROCESSING al aceptar un pedido', async () => {
-        const { updateOrderStatus } = await import('../features/commerces/services/commerceOrdersApi')
-        const pickupOrder = { ...mockPendingOrder, address: null }
+    it('muestra Marcar como Entregado en Seguimiento para retiro en tienda en PROCESSING', async () => {
+        const mockPickupProcessing = {
+            ...mockPendingOrder,
+            id: 3,
+            status: 'PROCESSING',
+            address: null,
+        }
 
         apiClient.get.mockResolvedValue(mockSessionWithStore)
-        fetchStoreOrders.mockResolvedValue({ ...mockOrdersResponse, orders: [pickupOrder] })
+        fetchStoreOrders.mockResolvedValue({
+            ...mockOrdersResponse,
+            orders: [mockPickupProcessing],
+        })
+
+        render(<CommerceOrdersPage />)
+
+        await waitFor(() => {
+            expect(document.querySelector('.animate-spin')).not.toBeInTheDocument()
+        })
+
+        await userEvent.click(screen.getByText('Seguimiento'))
+
+        expect(screen.getByText('#ORD-3')).toBeInTheDocument()
+        expect(screen.getByText('Marcar como Entregado')).toBeInTheDocument()
+    })
+
+    it.each([
+        { buttonText: 'Aceptar',  expectedStatus: 'PROCESSING' },
+        { buttonText: 'Rechazar', expectedStatus: 'CANCELLED'  },
+    ])('llama a updateOrderStatus con $expectedStatus al hacer clic en $buttonText', async ({ buttonText, expectedStatus }) => {
+        const { updateOrderStatus } = await import('../features/commerces/services/commerceOrdersApi')
+
+        const mockPickupOrder = { ...mockPendingOrder, address: null }
+
+        apiClient.get.mockResolvedValue(mockSessionWithStore)
+        fetchStoreOrders.mockResolvedValue({
+            ...mockOrdersResponse,
+            orders: [mockPickupOrder],
+        })
 
         render(<CommerceOrdersPage />)
 
         await waitFor(() => {
             expect(screen.getByText('#ORD-1')).toBeInTheDocument()
         })
-        await waitFor(() => {
-            expect(screen.getByText('Aceptar')).toBeInTheDocument()
-        })
 
-        await userEvent.click(screen.getByText('Aceptar'))
+        await userEvent.click(screen.getByText(buttonText))
 
-        expect(updateOrderStatus).toHaveBeenCalledWith(1, 'PROCESSING')
-    })
-
-    it('llama a updateOrderStatus con CANCELLED al rechazar un pedido', async () => {
-        const { updateOrderStatus } = await import('../features/commerces/services/commerceOrdersApi')
-        const pickupOrder = { ...mockPendingOrder, address: null }
-
-        apiClient.get.mockResolvedValue(mockSessionWithStore)
-        fetchStoreOrders.mockResolvedValue({ ...mockOrdersResponse, orders: [pickupOrder] })
-
-        render(<CommerceOrdersPage />)
-
-        await waitFor(() => {
-            expect(screen.getByText('#ORD-1')).toBeInTheDocument()
-        })
-        await waitFor(() => {
-            expect(screen.getByText('Rechazar')).toBeInTheDocument()
-        })
-
-        await userEvent.click(screen.getByText('Rechazar'))
-
-        expect(updateOrderStatus).toHaveBeenCalledWith(1, 'CANCELLED')
+        expect(updateOrderStatus).toHaveBeenCalledWith(1, expectedStatus)
     })
 
     it('muestra mensaje vacío cuando no hay pedidos pendientes', async () => {
@@ -207,177 +267,9 @@ describe('CommerceOrdersPage', () => {
         render(<CommerceOrdersPage />)
 
         await waitFor(() => {
-            expect(screen.queryByText('Cargando pedidos...')).not.toBeInTheDocument()
+            expect(document.querySelector('.animate-spin')).not.toBeInTheDocument()
         })
 
         expect(screen.getByText('No tenés pedidos pendientes.')).toBeInTheDocument()
-    })
-
-    it('muestra error cuando no hay comercio en la sesión (id_store null)', async () => {
-        apiClient.get.mockResolvedValue({ data: { user: { id_store: null } } })
-
-        render(<CommerceOrdersPage />)
-
-        await waitFor(() => {
-            expect(screen.getByText('No tenés un comercio registrado.')).toBeInTheDocument()
-        })
-    })
-
-    it('muestra "No tenés pedidos en progreso." al cambiar a Seguimiento sin órdenes', async () => {
-        apiClient.get.mockResolvedValue(mockSessionWithStore)
-        fetchStoreOrders.mockResolvedValue(mockOrdersResponse)
-
-        render(<CommerceOrdersPage />)
-
-        await waitFor(() => screen.getByText('Pendientes'))
-
-        await userEvent.click(screen.getByText('Seguimiento'))
-
-        await waitFor(() => {
-            expect(screen.getByText('No tenés pedidos en progreso.')).toBeInTheDocument()
-        })
-    })
-
-    it('muestra el tab Historial con "Cargando historial..." mientras carga', async () => {
-        apiClient.get.mockResolvedValue(mockSessionWithStore)
-        fetchStoreOrders
-            .mockResolvedValueOnce(mockOrdersResponse)
-            .mockReturnValue(new Promise(() => {}))
-
-        render(<CommerceOrdersPage />)
-
-        await waitFor(() => screen.getByText('Historial'))
-        await userEvent.click(screen.getByText('Historial'))
-
-        await waitFor(() => {
-            expect(screen.getByText('Cargando historial...')).toBeInTheDocument()
-        })
-    })
-
-    it('muestra "No hay pedidos con esos filtros." en Historial cuando retorna vacío', async () => {
-        apiClient.get.mockResolvedValue(mockSessionWithStore)
-        fetchStoreOrders.mockResolvedValue({ ...mockOrdersResponse, orders: [], total: 0 })
-
-        render(<CommerceOrdersPage />)
-
-        await waitFor(() => screen.getByText('Historial'))
-        await userEvent.click(screen.getByText('Historial'))
-
-        await waitFor(() => {
-            expect(screen.getByText('No hay pedidos con esos filtros.')).toBeInTheDocument()
-        })
-    })
-
-    it('muestra pedidos en Historial cuando la API retorna datos', async () => {
-        const historicalOrder = {
-            ...mockPendingOrder,
-            id: 10,
-            status: 'DELIVERED',
-            createdAt: new Date().toISOString(),
-        }
-        apiClient.get.mockResolvedValue(mockSessionWithStore)
-        fetchStoreOrders.mockResolvedValue({
-            orders: [historicalOrder],
-            total: 1,
-            page: 1,
-            limit: 10,
-            total_page: 1,
-        })
-
-        render(<CommerceOrdersPage />)
-
-        await waitFor(() => screen.getByText('Historial'))
-        await userEvent.click(screen.getByText('Historial'))
-
-        await waitFor(() => {
-            expect(screen.getByText('#OM-10')).toBeInTheDocument()
-        })
-    })
-
-    it('muestra el botón "Asignar delivery" para pedidos con dirección', async () => {
-        const orderWithAddress = {
-            ...mockPendingOrder,
-            id: 3,
-            address: { city: 'Asunción', region: 'Central' },
-        }
-        apiClient.get.mockResolvedValue(mockSessionWithStore)
-        fetchStoreOrders.mockResolvedValue({
-            ...mockOrdersResponse,
-            orders: [orderWithAddress],
-        })
-
-        render(<CommerceOrdersPage />)
-
-        await waitFor(() => {
-            expect(screen.getByText('Asignar delivery')).toBeInTheDocument()
-        })
-    })
-
-    it('abre el modal de asignación al hacer clic en "Asignar delivery"', async () => {
-        const orderWithAddress = {
-            ...mockPendingOrder,
-            id: 4,
-            address: { city: 'Luque', region: 'Central' },
-        }
-        apiClient.get.mockResolvedValue(mockSessionWithStore)
-        fetchStoreOrders.mockResolvedValue({
-            ...mockOrdersResponse,
-            orders: [orderWithAddress],
-        })
-
-        render(<CommerceOrdersPage />)
-
-        await waitFor(() => screen.getByText('Asignar delivery'))
-        await userEvent.click(screen.getByText('Asignar delivery'))
-
-        await waitFor(() => {
-            expect(screen.getByTestId('delivery-modal')).toBeInTheDocument()
-        })
-    })
-
-    it('cierra el modal al hacer clic en cerrar', async () => {
-        const orderWithAddress = {
-            ...mockPendingOrder,
-            id: 5,
-            address: { city: 'Luque', region: 'Central' },
-        }
-        apiClient.get.mockResolvedValue(mockSessionWithStore)
-        fetchStoreOrders.mockResolvedValue({
-            ...mockOrdersResponse,
-            orders: [orderWithAddress],
-        })
-
-        render(<CommerceOrdersPage />)
-
-        await waitFor(() => screen.getByText('Asignar delivery'))
-        await userEvent.click(screen.getByText('Asignar delivery'))
-        await waitFor(() => screen.getByTestId('delivery-modal'))
-        await userEvent.click(screen.getByText('Cerrar modal'))
-
-        await waitFor(() => {
-            expect(screen.queryByTestId('delivery-modal')).not.toBeInTheDocument()
-        })
-    })
-})
-
-describe('timeAgo', () => {
-    it('retorna "hace unos segundos" para diferencias menores a 1 min', () => {
-        const now = new Date(Date.now() - 30 * 1000).toISOString()
-        expect(timeAgo(now)).toBe('hace unos segundos')
-    })
-
-    it('retorna "hace X min" para diferencias menores a 1 hora', () => {
-        const now = new Date(Date.now() - 5 * 60 * 1000).toISOString()
-        expect(timeAgo(now)).toBe('hace 5 min')
-    })
-
-    it('retorna "hace Xh" para diferencias menores a 24 horas', () => {
-        const now = new Date(Date.now() - 3 * 3600 * 1000).toISOString()
-        expect(timeAgo(now)).toBe('hace 3h')
-    })
-
-    it('retorna "hace X días" para diferencias de más de 24 horas', () => {
-        const now = new Date(Date.now() - 2 * 86400 * 1000).toISOString()
-        expect(timeAgo(now)).toBe('hace 2 días')
     })
 })

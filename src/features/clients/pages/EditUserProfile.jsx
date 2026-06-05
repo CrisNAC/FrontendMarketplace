@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react"
-import Navbar from "../../../components/navbar/Navbar"
+import { PageLoader } from "../../../components/PageLoader"
 import {
     getSession,
     fetchUserProfile,
@@ -128,19 +128,10 @@ export const EditClientProfile = () => {
         }
     }
 
-    if (loading) {
-        return (
-            <div>
-                <Navbar />
-                <div className="p-10 text-center">Cargando perfil...</div>
-            </div>
-        )
-    }
+    if (loading) return <PageLoader />;
 
     return (
-        <div>
-            <Navbar />
-            <div className="flex justify-center w-full mt-3 mb-3">
+        <div className="flex justify-center w-full mt-3 mb-3">
                 <div className="w-full max-w-2xl bg-white p-8 rounded-md shadow-md">
                     <p className="text-xl text-gray-900 font-bold">Editar Perfil</p>
                     <p className="text-gray-700">Actualiza tu información personal.</p>
@@ -198,7 +189,6 @@ export const EditClientProfile = () => {
                     {error && <div className="text-red-500 mt-3">{error}</div>}
                     {success && <div className="text-green-600 mt-3">{success}</div>}
                 </div>
-            </div>
         </div>
     )
 }

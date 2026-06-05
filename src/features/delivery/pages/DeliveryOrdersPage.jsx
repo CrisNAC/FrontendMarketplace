@@ -1,8 +1,9 @@
-// src/features/delivery/pages/DeliveryOrdersPage.jsx
 import { useState, useEffect } from 'react';
-import { MapPin, CheckCircle, Clock, AlertCircle, Loader, Truck } from 'lucide-react';
+import { MapPin, CheckCircle, Clock, AlertCircle, Loader2, Truck } from 'lucide-react';
+import { PageLoader } from '@/components/PageLoader';
 import { getActiveDeliveryAssignments, completeDeliveryAssignment } from '../services/deliveryAssignmentsApi';
 import { getCurrentUserForDeliveryForm } from '../../clients/services/deliveryApi';
+import { useToast } from "@/hooks";
 
 function timeAgo(dateStr) {
   const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
@@ -13,6 +14,7 @@ function timeAgo(dateStr) {
 }
 
 export function DeliveryOrdersPage() {
+  const { showToast } = useToast();
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [completing, setCompleting] = useState(null);
@@ -33,7 +35,6 @@ export function DeliveryOrdersPage() {
         }
       } catch (err) {
         if (active) {
-          console.error('Error cargando pedidos activos:', err);
           setError('No se pudieron cargar los pedidos activos');
         }
       } finally {
@@ -50,29 +51,15 @@ export function DeliveryOrdersPage() {
     try {
       await completeDeliveryAssignment(assignmentId);
       setAssignments(prev => prev.filter(a => a.id_delivery_assignment !== assignmentId));
+      showToast("Pedido marcado como entregado", "success");
     } catch (err) {
-      console.error('Error completando entrega:', err);
+      showToast("Error al marcar el pedido como entregado", "error");
     } finally {
       setCompleting(null);
     }
   };
 
-  if (loading) {
-    return (
-      <div>
-        <div style={{ marginBottom: '24px' }}>
-          <h4 style={{ fontWeight: '600', margin: '0 0 8px 0' }}>Mis Pedidos en Curso</h4>
-          <p style={{ color: '#6b7280', margin: 0, fontSize: '14px' }}>
-            Pedidos que estás repartiendo en este momento
-          </p>
-        </div>
-        <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '40px', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#6b7280' }}>
-          <Loader size={18} className="animate-spin" />
-          <span>Cargando pedidos...</span>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <PageLoader />;
 
   if (error) {
     return (
@@ -141,13 +128,11 @@ export function DeliveryOrdersPage() {
               }}
             >
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
-                {/* Lado izquierdo: Información del pedido */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ fontSize: '15px', fontWeight: '700', color: '#111827', margin: '0 0 8px 0' }}>
                     #ORD-{order?.id_order || '—'}
                   </p>
 
-                  {/* Cliente */}
                   <p style={{ fontSize: '12px', color: '#6b7280', fontWeight: '600', margin: '0 0 4px 0', textTransform: 'uppercase' }}>
                     Cliente
                   </p>
@@ -155,7 +140,6 @@ export function DeliveryOrdersPage() {
                     {clientName}
                   </p>
 
-                  {/* Dirección */}
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', marginBottom: '8px' }}>
                     <MapPin size={12} color='#ef4444' style={{ flexShrink: 0, marginTop: '2px' }} />
                     <span style={{ fontSize: '12px', color: '#6b7280' }}>
@@ -163,13 +147,11 @@ export function DeliveryOrdersPage() {
                     </span>
                   </div>
 
-                  {/* Tiempo */}
                   <span style={{ fontSize: '12px', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <Clock size={12} /> {timeAgo(order?.created_at)}
                   </span>
                 </div>
 
-                {/* Lado derecho: Total y botón */}
                 <div className="flex w-full flex-col gap-3 border-t border-slate-100 pt-3 sm:w-auto sm:items-end sm:border-t-0 sm:pt-0 sm:pl-0" style={{ flexShrink: 0 }}>
                   <div className="w-full text-left sm:text-right">
                     <p style={{ fontSize: '11px', color: '#6b7280', margin: '0 0 2px 0', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.05em' }}>
@@ -180,7 +162,6 @@ export function DeliveryOrdersPage() {
                     </p>
                   </div>
 
-                  {/* Botón de acción */}
                   <button
                     onClick={() => handleCompleteDelivery(assignment.id_delivery_assignment)}
                     disabled={isCompleting}
@@ -214,7 +195,7 @@ export function DeliveryOrdersPage() {
                   >
                     {isCompleting ? (
                       <>
-                        <Loader size={12} className="animate-spin" />
+                        <Loader2 size={12} className="animate-spin" />
                         Finalizando...
                       </>
                     ) : (

@@ -7,6 +7,8 @@ import { CategoryFilterSidebar } from "../components/commerceProfile/CategoryFil
 import { CommerceProfileHeader } from "../components/commerceProfile/CommerceProfileHeader";
 import { FeaturedProducts } from "../components/commerceProfile/FeaturedProducts";
 import { Pagination } from "../components/commerceProfile/Pagination";
+import { useStoreAvailability } from "../../../hooks/useStoreAvailability";
+import { ProductCardSkeleton } from "../../../components/ProductCardSkeleton";
 
 type Store = {
     id_store: number;
@@ -20,6 +22,12 @@ type Store = {
     open_time?: string | null;
     close_time?: string | null;
     is_open?: boolean;
+    business_hours?: Array<{
+        day_of_week: number;
+        is_closed?: boolean;
+        open_time?: string | null;
+        close_time?: string | null;
+    }>;
     categories?: Array<{ id?: number; name: string }>;
     store_category?: { id_store_category: number; name: string };
     status?: boolean;
@@ -224,9 +232,16 @@ export const VistaComercioPage = () => {
     const longitude = mainAddress?.longitude;
 
     const resolvedLogo = resolveApiAssetUrl(store?.logo ?? null, apiBase || "http://localhost:3000");
+
+    const availability = useStoreAvailability(store?.business_hours, {
+        is_open: store?.is_open,
+        close_time: store?.close_time ?? null,
+        open_time: store?.open_time ?? null,
+    });
+
     const closesAt =
-        store?.close_time != null && String(store.close_time).trim() !== ""
-            ? String(store.close_time).trim()
+        availability.close_time != null && String(availability.close_time).trim() !== ""
+            ? String(availability.close_time).trim()
             : "";
 
     const hasValidCoords =
@@ -266,7 +281,7 @@ export const VistaComercioPage = () => {
             <CommerceProfileHeader
                 name={headerName}
                 category={headerCategory}
-                isOpen={Boolean(store?.is_open)}
+                isOpen={availability.is_open}
                 rating={Number(store?.average_rating ?? 0)}
                 reviews={Number(store?.total_reviews ?? 0)}
                 closesAt={closesAt}
@@ -298,7 +313,13 @@ export const VistaComercioPage = () => {
                         setPage(1);
                     }}
                 />
-                {status === "loading" && <div style={{ color: "#6b7280" }}>Cargando productos...</div>}
+                {status === "loading" && (
+                    <div style={{ flexGrow: 1 }}>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(0, 1fr))", gap: "12px" }}>
+                            {Array.from({ length: 10 }).map((_, i) => <ProductCardSkeleton key={i} />)}
+                        </div>
+                    </div>
+                )}
                 {status === "error" && (
                     <div style={{ color: "#dc2626" }}>{error}</div>
                 )}
@@ -306,7 +327,12 @@ export const VistaComercioPage = () => {
                     <div style={{ color: "#dc2626" }}>No se pudieron cargar las categorías: {categoriesError}</div>
                 )}
                 {status === "success" && products.length === 0 && (
-                    <div style={{ color: "#6b7280" }}>Este comercio aún no tiene productos publicados.</div>
+                    <div style={{ color: "#6b7280" }}>
+                        {appliedSearch.trim() || selectedCategoryId !== null || priceRange.min !== null || priceRange.max !== null
+                            ? "No se encontraron productos para esta tienda con los filtros aplicados."
+                            : "Este comercio aún no tiene productos publicados."
+                        }
+                    </div>
                 )}
                 {status === "success" && products.length > 0 && (
                     <FeaturedProducts

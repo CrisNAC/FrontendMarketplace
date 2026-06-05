@@ -63,8 +63,6 @@ export const linkDeliveryToStore = async (storeId, fk_user) => {
     }
 };
 
-export { getBackendErrorMessage };
-
 export const getStoreDeliveryErrorMessage = (error, fallback) => {
     if (axios.isAxiosError(error)) {
         const msg = error.response?.data?.message;

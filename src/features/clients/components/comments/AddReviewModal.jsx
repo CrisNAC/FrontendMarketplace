@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { z } from 'zod';
 
-// ─── Esquema de validación ──────────────────────────────────────────────────
 const reviewSchema = z.object({
   rating: z.number().min(1, "Debes seleccionar una calificación").max(5, "Calificación inválida"),
   comment: z.string().trim().min(1, "El comentario es obligatorio").max(1000, "El comentario no puede superar 1000 caracteres"),
@@ -41,7 +40,6 @@ export const AddReviewModal = ({ isOpen, onClose, onSubmit }) => {
       date: new Date().toLocaleDateString('es-ES')
     });
 
-    // Reset form
     setRating(5);
     setComment('');
     setFieldErrors({});
@@ -71,7 +69,6 @@ export const AddReviewModal = ({ isOpen, onClose, onSubmit }) => {
         )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
-          {/* Valoración */}
           <div className="flex flex-col gap-2">
             <label className="text-sm font-semibold text-gray-800">
               Valoración
@@ -95,7 +92,6 @@ export const AddReviewModal = ({ isOpen, onClose, onSubmit }) => {
             </div>
           </div>
 
-          {/* Comentario */}
           <div className="flex flex-col gap-2">
             <label className="text-sm font-semibold text-gray-800">
               Comentario
@@ -117,7 +113,6 @@ export const AddReviewModal = ({ isOpen, onClose, onSubmit }) => {
             {fieldErrors.comment && <p className="text-xs text-red-600">{fieldErrors.comment}</p>}
           </div>
 
-          {/* Botón guardar */}
           <button 
             type="submit" 
             className="px-5 py-3 bg-teal-600 text-white rounded font-semibold cursor-pointer transition-all hover:bg-teal-700 active:translate-y-0.5 mt-2"

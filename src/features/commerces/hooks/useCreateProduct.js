@@ -1,4 +1,3 @@
-//useCreateProduct.js
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import {
@@ -22,7 +21,6 @@ const INITIAL_FORM_STATE = {
   isVisible: true,
 };
 
-// ─── Esquema de validación con Zod ──────────────────────────────────────────
 const productSchema = z.object({
   name: z.string().min(1, "El nombre del producto es obligatorio."),
   description: z.string().min(1, "La descripcion es obligatoria."),
@@ -58,7 +56,7 @@ const validateForm = (formData, selectedTags) => {
   return errors;
 };
 
-export const useCreateProduct = () => {
+export const useCreateProduct = ({ onSuccess, onError } = {}) => {
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
   const [categories, setCategories] = useState([]);
   const [availableTags, setAvailableTags] = useState([]);
@@ -66,16 +64,8 @@ export const useCreateProduct = () => {
   const [showAllTagSuggestions, setShowAllTagSuggestions] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
   const [loadError, setLoadError] = useState("");
-  const [resultModal, setResultModal] = useState({
-    isOpen: false,
-    variant: "success",
-    title: "",
-    message: "",
-  });
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // archivo de imagen seleccionado localmente (se sube después de crear el producto)
   const [imageFile, setImageFile] = useState(null);
 
   useEffect(() => {
@@ -152,7 +142,6 @@ export const useCreateProduct = () => {
     }));
   };
 
-  // acepta un File para preview local, o null para limpiar
   const onImageFileChange = (file) => {
     setImageFile(file);
   };
@@ -196,10 +185,6 @@ export const useCreateProduct = () => {
     addTag(tag);
   };
 
-  const closeModal = () => {
-    setResultModal((previous) => ({ ...previous, isOpen: false }));
-  };
-
   const resetForm = () => {
     setFormData(INITIAL_FORM_STATE);
     setSelectedTags([]);
@@ -214,6 +199,7 @@ export const useCreateProduct = () => {
     const errors = validateForm(formData, selectedTags);
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors);
+      onError?.("Revisá los campos del formulario antes de continuar");
       return;
     }
 
@@ -231,32 +217,14 @@ export const useCreateProduct = () => {
 
     try {
       const created = await createProduct({ payload });
-
-      // si el usuario seleccionó una imagen, la subimos usando el id del producto recién creado
       if (imageFile instanceof File && (created?.id_product ?? created?.id)) {
-        await uploadProductImage(created.id_product ?? created.id, imageFile).catch((err) => {
-          // no bloqueamos el éxito del producto por un fallo de imagen
-          console.warn("[WARN] No se pudo subir la imagen del producto:", err);
-        });
+        await uploadProductImage(created.id_product ?? created.id, imageFile).catch(() => {})
       }
 
-      setResultModal({
-        isOpen: true,
-        variant: "success",
-        title: "Producto creado",
-        message: "El producto se creo correctamente.",
-      });
+      onSuccess?.("Producto creado correctamente");
       resetForm();
     } catch (error) {
-      setResultModal({
-        isOpen: true,
-        variant: "error",
-        title: "No se pudo crear",
-        message: getBackendErrorMessage(
-          error,
-          "No se pudo crear el producto. Intenta nuevamente."
-        ),
-      });
+      onError?.(getBackendErrorMessage(error, "No se pudo crear el producto. Intenta nuevamente."));
     } finally {
       setIsSubmitting(false);
     }
@@ -272,14 +240,12 @@ export const useCreateProduct = () => {
     showAllTagSuggestions,
     validationErrors,
     loadError,
-    resultModal,
     isLoadingInitialData,
     isSubmitting,
     isFormDisabled: isLoadingInitialData || isSubmitting,
     imageFile,
     setFormData,
     setShowAllTagSuggestions,
-    closeModal,
     onFieldChange,
     onImageFileChange,
     toggleTag,

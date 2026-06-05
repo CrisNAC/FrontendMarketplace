@@ -15,8 +15,12 @@ vi.mock('../features/admin/services/adminProductsApi', () => ({
   rejectProduct:      (...args) => mockRejectProduct(...args),
 }));
 
-vi.mock('react-hot-toast', () => ({
-  default: { success: vi.fn(), error: vi.fn() },
+const mockShowToast = vi.fn();
+
+vi.mock('@/hooks', () => ({
+  useToast: () => ({
+    showToast: mockShowToast,
+  }),
 }));
 
 import { AdminProductsPage } from '../features/admin/pages/AdminProductsPage';
@@ -116,7 +120,7 @@ describe('AdminProductsPage', () => {
     mockFetchAdminProducts.mockReturnValue(new Promise(() => {}));
     renderPage();
 
-    expect(screen.getByText('Cargando productos...')).toBeInTheDocument();
+    expect(document.querySelector('.animate-spin')).toBeInTheDocument();
   });
 
   it('carga con filtro PENDING por defecto', async () => {

@@ -113,7 +113,7 @@ export default function MapView({
       className={
         fullscreen
           ? "fixed inset-0 z-[999]"
-          : `relative ${heightClass} w-full rounded-xl overflow-hidden`
+          : `relative ${heightClass} w-full rounded-xl overflow-hidden isolate`
       }
     >
       {allowFullscreen && (

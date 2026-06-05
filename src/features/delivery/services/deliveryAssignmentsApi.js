@@ -1,6 +1,4 @@
-// src/features/delivery/services/deliveryAssignmentsApi.js
-import apiClient from '../../../lib/apiClient';
-import toast from 'react-hot-toast';
+import { apiClient } from '@/lib';
 
 /**
  * Obtener todas las asignaciones de un delivery con filtro de estado
@@ -34,11 +32,9 @@ export const getActiveDeliveryAssignments = async (deliveryId) => {
 export const completeDeliveryAssignment = async (assignmentId) => {
   try {
     const response = await apiClient.post(`/api/assignments/${assignmentId}/complete`);
-    toast.success('Entrega finalizada correctamente');
     return response.data;
   } catch (error) {
     const message = error.response?.data?.error?.message || 'Error al finalizar la entrega';
-    toast.error(message);
     throw error;
   }
 };

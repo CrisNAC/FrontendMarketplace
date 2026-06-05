@@ -1,4 +1,3 @@
-//useEditProduct.js
 import { useState, useEffect, useMemo } from "react";
 import {
     fetchProductById,
@@ -69,14 +68,11 @@ const validateForm = (formData, selectedTags) => {
  *
  * @param {number|string} productId - ID del producto a editar
  */
-export const useEditProduct = (productId) => {
-    // ── Datos de referencia (categorías y tags del servidor) ──────────────────
+export const useEditProduct = (productId, { onSuccess, onError } = {}) => {
     const [categories, setCategories] = useState([]);
     const [availableTags, setAvailableTags] = useState([]);
     const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
     const [loadError, setLoadError] = useState("");
-
-    // ── Estado del formulario ─────────────────────────────────────────────────
     const [formData, setFormData] = useState({
         name: "",
         description: "",
@@ -91,29 +87,15 @@ export const useEditProduct = (productId) => {
     const [selectedTags, setSelectedTags] = useState([]);
     const [validationErrors, setValidationErrors] = useState({});
     const [showAllTagSuggestions, setShowAllTagSuggestions] = useState(false);
-
-    // archivo de imagen seleccionado localmente (antes de subir)
     const [imageFile, setImageFile] = useState(null);
-
-    // ── Estado de envío ────────────────────────────────────────────────────────
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [resultModal, setResultModal] = useState({
-        isOpen: false,
-        variant: "success",
-        title: "",
-        message: "",
-    });
 
-    // ── Carga inicial: producto + categorías + tags en paralelo ───────────────
     useEffect(() => {
         if (!productId) return;
-
         let active = true;
-
         const loadAll = async () => {
             setIsLoadingInitialData(true);
             setLoadError("");
-
             try {
                 const [product, categoriesData, tagsData] = await Promise.all([
                     fetchProductById(productId),
@@ -122,8 +104,6 @@ export const useEditProduct = (productId) => {
                 ]);
 
                 if (!active) return;
-
-                // Pre-llenar el formulario con los datos actuales del producto
                 setFormData({
                     name: product.name ?? "",
                     description: product.description ?? "",
@@ -133,7 +113,6 @@ export const useEditProduct = (productId) => {
                         : product.categoryId
                             ? [String(product.categoryId)]
                             : [],
-                    // el back puede devolver image_url o imageUrl según el endpoint
                     imageUrl: product.imageUrl ?? product.image_url ?? "",
                     isVisible: product.visible ?? true,
                     isOffer: Boolean(product.isOffer),
@@ -165,7 +144,6 @@ export const useEditProduct = (productId) => {
         return () => { active = false; };
     }, [productId]);
 
-    // ── Tags visibles en las sugerencias ─────────────────────────────────────
     const displayedTagOptions = useMemo(() => {
         if (showAllTagSuggestions) return availableTags;
         return availableTags.slice(0, MAX_VISIBLE_TAG_SUGGESTIONS);
@@ -176,14 +154,12 @@ export const useEditProduct = (productId) => {
         [selectedTags]
     );
 
-    // ── Handlers del formulario ───────────────────────────────────────────────
     const onFieldChange = (event) => {
         const { name, value, type, checked } = event.target;
         setFormData((prev) => ({
             ...prev,
             [name]: type === "checkbox" ? checked : value,
         }));
-        // Limpiar error del campo al modificarlo
         setValidationErrors((prev) => ({
             ...prev,
             [name]: "",
@@ -191,7 +167,6 @@ export const useEditProduct = (productId) => {
         }));
     };
 
-    // acepta un File para preview local, o null para limpiar
     const onImageFileChange = (file) => {
         setImageFile(file);
     };
@@ -211,17 +186,13 @@ export const useEditProduct = (productId) => {
         setSelectedTags((prev) => prev.filter((t) => t.id !== tagId));
     };
 
-    const closeModal = () => {
-        setResultModal((prev) => ({ ...prev, isOpen: false }));
-    };
-
-    // ── Submit ────────────────────────────────────────────────────────────────
     const handleSubmit = async (event) => {
         event.preventDefault();
 
         const errors = validateForm(formData, selectedTags);
         if (Object.keys(errors).length > 0) {
             setValidationErrors(errors);
+            onError?.("Revisá los campos del formulario antes de continuar");
             return;
         }
 
@@ -241,63 +212,40 @@ export const useEditProduct = (productId) => {
         setIsSubmitting(true);
         try {
             await updateProduct({ productId, payload });
-
-            // si el usuario seleccionó una imagen nueva, la subimos a Supabase
             if (imageFile instanceof File) {
                 const { image_url } = await uploadProductImage(productId, imageFile);
                 setFormData(prev => ({ ...prev, imageUrl: image_url }));
                 setImageFile(null);
             }
 
-            setResultModal({
-                isOpen: true,
-                variant: "success",
-                title: "Producto actualizado",
-                message: "Los cambios se guardaron correctamente.",
-            });
+            onSuccess?.("Producto actualizado correctamente");
         } catch (error) {
-            setResultModal({
-                isOpen: true,
-                variant: "error",
-                title: "No se pudo actualizar",
-                message: getBackendErrorMessage(
-                    error,
-                    "No se pudo actualizar el producto. Intentá nuevamente."
-                ),
-            });
+            onError?.(getBackendErrorMessage(error, "No se pudo actualizar el producto. Intenta nuevamente."));
         } finally {
             setIsSubmitting(false);
         }
     };
 
     return {
-        // Estado del formulario
         formData,
         selectedTags,
         validationErrors,
-        // Datos de referencia
         categories,
         availableTags,
         displayedTagOptions,
         selectedTagNames,
         showAllTagSuggestions,
         setShowAllTagSuggestions,
-        // Estados de carga
         isLoadingInitialData,
         isSubmitting,
         isFormDisabled: isLoadingInitialData || isSubmitting,
         loadError,
-        // Modal de resultado
-        resultModal,
-        closeModal,
-        // Handlers
         onFieldChange,
         onImageFileChange,
         imageFile,
         toggleTag,
         removeTag,
         handleSubmit,
-        // Constantes útiles para la UI
         MAX_TAGS,
         MAX_VISIBLE_TAG_SUGGESTIONS,
     };

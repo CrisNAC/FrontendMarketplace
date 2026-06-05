@@ -16,6 +16,14 @@ vi.mock('../features/commerces/services/editUserProfileApi', () => ({
     getBackendErrorMessage: (_err, fallback) => fallback,
 }))
 
+vi.mock('@/hooks', () => ({
+    useToast: () => ({
+        showToast: vi.fn(),
+        toasts: [],
+        removeToast: vi.fn(),
+    }),
+}))
+
 import { getCurrentUserForDeliveryForm, getDeliveryProfile } from '../features/clients/services/deliveryApi'
 
 // ─── Datos de prueba ──────────────────────────────────────────────────────────

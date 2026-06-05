@@ -2,12 +2,12 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import axios from "axios";
-import toast from "react-hot-toast";
 import { addToCartApi } from "../lib/cartApi";
 import { mergeCartResponseFromApi } from "../lib/cartLocalStorage";
 import DetalleProducto from "../features/clients/pages/DetalleProducto";
 
 const mockNavigate = vi.fn();
+const mockShowToast = vi.fn();
 
 vi.mock("react-router-dom", () => ({
   useNavigate: () => mockNavigate,
@@ -30,11 +30,10 @@ vi.mock("axios", () => ({
   },
 }));
 
-vi.mock("react-hot-toast", () => ({
-  default: {
-    success: vi.fn(),
-    error: vi.fn(),
-  },
+vi.mock('@/hooks', () => ({
+  useToast: () => ({
+    showToast: mockShowToast,
+  }),
 }));
 
 vi.mock("../lib/cartApi", () => ({
@@ -82,6 +81,6 @@ describe("DetalleProducto - agregar al carrito", () => {
       expect(addToCartApi).toHaveBeenCalledWith(7, { productId: 10, quantity: 1 });
     });
     expect(mergeCartResponseFromApi).toHaveBeenCalled();
-    expect(toast.success).toHaveBeenCalledWith("Producto agregado al carrito");
+    expect(mockShowToast).toHaveBeenCalledWith("Producto agregado al carrito", "success");
   });
 });
