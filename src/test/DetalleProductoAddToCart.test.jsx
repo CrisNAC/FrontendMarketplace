@@ -47,7 +47,7 @@ vi.mock("../lib/cartLocalStorage", () => ({
 describe("DetalleProducto - agregar al carrito", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
         id: 10,
