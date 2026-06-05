@@ -6,6 +6,9 @@ import {
   updateProductReport,
 } from "@/lib";
 import { useToast } from "@/hooks";
+import { REPORT_REASON_LABELS } from "@/features/clients/services";
+
+const REASON_LABEL = Object.fromEntries(REPORT_REASON_LABELS.map(({ value, label }) => [value, label]));
 
 const STATUS_OPTIONS = [
   { value: "", label: "Todos los estados" },
@@ -244,7 +247,7 @@ export default function ProductClaimsPanel({ canResolve = false, embedded = fals
                     {STATUS_LABEL[st] ?? st}
                   </span>
                   <p className="text-xs font-semibold text-gray-800">
-                    {r.reason}
+                    {REASON_LABEL[r.reason] ?? r.reason}
                   </p>
                   {r.description && (
                     <div className="w-full min-w-0 rounded-xl bg-[#f7faf8] border border-[#dfeae4] px-3 py-2">

@@ -9,7 +9,7 @@ export const reportProductReview = async (reviewId, { reason, description }) => 
   const { data } = await apiClient.post(`/api/reports/reviews/${reviewId}`, {
     reason,
     ...(description?.trim() ? { description: description.trim() } : {}),
-  });
+  }, { skipGlobalErrorRedirect: true });
   return data.report;
 };
 

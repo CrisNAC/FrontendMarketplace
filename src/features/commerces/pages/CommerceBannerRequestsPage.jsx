@@ -273,11 +273,15 @@ ConfirmModal.propTypes = {
 
 // ─── Página ───────────────────────────────────────────────────────────────────
 
+const extractErrorMessage = (err, fallback) =>
+  err?.response?.data?.error?.message ?? err?.response?.data?.message ?? fallback;
+
 export const CommerceBannerRequestsPage = () => {
   const { showToast } = useToast();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [storeId, setStoreId] = useState(null);
+  const [accessError, setAccessError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmCancelId, setConfirmCancelId] = useState(null);
@@ -287,7 +291,11 @@ export const CommerceBannerRequestsPage = () => {
       const data = await getMyBannerRequests(sid);
       setRequests(data);
     } catch (err) {
-      showToast(err?.response?.data?.error?.message ?? "No se pudieron cargar las solicitudes", "error");
+      if (err?.response?.status === 403) {
+        setAccessError(extractErrorMessage(err, "Tu comercio no está habilitado para usar esta función."));
+      } else {
+        showToast(extractErrorMessage(err, "No se pudieron cargar las solicitudes"), "error");
+      }
     }
   }, [showToast]);
 
@@ -322,7 +330,7 @@ export const CommerceBannerRequestsPage = () => {
       setIsModalOpen(false);
       await loadRequests(storeId);
     } catch (err) {
-      showToast(err?.response?.data?.error?.message ?? "No se pudo enviar la solicitud", "error");
+      showToast(extractErrorMessage(err, "No se pudo enviar la solicitud"), "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -341,7 +349,7 @@ export const CommerceBannerRequestsPage = () => {
       setRequests((prev) => prev.filter((r) => r.id !== requestId));
       showToast("Solicitud cancelada", "success");
     } catch (e) {
-      showToast(e?.response?.data?.error?.message ?? "No se pudo cancelar la solicitud", "error");
+      showToast(extractErrorMessage(e, "No se pudo cancelar la solicitud"), "error");
     }
   };
 
@@ -362,12 +370,19 @@ export const CommerceBannerRequestsPage = () => {
         <button
           type="button"
           onClick={() => setIsModalOpen(true)}
-          disabled={!storeId}
-          style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "10px 16px", backgroundColor: "var(--primary-dark)", color: "white", border: "none", borderRadius: "10px", cursor: storeId ? "pointer" : "not-allowed", fontSize: "14px", fontWeight: "600", opacity: storeId ? 1 : 0.5 }}
+          disabled={!storeId || !!accessError}
+          style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "10px 16px", backgroundColor: "var(--primary-dark)", color: "white", border: "none", borderRadius: "10px", cursor: (storeId && !accessError) ? "pointer" : "not-allowed", fontSize: "14px", fontWeight: "600", opacity: (storeId && !accessError) ? 1 : 0.5 }}
         >
           <Plus size={16} /> Nueva solicitud
         </button>
       </div>
+
+      {accessError && (
+        <div style={{ backgroundColor: "#fff7ed", border: "1px solid #fed7aa", borderRadius: "10px", padding: "16px 20px", marginBottom: "20px", display: "flex", alignItems: "center", gap: "12px" }}>
+          <Megaphone size={20} color="#c2410c" style={{ flexShrink: 0 }} />
+          <p style={{ margin: 0, fontSize: "14px", color: "#9a3412" }}>{accessError}</p>
+        </div>
+      )}
 
       {pendingCount > 0 && (
         <div style={{ backgroundColor: "#fffbeb", border: "1px solid #fde68a", borderRadius: "10px", padding: "12px 16px", marginBottom: "20px", fontSize: "13px", color: "#92400e" }}>
