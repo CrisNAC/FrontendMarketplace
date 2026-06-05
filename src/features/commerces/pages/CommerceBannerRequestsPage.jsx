@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Calendar, Megaphone, Plus, X } from "lucide-react";
 import { useToast } from "../../../hooks/useToast";
+import { PageLoader } from "../../../components/PageLoader";
 import { apiClient } from "../services/editCommerceApi";
 import {
   getMyBannerRequests,
@@ -344,7 +345,7 @@ export const CommerceBannerRequestsPage = () => {
     }
   };
 
-  if (loading) return <p style={{ color: "#6b7280", padding: "16px" }}>Cargando...</p>;
+  if (loading) return <PageLoader />;
 
   const pendingCount = requests.filter((r) => r.approvalStatus === "PENDING").length;
   const pluralSuffix = pendingCount === 1 ? "" : "s";

@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { getSession } from "../../features/commerces/services/editUserProfileApi";
+import { PageLoader } from "../PageLoader";
 
 export function RequireAdmin({ children }) {
   const location = useLocation();
@@ -28,7 +29,7 @@ export function RequireAdmin({ children }) {
     return () => { active = false; };
   }, []);
 
-  if (status === "loading") return null;
+  if (status === "loading") return <PageLoader />;
   if (status === "unauthorized") return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   if (status === "forbidden") return <Navigate to="/error/403" replace />;
   if (status === "error") return <Navigate to="/error/500" replace />;
