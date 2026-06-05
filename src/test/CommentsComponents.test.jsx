@@ -147,7 +147,7 @@ describe('CommentForm', () => {
     })
 
     it('muestra alerta cuando se envía sin título o contenido', async () => {
-        const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {})
+        const alertMock = vi.spyOn(globalThis, 'alert').mockImplementation(() => {})
         render(<CommentForm />)
 
         await userEvent.click(screen.getByText('Enviar mi opinión'))

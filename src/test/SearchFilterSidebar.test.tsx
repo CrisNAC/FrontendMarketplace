@@ -72,7 +72,7 @@ describe('SearchFilterSidebar', () => {
     })
 
     it('muestra alerta cuando precio mínimo > precio máximo', async () => {
-        const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {})
+        const alertMock = vi.spyOn(globalThis, 'alert').mockImplementation(() => {})
         render(<SearchFilterSidebar />)
         await userEvent.type(screen.getByPlaceholderText('Min'), '500')
         await userEvent.type(screen.getByPlaceholderText('Max'), '100')
@@ -82,7 +82,7 @@ describe('SearchFilterSidebar', () => {
     })
 
     it('muestra alerta cuando precio es <= 0', async () => {
-        const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {})
+        const alertMock = vi.spyOn(globalThis, 'alert').mockImplementation(() => {})
         render(<SearchFilterSidebar />)
         await userEvent.type(screen.getByPlaceholderText('Min'), '-10')
         await userEvent.click(screen.getByText('Aplicar'))

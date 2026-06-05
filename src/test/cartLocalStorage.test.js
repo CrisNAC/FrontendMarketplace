@@ -4,7 +4,7 @@ import { mergeWishlistLinesIntoLocalCart, mergeCartResponseFromApi } from '../li
 describe('mergeWishlistLinesIntoLocalCart', () => {
     beforeEach(() => {
         localStorage.clear()
-        vi.spyOn(window, 'dispatchEvent')
+        vi.spyOn(globalThis, 'dispatchEvent')
     })
 
     afterEach(() => {
@@ -80,7 +80,7 @@ describe('mergeWishlistLinesIntoLocalCart', () => {
 
     it('dispara el evento cartUpdated', () => {
         mergeWishlistLinesIntoLocalCart([{ productId: 10, nombre: 'X', precio: 100, cantidad: 1 }])
-        expect(window.dispatchEvent).toHaveBeenCalledWith(expect.any(Event))
+        expect(globalThis.dispatchEvent).toHaveBeenCalledWith(expect.any(Event))
     })
 
     it('maneja localStorage corrupto gracefully', () => {
@@ -94,7 +94,7 @@ describe('mergeWishlistLinesIntoLocalCart', () => {
 describe('mergeCartResponseFromApi', () => {
     beforeEach(() => {
         localStorage.clear()
-        vi.spyOn(window, 'dispatchEvent')
+        vi.spyOn(globalThis, 'dispatchEvent')
     })
 
     afterEach(() => {
