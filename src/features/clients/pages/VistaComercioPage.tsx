@@ -327,7 +327,12 @@ export const VistaComercioPage = () => {
                     <div style={{ color: "#dc2626" }}>No se pudieron cargar las categorías: {categoriesError}</div>
                 )}
                 {status === "success" && products.length === 0 && (
-                    <div style={{ color: "#6b7280" }}>Este comercio aún no tiene productos publicados.</div>
+                    <div style={{ color: "#6b7280" }}>
+                        {appliedSearch.trim() || selectedCategoryId !== null || priceRange.min !== null || priceRange.max !== null
+                            ? "No se encontraron productos para esta tienda con los filtros aplicados."
+                            : "Este comercio aún no tiene productos publicados."
+                        }
+                    </div>
                 )}
                 {status === "success" && products.length > 0 && (
                     <FeaturedProducts
