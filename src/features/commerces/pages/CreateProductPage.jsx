@@ -50,7 +50,7 @@ export default function CreateProductPage() {
   } = useCreateProduct({
     onSuccess: (msg) => {
       showToast(msg, 'success');
-      navigate('/comercio');
+      navigate('/comercio/productos');
     },
     onError: (msg) => showToast(msg, 'error'),
   });
@@ -81,7 +81,7 @@ export default function CreateProductPage() {
   };
 
   const handleCancel = () => {
-    navigate("/comercio");
+    navigate("/comercio/productos");
   };
 
   return (

@@ -27,16 +27,16 @@ export const CreateCommercePage = () => {
     }, [navigate, showToast]);
 
     return (
-        <div>
+        <div className="bg-gray-50 min-h-screen">
             <div className="sticky top-0 z-50">
                 <Navbar />
             </div>
-            <div className="flex justify-center w-full mt-3 mb-3">
-                <div className="w-full max-w-2xl bg-white p-8 rounded-md shadow-md ">
-                    <p className="text-xl text-gray-900 font-bold">Crear Comercio</p>
-                    <p className="text-gray-700">Completa el formulario para registrar tu comercio y comenzar a vender productos responsables.</p>
+            <div className="flex justify-center w-full py-10 px-4">
+                <div className="w-full max-w-2xl bg-white p-8 md:p-10 rounded-2xl shadow-xl ring-1 ring-gray-900/5">
+                    <p className="text-2xl text-gray-900 font-extrabold tracking-tight">Crear Comercio</p>
+                    <p className="text-gray-500 mt-2 mb-6">Completa el formulario para registrar tu comercio y comenzar a vender productos responsables.</p>
                     <CommerceCreationForm />
-                    <p className="text-sm text-gray-500 text-center mt-4">Los campos marcados con * son obligatorios.</p>
+                    <p className="text-sm text-gray-400 text-center mt-6">Los campos marcados con * son obligatorios.</p>
                 </div>
             </div>
         </div>
