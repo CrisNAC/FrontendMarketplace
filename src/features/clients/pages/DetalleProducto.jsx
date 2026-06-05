@@ -276,7 +276,7 @@ export default function DetalleProducto() {
       const { data } = await apiClient.post(`/products/${productId}/reviews`, {
         rating: reviewData.rating,
         comment: reviewData.comment,
-      });
+      }, { skipGlobalErrorRedirect: true });
       const newComment = {
         id: data.id,
         author: data.customerName,
@@ -291,10 +291,10 @@ export default function DetalleProducto() {
       setComments((prev) => [newComment, ...prev]);
       setShowAddReviewModal(false);
       await fetchComments();
-      toast.success("¡Reseña enviada exitosamente!");
+      showToast("¡Reseña enviada exitosamente!", "success");
     } catch (err) {
       const d = err?.response?.data;
-      toast.error(d?.errors?.auth?.message || d?.message || "No se pudo enviar la reseña.");
+      showToast(d?.errors?.auth?.message || d?.message || "No se pudo enviar la reseña.", "error");
     }
   };
 
@@ -304,12 +304,12 @@ export default function DetalleProducto() {
       setCommentReportSubmitting(true);
       await reportProductReview(selectedComment.id, { reason, description });
       setReportedReviewIds((prev) => prev.includes(selectedComment.id) ? prev : [...prev, selectedComment.id]);
-      toast.success("Reporte enviado. Gracias por ayudarnos a mejorar la comunidad.");
+      showToast("Reporte enviado. Gracias por ayudarnos a mejorar la comunidad.", "success");
       setShowCommentReportModal(false);
       setSelectedComment(null);
     } catch (err) {
       const message = err?.response?.data?.error?.message || err?.response?.data?.message || "No se pudo enviar el reporte.";
-      toast.error(message);
+      showToast(message, "error");
     } finally {
       setCommentReportSubmitting(false);
     }

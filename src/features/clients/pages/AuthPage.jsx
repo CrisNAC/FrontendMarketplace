@@ -93,10 +93,6 @@ export default function AuthPage() {
         );
 
         const role = res.data?.user?.role;
-        if (role === "CUSTOMER") {
-          sessionStorage.setItem("showDeliveryReviewPrompt", "1");
-        }
-
         const path = getPostLoginPath(role);
         navigate(path, { replace: true });
       } else {
