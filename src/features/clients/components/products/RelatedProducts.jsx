@@ -101,7 +101,7 @@ function RelatedProducts({ productId, limit = 8 }) {
   }
 
   return (
-    <section className="mt-12 pt-8 border-t border-[#d0d7d2]">
+    <section>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-[20px] font-semibold text-[#2f3e39]">
           Productos relacionados
