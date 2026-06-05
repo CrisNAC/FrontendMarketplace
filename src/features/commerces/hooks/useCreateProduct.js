@@ -221,24 +221,9 @@ export const useCreateProduct = ({ onSuccess, onError } = {}) => {
         await uploadProductImage(created.id_product ?? created.id, imageFile).catch(() => {})
       }
 
-      setResultModal({
-        isOpen: true,
-        variant: "success",
-        title: "Producto creado",
-        message: "El producto se creo correctamente.",
-      });
       onSuccess?.("Producto creado correctamente");
       resetForm();
     } catch (error) {
-      setResultModal({
-        isOpen: true,
-        variant: "error",
-        title: "No se pudo crear",
-        message: getBackendErrorMessage(
-          error,
-          "No se pudo crear el producto. Intenta nuevamente."
-        ),
-      });
       onError?.(getBackendErrorMessage(error, "No se pudo crear el producto. Intenta nuevamente."));
     } finally {
       setIsSubmitting(false);
