@@ -67,37 +67,27 @@ const fillRequiredFields = async () => {
     await userEvent.click(screen.getByText('Seleccionar punto en mapa'))
 }
 
+async function renderAndSelectPoint() {
+    render(<CommerceCreationForm />)
+    await waitFor(() => screen.getByText('Seleccionar punto en mapa'))
+    await userEvent.click(screen.getByText('Seleccionar punto en mapa'))
+}
+
 describe('CommerceCreationForm', () => {
     beforeEach(() => {
         vi.clearAllMocks()
         setupFetch()
     })
 
-    it('renderiza el formulario con el campo Nombre del Comercio', async () => {
+    it.each([
+        ['nombre', 'Ej: Mi Tienda Online'],
+        ['email de contacto', 'contacto@mitienda.com'],
+        ['teléfono', '+595XXXXXXXXX'],
+        ['dirección', 'Calle Principal 123'],
+    ])('muestra el campo de %s', async (_, placeholder) => {
         render(<CommerceCreationForm />)
         await waitFor(() => {
-            expect(screen.getByPlaceholderText('Ej: Mi Tienda Online')).toBeInTheDocument()
-        })
-    })
-
-    it('muestra el campo de email de contacto', async () => {
-        render(<CommerceCreationForm />)
-        await waitFor(() => {
-            expect(screen.getByPlaceholderText('contacto@mitienda.com')).toBeInTheDocument()
-        })
-    })
-
-    it('muestra el campo de teléfono', async () => {
-        render(<CommerceCreationForm />)
-        await waitFor(() => {
-            expect(screen.getByPlaceholderText('+595XXXXXXXXX')).toBeInTheDocument()
-        })
-    })
-
-    it('muestra el campo de dirección', async () => {
-        render(<CommerceCreationForm />)
-        await waitFor(() => {
-            expect(screen.getByPlaceholderText('Calle Principal 123')).toBeInTheDocument()
+            expect(screen.getByPlaceholderText(placeholder)).toBeInTheDocument()
         })
     })
 
@@ -135,7 +125,6 @@ describe('CommerceCreationForm', () => {
     it('muestra error por formato de teléfono inválido', async () => {
         render(<CommerceCreationForm />)
         await waitFor(() => screen.getByPlaceholderText('Ej: Mi Tienda Online'))
-
         await userEvent.type(screen.getByPlaceholderText('Ej: Mi Tienda Online'), 'Mi Tienda')
         await userEvent.type(screen.getByPlaceholderText('contacto@mitienda.com'), 'tienda@test.com')
         await userEvent.type(screen.getByPlaceholderText('+595XXXXXXXXX'), '0981123456')
@@ -145,7 +134,6 @@ describe('CommerceCreationForm', () => {
         await userEvent.type(screen.getByPlaceholderText('Ej: 4000'), '4000')
         await userEvent.click(screen.getByText('Seleccionar punto en mapa'))
         await userEvent.click(screen.getByText('Registrar Comercio'))
-
         await waitFor(() => {
             expect(screen.getByText(/número de teléfono debe tener el formato/)).toBeInTheDocument()
         })
@@ -154,7 +142,6 @@ describe('CommerceCreationForm', () => {
     it('muestra error cuando no se selecciona un punto en el mapa', async () => {
         render(<CommerceCreationForm />)
         await waitFor(() => screen.getByPlaceholderText('Ej: Mi Tienda Online'))
-
         await userEvent.type(screen.getByPlaceholderText('Ej: Mi Tienda Online'), 'Mi Tienda')
         await userEvent.type(screen.getByPlaceholderText('contacto@mitienda.com'), 'tienda@test.com')
         await userEvent.type(screen.getByPlaceholderText('+595XXXXXXXXX'), '+595981123456')
@@ -163,7 +150,6 @@ describe('CommerceCreationForm', () => {
         await userEvent.type(screen.getByPlaceholderText('Ej: 2500'), '2500')
         await userEvent.type(screen.getByPlaceholderText('Ej: 4000'), '4000')
         await userEvent.click(screen.getByText('Registrar Comercio'))
-
         await waitFor(() => {
             expect(screen.getByText(/Seleccioná un punto en el mapa/)).toBeInTheDocument()
         })
@@ -179,10 +165,8 @@ describe('CommerceCreationForm', () => {
     it('llama a la API de creación de comercio con los datos del formulario', async () => {
         render(<CommerceCreationForm />)
         await waitFor(() => screen.getByPlaceholderText('Ej: Mi Tienda Online'))
-
         await fillRequiredFields()
         await userEvent.click(screen.getByText('Registrar Comercio'))
-
         await waitFor(() => {
             expect(globalThis.fetch).toHaveBeenCalledWith(
                 expect.stringContaining('/api/commerces'),
@@ -205,13 +189,10 @@ describe('CommerceCreationForm', () => {
             }
             return Promise.resolve(makeOk({}))
         })
-
         render(<CommerceCreationForm />)
         await waitFor(() => screen.getByPlaceholderText('Ej: Mi Tienda Online'))
-
         await fillRequiredFields()
         await userEvent.click(screen.getByText('Registrar Comercio'))
-
         await waitFor(() => {
             expect(screen.getByText('Nombre ya registrado')).toBeInTheDocument()
         })
@@ -225,7 +206,6 @@ describe('CommerceCreationForm', () => {
             }
             return Promise.resolve(makeOk([]))
         })
-
         render(<CommerceCreationForm />)
         await waitFor(() => {
             expect(screen.getByText(/No se pudo verificar la sesión/)).toBeInTheDocument()
@@ -233,27 +213,21 @@ describe('CommerceCreationForm', () => {
     })
 
     it('muestra el mensaje de ubicación seleccionada', async () => {
-        render(<CommerceCreationForm />)
-        await waitFor(() => screen.getByText('Seleccionar punto en mapa'))
-        await userEvent.click(screen.getByText('Seleccionar punto en mapa'))
+        await renderAndSelectPoint()
         await waitFor(() => {
             expect(screen.getByText(/Punto seleccionado/)).toBeInTheDocument()
         })
     })
 
     it('muestra el botón Limpiar punto después de seleccionar', async () => {
-        render(<CommerceCreationForm />)
-        await waitFor(() => screen.getByText('Seleccionar punto en mapa'))
-        await userEvent.click(screen.getByText('Seleccionar punto en mapa'))
+        await renderAndSelectPoint()
         await waitFor(() => {
             expect(screen.getByText('Limpiar punto')).toBeInTheDocument()
         })
     })
 
     it('limpia el punto al hacer clic en Limpiar punto', async () => {
-        render(<CommerceCreationForm />)
-        await waitFor(() => screen.getByText('Seleccionar punto en mapa'))
-        await userEvent.click(screen.getByText('Seleccionar punto en mapa'))
+        await renderAndSelectPoint()
         await waitFor(() => screen.getByText('Limpiar punto'))
         await userEvent.click(screen.getByText('Limpiar punto'))
         await waitFor(() => {

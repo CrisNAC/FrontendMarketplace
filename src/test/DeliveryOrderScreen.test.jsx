@@ -35,6 +35,14 @@ const mockAssignment = {
     }
 }
 
+function setupWithAssignment() {
+    loadDeliveryDashboard.mockResolvedValueOnce({
+        assignments: [mockAssignment],
+        reason: null,
+        delivery: { id_delivery: 1 }
+    })
+}
+
 describe('DeliveryOrderScreen', () => {
     beforeEach(() => {
         vi.clearAllMocks()
@@ -42,21 +50,13 @@ describe('DeliveryOrderScreen', () => {
 
     it('muestra "Cargando pedidos..." durante la carga', () => {
         loadDeliveryDashboard.mockReturnValue(new Promise(() => {}))
-
         render(<DeliveryOrderScreen />)
-
         expect(screen.getByText('Cargando pedidos…')).toBeInTheDocument()
     })
 
     it('muestra el título "Pedidos para aceptar"', async () => {
-        loadDeliveryDashboard.mockResolvedValueOnce({
-            assignments: [mockAssignment],
-            reason: null,
-            delivery: { id_delivery: 1 }
-        })
-
+        setupWithAssignment()
         render(<DeliveryOrderScreen />)
-
         await waitFor(() => {
             expect(screen.getByText('Pedidos para aceptar')).toBeInTheDocument()
         })
@@ -68,73 +68,40 @@ describe('DeliveryOrderScreen', () => {
             reason: null,
             delivery: { id_delivery: 1 }
         })
-
         render(<DeliveryOrderScreen />)
-
         await waitFor(() => {
             expect(screen.getByText('No hay pedidos pendientes')).toBeInTheDocument()
         })
     })
 
-    it('muestra mensaje de not_delivery cuando no hay sesión de repartidor', async () => {
-        loadDeliveryDashboard.mockResolvedValueOnce({
-            assignments: [],
-            reason: 'not_delivery',
-            delivery: null
-        })
-
+    it.each([
+        ['not_delivery', /Iniciá sesión con una cuenta de repartidor/],
+        ['no_delivery_profile', /no tiene perfil de delivery activo/],
+    ])('muestra mensaje cuando reason es %s', async (reason, pattern) => {
+        loadDeliveryDashboard.mockResolvedValueOnce({ assignments: [], reason, delivery: null })
         render(<DeliveryOrderScreen />)
-
         await waitFor(() => {
-            expect(screen.getByText(/Iniciá sesión con una cuenta de repartidor/)).toBeInTheDocument()
-        })
-    })
-
-    it('muestra mensaje de no_delivery_profile cuando no tiene perfil de delivery', async () => {
-        loadDeliveryDashboard.mockResolvedValueOnce({
-            assignments: [],
-            reason: 'no_delivery_profile',
-            delivery: null
-        })
-
-        render(<DeliveryOrderScreen />)
-
-        await waitFor(() => {
-            expect(screen.getByText(/no tiene perfil de delivery activo/)).toBeInTheDocument()
+            expect(screen.getByText(pattern)).toBeInTheDocument()
         })
     })
 
     it('renderiza datos de la asignación', async () => {
-        loadDeliveryDashboard.mockResolvedValueOnce({
-            assignments: [mockAssignment],
-            reason: null,
-            delivery: { id_delivery: 1 }
-        })
-
+        setupWithAssignment()
         render(<DeliveryOrderScreen />)
-
         await waitFor(() => {
             expect(screen.getByText('Tienda Test')).toBeInTheDocument()
         })
     })
 
     it('acepta un pedido al hacer clic en Aceptar', async () => {
-        loadDeliveryDashboard.mockResolvedValueOnce({
-            assignments: [mockAssignment],
-            reason: null,
-            delivery: { id_delivery: 1 }
-        })
+        setupWithAssignment()
         respondToDeliveryOrder.mockResolvedValueOnce({})
         loadDeliveryDashboard.mockResolvedValueOnce({ assignments: [], reason: null, delivery: { id_delivery: 1 } })
-
         render(<DeliveryOrderScreen />)
-
         await waitFor(() => {
             expect(screen.getByText('Aceptar')).toBeInTheDocument()
         })
-
         await userEvent.click(screen.getByText('Aceptar'))
-
         await waitFor(() => {
             expect(respondToDeliveryOrder).toHaveBeenCalledWith(10, 'ACCEPT')
             expect(toast.success).toHaveBeenCalledWith('Pedido aceptado.')
@@ -142,22 +109,14 @@ describe('DeliveryOrderScreen', () => {
     })
 
     it('rechaza un pedido al hacer clic en Rechazar', async () => {
-        loadDeliveryDashboard.mockResolvedValueOnce({
-            assignments: [mockAssignment],
-            reason: null,
-            delivery: { id_delivery: 1 }
-        })
+        setupWithAssignment()
         respondToDeliveryOrder.mockResolvedValueOnce({})
         loadDeliveryDashboard.mockResolvedValueOnce({ assignments: [], reason: null, delivery: { id_delivery: 1 } })
-
         render(<DeliveryOrderScreen />)
-
         await waitFor(() => {
             expect(screen.getByText('Rechazar')).toBeInTheDocument()
         })
-
         await userEvent.click(screen.getByText('Rechazar'))
-
         await waitFor(() => {
             expect(respondToDeliveryOrder).toHaveBeenCalledWith(10, 'REJECT')
             expect(toast.success).toHaveBeenCalledWith('Pedido rechazado.')
@@ -165,21 +124,13 @@ describe('DeliveryOrderScreen', () => {
     })
 
     it('muestra error cuando respondToDeliveryOrder falla', async () => {
-        loadDeliveryDashboard.mockResolvedValueOnce({
-            assignments: [mockAssignment],
-            reason: null,
-            delivery: { id_delivery: 1 }
-        })
+        setupWithAssignment()
         respondToDeliveryOrder.mockRejectedValueOnce(new Error('Error de red'))
-
         render(<DeliveryOrderScreen />)
-
         await waitFor(() => {
             expect(screen.getByText('Aceptar')).toBeInTheDocument()
         })
-
         await userEvent.click(screen.getByText('Aceptar'))
-
         await waitFor(() => {
             expect(toast.error).toHaveBeenCalled()
         })

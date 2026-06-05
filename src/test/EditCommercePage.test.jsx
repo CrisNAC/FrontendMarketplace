@@ -90,34 +90,22 @@ describe('EditCommercePage', () => {
         expect(screen.getByText('Comercio no encontrado.')).toBeInTheDocument()
     })
 
-    it('muestra el campo de teléfono', () => {
+    it.each([
+        ['teléfono', '+595XXXXXXXXX'],
+        ['sitio web', 'https://mi-comercio.com'],
+        ['Instagram', 'https://instagram.com/mi_comercio'],
+        ['TikTok', 'https://tiktok.com/@mi_comercio'],
+    ])('muestra el campo de %s', (_, placeholder) => {
         render(<EditCommercePage />)
-        expect(screen.getByPlaceholderText('+595XXXXXXXXX')).toBeInTheDocument()
+        expect(screen.getByPlaceholderText(placeholder)).toBeInTheDocument()
     })
 
-    it('muestra el campo de sitio web', () => {
+    it.each([
+        ['Guardar Cambios'],
+        ['Cancelar'],
+    ])('muestra el botón "%s"', (text) => {
         render(<EditCommercePage />)
-        expect(screen.getByPlaceholderText('https://mi-comercio.com')).toBeInTheDocument()
-    })
-
-    it('muestra el campo de Instagram', () => {
-        render(<EditCommercePage />)
-        expect(screen.getByPlaceholderText('https://instagram.com/mi_comercio')).toBeInTheDocument()
-    })
-
-    it('muestra el campo de TikTok', () => {
-        render(<EditCommercePage />)
-        expect(screen.getByPlaceholderText('https://tiktok.com/@mi_comercio')).toBeInTheDocument()
-    })
-
-    it('muestra el botón de Guardar Cambios', () => {
-        render(<EditCommercePage />)
-        expect(screen.getByText('Guardar Cambios')).toBeInTheDocument()
-    })
-
-    it('muestra el botón de Cancelar', () => {
-        render(<EditCommercePage />)
-        expect(screen.getByText('Cancelar')).toBeInTheDocument()
+        expect(screen.getByText(text)).toBeInTheDocument()
     })
 
     it('navega a /comercio/perfil al hacer clic en Cancelar', async () => {

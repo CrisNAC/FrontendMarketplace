@@ -135,17 +135,20 @@ describe("DetalleProducto", () => {
         });
     });
 
-    it("muestra el nombre del producto tras la carga", async () => {
+    it.each([
+        ['nombre', 'Mouse gamer'],
+        ['descripción', 'Mouse RGB de alta precisión'],
+        ['precio', 'Gs. 150000'],
+        ['stock', 'En stock'],
+        ['sin imagen', 'Sin imagen'],
+        ['calificación', '4.5'],
+        ['conteo de reseñas', '12 calificaciones'],
+        ['título compuesto', 'TechStore / Electrónica'],
+        ['botón Comentarios', 'Comentarios'],
+    ])('muestra el/la %s del producto', async (_, text) => {
         render(<DetalleProducto />);
         await waitFor(() => {
-            expect(screen.getByText("Mouse gamer")).toBeInTheDocument();
-        });
-    });
-
-    it("muestra la descripción del producto", async () => {
-        render(<DetalleProducto />);
-        await waitFor(() => {
-            expect(screen.getByText("Mouse RGB de alta precisión")).toBeInTheDocument();
+            expect(screen.getByText(text)).toBeInTheDocument();
         });
     });
 
@@ -166,32 +169,11 @@ describe("DetalleProducto", () => {
         });
     });
 
-    it("muestra el precio formateado del producto", async () => {
-        render(<DetalleProducto />);
-        await waitFor(() => {
-            expect(screen.getByText("Gs. 150000")).toBeInTheDocument();
-        });
-    });
-
-    it("muestra 'En stock' cuando quantity > 0", async () => {
-        render(<DetalleProducto />);
-        await waitFor(() => {
-            expect(screen.getByText("En stock")).toBeInTheDocument();
-        });
-    });
-
     it("muestra 'Sin stock' cuando quantity = 0", async () => {
         setupFetch({ ...baseProduct, quantity: 0 });
         render(<DetalleProducto />);
         await waitFor(() => {
             expect(screen.getByText("Sin stock")).toBeInTheDocument();
-        });
-    });
-
-    it("muestra 'Sin imagen' cuando no hay imageUrl", async () => {
-        render(<DetalleProducto />);
-        await waitFor(() => {
-            expect(screen.getByText("Sin imagen")).toBeInTheDocument();
         });
     });
 
@@ -203,32 +185,11 @@ describe("DetalleProducto", () => {
         });
     });
 
-    it("muestra el promedio de calificaciones", async () => {
-        render(<DetalleProducto />);
-        await waitFor(() => {
-            expect(screen.getByText("4.5")).toBeInTheDocument();
-        });
-    });
-
-    it("muestra el conteo de reseñas cuando existe", async () => {
-        render(<DetalleProducto />);
-        await waitFor(() => {
-            expect(screen.getByText("12 calificaciones")).toBeInTheDocument();
-        });
-    });
-
     it("muestra 'Ver calificaciones' cuando reviewCount es null", async () => {
         setupFetch({ ...baseProduct, reviewCount: null });
         render(<DetalleProducto />);
         await waitFor(() => {
             expect(screen.getByText("Ver calificaciones")).toBeInTheDocument();
-        });
-    });
-
-    it("muestra el título compuesto con comercio y categoría", async () => {
-        render(<DetalleProducto />);
-        await waitFor(() => {
-            expect(screen.getByText("TechStore / Electrónica")).toBeInTheDocument();
         });
     });
 
@@ -374,13 +335,6 @@ describe("DetalleProducto", () => {
         render(<DetalleProducto />);
         await waitFor(() => {
             expect(screen.getByRole("button", { name: /agregar al carrito/i })).toBeInTheDocument();
-        });
-    });
-
-    it("muestra el botón 'Comentarios'", async () => {
-        render(<DetalleProducto />);
-        await waitFor(() => {
-            expect(screen.getByText("Comentarios")).toBeInTheDocument();
         });
     });
 

@@ -90,10 +90,16 @@ describe('AddStoreDeliveryPage', () => {
         })
     })
 
-    it('muestra el encabezado "Agregar delivery"', async () => {
+    it.each([
+        ['encabezado', 'Agregar delivery'],
+        ['nombre del repartidor', 'Carlos López'],
+        ['email del repartidor', 'carlos@test.com'],
+        ['botón "Agregar"', 'Agregar'],
+        ['disponibilidad', '1 disponible'],
+    ])('muestra el/la %s', async (_, text) => {
         render(<AddStoreDeliveryPage />)
         await waitFor(() => {
-            expect(screen.getByText('Agregar delivery')).toBeInTheDocument()
+            expect(screen.getByText(text)).toBeInTheDocument()
         })
     })
 
@@ -126,27 +132,6 @@ describe('AddStoreDeliveryPage', () => {
         await userEvent.type(screen.getByPlaceholderText('Filtrar por nombre, correo o teléfono…'), 'xyznoexiste')
         await waitFor(() => {
             expect(screen.getByText('Ningún resultado coincide con el filtro.')).toBeInTheDocument()
-        })
-    })
-
-    it('muestra el nombre del repartidor en la lista', async () => {
-        render(<AddStoreDeliveryPage />)
-        await waitFor(() => {
-            expect(screen.getByText('Carlos López')).toBeInTheDocument()
-        })
-    })
-
-    it('muestra el email del repartidor', async () => {
-        render(<AddStoreDeliveryPage />)
-        await waitFor(() => {
-            expect(screen.getByText('carlos@test.com')).toBeInTheDocument()
-        })
-    })
-
-    it('muestra el botón "Agregar" para cada repartidor', async () => {
-        render(<AddStoreDeliveryPage />)
-        await waitFor(() => {
-            expect(screen.getByText('Agregar')).toBeInTheDocument()
         })
     })
 
@@ -195,13 +180,6 @@ describe('AddStoreDeliveryPage', () => {
         render(<AddStoreDeliveryPage />)
         await waitFor(() => {
             expect(screen.getByText('No se pudo cargar la lista de repartidores.')).toBeInTheDocument()
-        })
-    })
-
-    it('muestra la disponibilidad de repartidores', async () => {
-        render(<AddStoreDeliveryPage />)
-        await waitFor(() => {
-            expect(screen.getByText('1 disponible')).toBeInTheDocument()
         })
     })
 })

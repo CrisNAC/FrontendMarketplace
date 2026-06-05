@@ -105,28 +105,16 @@ describe('AdminDashboardPage', () => {
         expect(screen.getByText('Comercios por aprobar')).toBeInTheDocument()
     })
 
-    it('muestra alerta cuando hay reportes de productos pendientes', async () => {
-        fetchAdminDashboardStats.mockResolvedValue({ ...mockStats, pendingProductReports: 3 })
-
+    it.each([
+        [3, /3 compradores reportaron productos/],
+        [1, /Un comprador reportó un producto/],
+    ])('muestra mensaje para %i reporte(s) de productos', async (count, pattern) => {
+        fetchAdminDashboardStats.mockResolvedValue({ ...mockStats, pendingProductReports: count })
         render(<AdminDashboardPage />)
-
         await waitFor(() => {
             expect(screen.getByText('Hay reportes de productos pendientes')).toBeInTheDocument()
         })
-
-        expect(screen.getByText(/3 compradores reportaron productos/)).toBeInTheDocument()
-    })
-
-    it('muestra mensaje singular para un solo reporte', async () => {
-        fetchAdminDashboardStats.mockResolvedValue({ ...mockStats, pendingProductReports: 1 })
-
-        render(<AdminDashboardPage />)
-
-        await waitFor(() => {
-            expect(screen.getByText('Hay reportes de productos pendientes')).toBeInTheDocument()
-        })
-
-        expect(screen.getByText(/Un comprador reportó un producto/)).toBeInTheDocument()
+        expect(screen.getByText(pattern)).toBeInTheDocument()
     })
 
     it('no muestra alerta cuando no hay reportes de productos', async () => {

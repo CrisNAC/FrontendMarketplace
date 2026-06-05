@@ -91,34 +91,22 @@ describe('CreateProductPage', () => {
         expect(screen.getByText('Crear Nuevo Producto')).toBeInTheDocument()
     })
 
-    it('muestra el campo de nombre del producto', () => {
+    it.each([
+        ['nombre', 'Ej: Coca Cola 1L'],
+        ['descripción', 'Describe las caracteristicas del producto'],
+        ['precio', '12000'],
+        ['stock', '20'],
+    ])('muestra el campo de %s', (_, placeholder) => {
         render(<CreateProductPage />)
-        expect(screen.getByPlaceholderText('Ej: Coca Cola 1L')).toBeInTheDocument()
+        expect(screen.getByPlaceholderText(placeholder)).toBeInTheDocument()
     })
 
-    it('muestra el campo de descripción', () => {
+    it.each([
+        ['Crear Producto'],
+        ['Cancelar'],
+    ])('muestra el botón "%s"', (text) => {
         render(<CreateProductPage />)
-        expect(screen.getByPlaceholderText('Describe las caracteristicas del producto')).toBeInTheDocument()
-    })
-
-    it('muestra el campo de precio', () => {
-        render(<CreateProductPage />)
-        expect(screen.getByPlaceholderText('12000')).toBeInTheDocument()
-    })
-
-    it('muestra el campo de stock', () => {
-        render(<CreateProductPage />)
-        expect(screen.getByPlaceholderText('20')).toBeInTheDocument()
-    })
-
-    it('muestra el botón "Crear Producto"', () => {
-        render(<CreateProductPage />)
-        expect(screen.getByText('Crear Producto')).toBeInTheDocument()
-    })
-
-    it('muestra el botón "Cancelar"', () => {
-        render(<CreateProductPage />)
-        expect(screen.getByText('Cancelar')).toBeInTheDocument()
+        expect(screen.getByText(text)).toBeInTheDocument()
     })
 
     it('navega a /comercio al hacer clic en Cancelar', async () => {
