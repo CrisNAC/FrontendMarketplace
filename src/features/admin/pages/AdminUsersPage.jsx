@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search, ShoppingCart, Store, Shield, Truck, Eye } from "lucide-react";
+import { Search, ShoppingCart, Store, Shield, Truck } from "lucide-react";
 import { fetchAdminUsers } from "../services/adminUsersApi";
 import { PageLoader } from "../../../components/PageLoader";
 
@@ -233,14 +233,6 @@ export const AdminUsersPage = () => {
                     Registro: {new Date(user.createdAt).toLocaleDateString("es-PY")}
                   </span>
 
-                  {/* Acciones */}
-                  <button
-                    title="Ver detalle (próximamente)"
-                    disabled
-                    style={{ background: "none", border: "none", cursor: "not-allowed", color: "#6b7280", padding: "4px", borderRadius: "6px", display: "flex", opacity: 0.4 }}
-                  >
-                    <Eye size={18} />
-                  </button>
                 </div>
               );
             })}

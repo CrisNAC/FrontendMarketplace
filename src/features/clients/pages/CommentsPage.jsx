@@ -66,7 +66,7 @@ export const CommentsPage = () => {
       const { data } = await apiClient.post(`/products/${id}/reviews`, {
         rating: reviewData.rating,
         comment: reviewData.comment,
-      });
+      }, { skipGlobalErrorRedirect: true });
 
       const newComment = {
         id: data.id,
@@ -116,6 +116,8 @@ export const CommentsPage = () => {
         err?.response?.data?.error?.message ||
         err?.response?.data?.message ||
         'No se pudo enviar el reporte.';
+      setShowReportModal(false);
+      setSelectedComment(null);
       showToast(message, 'error');
     } finally {
       setReportSubmitting(false);

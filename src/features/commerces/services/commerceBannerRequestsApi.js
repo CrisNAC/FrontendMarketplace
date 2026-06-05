@@ -5,7 +5,7 @@ import apiClient from "../../../lib/apiClient";
 export const getMyBannerRequests = async (storeId, { approvalStatus } = {}) => {
   const params = {};
   if (approvalStatus) params.approval_status = approvalStatus;
-  const { data } = await apiClient.get(`/api/stores/${storeId}/banner-requests`, { params });
+  const { data } = await apiClient.get(`/api/stores/${storeId}/banner-requests`, { params, skipGlobalErrorRedirect: true });
   return data.data ?? [];
 };
 
@@ -18,12 +18,12 @@ export const createBannerRequest = async (storeId, payload) => {
     linkUrl,
     startAt,
     endAt,
-  });
+  }, { skipGlobalErrorRedirect: true });
   return data;
 };
 
 export const cancelBannerRequest = async (storeId, requestId) => {
-  await apiClient.delete(`/api/stores/${storeId}/banner-requests/${requestId}`);
+  await apiClient.delete(`/api/stores/${storeId}/banner-requests/${requestId}`, { skipGlobalErrorRedirect: true });
 };
 
 // ── Admin side ───────────────────────────────────────────────────────────────
