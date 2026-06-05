@@ -34,6 +34,11 @@ const mockReport = {
     }
 }
 
+async function renderLoaded() {
+    render(<ReviewReportsPanel />)
+    await waitFor(() => screen.getByText('Laptop Gaming'))
+}
+
 describe('ReviewReportsPanel', () => {
     beforeEach(() => {
         vi.clearAllMocks()
@@ -42,61 +47,39 @@ describe('ReviewReportsPanel', () => {
 
     it('muestra "Cargando reportes..." durante la carga', () => {
         fetchFilteredReviewReports.mockReturnValue(new Promise(() => {}))
-
         render(<ReviewReportsPanel />)
-
         expect(screen.getByText('Cargando reportes…')).toBeInTheDocument()
     })
 
     it('renderiza el reporte cargado', async () => {
-        render(<ReviewReportsPanel />)
-
-        await waitFor(() => {
-            expect(screen.getByText('Laptop Gaming')).toBeInTheDocument()
-        })
+        await renderLoaded()
+        expect(screen.getByText('Laptop Gaming')).toBeInTheDocument()
     })
 
     it('muestra "No hay reportes" cuando la lista está vacía', async () => {
         fetchFilteredReviewReports.mockResolvedValueOnce({ data: [], meta: { ...mockMeta, total: 0 } })
-
         render(<ReviewReportsPanel />)
-
         await waitFor(() => {
             expect(screen.getByText('No hay reportes de reseñas con estos criterios.')).toBeInTheDocument()
         })
     })
 
     it('muestra botones de acción en el reporte', async () => {
-        render(<ReviewReportsPanel />)
-
-        await waitFor(() => {
-            expect(screen.getByText('Aceptar reseña')).toBeInTheDocument()
-            expect(screen.getByText('Eliminar reseña')).toBeInTheDocument()
-        })
+        await renderLoaded()
+        expect(screen.getByText('Aceptar reseña')).toBeInTheDocument()
+        expect(screen.getByText('Eliminar reseña')).toBeInTheDocument()
     })
 
     it('abre modal de confirmación al hacer clic en Eliminar reseña', async () => {
-        render(<ReviewReportsPanel />)
-
-        await waitFor(() => {
-            expect(screen.getByText('Eliminar reseña')).toBeInTheDocument()
-        })
-
+        await renderLoaded()
         await userEvent.click(screen.getByText('Eliminar reseña'))
-
         expect(screen.getByText('Confirmar acción')).toBeInTheDocument()
     })
 
     it('cancela el modal al hacer clic en Cancelar', async () => {
-        render(<ReviewReportsPanel />)
-
-        await waitFor(() => {
-            expect(screen.getByText('Eliminar reseña')).toBeInTheDocument()
-        })
-
+        await renderLoaded()
         await userEvent.click(screen.getByText('Eliminar reseña'))
         await userEvent.click(screen.getByText('Cancelar'))
-
         await waitFor(() => {
             expect(screen.queryByText('Confirmar acción')).not.toBeInTheDocument()
         })
@@ -106,15 +89,8 @@ describe('ReviewReportsPanel', () => {
         resolveReviewReport.mockResolvedValueOnce({})
         fetchFilteredReviewReports.mockResolvedValueOnce({ data: [mockReport], meta: mockMeta })
         fetchFilteredReviewReports.mockResolvedValueOnce({ data: [], meta: { ...mockMeta, total: 0 } })
-
-        render(<ReviewReportsPanel />)
-
-        await waitFor(() => {
-            expect(screen.getByText('Aceptar reseña')).toBeInTheDocument()
-        })
-
+        await renderLoaded()
         await userEvent.click(screen.getByText('Aceptar reseña'))
-
         await waitFor(() => {
             expect(resolveReviewReport).toHaveBeenCalledWith(1, { decision: 'KEEP_REVIEW' })
             expect(toast.success).toHaveBeenCalledWith(expect.stringMatching(/reporte descartado/i))
@@ -125,21 +101,12 @@ describe('ReviewReportsPanel', () => {
         resolveReviewReport.mockResolvedValueOnce({})
         fetchFilteredReviewReports.mockResolvedValueOnce({ data: [mockReport], meta: mockMeta })
         fetchFilteredReviewReports.mockResolvedValueOnce({ data: [], meta: { ...mockMeta, total: 0 } })
-
-        render(<ReviewReportsPanel />)
-
-        await waitFor(() => {
-            expect(screen.getByText('Eliminar reseña')).toBeInTheDocument()
-        })
-
+        await renderLoaded()
         await userEvent.click(screen.getByText('Eliminar reseña'))
-
         await waitFor(() => {
             expect(screen.getByText('Sí, ocultar')).toBeInTheDocument()
         })
-
         await userEvent.click(screen.getByText('Sí, ocultar'))
-
         await waitFor(() => {
             expect(resolveReviewReport).toHaveBeenCalledWith(1, { decision: 'REMOVE_REVIEW' })
             expect(toast.success).toHaveBeenCalledWith(expect.stringMatching(/ocultada/i))
@@ -147,18 +114,12 @@ describe('ReviewReportsPanel', () => {
     })
 
     it('muestra el input de búsqueda', async () => {
-        render(<ReviewReportsPanel />)
-
-        await waitFor(() => {
-            expect(screen.getByPlaceholderText('Buscar por quien reporta, autor de la reseña o producto.')).toBeInTheDocument()
-        })
+        await renderLoaded()
+        expect(screen.getByPlaceholderText('Buscar por quien reporta, autor de la reseña o producto.')).toBeInTheDocument()
     })
 
     it('muestra el select de estado', async () => {
-        render(<ReviewReportsPanel />)
-
-        await waitFor(() => {
-            expect(screen.getByText('Todos los estados')).toBeInTheDocument()
-        })
+        await renderLoaded()
+        expect(screen.getByText('Todos los estados')).toBeInTheDocument()
     })
 })

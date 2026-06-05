@@ -44,6 +44,11 @@ const mockActivity = [
     },
 ]
 
+async function renderLoaded() {
+    render(<AdminDashboardPage />)
+    await waitFor(() => screen.getByText('Total Usuarios'))
+}
+
 describe('AdminDashboardPage', () => {
     beforeEach(() => {
         vi.clearAllMocks()
@@ -51,55 +56,38 @@ describe('AdminDashboardPage', () => {
         fetchAdminRecentActivity.mockResolvedValue(mockActivity)
     })
 
-    it('muestra el título del dashboard', async () => {
-        render(<AdminDashboardPage />)
-
-        await waitFor(() => {
-            expect(screen.getByText('Dashboard')).toBeInTheDocument()
-        })
-    })
-
     it('muestra "..." mientras carga', () => {
         fetchAdminDashboardStats.mockReturnValue(new Promise(() => {}))
         fetchAdminRecentActivity.mockReturnValue(new Promise(() => {}))
-
         render(<AdminDashboardPage />)
-
         const loadingIndicators = screen.getAllByText('...')
         expect(loadingIndicators.length).toBeGreaterThan(0)
     })
 
+    it('muestra el título del dashboard', async () => {
+        await renderLoaded()
+        expect(screen.getByText('Dashboard')).toBeInTheDocument()
+    })
+
     it('renderiza las tarjetas de estadísticas con valores', async () => {
-        render(<AdminDashboardPage />)
-
-        await waitFor(() => {
-            expect(screen.getByText('Total Usuarios')).toBeInTheDocument()
-        })
-
+        await renderLoaded()
+        expect(screen.getByText('Total Usuarios')).toBeInTheDocument()
         expect(screen.getByText('Compradores Activos')).toBeInTheDocument()
         expect(screen.getByText('Comercios Registrados')).toBeInTheDocument()
         expect(screen.getByText('Productos Pendientes')).toBeInTheDocument()
     })
 
     it('muestra la actividad reciente', async () => {
-        render(<AdminDashboardPage />)
-
-        await waitFor(() => {
-            expect(screen.getByText('Actividad Reciente')).toBeInTheDocument()
-        })
-
+        await renderLoaded()
+        expect(screen.getByText('Actividad Reciente')).toBeInTheDocument()
         expect(screen.getByText('Nuevo comprador registrado')).toBeInTheDocument()
         expect(screen.getByText('Juan Pérez')).toBeInTheDocument()
         expect(screen.getByText('Producto pendiente de aprobación')).toBeInTheDocument()
     })
 
     it('muestra las tareas pendientes', async () => {
-        render(<AdminDashboardPage />)
-
-        await waitFor(() => {
-            expect(screen.getByText('Tareas Pendientes')).toBeInTheDocument()
-        })
-
+        await renderLoaded()
+        expect(screen.getByText('Tareas Pendientes')).toBeInTheDocument()
         expect(screen.getByText('Productos sospechosos')).toBeInTheDocument()
         expect(screen.getByText('Reseñas reportadas')).toBeInTheDocument()
         expect(screen.getByText('Comercios por aprobar')).toBeInTheDocument()
@@ -118,43 +106,28 @@ describe('AdminDashboardPage', () => {
     })
 
     it('no muestra alerta cuando no hay reportes de productos', async () => {
-        render(<AdminDashboardPage />)
-
-        await waitFor(() => {
-            expect(screen.getByText('Total Usuarios')).toBeInTheDocument()
-        })
-
+        await renderLoaded()
         expect(screen.queryByText('Hay reportes de productos pendientes')).not.toBeInTheDocument()
     })
 
     it('muestra error cuando falla la carga', async () => {
         fetchAdminDashboardStats.mockRejectedValue(new Error('Error de red'))
-
         render(<AdminDashboardPage />)
-
         await waitFor(() => {
             expect(screen.getByText('No se pudo cargar el dashboard.')).toBeInTheDocument()
         })
     })
 
     it('navega al hacer clic en una tarjeta con link', async () => {
-        render(<AdminDashboardPage />)
-
-        await waitFor(() => {
-            expect(screen.getByText('Total Usuarios')).toBeInTheDocument()
-        })
-
+        await renderLoaded()
         const cards = screen.getAllByTitle('Abrir gestión de usuarios con este filtro')
         await userEvent.click(cards[0])
-
         expect(mockNavigate).toHaveBeenCalledWith('/admin/usuarios')
     })
 
     it('muestra mensaje de no actividad cuando la lista está vacía', async () => {
         fetchAdminRecentActivity.mockResolvedValue([])
-
         render(<AdminDashboardPage />)
-
         await waitFor(() => {
             expect(screen.getByText('Aun no hay actividad disponible para mostrar.')).toBeInTheDocument()
         })
