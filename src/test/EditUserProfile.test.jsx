@@ -110,7 +110,7 @@ describe('EditClientProfile', () => {
     })
 
     it('muestra error de validación cuando el nombre está vacío', async () => {
-        fetchUserProfile.mockResolvedValue({ data: { ...mockUser, name: '' } })
+        fetchUserProfile.mockResolvedValue({ ...mockUser, name: '' })
         render(<EditClientProfile />)
         await waitFor(() => screen.getByText('Guardar cambios'))
         await userEvent.click(screen.getByText('Guardar cambios'))
