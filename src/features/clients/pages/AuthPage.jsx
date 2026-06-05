@@ -105,7 +105,11 @@ export default function AuthPage() {
         setIsLogin(true);
       }
     } catch (err) {
-      setError(err.response?.data?.error || err.response?.data?.message || "Ocurrió un error");
+      if (err.response?.status === 429) {
+        setError("Demasiados intentos. Esperá unos minutos e intentá de nuevo.");
+      } else {
+        setError(err.response?.data?.error || err.response?.data?.message || "Ocurrió un error");
+      }
     } finally {
       setLoading(false);
     }
