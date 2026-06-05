@@ -20,7 +20,6 @@ vi.mock('../features/commerces/services/editUserProfileApi', () => ({
     getBackendErrorMessage: vi.fn((_err, fallback) => fallback),
 }))
 
-import toast from 'react-hot-toast'
 import { becomeDelivery, getCurrentUserForDeliveryForm } from '../features/clients/services/deliveryApi'
 import { BecomeDeliveryModal } from '../features/clients/components/BecomeDeliveryModal'
 

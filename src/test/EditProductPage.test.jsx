@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -11,7 +12,7 @@ vi.mock('react-router-dom', () => ({
 
 vi.mock('lucide-react', () => ({
     ArrowLeft: () => <span>←</span>,
-    X: ({ onClick }) => <span onClick={onClick} data-testid="x-icon">×</span>,
+    X: ({ onClick }) => <button type="button" onClick={onClick} data-testid="x-icon">×</button>,
 }))
 
 vi.mock('../features/commerces/hooks/useEditProduct', () => ({

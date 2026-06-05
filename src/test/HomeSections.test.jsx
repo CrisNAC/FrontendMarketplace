@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -59,7 +60,7 @@ describe('HomeSections', () => {
     })
 
     it('muestra "Compra por categorías" después de cargar datos', async () => {
-        global.fetch = mockFetch([{ id_product_category: 1, name: 'Electrónica' }])
+        globalThis.fetch = mockFetch([{ id_product_category: 1, name: 'Electrónica' }])
 
         render(<HomeSections />)
 
@@ -69,7 +70,7 @@ describe('HomeSections', () => {
     })
 
     it('muestra categoría cargada', async () => {
-        global.fetch = mockFetch([{ id_product_category: 1, name: 'Tecnología' }])
+        globalThis.fetch = mockFetch([{ id_product_category: 1, name: 'Tecnología' }])
 
         render(<HomeSections />)
 
@@ -79,7 +80,7 @@ describe('HomeSections', () => {
     })
 
     it('muestra "No hay categorías disponibles" cuando la lista está vacía', async () => {
-        global.fetch = mockFetch([])
+        globalThis.fetch = mockFetch([])
 
         render(<HomeSections />)
 
@@ -104,7 +105,7 @@ describe('HomeSections', () => {
     })
 
     it('muestra "Ofertas" sección', async () => {
-        global.fetch = mockFetch(
+        globalThis.fetch = mockFetch(
             [],
             [{ id_product: 1, name: 'Laptop Oferta', price: 500000, offer_price: 400000, image_url: null }]
         )
@@ -117,7 +118,7 @@ describe('HomeSections', () => {
     })
 
     it('muestra "No hay ofertas disponibles" cuando lista vacía', async () => {
-        global.fetch = mockFetch([], [])
+        globalThis.fetch = mockFetch([], [])
 
         render(<HomeSections />)
 
@@ -127,7 +128,7 @@ describe('HomeSections', () => {
     })
 
     it('muestra el nombre de la oferta cuando hay productos en oferta', async () => {
-        global.fetch = mockFetch(
+        globalThis.fetch = mockFetch(
             [],
             [{ id_product: 1, name: 'Laptop Oferta', price: 500000, offer_price: 400000, image_url: null }]
         )
@@ -159,7 +160,7 @@ describe('HomeSections', () => {
     })
 
     it('muestra comercios cuando la API retorna datos', async () => {
-        global.fetch = mockFetch(
+        globalThis.fetch = mockFetch(
             [],
             [],
             [{ id_store: 1, name: 'Tienda Test', logo: null }]
@@ -173,7 +174,7 @@ describe('HomeSections', () => {
     })
 
     it('muestra "No hay comercios disponibles" cuando la lista está vacía', async () => {
-        global.fetch = mockFetch([], [], [])
+        globalThis.fetch = mockFetch([], [], [])
 
         render(<HomeSections />)
 
@@ -202,7 +203,7 @@ describe('HomeSections', () => {
     })
 
     it('navega a /ofertas al hacer clic en "Ver todas las ofertas"', async () => {
-        global.fetch = mockFetch([], [])
+        globalThis.fetch = mockFetch([], [])
 
         render(<HomeSections />)
 
@@ -213,7 +214,7 @@ describe('HomeSections', () => {
     })
 
     it('navega al perfil del comercio al hacer clic en un comercio', async () => {
-        global.fetch = mockFetch(
+        globalThis.fetch = mockFetch(
             [],
             [],
             [{ id_store: 5, name: 'Mi Tienda', logo: null }]
@@ -228,7 +229,7 @@ describe('HomeSections', () => {
     })
 
     it('navega a la búsqueda por categoría al hacer clic en una categoría', async () => {
-        global.fetch = mockFetch(
+        globalThis.fetch = mockFetch(
             [{ id: 3, name: 'Deportes', id_product_category: 3 }],
             []
         )

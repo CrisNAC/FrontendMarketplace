@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
@@ -340,7 +341,7 @@ describe("BusquedaPage", () => {
     await user.click(screen.getByRole("button", { name: /ir a página 2/i }));
     await waitFor(() => {
       const calledUrl =
-        fetchMock.mock.calls.map((c: unknown[]) => String(c[0])).find((u: string) => u.includes("page=2")) || "";
+        fetchMock.mock.calls.map((c) => String(c[0])).find((u) => u.includes("page=2")) || "";
       expect(calledUrl).toContain("page=2");
     });
   });

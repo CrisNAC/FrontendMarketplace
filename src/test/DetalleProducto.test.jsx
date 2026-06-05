@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -76,7 +77,6 @@ import DetalleProducto from "../features/clients/pages/DetalleProducto";
 import toast from "react-hot-toast";
 import {
     getWishlists,
-    createWishlist,
     addWishlistItem,
 } from "../features/clients/services/wishlistService";
 import {
@@ -103,7 +103,7 @@ const baseProduct = {
 const customerSession = { data: { user: { id_user: 7, role: "CUSTOMER" } } };
 
 function setupFetch(product = baseProduct) {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
         ok: true,
         json: async () => product,
     });
@@ -121,7 +121,7 @@ describe("DetalleProducto", () => {
     });
 
     it("muestra 'Cargando producto...' durante la carga", async () => {
-        global.fetch = vi.fn().mockReturnValue(new Promise(() => {}));
+        globalThis.fetch = vi.fn().mockReturnValue(new Promise(() => {}));
         render(<DetalleProducto />);
         await waitFor(() => {
             expect(screen.getByText("Cargando producto...")).toBeInTheDocument();
@@ -129,7 +129,7 @@ describe("DetalleProducto", () => {
     });
 
     it("muestra error cuando el fetch falla", async () => {
-        global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 404 });
+        globalThis.fetch = vi.fn().mockResolvedValue({ ok: false, status: 404 });
         render(<DetalleProducto />);
         await waitFor(() => {
             expect(screen.getByText(/No se pudo cargar el producto/i)).toBeInTheDocument();

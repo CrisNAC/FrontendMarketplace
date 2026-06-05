@@ -109,9 +109,8 @@ describe('useCategoryRequest', () => {
         act(() => {
             result.current.onFieldChange({ target: { name: 'name', value: 'Categoría' } })
         })
-        let submitPromise
         act(() => {
-            submitPromise = result.current.handleSubmit({ preventDefault: vi.fn() })
+            result.current.handleSubmit({ preventDefault: vi.fn() })
         })
         expect(result.current.isSubmitting).toBe(true)
         resolveSubmit({})

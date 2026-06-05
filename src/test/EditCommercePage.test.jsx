@@ -1,4 +1,5 @@
-import { render, screen, waitFor } from '@testing-library/react'
+/* eslint-disable react/prop-types */
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
@@ -26,7 +27,7 @@ vi.mock('../features/clients/components/Map', () => ({
 
 vi.mock('lucide-react', () => ({
     Save: () => <span>Save</span>,
-    X: ({ onClick }) => <span onClick={onClick} data-testid="x-icon">×</span>,
+    X: ({ onClick }) => <button type="button" onClick={onClick} data-testid="x-icon">×</button>,
 }))
 
 import { useEditCommerce } from '../features/commerces/hooks/useEditCommerce'

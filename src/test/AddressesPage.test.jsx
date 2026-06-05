@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -24,7 +25,7 @@ vi.mock('../components/SidebarClientProfile', () => ({
 
 vi.mock('../features/clients/components/Map', () => ({
     default: ({ onPointChange }) => (
-        <button onClick={() => onPointChange && onPointChange({ lat: -25.3, lng: -57.6 })}>
+        <button type="button" onClick={() => onPointChange?.({ lat: -25.3, lng: -57.6 })}>
             Seleccionar en mapa
         </button>
     ),

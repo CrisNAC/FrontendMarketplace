@@ -20,7 +20,6 @@ vi.mock('../features/delivery/services/deliveryAssignmentsApi', () => ({
     completeDeliveryAssignment: vi.fn(),
 }))
 
-import toast from 'react-hot-toast'
 import { getActiveDeliveryAssignments, completeDeliveryAssignment } from '../features/delivery/services/deliveryAssignmentsApi'
 import { ActiveDeliveriesSection } from '../features/delivery/components/ActiveDeliveriesSection'
 

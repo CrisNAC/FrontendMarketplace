@@ -16,7 +16,6 @@ import {
     getSession,
     fetchUserProfile,
     updateUserProfile,
-    getBackendErrorMessage,
 } from '../features/commerces/services/editUserProfileApi'
 import { EditClientProfile } from '../features/clients/pages/EditUserProfile'
 

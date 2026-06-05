@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -199,17 +200,17 @@ describe('AdminPendingStoresPage', () => {
     })
 })
 
+const mockCatResponse = (data = []) => ({
+    data,
+    categoryTotal: data.length,
+    categoryPage: 1,
+    categoryLimit: 20,
+    categoryTotalPages: 1,
+})
+
 // ─── AdminCategoriesPage ─────────────────────────────────────────────────────
 describe('AdminCategoriesPage', () => {
     beforeEach(() => vi.clearAllMocks())
-
-    const mockCatResponse = (data = []) => ({
-        data,
-        categoryTotal: data.length,
-        categoryPage: 1,
-        categoryLimit: 20,
-        categoryTotalPages: 1,
-    })
 
     it('muestra categorías cuando la API responde', async () => {
         fetchCategoriesWithProducts.mockResolvedValue(
@@ -242,17 +243,9 @@ describe('AdminCategoriesPage', () => {
 describe('AdminCategoryDetailPage', () => {
     beforeEach(() => vi.clearAllMocks())
 
-    const mockCatDetailResponse = (data = []) => ({
-        data,
-        categoryTotal: data.length,
-        categoryPage: 1,
-        categoryLimit: 20,
-        categoryTotalPages: 1,
-    })
-
     it('muestra detalle de categoría al cargar', async () => {
         fetchAdminCategoryById.mockResolvedValue({ id: 1, name: 'Electrónica', visible: true })
-        fetchCategoriesWithProducts.mockResolvedValue(mockCatDetailResponse([]))
+        fetchCategoriesWithProducts.mockResolvedValue(mockCatResponse([]))
         render(<AdminCategoryDetailPage />)
         await waitFor(() => {
             expect(screen.getAllByText('Electrónica').length).toBeGreaterThan(0)
@@ -268,7 +261,7 @@ describe('AdminCategoryDetailPage', () => {
 
     it('muestra error cuando falla la carga', async () => {
         fetchAdminCategoryById.mockRejectedValue(new Error('Error'))
-        fetchCategoriesWithProducts.mockResolvedValue(mockCatDetailResponse([]))
+        fetchCategoriesWithProducts.mockResolvedValue(mockCatResponse([]))
         render(<AdminCategoryDetailPage />)
         await waitFor(() => {
             expect(screen.getByText(/No se pudo cargar/i)).toBeInTheDocument()
