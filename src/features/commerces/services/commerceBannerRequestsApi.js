@@ -10,15 +10,25 @@ export const getMyBannerRequests = async (storeId, { approvalStatus } = {}) => {
 };
 
 export const createBannerRequest = async (storeId, payload) => {
-  const { title, description = null, imageUrl = null, linkUrl = null, startAt = null, endAt = null } = payload ?? {};
+  const { title, description = null, linkUrl = null, startAt = null, endAt = null } = payload ?? {};
   const { data } = await apiClient.post(`/api/stores/${storeId}/banner-requests`, {
     title,
     description,
-    imageUrl,
     linkUrl,
     startAt,
     endAt,
   }, { skipGlobalErrorRedirect: true });
+  return data;
+};
+
+export const uploadBannerRequestImage = async (requestId, file) => {
+  const formData = new FormData();
+  formData.append("image", file);
+  const { data } = await apiClient.post(
+    `/api/banner-requests/${requestId}/image`,
+    formData,
+    { headers: { "Content-Type": "multipart/form-data" }, skipGlobalErrorRedirect: true }
+  );
   return data;
 };
 
