@@ -120,7 +120,7 @@ describe('AdminProductsPage', () => {
     mockFetchAdminProducts.mockReturnValue(new Promise(() => {}));
     renderPage();
 
-    expect(screen.getByText('Cargando productos...')).toBeInTheDocument();
+    expect(document.querySelector('.animate-spin')).toBeInTheDocument();
   });
 
   it('carga con filtro PENDING por defecto', async () => {

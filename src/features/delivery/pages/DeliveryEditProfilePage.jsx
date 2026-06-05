@@ -185,6 +185,7 @@ const s = {
 
 export function DeliveryEditProfilePage() {
     const navigate = useNavigate();
+    const { showToast } = useToast();
     const fileInputRef = useRef(null);
 
     const [deliveryId, setDeliveryId] = useState(null);

@@ -84,7 +84,7 @@ describe('CommerceOrdersPage', () => {
 
         render(<CommerceOrdersPage />)
 
-        expect(screen.getByText('Cargando pedidos...')).toBeInTheDocument()
+        expect(document.querySelector('.animate-spin')).toBeInTheDocument()
     })
 
     it('muestra los tabs y el pedido pendiente cuando la API responde bien', async () => {
@@ -95,7 +95,7 @@ describe('CommerceOrdersPage', () => {
 
         // Esperar a que desaparezca el loading
         await waitFor(() => {
-            expect(screen.queryByText('Cargando pedidos...')).not.toBeInTheDocument()
+            expect(document.querySelector('.animate-spin')).not.toBeInTheDocument()
         })
 
         // Los tres tabs deben estar visibles
@@ -168,7 +168,7 @@ describe('CommerceOrdersPage', () => {
         render(<CommerceOrdersPage />)
 
         await waitFor(() => {
-            expect(screen.queryByText('Cargando pedidos...')).not.toBeInTheDocument()
+            expect(document.querySelector('.animate-spin')).not.toBeInTheDocument()
         })
 
         await userEvent.click(screen.getByText('Seguimiento'))
@@ -195,7 +195,7 @@ describe('CommerceOrdersPage', () => {
         render(<CommerceOrdersPage />)
 
         await waitFor(() => {
-            expect(screen.queryByText('Cargando pedidos...')).not.toBeInTheDocument()
+            expect(document.querySelector('.animate-spin')).not.toBeInTheDocument()
         })
 
         await userEvent.click(screen.getByText('Seguimiento'))
@@ -205,7 +205,7 @@ describe('CommerceOrdersPage', () => {
         expect(screen.queryByText('Marcar como Enviado')).not.toBeInTheDocument()
     })
 
-    it('muestra Marcar como Enviado en Seguimiento para retiro en tienda en PROCESSING', async () => {
+    it('muestra Marcar como Entregado en Seguimiento para retiro en tienda en PROCESSING', async () => {
         const mockPickupProcessing = {
             ...mockPendingOrder,
             id: 3,
@@ -222,13 +222,13 @@ describe('CommerceOrdersPage', () => {
         render(<CommerceOrdersPage />)
 
         await waitFor(() => {
-            expect(screen.queryByText('Cargando pedidos...')).not.toBeInTheDocument()
+            expect(document.querySelector('.animate-spin')).not.toBeInTheDocument()
         })
 
         await userEvent.click(screen.getByText('Seguimiento'))
 
         expect(screen.getByText('ORD-3')).toBeInTheDocument()
-        expect(screen.getByText('Marcar como Enviado')).toBeInTheDocument()
+        expect(screen.getByText('Marcar como Entregado')).toBeInTheDocument()
     })
 
     it.each([
@@ -267,7 +267,7 @@ describe('CommerceOrdersPage', () => {
         render(<CommerceOrdersPage />)
 
         await waitFor(() => {
-            expect(screen.queryByText('Cargando pedidos...')).not.toBeInTheDocument()
+            expect(document.querySelector('.animate-spin')).not.toBeInTheDocument()
         })
 
         expect(screen.getByText('No tenés pedidos pendientes.')).toBeInTheDocument()

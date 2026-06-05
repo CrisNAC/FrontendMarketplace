@@ -33,9 +33,13 @@ vi.mock('../features/clients/services/deliveryApi', () => ({
     },
 }))
 
-vi.mock('../features/commerces/services/editUserProfileApi', () => ({
-    getBackendErrorMessage: (_err, fallback) => fallback,
-}))
+vi.mock('../features/commerces/services/editUserProfileApi', async (importOriginal) => {
+    const actual = await importOriginal()
+    return {
+        ...actual,
+        getBackendErrorMessage: (_err, fallback) => fallback,
+    }
+})
 
 const mockShowToast = vi.fn();
 
