@@ -18,6 +18,12 @@ import {
 } from "@/features/clients/services";
 import { useToast } from "@/hooks";
 
+import { RatingsDistribution } from "../components/comments/RatingsDistribution";
+import { CommentsList } from "../components/comments/CommentsList";
+import { AddReviewModal } from "../components/comments/AddReviewModal";
+import { ReportModal } from "../components/comments/ReportModal";
+import { reportProductReview } from "../../../lib/reviewReportsApi";
+
 function apiErrorMessage(data) {
   if (!data) return null;
   if (typeof data.message === "string") return data.message;
@@ -111,6 +117,18 @@ export default function DetalleProducto() {
   const [reportModalError, setReportModalError] = useState("");
   const [submittingReport, setSubmittingReport] = useState(false);
   const [reportReasonOptions, setReportReasonOptions] = useState(REPORT_REASON_LABELS);
+
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [commentsError, setCommentsError] = useState(null);
+  const [comments, setComments] = useState([]);
+  const [commentsStats, setCommentsStats] = useState(null);
+  const [commentsRatings, setCommentsRatings] = useState({ 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 });
+  const [showAddReviewModal, setShowAddReviewModal] = useState(false);
+  const [showCommentReportModal, setShowCommentReportModal] = useState(false);
+  const [selectedComment, setSelectedComment] = useState(null);
+  const [commentReportSubmitting, setCommentReportSubmitting] = useState(false);
+  const [reportedReviewIds, setReportedReviewIds] = useState([]);
 
   useEffect(() => {
     let active = true;
@@ -212,6 +230,90 @@ export default function DetalleProducto() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [reportModalOpen, submittingReport]);
+
+  const fetchComments = async () => {
+    if (!productId) return;
+    let cancelled = false;
+    setCommentsLoading(true);
+    setCommentsError(null);
+    try {
+      const { data } = await apiClient.get(`/products/reviews/${productId}`);
+      if (cancelled) return;
+      const mapped = data.reviews.map((r) => ({
+        id: r.id,
+        author: r.customerName,
+        rating: r.rating,
+        title: `${r.rating}/5`,
+        content: r.comment,
+        verified: r.isVerified,
+        location: "",
+        date: new Date(r.date).toLocaleDateString("es-PY", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        }),
+        productDetails: {},
+      }));
+      setComments(mapped);
+      setCommentsStats(data.stats);
+      const dist = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+      data.reviews.forEach((r) => { if (dist[r.rating] !== undefined) dist[r.rating]++; });
+      setCommentsRatings(dist);
+    } catch (err) {
+      if (!cancelled) setCommentsError(err?.response?.data?.message || "No se pudieron cargar las reseñas.");
+    } finally {
+      if (!cancelled) setCommentsLoading(false);
+    }
+    return () => { cancelled = true; };
+  };
+
+  useEffect(() => {
+    if (commentsOpen && productId) fetchComments();
+  }, [commentsOpen, productId]);
+
+  const handleAddReview = async (reviewData) => {
+    try {
+      const { data } = await apiClient.post(`/products/${productId}/reviews`, {
+        rating: reviewData.rating,
+        comment: reviewData.comment,
+      });
+      const newComment = {
+        id: data.id,
+        author: data.customerName,
+        rating: data.rating,
+        title: `${data.rating}/5`,
+        content: data.comment,
+        verified: data.isVerified,
+        location: "",
+        date: new Date().toLocaleDateString("es-PY", { year: "numeric", month: "long", day: "numeric" }),
+        productDetails: {},
+      };
+      setComments((prev) => [newComment, ...prev]);
+      setShowAddReviewModal(false);
+      await fetchComments();
+      toast.success("¡Reseña enviada exitosamente!");
+    } catch (err) {
+      const d = err?.response?.data;
+      toast.error(d?.errors?.auth?.message || d?.message || "No se pudo enviar la reseña.");
+    }
+  };
+
+  const handleCommentReport = async ({ reason, description }) => {
+    if (!selectedComment?.id) return;
+    try {
+      setCommentReportSubmitting(true);
+      await reportProductReview(selectedComment.id, { reason, description });
+      setReportedReviewIds((prev) => prev.includes(selectedComment.id) ? prev : [...prev, selectedComment.id]);
+      toast.success("Reporte enviado. Gracias por ayudarnos a mejorar la comunidad.");
+      setShowCommentReportModal(false);
+      setSelectedComment(null);
+    } catch (err) {
+      const message = err?.response?.data?.error?.message || err?.response?.data?.message || "No se pudo enviar el reporte.";
+      toast.error(message);
+    } finally {
+      setCommentReportSubmitting(false);
+    }
+  };
 
   const showReportMenu =
     sessionChecked
@@ -436,9 +538,11 @@ export default function DetalleProducto() {
 
   return (
     <>
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-[#F0F2F1]">
         <div className="max-w-7xl mx-auto w-full px-6 py-6">
-          <div className="flex items-center gap-4 mb-8 w-full">
+
+          {/* Header: breadcrumb + menú */}
+          <div className="flex items-center gap-4 mb-6 w-full">
             <div className="flex items-center gap-4 flex-1 min-w-0">
               <ArrowLeft className="w-6 h-6 shrink-0 cursor-pointer" onClick={() => navigate(-1)} />
               <h1 className="text-2xl font-bold truncate">{titleText}</h1>
@@ -477,116 +581,134 @@ export default function DetalleProducto() {
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-start">
-            <div className="flex justify-center">
-              {product?.imageUrl ? (
-                <img
-                  src={product.imageUrl}
-                  alt={productName}
-                  className="w-full max-w-[400px] object-contain rounded-2xl"
-                  draggable={false}
-                  onError={(e) => { e.currentTarget.style.display = "none"; }}
-                />
-              ) : (
-                <div className="w-full max-w-[400px] aspect-square flex items-center justify-center rounded-2xl bg-gray-100 text-gray-400 text-sm">
-                  Sin imagen
-                </div>
-              )}
-            </div>
-
-            <div className="flex flex-col items-start">
-              <h2 className="text-[21px] font-semibold text-black">{productName}</h2>
-
-              <button
-                type="button"
-                onClick={() => navigate(`/comentarios/${productId}`)}
-                className="flex items-center gap-2 mt-1 text-[12px] w-fit"
-              >
-                <span className="flex items-center gap-1 text-yellow-500">
-                  {product?.averageRating ?? "-"}
-                  <SvgIcon className="w-4 h-4 text-yellow-500">{I.star}</SvgIcon>
-                </span>
-                <span className="text-gray-500 underline">
-                  {product?.reviewCount != null ? `${product.reviewCount} calificaciones` : "Ver calificaciones"}
-                </span>
-              </button>
-
-              <div className="mt-3 text-[30px] font-semibold text-black">{formatGuarani(product?.price)}</div>
-
-              {inStock !== null && (
-                <span
-                  className="mt-1 text-white text-[10px] px-3 py-[2px] rounded w-fit"
-                  style={{ backgroundColor: inStock ? VERDE : "#b91c1c" }}
-                >
-                  {inStock ? "En stock" : "Sin stock"}
-                </span>
-              )}
-
-              {status === "error" && <div className="mt-3 text-[12px] text-red-600">No se pudo cargar el producto{error ? `: ${error}` : "."}</div>}
-              {!productId && <div className="mt-3 text-[12px] text-gray-500">No se especificó un producto. Volvé a la búsqueda y elegí uno.</div>}
-
-              <div className="mt-6">
-                <h3 className="text-[13px] font-semibold mb-2 text-black">Detalles</h3>
-                {productDescription ? (
-                  <div className="text-[12px] text-black leading-relaxed max-w-xl">{productDescription}</div>
+          {/* Card principal del producto */}
+          <div className="bg-white rounded-2xl shadow-sm border border-[#e2e8e5] p-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-stretch">
+              {/* Imagen — fondo verde de marca para distinguirla del card */}
+              <div className="flex justify-center items-center bg-[#DDE8E3] rounded-xl p-8 min-h-[380px]">
+                {product?.imageUrl ? (
+                  <img
+                    src={product.imageUrl}
+                    alt={productName}
+                    className="w-full max-w-100 object-contain drop-shadow-md"
+                    draggable={false}
+                    onError={(e) => { e.currentTarget.style.display = "none"; }}
+                  />
                 ) : (
-                  <ul className="text-[12px] text-black list-disc pl-5 space-y-1">
-                    {(product?.tags || []).slice(0, 6).map((t) => <li key={t.id}>{t.name}</li>)}
-                    {(!product?.tags || product.tags.length === 0) && <li>Sin detalles adicionales.</li>}
-                  </ul>
+                  <div className="w-full max-w-100 aspect-square flex items-center justify-center rounded-xl bg-[#c8d9d1] text-[#6B9080] text-sm">
+                    Sin imagen
+                  </div>
                 )}
               </div>
 
-              <div className="mt-6">
-                <h3 className="text-[13px] font-semibold mb-2 text-black">Cantidad</h3>
-                <div className="inline-flex border border-gray-300 rounded-md overflow-hidden">
-                  <button type="button" onClick={() => setCantidad((v) => (v > 1 ? v - 1 : 1))} className="w-9 h-9 flex items-center justify-center">
-                    <SvgIcon className="w-4 h-4 text-gray-600">{I.minus}</SvgIcon>
+              {/* Info — distribuida verticalmente para llenar el alto */}
+              <div className="flex flex-col justify-between py-2">
+                <div>
+                  <h2 className="text-2xl font-semibold text-black leading-tight">{productName}</h2>
+
+                  <button
+                    type="button"
+                    onClick={() => setCommentsOpen(true)}
+                    className="flex items-center gap-2 mt-2 text-[13px] w-fit"
+                  >
+                    <span className="flex items-center gap-1 text-yellow-500 font-medium">
+                      {product?.averageRating ?? "-"}
+                      <SvgIcon className="w-4 h-4 text-yellow-500">{I.star}</SvgIcon>
+                    </span>
+                    <span className="text-gray-400 underline">
+                      {product?.reviewCount != null ? `${product.reviewCount} calificaciones` : "Ver calificaciones"}
+                    </span>
                   </button>
-                  <div className="w-10 h-9 flex items-center justify-center text-[12px] text-black">{cantidad}</div>
-                  <button type="button" onClick={() => setCantidad((v) => v + 1)} className="w-9 h-9 flex items-center justify-center">
-                    <SvgIcon className="w-4 h-4 text-gray-600">{I.plus}</SvgIcon>
-                  </button>
+
+                  <div className="mt-5 text-[32px] font-bold text-black tracking-tight">{formatGuarani(product?.price)}</div>
+
+                  {inStock !== null && (
+                    <span
+                      className="mt-2 inline-block text-white text-[11px] font-medium px-3 py-0.5 rounded-full w-fit"
+                      style={{ backgroundColor: inStock ? VERDE : "#b91c1c" }}
+                    >
+                      {inStock ? "En stock" : "Sin stock"}
+                    </span>
+                  )}
+
+                  {status === "error" && <div className="mt-3 text-[12px] text-red-600">No se pudo cargar el producto{error ? `: ${error}` : "."}</div>}
+                  {!productId && <div className="mt-3 text-[12px] text-gray-500">No se especificó un producto. Volvé a la búsqueda y elegí uno.</div>}
+                </div>
+
+                <div className="mt-8 space-y-4">
+                  <div>
+                    <h3 className="text-[13px] font-semibold mb-2 text-gray-500 uppercase tracking-wide">Detalles</h3>
+                    {productDescription ? (
+                      <div className="text-[14px] text-gray-700 leading-relaxed">{productDescription}</div>
+                    ) : (
+                      <ul className="text-[14px] text-gray-700 list-disc pl-5 space-y-1">
+                        {(product?.tags || []).slice(0, 6).map((t) => <li key={t.id}>{t.name}</li>)}
+                        {(!product?.tags || product.tags.length === 0) && <li>Sin detalles adicionales.</li>}
+                      </ul>
+                    )}
+                  </div>
+
+                  <div>
+                    <h3 className="text-[13px] font-semibold mb-3 text-gray-500 uppercase tracking-wide">Cantidad</h3>
+                    <div className="inline-flex border border-gray-300 rounded-lg overflow-hidden">
+                      <button type="button" onClick={() => setCantidad((v) => (v > 1 ? v - 1 : 1))} className="w-10 h-10 flex items-center justify-center hover:bg-gray-50 transition-colors">
+                        <SvgIcon className="w-4 h-4 text-gray-600">{I.minus}</SvgIcon>
+                      </button>
+                      <div className="w-12 h-10 flex items-center justify-center text-[14px] font-medium text-black border-x border-gray-300">{cantidad}</div>
+                      <button type="button" onClick={() => setCantidad((v) => v + 1)} className="w-10 h-10 flex items-center justify-center hover:bg-gray-50 transition-colors">
+                        <SvgIcon className="w-4 h-4 text-gray-600">{I.plus}</SvgIcon>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="flex items-center justify-between pt-6">
-            <button
-              type="button"
-              onClick={() => navigate(`/comentarios/${productId}`)}
-              className="text-[16px] font-semibold text-[#374151] hover:text-[#111827] transition-colors"
-            >
-              <h1>Comentarios</h1>
-            </button>
-
-            <div className="flex items-center gap-4 flex-wrap">
+            {/* Separador + acciones */}
+            <div className="mt-8 pt-6 border-t border-[#e9edeb] flex items-center justify-between flex-wrap gap-4">
               <button
                 type="button"
-                onClick={agregarAlCarrito}
-                disabled={addingToCart || status !== "success"}
-                className="px-8 py-2 rounded-md text-white text-[12px] font-medium disabled:opacity-60"
-                style={{ backgroundColor: "#6B9080" }}
+                onClick={() => setCommentsOpen(true)}
+                className="flex items-center gap-2 text-[15px] font-semibold text-[#374151] hover:text-[#6B9080] transition-colors group"
               >
-                {addingToCart ? "Agregando..." : "Agregar al carrito"}
+                <svg className="w-5 h-5 text-gray-400 group-hover:text-[#6B9080] transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+                Comentarios
+                {product?.reviewCount != null && product.reviewCount > 0 && (
+                  <span className="text-[12px] font-normal text-gray-400">({product.reviewCount})</span>
+                )}
               </button>
-              <button
-                type="button"
-                onClick={openWishlistModal}
-                disabled={status !== "success"}
-                className="w-9 h-9 rounded-full flex items-center justify-center border border-[#D1D5DB] bg-white text-[#EF4444] disabled:opacity-60"
-                aria-label="Agregar a favoritos"
-              >
-                <SvgIcon className="w-4 h-4">
-                  {I.heart}
-                </SvgIcon>
-              </button>
+
+              <div className="flex items-center gap-4 flex-wrap">
+                <button
+                  type="button"
+                  onClick={agregarAlCarrito}
+                  disabled={addingToCart || status !== "success"}
+                  className="px-8 py-2 rounded-md text-white text-[12px] font-medium disabled:opacity-60"
+                  style={{ backgroundColor: "#6B9080" }}
+                >
+                  {addingToCart ? "Agregando..." : "Agregar al carrito"}
+                </button>
+                <button
+                  type="button"
+                  onClick={openWishlistModal}
+                  disabled={status !== "success"}
+                  className="w-9 h-9 rounded-full flex items-center justify-center border border-[#D1D5DB] bg-white text-[#EF4444] disabled:opacity-60"
+                  aria-label="Agregar a favoritos"
+                >
+                  <SvgIcon className="w-4 h-4">
+                    {I.heart}
+                  </SvgIcon>
+                </button>
+              </div>
             </div>
           </div>
 
           {status === "success" && Boolean(productId) && (
-            <RelatedProducts productId={productId} limit={8} />
+            <div className="mt-6 px-6 py-8 bg-white rounded-2xl border border-[#e2e8e5] shadow-sm">
+              <RelatedProducts productId={productId} limit={8} />
+            </div>
           )}
         </div>
 
@@ -678,6 +800,98 @@ export default function DetalleProducto() {
           </div>
         )}
       </div>
+      {/* Comments drawer backdrop */}
+      {commentsOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/30 transition-opacity"
+          onClick={() => setCommentsOpen(false)}
+        />
+      )}
+
+      {/* Comments drawer */}
+      <div
+        className={`fixed inset-y-0 right-0 z-50 w-full max-w-2xl bg-[#F5F5F5] shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out ${
+          commentsOpen ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        <div className="px-6 py-4 flex items-center gap-4 bg-white border-b border-gray-200 shrink-0">
+          <button
+            type="button"
+            onClick={() => setCommentsOpen(false)}
+            className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
+            aria-label="Cerrar comentarios"
+          >
+            <ArrowLeft className="w-6 h-6" />
+          </button>
+          <h2 className="text-2xl font-bold">Comentarios</h2>
+        </div>
+
+        <div className="flex-1 overflow-y-auto">
+          <div className="grid grid-cols-[280px_1fr] gap-6 px-6 py-6 items-start">
+            <aside className="flex flex-col gap-4 sticky top-6">
+              <div className="bg-white border border-gray-200 rounded-lg">
+                <RatingsDistribution
+                  ratings={commentsRatings}
+                  averageRating={commentsStats?.averageRating ?? 0}
+                />
+                <div className="px-4 pb-4 pt-2 border-t border-gray-200">
+                  <h3 className="text-base font-bold mb-1 text-gray-800">
+                    Escribir opinión de este producto
+                  </h3>
+                  <p className="text-xs text-gray-500">
+                    Comparte tu opinión con otros clientes
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="w-full py-2.5 px-4 text-white rounded-full text-sm font-semibold transition-all hover:opacity-90 active:translate-y-0.5"
+                style={{ background: "#6B9080" }}
+                onClick={() => setShowAddReviewModal(true)}
+              >
+                Escribir mi opinión
+              </button>
+            </aside>
+
+            <main className="flex flex-col gap-0">
+              {commentsLoading && (
+                <p className="text-gray-500 text-sm">Cargando reseñas...</p>
+              )}
+              {commentsError && (
+                <p className="text-red-500 text-sm">{commentsError}</p>
+              )}
+              {!commentsLoading && !commentsError && (
+                <CommentsList
+                  comments={comments.map((c) => ({
+                    ...c,
+                    reportedByViewer: reportedReviewIds.includes(c.id),
+                  }))}
+                  onReport={(comment) => {
+                    setSelectedComment(comment);
+                    setShowCommentReportModal(true);
+                  }}
+                />
+              )}
+            </main>
+          </div>
+        </div>
+
+        <AddReviewModal
+          isOpen={showAddReviewModal}
+          onClose={() => setShowAddReviewModal(false)}
+          onSubmit={handleAddReview}
+        />
+        <ReportModal
+          isOpen={showCommentReportModal}
+          onClose={() => {
+            setShowCommentReportModal(false);
+            setSelectedComment(null);
+          }}
+          onSubmit={handleCommentReport}
+          isSubmitting={commentReportSubmitting}
+        />
+      </div>
+
       {wishlistModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/45"

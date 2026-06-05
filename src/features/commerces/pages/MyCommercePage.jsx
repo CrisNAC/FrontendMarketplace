@@ -86,7 +86,7 @@ export const MyCommercePage = () => {
                 Volver al inicio
             </button>
 
-            <Topbar storeName={store?.name} />
+            <Topbar storeName={store?.name} showCreateProduct={store?.store_status === 'ACTIVE'} />
 
             {/* Banners de estado */}
             {store?.store_status === "INACTIVE" && (
