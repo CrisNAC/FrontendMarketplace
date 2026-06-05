@@ -1,10 +1,8 @@
-// src/features/commerces/components/deliveryAssignment/DeliveryAssignmentModal.jsx
 import { useState, useEffect, useRef } from "react";
 import PropTypes from "prop-types";
 import { X, Truck, MapPin, User, Phone, AlertCircle, CheckCircle, Loader } from "lucide-react";
 import { fetchAvailableDeliveries, createDeliveryAssignment, getAssignmentErrorMessage } from "../../services/deliveryAssignmentApi";
-
-// ─── Sub-componentes ──────────────────────────────────────────────────────────
+import { useToast } from "@/hooks";
 
 function DeliveryAddress({ address }) {
   if (!address) return null;
@@ -156,9 +154,8 @@ BodyContent.defaultProps = {
   selected: null,
 };
 
-// ─── Modal principal ──────────────────────────────────────────────────────────
-
 export function DeliveryAssignmentModal({ order, storeId, onClose, onSuccess }) {
+  const { showToast } = useToast();
   const [deliveries, setDeliveries] = useState([]);
   const [deliveryAddress, setDeliveryAddress] = useState(null);
   const [selected, setSelected] = useState(null);
@@ -212,6 +209,7 @@ export function DeliveryAssignmentModal({ order, storeId, onClose, onSuccess }) 
     setError("");
     try {
       await createDeliveryAssignment(order.id, selected);
+      showToast("Delivery asignado correctamente", "success");
       onSuccess?.();
       handleClose();
     } catch (err) {
@@ -230,8 +228,6 @@ export function DeliveryAssignmentModal({ order, storeId, onClose, onSuccess }) 
       onClose();
     }
   };
-
-  // ─── Estilos ────────────────────────────────────────────────────────────
 
   const header = {
     padding: "20px 24px 16px",
@@ -274,12 +270,9 @@ export function DeliveryAssignmentModal({ order, storeId, onClose, onSuccess }) 
     opacity: assigning ? 0.6 : 1,
   };
 
-  // Ternario extraído a variable independiente (fix Sonar)
   const assignButtonContent = assigning
     ? <><Loader size={14} /> Asignando...</>
     : <><Truck size={14} /> Asignar delivery</>;
-
-  // ─── Render ──────────────────────────────────────────────────────────────
 
   return (
     <>
@@ -310,7 +303,6 @@ export function DeliveryAssignmentModal({ order, storeId, onClose, onSuccess }) 
         aria-labelledby="modal-title"
       >
         <div>
-          {/* Header */}
           <div style={header}>
             <div>
               <p id="modal-title" style={{ fontSize: "17px", fontWeight: "700", color: "#111827", margin: "0 0 4px 0", display: "flex", alignItems: "center", gap: "8px" }}>
@@ -331,10 +323,8 @@ export function DeliveryAssignmentModal({ order, storeId, onClose, onSuccess }) 
             </button>
           </div>
 
-          {/* Dirección de entrega */}
           <DeliveryAddress address={deliveryAddress} />
 
-          {/* Body */}
           <div style={body}>
             {error && (
               <div style={{ backgroundColor: "#fff1f2", border: "1px solid #fecdd3", borderRadius: "10px", padding: "11px 14px", color: "#be123c", fontSize: "13px", marginBottom: "14px", display: "flex", gap: "8px", alignItems: "center" }}>
@@ -349,7 +339,6 @@ export function DeliveryAssignmentModal({ order, storeId, onClose, onSuccess }) 
             />
           </div>
 
-          {/* Footer */}
           <div style={footer}>
             <button
               type="button"

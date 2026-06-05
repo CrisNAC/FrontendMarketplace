@@ -1,5 +1,4 @@
 import { apiClient } from '@/lib';
-import { useToast } from "@/hooks";
 
 /**
  * Obtener todas las asignaciones de un delivery con filtro de estado
@@ -31,14 +30,11 @@ export const getActiveDeliveryAssignments = async (deliveryId) => {
  * POST /api/assignments/{id}/complete
  */
 export const completeDeliveryAssignment = async (assignmentId) => {
-  const { showToast } = useToast();
   try {
     const response = await apiClient.post(`/api/assignments/${assignmentId}/complete`);
-    showToast('Entrega finalizada correctamente', 'success');
     return response.data;
   } catch (error) {
     const message = error.response?.data?.error?.message || 'Error al finalizar la entrega';
-    showToast(message, 'error');
     throw error;
   }
 };
