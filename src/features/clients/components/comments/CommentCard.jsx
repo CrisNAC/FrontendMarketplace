@@ -45,9 +45,9 @@ export const CommentCard = ({
             ★
           </span>
         ))}
-        <span className="text-xs text-gray-800 font-semibold ml-1">
+        {/* <span className="text-xs text-gray-800 font-semibold ml-1">
           10/10 would recommend!!
-        </span>
+        </span> */}
       </div>
 
       <div className="text-xs text-gray-500 mb-1.5">
