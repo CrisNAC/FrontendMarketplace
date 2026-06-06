@@ -54,6 +54,30 @@ export default defineConfig({
       '**/tests/**',       
       '**/*.e2e.spec.*',  
     ],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html', 'lcov'],
+      reportsDirectory: './coverage',
+      include: ['src/**/*.{js,jsx,ts,tsx}'],
+      exclude: [
+        // Entry points y configuración — sin lógica de negocio
+        'src/main.tsx',
+        'src/App.tsx',
+        'src/**/*.d.ts',
+        // Archivos de test
+        'src/test/**',
+        // Layouts — sólo estructura visual, sin lógica
+        'src/layouts/**',
+        // Páginas de error estáticas
+        'src/pages/errors/**',
+      ],
+      thresholds: {
+        lines: 85,
+        functions: 85,
+        branches: 85,
+        statements: 85,
+      },
+    },
   },
 
   preview: {

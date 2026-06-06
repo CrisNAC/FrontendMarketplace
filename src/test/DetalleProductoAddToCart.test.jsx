@@ -14,18 +14,21 @@ vi.mock("react-router-dom", () => ({
   useParams: () => ({ id: "10" }),
 }));
 
-vi.mock("axios", () => {
-  const mockAxios = {
+vi.mock("axios", () => ({
+  default: {
     get: vi.fn(),
     post: vi.fn(),
-    interceptors: {
-      request: { use: vi.fn(), eject: vi.fn() },
-      response: { use: vi.fn(), eject: vi.fn() }
-    },
-    create: vi.fn(() => mockAxios)
-  };
-  return { default: mockAxios };
-});
+    create: vi.fn(() => ({
+      get: vi.fn(),
+      post: vi.fn(),
+      patch: vi.fn(),
+      interceptors: {
+        request: { use: vi.fn() },
+        response: { use: vi.fn() },
+      },
+    })),
+  },
+}));
 
 vi.mock('@/hooks', () => ({
   useToast: () => ({
@@ -44,7 +47,7 @@ vi.mock("../lib/cartLocalStorage", () => ({
 describe("DetalleProducto - agregar al carrito", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
         id: 10,
@@ -59,11 +62,8 @@ describe("DetalleProducto - agregar al carrito", () => {
   });
 
   it("agrega al carrito cuando hay sesión activa", async () => {
-    axios.get.mockImplementation((url) => {
-      if (url && url.includes("/related")) {
-        return Promise.resolve({ data: [] });
-      }
-      return Promise.resolve({ data: { user: { id_user: 7 } } });
+    axios.get.mockResolvedValue({
+      data: { user: { id_user: 7 } },
     });
     addToCartApi.mockResolvedValue({
       id: 1,

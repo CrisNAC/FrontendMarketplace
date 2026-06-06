@@ -128,7 +128,7 @@ export const CommentsPage = () => {
     <div className="flex-1 min-h-0 flex flex-col" style={{ background: '#F5F5F5' }}>
       <div className="max-w-6xl mx-auto w-full flex flex-col flex-1 min-h-0">
         <div className="px-6 py-4 flex items-center gap-4 shrink-0">
-          <ArrowLeft className="w-6 h-6 cursor-pointer" onClick={() => navigate(-1)} />
+          <ArrowLeft className="w-6 h-6 cursor-pointer" onClick={() => navigate(-1)} data-testid="back-button" />
           <h1 className="text-2xl font-bold">Comentarios</h1>
         </div>
 
