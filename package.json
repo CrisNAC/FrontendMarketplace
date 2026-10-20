@@ -9,8 +9,11 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",
+    "test:run": "vitest run",
     "test:ui": "vitest --ui",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:coverage": "vitest run --coverage",
+    "test:coverage:unit": "vitest run --coverage src/test"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.97.0",
@@ -38,6 +41,7 @@
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react-swc": "^4.2.2",
+    "@vitest/coverage-v8": "^4.1.5",
     "@vitest/ui": "^4.1.2",
     "autoprefixer": "^10.4.27",
     "eslint": "^9.39.1",

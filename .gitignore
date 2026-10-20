@@ -33,4 +33,6 @@ dist-ssr
 /playwright/.auth/
 
 coverage/
+coverage_raw.txt
+coverage_output.txt
 .claude/

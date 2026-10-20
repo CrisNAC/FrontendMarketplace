@@ -200,7 +200,7 @@ describe('CommerceOrdersPage', () => {
 
         await userEvent.click(screen.getByText('Seguimiento'))
 
-        expect(screen.getByText('ORD-2')).toBeInTheDocument()
+        expect(screen.getByText('#ORD-2')).toBeInTheDocument()
         expect(screen.getByText('Añadir delivery')).toBeInTheDocument()
         expect(screen.queryByText('Marcar como Enviado')).not.toBeInTheDocument()
     })
@@ -227,7 +227,7 @@ describe('CommerceOrdersPage', () => {
 
         await userEvent.click(screen.getByText('Seguimiento'))
 
-        expect(screen.getByText('ORD-3')).toBeInTheDocument()
+        expect(screen.getByText('#ORD-3')).toBeInTheDocument()
         expect(screen.getByText('Marcar como Entregado')).toBeInTheDocument()
     })
 

@@ -256,7 +256,7 @@ export function CommerceDeliveriesPage() {
                 const sid = res.data?.user?.id_store;
                 if (!sid) { setError("No tenés un comercio registrado."); setLoading(false); return; }
                 setStoreId(sid);
-                await load(sid);
+                await load(sid).catch(() => {}); // load() ya establece su propio error; swallow el re-throw
             } catch {
                 setError("No se pudo cargar la sesión.");
             } finally {
