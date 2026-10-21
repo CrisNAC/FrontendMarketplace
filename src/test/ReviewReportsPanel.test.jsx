@@ -6,8 +6,10 @@ vi.mock('react-router-dom', () => ({
     useNavigate: () => vi.fn(),
 }))
 
-vi.mock('react-hot-toast', () => ({
-    default: { success: vi.fn(), error: vi.fn() }
+const mockShowToast = vi.hoisted(() => vi.fn())
+
+vi.mock('@/hooks', () => ({
+    useToast: () => ({ showToast: mockShowToast }),
 }))
 
 vi.mock('../lib/reviewReportsApi', () => ({
@@ -15,7 +17,6 @@ vi.mock('../lib/reviewReportsApi', () => ({
     resolveReviewReport: vi.fn(),
 }))
 
-import toast from 'react-hot-toast'
 import { fetchFilteredReviewReports, resolveReviewReport } from '../lib/reviewReportsApi'
 import ReviewReportsPanel from '../features/reports/ReviewReportsPanel'
 
@@ -45,10 +46,10 @@ describe('ReviewReportsPanel', () => {
         fetchFilteredReviewReports.mockResolvedValue({ data: [mockReport], meta: mockMeta })
     })
 
-    it('muestra "Cargando reportes..." durante la carga', () => {
+    it('muestra el indicador de carga mientras carga', () => {
         fetchFilteredReviewReports.mockReturnValue(new Promise(() => {}))
         render(<ReviewReportsPanel />)
-        expect(screen.getByText('Cargando reportes…')).toBeInTheDocument()
+        expect(document.querySelector('.animate-spin')).toBeInTheDocument()
     })
 
     it('renderiza el reporte cargado', async () => {
@@ -93,7 +94,7 @@ describe('ReviewReportsPanel', () => {
         await userEvent.click(screen.getByText('Aceptar reseña'))
         await waitFor(() => {
             expect(resolveReviewReport).toHaveBeenCalledWith(1, { decision: 'KEEP_REVIEW' })
-            expect(toast.success).toHaveBeenCalledWith(expect.stringMatching(/reporte descartado/i))
+            expect(mockShowToast).toHaveBeenCalledWith(expect.stringMatching(/reporte descartado/i), 'success')
         })
     })
 
@@ -109,7 +110,7 @@ describe('ReviewReportsPanel', () => {
         await userEvent.click(screen.getByText('Sí, ocultar'))
         await waitFor(() => {
             expect(resolveReviewReport).toHaveBeenCalledWith(1, { decision: 'REMOVE_REVIEW' })
-            expect(toast.success).toHaveBeenCalledWith(expect.stringMatching(/ocultada/i))
+            expect(mockShowToast).toHaveBeenCalledWith(expect.stringMatching(/ocultada/i), 'success')
         })
     })
 

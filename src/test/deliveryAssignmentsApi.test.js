@@ -7,15 +7,7 @@ vi.mock('../lib/apiClient', () => ({
     }
 }))
 
-vi.mock('react-hot-toast', () => ({
-    default: {
-        success: vi.fn(),
-        error: vi.fn(),
-    }
-}))
-
 import apiClient from '../lib/apiClient'
-import toast from 'react-hot-toast'
 import {
     getDeliveryAssignments,
     getActiveDeliveryAssignments,
@@ -65,29 +57,26 @@ describe('getActiveDeliveryAssignments', () => {
 describe('completeDeliveryAssignment', () => {
     beforeEach(() => vi.clearAllMocks())
 
-    it('llama a POST /api/assignments/:id/complete y muestra toast de éxito', async () => {
+    it('llama a POST /api/assignments/:id/complete y devuelve la respuesta', async () => {
         apiClient.post.mockResolvedValueOnce({ data: { success: true } })
 
         const result = await completeDeliveryAssignment(55)
 
         expect(apiClient.post).toHaveBeenCalledWith('/api/assignments/55/complete')
-        expect(toast.success).toHaveBeenCalledWith('Entrega finalizada correctamente')
         expect(result).toMatchObject({ success: true })
     })
 
-    it('muestra toast de error y propaga el error cuando falla', async () => {
+    it('propaga el error cuando falla', async () => {
         const err = { response: { data: { error: { message: 'No autorizado' } } } }
         apiClient.post.mockRejectedValueOnce(err)
 
         await expect(completeDeliveryAssignment(55)).rejects.toEqual(err)
-        expect(toast.error).toHaveBeenCalledWith('No autorizado')
     })
 
-    it('usa mensaje por defecto cuando no hay mensaje en el error', async () => {
+    it('propaga el error cuando no hay mensaje en la respuesta', async () => {
         apiClient.post.mockRejectedValueOnce(new Error('fail'))
 
         await expect(completeDeliveryAssignment(55)).rejects.toThrow()
-        expect(toast.error).toHaveBeenCalledWith('Error al finalizar la entrega')
     })
 })
 

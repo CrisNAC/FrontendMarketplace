@@ -5,8 +5,10 @@ vi.mock('react-router-dom', () => ({
     useNavigate: () => vi.fn(),
 }))
 
-vi.mock('react-hot-toast', () => ({
-    default: { error: vi.fn(), success: vi.fn() }
+const mockShowToast = vi.hoisted(() => vi.fn())
+
+vi.mock('@/hooks', () => ({
+    useToast: () => ({ showToast: mockShowToast }),
 }))
 
 vi.mock('../lib/cartApi', () => ({
@@ -22,6 +24,12 @@ vi.mock('axios', () => ({
     default: {
         get: vi.fn(),
         isAxiosError: vi.fn(),
+        create: vi.fn(() => ({
+            interceptors: {
+                request: { use: vi.fn() },
+                response: { use: vi.fn() },
+            },
+        })),
     }
 }))
 
@@ -56,11 +64,11 @@ describe('OrdenesComprasPage', () => {
         expect(screen.getByText('Cargando carrito...')).toBeInTheDocument()
     })
 
-    it('muestra el título "Ordenes de Compras"', async () => {
+    it('muestra el título "Carritos"', async () => {
         render(<OrdenesComprasPage />)
 
         await waitFor(() => {
-            expect(screen.getByText('Ordenes de Compras')).toBeInTheDocument()
+            expect(screen.getByText('Carritos')).toBeInTheDocument()
         })
     })
 
@@ -68,7 +76,7 @@ describe('OrdenesComprasPage', () => {
         render(<OrdenesComprasPage />)
 
         await waitFor(() => {
-            expect(screen.getByText('Laptop')).toBeInTheDocument()
+            expect(screen.getByText('Tienda Test')).toBeInTheDocument()
         })
     })
 

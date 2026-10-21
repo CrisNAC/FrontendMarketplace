@@ -2,8 +2,10 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-vi.mock('react-hot-toast', () => ({
-    default: { success: vi.fn(), error: vi.fn() }
+const mockShowToast = vi.hoisted(() => vi.fn())
+
+vi.mock('@/hooks', () => ({
+    useToast: () => ({ showToast: mockShowToast }),
 }))
 
 vi.mock('../features/delivery/services/deliveryOrdersApi', () => ({
@@ -16,7 +18,6 @@ vi.mock('../lib/formatGuarani', () => ({
     formatGuarani: (v) => `₲${v}`
 }))
 
-import toast from 'react-hot-toast'
 import { loadDeliveryDashboard, respondToDeliveryOrder } from '../features/delivery/services/deliveryOrdersApi'
 import DeliveryOrderScreen from '../features/delivery/pages/DeliveryOrderScreen'
 
@@ -48,10 +49,10 @@ describe('DeliveryOrderScreen', () => {
         vi.clearAllMocks()
     })
 
-    it('muestra "Cargando pedidos..." durante la carga', () => {
+    it('muestra el indicador de carga mientras carga', () => {
         loadDeliveryDashboard.mockReturnValue(new Promise(() => {}))
         render(<DeliveryOrderScreen />)
-        expect(screen.getByText('Cargando pedidos…')).toBeInTheDocument()
+        expect(document.querySelector('.animate-spin')).toBeInTheDocument()
     })
 
     it('muestra el título "Pedidos para aceptar"', async () => {
@@ -107,7 +108,7 @@ describe('DeliveryOrderScreen', () => {
         await userEvent.click(screen.getByText(btnText))
         await waitFor(() => {
             expect(respondToDeliveryOrder).toHaveBeenCalledWith(10, action)
-            expect(toast.success).toHaveBeenCalledWith(successMsg)
+            expect(mockShowToast).toHaveBeenCalledWith(successMsg, 'success')
         })
     })
 
@@ -120,7 +121,7 @@ describe('DeliveryOrderScreen', () => {
         })
         await userEvent.click(screen.getByText('Aceptar'))
         await waitFor(() => {
-            expect(toast.error).toHaveBeenCalled()
+            expect(mockShowToast).toHaveBeenCalledWith('No se pudieron cargar los pedidos.', 'error')
         })
     })
 })

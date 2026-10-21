@@ -10,9 +10,10 @@ vi.mock('react-router-dom', () => ({
     Link: ({ children, to }) => <a href={to}>{children}</a>,
 }))
 
-vi.mock('react-hot-toast', () => ({
-    default: { error: vi.fn(), success: vi.fn() },
-    toast: { error: vi.fn(), success: vi.fn() },
+const mockShowToast = vi.hoisted(() => vi.fn())
+
+vi.mock('@/hooks', () => ({
+    useToast: () => ({ showToast: mockShowToast }),
 }))
 
 vi.mock('lucide-react', () => ({
