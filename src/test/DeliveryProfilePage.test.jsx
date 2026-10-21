@@ -10,12 +10,6 @@ vi.mock('react-router-dom', () => ({
 vi.mock('../features/clients/services/deliveryApi', () => ({
     getCurrentUserForDeliveryForm: vi.fn(),
     getDeliveryProfile: vi.fn(),
-    UI_VEHICLE_LABELS: {
-        CAR: 'Automóvil',
-        MOTORCYCLE: 'Motocicleta / scooter',
-        BICYCLE: 'Bicicleta',
-        ON_FOOT: 'A pie',
-    },
 }))
 
 vi.mock('../features/commerces/services/editUserProfileApi', () => ({
@@ -35,12 +29,12 @@ import { getCurrentUserForDeliveryForm, getDeliveryProfile } from '../features/c
 // ─── Datos de prueba ──────────────────────────────────────────────────────────
 const mockUserSessionAndProfile = {
     sessionUser: { id_user: 1, role: 'DELIVERY', name: 'Delivery Guy', email: 'delivery@test.com', id_delivery: 5 },
-    profile: { phone: '0981000000', addresses: [{ city: 'Asunción' }] }
+    profile: { phone: '0981000000' }
 }
 
 const mockDeliveryProfile = {
     id_delivery: 5,
-    delivery_status: 'ACTIVE',
+    delivery_status: 'AVAILABLE',
     vehicle_type: 'CAR',
     coverage_city: 'Asunción',
     coverage_region: 'Central',
@@ -59,8 +53,8 @@ describe('DeliveryProfilePage', () => {
     })
 
     it('muestra el badge "Disponible" cuando el delivery está ACTIVE', async () => {
-        getCurrentUserForDeliveryForm.mockResolvedValueOnce(mockUserSessionAndProfile)
-        getDeliveryProfile.mockResolvedValueOnce(mockDeliveryProfile)
+        getCurrentUserForDeliveryForm.mockResolvedValue(mockUserSessionAndProfile)
+        getDeliveryProfile.mockResolvedValue(mockDeliveryProfile)
 
         render(<DeliveryProfilePage />)
 
@@ -69,7 +63,7 @@ describe('DeliveryProfilePage', () => {
         })
 
         expect(screen.getByText('Delivery Guy')).toBeInTheDocument()
-        expect(screen.getByText('Automóvil')).toBeInTheDocument()
+        expect(screen.getByText('CAR')).toBeInTheDocument()
         expect(screen.getByText('Asunción')).toBeInTheDocument()
     })
 
