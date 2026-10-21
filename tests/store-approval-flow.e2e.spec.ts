@@ -185,7 +185,7 @@ test.describe('Flujo de reaprobación de comercio', () => {
 
     await page.getByRole('button', { name: 'Guardar Cambios' }).click();
     await expect.poll(() => updateRequestCount).toBe(1);
-    await expect(page.getByText('Comercio actualizado exitosamente')).toBeVisible();
+    await expect(page.getByText('Comercio actualizado correctamente')).toBeVisible();
 
     // Post-reenvío: banner INACTIVE visible, banner SUSPENDED y botón de reenvío ausentes
     await page.goto('/comercio');

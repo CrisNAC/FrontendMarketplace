@@ -495,9 +495,9 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page).toHaveURL('/producto-detalle/101');
     await expect(page.getByText('Apple iPhone 17 Pro A3256 Dual')).toBeVisible();
 
-    await page.getByRole('button', { name: 'Comentarios' }).click();
-    await expect(page).toHaveURL('/comentarios/101');
-    await expect(page.getByRole('heading', { name: 'Comentarios' })).toBeVisible();
+    await page.getByRole('button', { name: /^Ver comentarios/ }).click();
+    await expect(page).toHaveURL('/producto-detalle/101');
+    await expect(page.getByRole('heading', { name: 'Comentarios', exact: true })).toBeInViewport();
   });
 
   test('flujo comercio: login, ir a productos y crear un nuevo producto', async ({ page }) => {
@@ -529,8 +529,8 @@ test.describe('Flujos E2E de usuario final', () => {
     await page.getByRole('button', { name: 'oferta' }).click();
     await page.getByRole('button', { name: 'Crear Producto' }).click();
 
-    await expect(page.getByRole('dialog')).toBeVisible();
-    await expect(page.getByText('Producto creado')).toBeVisible();
+    await expect(page.getByText('Producto creado correctamente')).toBeVisible();
+    await expect(page).toHaveURL('/comercio/productos');
   });
 
   test('flujo descubrimiento: homepage, busqueda, comparar precios y abrir detalle', async ({ page }) => {
@@ -798,13 +798,9 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(page.getByRole('button', { name: 'Eliminar lista' })).toBeVisible();
     await expect(page.getByText('Apple iPhone 17 Pro A3256 Dual')).toBeVisible();
 
-    // Interceptar el dialog nativo ANTES de hacer click
-    page.once('dialog', async (dialog) => {
-      await dialog.accept(); // simula click en "Aceptar"
-    });
-
     await page.getByRole('button', { name: 'Eliminar lista' }).click();
-    await expect(page.getByText('Lista eliminada')).toBeVisible();
+    await page.getByRole('dialog').getByRole('button', { name: 'Eliminar lista' }).click();
+    await expect(page.getByText('Lista eliminada', { exact: true })).toBeVisible();
   });
 
 
@@ -1028,7 +1024,7 @@ test.describe('Flujos E2E de usuario final', () => {
     await page.goto('/direcciones');
     await page.waitForLoadState('networkidle');
 
-    await expect(page.getByRole('heading', { name: 'Mi Cuenta' })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: 'Libreta de direcciones', level: 1 })).toBeVisible({ timeout: 10000 });
     await expect(page.getByRole('link', { name: 'Libreta de direcciones' })).toBeVisible();
 
     await page.getByRole('button', { name: 'Agregar dirección' }).first().click();
@@ -3602,6 +3598,7 @@ test.describe('Flujos E2E de usuario final', () => {
       });
     });
     let mockMode = 'empty';
+    let releaseHistory: () => void = () => {};
 
     await page.route('**/api/assignments/**/orders**', async (route) => {
       if (mockMode === 'error') {
@@ -3609,7 +3606,7 @@ test.describe('Flujos E2E de usuario final', () => {
         return;
       }
       if (mockMode === 'delay') {
-        await new Promise((res) => setTimeout(res, 300));
+        await new Promise<void>((res) => { releaseHistory = res; });
       }
       const payload = { content: [], total_elements: 0, total_pages: 1, page: 1, size: 10 };
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(payload) });
@@ -3628,7 +3625,8 @@ test.describe('Flujos E2E de usuario final', () => {
     mockMode = 'delay';
     const historialPromise = page.waitForResponse('**/api/assignments/**/orders**');
     await page.goto('/delivery/history');
-    await expect(page.getByText('Cargando historial…')).toBeVisible();
+    await expect(page.locator('svg.animate-spin')).toBeVisible();
+    releaseHistory();
     await historialPromise; // esperar que termine la petición
   });
 
@@ -4389,7 +4387,7 @@ test.describe('Flujos E2E de usuario final', () => {
     await expect(finishButton).toBeVisible();
     await finishButton.click();
 
-    await expect(page.getByText('Entrega finalizada correctamente')).toBeVisible();
+    await expect(page.getByText('Pedido marcado como entregado')).toBeVisible();
     await expect(page.getByText('¡No tienes pedidos activos! Buen trabajo completando entregas.')).toBeVisible();
   });
 
@@ -4849,7 +4847,7 @@ test.describe('Flujos E2E de usuario final', () => {
     // Ir a la página de direcciones
     await page.goto('/direcciones');
     await page.waitForLoadState('networkidle');
-    await expect(page.getByRole('heading', { name: 'Mi Cuenta' })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: 'Libreta de direcciones', level: 1 })).toBeVisible({ timeout: 10000 });
     await expect(page.getByRole('link', { name: 'Libreta de direcciones' })).toBeVisible();
 
     // Abrir modal de agregar dirección
@@ -5509,6 +5507,7 @@ test.describe('Flujos E2E de usuario final', () => {
         body: JSON.stringify([
           {
             id: 555,
+            orderNumber: 555,
             createdAt: '2026-05-18T11:50:00.000Z',
             status: 'PROCESSING',
             items: [],
@@ -5988,8 +5987,8 @@ test.describe('Flujos E2E de usuario final', () => {
 
     // Ahora deben aparecer las dos categorías
     await expect(page.getByText('Electrónica')).toBeVisible();
-    await expect(page.getByText('Audio')).toBeVisible();
-    await expect(page.locator('div').filter({ hasText: 'Audio' }).locator('svg.lucide-laptop')).toBeVisible();
+    await expect(page.getByText('Audio', { exact: true })).toBeVisible();
+    await expect(page.getByText('Audio', { exact: true }).locator('xpath=../..').locator('svg.lucide-laptop')).toBeVisible();
 
     // Usar el primer botón "Ver detalle" que corresponde a Electrónica
     await page.getByRole('button', { name: 'Ver detalle' }).first().click();
@@ -7314,6 +7313,8 @@ test.describe('Flujos E2E de usuario final', () => {
   // Horarios de atención del comercio
 
   const installBusinessHoursMock = async (page: Page) => {
+    await page.clock.setFixedTime(new Date(2026, 4, 6, 12, 0, 0));
+
     await page.route('**/api/session/user-session', async (route) => {
       await route.fulfill({
         status: 200,
