@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mockNavigate = vi.fn();
 const mockAxiosGet = vi.fn();
 const mockApiClientGet = vi.fn();
+const mockShowToast = vi.fn();
 
 vi.mock("react-router-dom", () => ({
     useNavigate: () => mockNavigate,
@@ -31,8 +32,8 @@ vi.mock("../lib/apiClient", () => ({
     default: { get: (...args) => mockApiClientGet(...args) },
 }));
 
-vi.mock("react-hot-toast", () => ({
-    default: { success: vi.fn(), error: vi.fn() },
+vi.mock("@/hooks", () => ({
+    useToast: () => ({ showToast: mockShowToast }),
 }));
 
 vi.mock("../lib/cartApi", () => ({
@@ -62,11 +63,16 @@ vi.mock("../features/clients/services/productReportApi", () => ({
     submitProductReport: vi.fn(),
 }));
 
-vi.mock("lucide-react", () => ({
+vi.mock("lucide-react", async (importOriginal) => ({
+    ...(await importOriginal()),
     ArrowLeft: ({ onClick, className }) => (
         <button onClick={onClick} className={className} data-testid="arrow-left">←</button>
     ),
     MoreVertical: () => <span data-testid="more-vertical">⋮</span>,
+}));
+
+vi.mock("@/features/clients/components/products/RelatedProducts.jsx", () => ({
+    default: () => null,
 }));
 
 vi.mock("../lib/formatGuarani", () => ({
@@ -119,11 +125,11 @@ describe("DetalleProducto", () => {
         mockApiClientGet.mockResolvedValue({ data: { user: { id_user: 7 } } });
     });
 
-    it("muestra 'Cargando producto...' durante la carga", async () => {
+    it("muestra el skeleton de carga durante la carga", async () => {
         globalThis.fetch = vi.fn().mockReturnValue(new Promise(() => {}));
-        render(<DetalleProducto />);
+        const { container } = render(<DetalleProducto />);
         await waitFor(() => {
-            expect(screen.getByText("Cargando producto...")).toBeInTheDocument();
+            expect(container.querySelector(".animate-pulse")).toBeInTheDocument();
         });
     });
 
@@ -141,7 +147,6 @@ describe("DetalleProducto", () => {
         ['precio', 'Gs. 150000'],
         ['stock', 'En stock'],
         ['sin imagen', 'Sin imagen'],
-        ['calificación', '4.5'],
         ['conteo de reseñas', '12 calificaciones'],
         ['título compuesto', 'TechStore / Electrónica'],
         ['botón Comentarios', 'Comentarios'],
@@ -152,12 +157,13 @@ describe("DetalleProducto", () => {
         });
     });
 
-    it("muestra 'Sin detalles adicionales.' cuando no hay descripción ni tags", async () => {
+    it("no muestra la sección Descripción cuando no hay descripción ni tags", async () => {
         setupFetch({ ...baseProduct, description: "", tags: [] });
         render(<DetalleProducto />);
         await waitFor(() => {
-            expect(screen.getByText("Sin detalles adicionales.")).toBeInTheDocument();
+            expect(screen.getByText("Mouse gamer")).toBeInTheDocument();
         });
+        expect(screen.queryByText("Descripción")).not.toBeInTheDocument();
     });
 
     it("muestra etiquetas en lista cuando no hay descripción pero hay tags", async () => {
@@ -203,7 +209,7 @@ describe("DetalleProducto", () => {
 
     it("navega hacia atrás al hacer clic en la flecha", async () => {
         render(<DetalleProducto />);
-        await userEvent.click(await screen.findByTestId("arrow-left"));
+        await userEvent.click((await screen.findAllByTestId("arrow-left"))[0]);
         expect(mockNavigate).toHaveBeenCalledWith(-1);
     });
 
@@ -273,13 +279,13 @@ describe("DetalleProducto", () => {
         });
     });
 
-    it("muestra 'Cargando listas...' mientras carga el modal de wishlist", async () => {
+    it("muestra el indicador de carga mientras carga el modal de wishlist", async () => {
         getWishlists.mockReturnValue(new Promise(() => {}));
         render(<DetalleProducto />);
         await waitFor(() => screen.getByText("Mouse gamer"));
         await userEvent.click(screen.getByRole("button", { name: /agregar a favoritos/i }));
         await waitFor(() => {
-            expect(screen.getByText("Cargando listas...")).toBeInTheDocument();
+            expect(document.querySelector(".animate-spin")).toBeInTheDocument();
         });
     });
 

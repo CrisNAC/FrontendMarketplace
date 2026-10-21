@@ -11,15 +11,27 @@ vi.mock('react-router-dom', () => ({
     Link: ({ children, to, ...rest }) => <a href={to} {...rest}>{children}</a>,
 }))
 
-vi.mock('react-hot-toast', () => ({
-    default: { success: vi.fn(), error: vi.fn() },
+const mockShowToast = vi.hoisted(() => vi.fn())
+
+vi.mock('@/hooks', () => ({
+    useToast: () => ({ showToast: mockShowToast }),
 }))
 
 vi.mock('axios', () => ({
     default: {
         get: vi.fn(),
         delete: vi.fn(),
+        create: vi.fn(() => ({
+            interceptors: {
+                request: { use: vi.fn() },
+                response: { use: vi.fn() },
+            },
+        })),
     },
+}))
+
+vi.mock('../components/notifications/NotificationBellDropdown', () => ({
+    NotificationBellDropdown: () => null,
 }))
 
 vi.mock('../lib/cartApi', () => ({
@@ -34,61 +46,12 @@ vi.mock('lucide-react', () => ({
     Search: () => <span>SearchIcon</span>,
     ChevronDown: () => null,
     LogOut: () => null,
+    Menu: () => null,
 }))
 
 import axios from 'axios'
 import { fetchCartsApi } from '../lib/cartApi'
-import { CategoriesBar } from '../components/navbar/CategoriesBar'
-import { MarketplaceNavbar } from '../components/navbar/MarketplaceNavbar'
-import Navbar from '../components/navbar/Navbar'
-
-// ─── CategoriesBar ─────────────────────────────────────────────────────────────
-describe('CategoriesBar', () => {
-    it('renderiza todas las categorías predefinidas', () => {
-        render(<CategoriesBar />)
-        expect(screen.getByText('Tecnologia')).toBeInTheDocument()
-        expect(screen.getByText('Moda')).toBeInTheDocument()
-        expect(screen.getByText('Deportes')).toBeInTheDocument()
-        expect(screen.getByText('Ofertas!!')).toBeInTheDocument()
-    })
-
-    it('renderiza la etiqueta "Ofertas!!" en rojo', () => {
-        render(<CategoriesBar />)
-        const oferta = screen.getByText('Ofertas!!')
-        expect(oferta.className).toContain('red')
-    })
-
-    it('renderiza al menos 8 categorías + Ofertas', () => {
-        render(<CategoriesBar />)
-        const spans = screen.getAllByText(/./i)
-        expect(spans.length).toBeGreaterThanOrEqual(8)
-    })
-})
-
-// ─── MarketplaceNavbar ────────────────────────────────────────────────────────
-describe('MarketplaceNavbar', () => {
-    it('renderiza el nombre "Open Market"', () => {
-        render(<MarketplaceNavbar />)
-        expect(screen.getByText('Open Market')).toBeInTheDocument()
-    })
-
-    it('renderiza el input de búsqueda con placeholder "Buscar"', () => {
-        render(<MarketplaceNavbar />)
-        expect(screen.getByPlaceholderText('Buscar')).toBeInTheDocument()
-    })
-
-    it('renderiza el botón "Buscar"', () => {
-        render(<MarketplaceNavbar />)
-        expect(screen.getByRole('button', { name: 'Buscar' })).toBeInTheDocument()
-    })
-
-    it('renderiza los links de navegación', () => {
-        render(<MarketplaceNavbar />)
-        expect(screen.getByText('Inicio')).toBeInTheDocument()
-        expect(screen.getByText('Productos')).toBeInTheDocument()
-        expect(screen.getByText('Comercio')).toBeInTheDocument()
-    })
-})
+import { Navbar } from '../components/navbar/Navbar'
 
 // ─── Navbar ───────────────────────────────────────────────────────────────────
 describe('Navbar', () => {
@@ -111,7 +74,6 @@ describe('Navbar', () => {
         await waitFor(() => {
             expect(screen.getByText('Inicio')).toBeInTheDocument()
             expect(screen.getByText('Productos')).toBeInTheDocument()
-            expect(screen.getByText('Comercio')).toBeInTheDocument()
             // "Ofertas" aparece dos veces (nav + barra de categorías), usar getAllByText
             expect(screen.getAllByText('Ofertas').length).toBeGreaterThanOrEqual(1)
         })
@@ -136,7 +98,7 @@ describe('Navbar', () => {
     it('muestra el input de búsqueda', async () => {
         render(<Navbar />)
         await waitFor(() => {
-            expect(screen.getByPlaceholderText(/buscar/i)).toBeInTheDocument()
+            expect(screen.getByPlaceholderText('Buscar')).toBeInTheDocument()
         })
     })
 
@@ -193,5 +155,29 @@ describe('Navbar', () => {
         })
         await userEvent.click(screen.getByRole('button', { name: /Menú de cuenta/i }))
         expect(screen.getByText('Iniciar sesión')).toBeInTheDocument()
+    })
+
+    it('muestra toast de éxito al cerrar sesión', async () => {
+        axios.get.mockResolvedValue({ data: { user: { id_user: 1, name: 'María', role: 'CUSTOMER' } } })
+        axios.delete.mockResolvedValue({})
+        render(<Navbar />)
+        await waitFor(() => screen.getByRole('button', { name: /Menú de cuenta/i }))
+        await userEvent.click(screen.getByRole('button', { name: /Menú de cuenta/i }))
+        await userEvent.click(screen.getByText('Cerrar sesión'))
+        await waitFor(() => {
+            expect(mockShowToast).toHaveBeenCalledWith('Sesión cerrada', 'success')
+        })
+    })
+
+    it('muestra toast de error cuando falla el cierre de sesión', async () => {
+        axios.get.mockResolvedValue({ data: { user: { id_user: 1, name: 'María', role: 'CUSTOMER' } } })
+        axios.delete.mockRejectedValue(new Error('Network error'))
+        render(<Navbar />)
+        await waitFor(() => screen.getByRole('button', { name: /Menú de cuenta/i }))
+        await userEvent.click(screen.getByRole('button', { name: /Menú de cuenta/i }))
+        await userEvent.click(screen.getByText('Cerrar sesión'))
+        await waitFor(() => {
+            expect(mockShowToast).toHaveBeenCalledWith('No se pudo cerrar sesión. Intentá de nuevo.', 'error')
+        })
     })
 })

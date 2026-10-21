@@ -2,8 +2,10 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-vi.mock('react-hot-toast', () => ({
-    default: { success: vi.fn(), error: vi.fn() }
+const mockShowToast = vi.hoisted(() => vi.fn())
+
+vi.mock('@/hooks', () => ({
+    useToast: () => ({ showToast: mockShowToast }),
 }))
 
 vi.mock('../lib/productReportsApi', () => ({
@@ -11,7 +13,6 @@ vi.mock('../lib/productReportsApi', () => ({
     updateProductReport: vi.fn(),
 }))
 
-import toast from 'react-hot-toast'
 import { fetchFilteredProductReports, updateProductReport } from '../lib/productReportsApi'
 import ProductClaimsPanel from '../features/reports/ProductClaimsPanel'
 
@@ -32,12 +33,12 @@ describe('ProductClaimsPanel', () => {
         fetchFilteredProductReports.mockResolvedValue({ data: [mockClaim], meta: mockMeta })
     })
 
-    it('muestra "Cargando reclamos..." durante la carga', () => {
+    it('muestra el indicador de carga mientras carga', () => {
         fetchFilteredProductReports.mockReturnValue(new Promise(() => {}))
 
         render(<ProductClaimsPanel canResolve={true} />)
 
-        expect(screen.getByText('Cargando reclamos…')).toBeInTheDocument()
+        expect(document.querySelector('.animate-spin')).toBeInTheDocument()
     })
 
     it('renderiza el reclamo cargado', async () => {
@@ -81,7 +82,7 @@ describe('ProductClaimsPanel', () => {
 
         await waitFor(() => {
             expect(updateProductReport).toHaveBeenCalledWith(1, { report_status: 'IN_PROGRESS' })
-            expect(toast.success).toHaveBeenCalledWith('Reclamo marcado en curso')
+            expect(mockShowToast).toHaveBeenCalledWith('Reclamo marcado en curso', 'success')
         })
     })
 
@@ -151,7 +152,7 @@ describe('ProductClaimsPanel', () => {
         await userEvent.click(screen.getByText('Resolver'))
 
         await waitFor(() => {
-            expect(toast.error).toHaveBeenCalledWith('Agregá una nota explicando cómo se resolvió')
+            expect(mockShowToast).toHaveBeenCalledWith('Agregá una nota explicando cómo se resolvió')
         })
     })
 })

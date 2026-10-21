@@ -21,11 +21,10 @@ vi.mock('../lib/reviewReportsApi', () => ({
     reportProductReview: vi.fn(),
 }))
 
-vi.mock('react-hot-toast', () => ({
-    default: {
-        success: vi.fn(),
-        error: vi.fn(),
-    }
+const mockShowToast = vi.hoisted(() => vi.fn())
+
+vi.mock('@/hooks', () => ({
+    useToast: () => ({ showToast: mockShowToast }),
 }))
 
 vi.mock('../features/clients/components/comments/RatingsDistribution', () => ({
@@ -62,7 +61,6 @@ vi.mock('../features/clients/components/comments/ReportModal', () => ({
 
 import apiClient from '../lib/apiClient'
 import { reportProductReview } from '../lib/reviewReportsApi'
-import toast from 'react-hot-toast'
 import { CommentsPage } from '../features/clients/pages/CommentsPage'
 
 const mockReviewsResponse = {
@@ -199,11 +197,12 @@ describe('CommentsPage', () => {
         await waitFor(() => {
             expect(apiClient.post).toHaveBeenCalledWith(
                 '/products/42/reviews',
-                { rating: 5, comment: 'Excelente' }
+                { rating: 5, comment: 'Excelente' },
+                { skipGlobalErrorRedirect: true }
             )
         })
 
-        expect(toast.success).toHaveBeenCalledWith('¡Reseña enviada exitosamente!')
+        expect(mockShowToast).toHaveBeenCalledWith('¡Reseña enviada exitosamente!', 'success')
     })
 
     it('muestra toast de error cuando falla el envío de reseña', async () => {
@@ -221,7 +220,7 @@ describe('CommentsPage', () => {
         await userEvent.click(screen.getByText('Enviar reseña'))
 
         await waitFor(() => {
-            expect(toast.error).toHaveBeenCalledWith('No autorizado')
+            expect(mockShowToast).toHaveBeenCalledWith('No autorizado', 'error')
         })
     })
 

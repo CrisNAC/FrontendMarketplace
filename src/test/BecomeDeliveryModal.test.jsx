@@ -2,12 +2,9 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-vi.mock('react-hot-toast', () => ({
-    default: { success: vi.fn(), error: vi.fn() },
-}))
-
 vi.mock('lucide-react', () => ({
     Phone: () => <span />,
+    Car: () => <span />,
     X: () => <span data-testid="x-icon" />,
 }))
 
@@ -16,7 +13,8 @@ vi.mock('../features/clients/services/deliveryApi', () => ({
     getCurrentUserForDeliveryForm: vi.fn(),
 }))
 
-vi.mock('../features/commerces/services/editUserProfileApi', () => ({
+vi.mock('../features/commerces/services/editUserProfileApi', async (importOriginal) => ({
+    ...(await importOriginal()),
     getBackendErrorMessage: vi.fn((_err, fallback) => fallback),
 }))
 
@@ -65,7 +63,7 @@ describe('BecomeDeliveryModal', () => {
     it('muestra el campo teléfono con valor precargado', async () => {
         renderOpen()
         await waitFor(() => {
-            const phoneInput = screen.getByPlaceholderText('+54 9 11 2345-6789')
+            const phoneInput = screen.getByPlaceholderText('09xxxxxxxx')
             expect(phoneInput.value).toBe('0981111111')
         })
     })
@@ -90,8 +88,8 @@ describe('BecomeDeliveryModal', () => {
 
     it('muestra error de validación si el teléfono está vacío', async () => {
         renderOpen()
-        await waitFor(() => screen.getByPlaceholderText('+54 9 11 2345-6789'))
-        const phoneInput = screen.getByPlaceholderText('+54 9 11 2345-6789')
+        await waitFor(() => screen.getByPlaceholderText('09xxxxxxxx'))
+        const phoneInput = screen.getByPlaceholderText('09xxxxxxxx')
         await userEvent.clear(phoneInput)
         await userEvent.click(screen.getByText('Confirmar'))
         await waitFor(() => {
@@ -99,24 +97,26 @@ describe('BecomeDeliveryModal', () => {
         })
     })
 
-    it('llama becomeDelivery con datos válidos y llama onSuccess', async () => {
+    it('llama becomeDelivery con datos válidos, muestra toast y llama onSuccess', async () => {
         becomeDelivery.mockResolvedValueOnce({})
         const onSuccess = vi.fn()
         const onClose = vi.fn()
-        renderOpen({ onClose, onSuccess })
-        await waitFor(() => screen.getByPlaceholderText('+54 9 11 2345-6789'))
+        const showToast = vi.fn()
+        renderOpen({ onClose, onSuccess, showToast })
+        await waitFor(() => screen.getByPlaceholderText('09xxxxxxxx'))
         await userEvent.click(screen.getByText('Confirmar'))
         await waitFor(() => {
             expect(becomeDelivery).toHaveBeenCalledWith('MOTOCICLETA', '0981111111')
+            expect(showToast).toHaveBeenCalledWith('Listo: ahora sos delivery.', 'success')
             expect(onSuccess).toHaveBeenCalled()
-            expect(onClose).toHaveBeenCalled()
+            expect(onClose).not.toHaveBeenCalled()
         })
     })
 
     it('muestra error cuando becomeDelivery falla', async () => {
         becomeDelivery.mockRejectedValueOnce(new Error('Error del servidor'))
         renderOpen()
-        await waitFor(() => screen.getByPlaceholderText('+54 9 11 2345-6789'))
+        await waitFor(() => screen.getByPlaceholderText('09xxxxxxxx'))
         await userEvent.click(screen.getByText('Confirmar'))
         await waitFor(() => {
             expect(screen.getByText('No se pudo completar el registro como delivery.')).toBeInTheDocument()

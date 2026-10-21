@@ -9,11 +9,14 @@ vi.mock('react-router-dom', () => ({
     useNavigate: () => mockNavigate,
 }))
 
-vi.mock('react-hot-toast', () => ({
-    default: { success: vi.fn(), error: vi.fn() },
+const mockShowToast = vi.hoisted(() => vi.fn())
+
+vi.mock('@/hooks', () => ({
+    useToast: () => ({ showToast: mockShowToast }),
 }))
 
-vi.mock('lucide-react', () => ({
+vi.mock('lucide-react', async (importOriginal) => ({
+    ...(await importOriginal()),
     Search: () => <span>Search</span>,
     ArrowLeft: () => <span>←</span>,
     User: () => <span>User</span>,
@@ -52,7 +55,6 @@ vi.mock('../hooks/useDebouncedValue', () => ({
     useDebouncedValue: (val) => val,
 }))
 
-import toast from 'react-hot-toast'
 import { apiClient } from '../features/commerces/services/editCommerceApi'
 import { searchDeliveries, linkDeliveryToStore } from '../features/commerces/services/commerceStoreDeliveryApi'
 import { AddStoreDeliveryPage } from '../features/commerces/pages/AddStoreDeliveryPage'
@@ -103,11 +105,11 @@ describe('AddStoreDeliveryPage', () => {
         })
     })
 
-    it('muestra "Cargando lista..." mientras carga los repartidores', async () => {
+    it('muestra el indicador de carga mientras carga', async () => {
         searchDeliveries.mockReturnValue(new Promise(() => {}))
         render(<AddStoreDeliveryPage />)
         await waitFor(() => {
-            expect(screen.getByText('Cargando lista…')).toBeInTheDocument()
+            expect(document.querySelector('.animate-spin')).toBeInTheDocument()
         })
     })
 
@@ -170,7 +172,7 @@ describe('AddStoreDeliveryPage', () => {
         await userEvent.click(screen.getByText('Agregar'))
         await userEvent.click(screen.getByText('Confirmar'))
         await waitFor(() => {
-            expect(toast.success).toHaveBeenCalledWith('Repartidor agregado a tu comercio.')
+            expect(mockShowToast).toHaveBeenCalledWith('Repartidor agregado a tu comercio', 'success')
             expect(mockNavigate).toHaveBeenCalledWith('/comercio/delivery')
         })
     })

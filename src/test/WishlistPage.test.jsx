@@ -31,11 +31,10 @@ vi.mock('../lib/cartLocalStorage', () => ({
     mergeCartResponseFromApi: vi.fn(),
 }))
 
-vi.mock('react-hot-toast', () => ({
-    default: {
-        success: vi.fn(),
-        error: vi.fn(),
-    }
+const mockShowToast = vi.hoisted(() => vi.fn())
+
+vi.mock('@/hooks', () => ({
+    useToast: () => ({ showToast: mockShowToast }),
 }))
 
 vi.mock('../components/SidebarClientProfile', () => ({
@@ -43,7 +42,7 @@ vi.mock('../components/SidebarClientProfile', () => ({
 }))
 
 vi.mock('../features/clients/components/wishlist/WishlistItemCard', () => ({
-    default: ({ item, onRemove }) => (
+    WishlistItemCard: ({ item, onRemove }) => (
         <div>
             <span>{item.product?.name || 'Producto'}</span>
             <button onClick={() => onRemove(item)}>Eliminar</button>
@@ -52,11 +51,24 @@ vi.mock('../features/clients/components/wishlist/WishlistItemCard', () => ({
 }))
 
 vi.mock('../features/clients/components/wishlist/WishlistSummaryCard', () => ({
-    default: ({ totalItems, onAddAllToCart }) => (
+    WishlistSummaryCard: ({ totalItems, onAddAllToCart, showCreateForm, onToggleCreateForm, newListName, onListNameChange, onCreateList }) => (
         <div>
             <span>Total: {totalItems}</span>
             <button onClick={onAddAllToCart}>Agregar todo al carrito</button>
+            <button onClick={onToggleCreateForm}>{showCreateForm ? 'Cancelar' : 'Nueva lista'}</button>
+            {showCreateForm && (
+                <>
+                    <input placeholder="Nombre de la lista" value={newListName} onChange={(e) => onListNameChange(e.target.value)} />
+                    <button onClick={onCreateList}>Crear</button>
+                </>
+            )}
         </div>
+    ),
+}))
+
+vi.mock('../features/clients/components/cart', () => ({
+    ConfirmationModal: ({ isOpen, confirmText, onConfirm }) => (
+        isOpen ? <button onClick={onConfirm}>{confirmText}</button> : null
     ),
 }))
 
@@ -67,7 +79,6 @@ import {
     createWishlist,
     removeWishlistItem,
 } from '../features/clients/services/wishlistService'
-import toast from 'react-hot-toast'
 import Wishlist from '../features/clients/pages/Wishlist'
 
 const mockWishlist = {
@@ -165,10 +176,11 @@ describe('Wishlist', () => {
         })
 
         await userEvent.click(screen.getByText('Eliminar'))
+        await userEvent.click(screen.getByText('Quitar'))
 
         await waitFor(() => {
             expect(removeWishlistItem).toHaveBeenCalledWith(7, 1, 10)
-            expect(toast.success).toHaveBeenCalledWith('Producto eliminado de la lista')
+            expect(mockShowToast).toHaveBeenCalledWith('Producto eliminado de la lista', 'success')
         })
     })
 
@@ -186,7 +198,7 @@ describe('Wishlist', () => {
         render(<Wishlist />)
 
         await waitFor(() => {
-            expect(toast.error).toHaveBeenCalledWith('No se pudieron cargar las listas')
+            expect(mockShowToast).toHaveBeenCalledWith('No se pudieron cargar las listas', 'error')
         })
     })
 })
